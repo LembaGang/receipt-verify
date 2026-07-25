@@ -1,0 +1,178 @@
+{
+  "format": "evidence.action/0",
+  "spec_version": "1",
+  "spec": "SPEC.md",
+  "key_bundle": "jwks.json",
+  "test_key_seed_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "kid": "ed25519/Vkdap1RjR0wC",
+  "public_key_b64url": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+  "vectors": [
+    {
+      "id": "allow",
+      "description": "Permitted call; gate result=act; recorded outcome=executed. Proves a conforming verifier accepts a valid allow record byte-for-byte.",
+      "receipt": "vectors/allow/chain.jsonl",
+      "receipt_sha256": "568152aa8b0ff5b311e20dc62ab3471d91f7a6c92eed157aaf432b86dff7f94e",
+      "receipt_byte_length": 849,
+      "inputs": null,
+      "expected": {
+        "verify": "VALID",
+        "session_id": "00000000-0000-4000-8000-000000000001",
+        "record_count": 1,
+        "entries": [
+          {
+            "seq": 0,
+            "request_commitment": "sha256:1efa47d8c0270e949b23f20f97509b612fbf210fec304a4ef54f7ee4ed6c2458",
+            "entry_hash": "sha256:dad2cb581bfdf29c6d21e9524996d3992c66b21d2f954621970c2e2b35a13a24",
+            "sig": "K9waY62pdwIGqP0MA_7IuuaC7MYsTmqCmDKLTklSX4GhnCikHuCTK8VfyBydBLDeipB5CkfNLWFU4pwTJi-eDw",
+            "canonical_byte_length": 753,
+            "canonical_sha256": "dad2cb581bfdf29c6d21e9524996d3992c66b21d2f954621970c2e2b35a13a24"
+          }
+        ]
+      },
+      "proves": "A conforming verifier accepts a valid allow record byte-for-byte; gate.gate_family=permit + gate.result=act denotes a rule-based permission."
+    },
+    {
+      "id": "deny",
+      "description": "Policy-blocked call; gate result=halt; recorded outcome=denied; no downstream effect.",
+      "receipt": "vectors/deny/chain.jsonl",
+      "receipt_sha256": "1ef886cbc25db826c64dccc7c1d025d663db750ad52b418a437757057b4bc231",
+      "receipt_byte_length": 833,
+      "inputs": null,
+      "expected": {
+        "verify": "VALID",
+        "session_id": "00000000-0000-4000-8000-000000000002",
+        "record_count": 1,
+        "halt_recorded": true,
+        "entries": [
+          {
+            "seq": 0,
+            "request_commitment": "sha256:c29c2ddaeedc60b10afe8c74037fe7ed9a65ef4b1ae9159217c3676c4a560120",
+            "entry_hash": "sha256:58d85537164339552b83b411dc24d9749d7bc85262c5a2d0996216ea3f580609",
+            "sig": "kb3Nt0NSmY82W5rXbWDL-pYyOY90FJhE13jvtmJfqU8mjz6bzddoFiR9-LyilwzAco4T_EjoUNjcOOFwFtJaAA",
+            "canonical_byte_length": 737,
+            "canonical_sha256": "58d85537164339552b83b411dc24d9749d7bc85262c5a2d0996216ea3f580609"
+          }
+        ]
+      },
+      "proves": "Denial-with-halt is a first-class verifiable outcome. gate.gate_family=permit + gate.result=halt denotes an explicit rule-based deny."
+    },
+    {
+      "id": "fail-closed",
+      "description": "Denial-by-default: an environment / verification pre-condition could not be satisfied; gate halts without an explicit deny rule.",
+      "receipt": "vectors/fail-closed/chain.jsonl",
+      "receipt_sha256": "76528edc3254aa8cf25dc4c13fb54e533e145da11e864ef29e8e8a2190f8d5ea",
+      "receipt_byte_length": 867,
+      "inputs": null,
+      "expected": {
+        "verify": "VALID",
+        "session_id": "00000000-0000-4000-8000-000000000003",
+        "record_count": 1,
+        "halt_recorded": true,
+        "fail_closed": true,
+        "entries": [
+          {
+            "seq": 0,
+            "request_commitment": "sha256:2b105185c1f309338910c66d496c829b64a091cf624079064a4e0e14f27e07f1",
+            "entry_hash": "sha256:af745f5bb9c240ff1a27d64fd064b7e0d95255912a4621a74339ca63fd5500a5",
+            "sig": "X2_8EHlF9vFZB6hQSpAMTnWnXvPw2JG13tjgsOZj1pwabGyAiL2JKkzkcQ59TwoYmCxwpg8U0Wme7dDJfeyYCg",
+            "canonical_byte_length": 771,
+            "canonical_sha256": "af745f5bb9c240ff1a27d64fd064b7e0d95255912a4621a74339ca63fd5500a5"
+          }
+        ]
+      },
+      "proves": "An unresolvable pre-condition produces a verifiable halt. event.decision_source=fail-closed is the primary, signed-bytes distinguisher between safe-default halt and rule-based deny (config); gate.gate_family=environment is a supplementary signal naming the class of check. See SPEC.md §7.3, §10.2."
+    },
+    {
+      "id": "tampered",
+      "description": "Bytes altered after signing. A conforming verifier MUST reject. This is the negative case — the most important vector.",
+      "receipt": "vectors/tampered/chain.jsonl",
+      "receipt_sha256": "63ffa1b68039e82053aead192aee8216db3b7ab71427677a86bd3a3415f1b8f7",
+      "receipt_byte_length": 851,
+      "inputs": {
+        "based_on": "allow",
+        "mutation": "event.argv[1] changed from \"hello\" to \"goodbye\" after signing; sig unchanged",
+        "original_request_commitment": "sha256:1efa47d8c0270e949b23f20f97509b612fbf210fec304a4ef54f7ee4ed6c2458",
+        "tampered_record_carries_committed_hash": "sha256:1efa47d8c0270e949b23f20f97509b612fbf210fec304a4ef54f7ee4ed6c2458",
+        "recomputed_commitment_from_mutated_event": "sha256:3dcea82051d986cf22b30ce24995dba0b81e691ea9a68ce7f3cd478fd9ae4184"
+      },
+      "expected": {
+        "verify": "TAMPERED",
+        "tamper_entry": 0,
+        "tamper_reason": "request_commitment mismatch"
+      },
+      "proves": "A conforming verifier rejects post-signature mutation. A verifier that returns VALID here is non-conforming."
+    },
+    {
+      "id": "chain-multi",
+      "description": "Two linked records (file_read, then shell). Proves the verifier checks hash-chain linkage, not just per-record signatures.",
+      "receipt": "vectors/chain-multi/chain.jsonl",
+      "receipt_sha256": "d22292ca64876e2db9fa018ac8f3307b7296f3756901c749f2ba1051f5d0d596",
+      "receipt_byte_length": 1148,
+      "inputs": null,
+      "expected": {
+        "verify": "VALID",
+        "session_id": "00000000-0000-4000-8000-000000000005",
+        "record_count": 2,
+        "genesis_prev_hash": "sha256:860ef5092e3780d1d0665f5fbd652c3173fefe1a54a0506c1fed4f9ce53c910f",
+        "entries": [
+          {
+            "seq": 0,
+            "request_commitment": "sha256:c43d3ad30837ab7142574d2191507113a14b8811bd61de253b70169769356bce",
+            "entry_hash": "sha256:4d401d50f64b31240df9f02ac9a569fa9eeae7efe61834647e2d18c8444c51ac",
+            "sig": "cemXRyZG8ul1s1i5aAfjX_FIRHqB1vP_Zn_iCISTlDJSOGu6z37sNzQzrSmDu-mi5dBzeFgaom7a5tYru8UTBQ",
+            "canonical_byte_length": 465,
+            "canonical_sha256": "4d401d50f64b31240df9f02ac9a569fa9eeae7efe61834647e2d18c8444c51ac"
+          },
+          {
+            "seq": 1,
+            "request_commitment": "sha256:6069ae82a393a4b39a4853d910ea305c073e33b6db3745f1e972a1e535a7bf76",
+            "entry_hash": "sha256:16fed60fe326435e1265fb5c8b2dcc191b0e99c709e830fb7a150ab6d1d05101",
+            "sig": "sAfERmhVCd32F1NgQURjl7tLXyFaJph4mL9TszeFOLp_lc1sN49FINQhGeJ15jobkr7p9_YaeRW800ZaqCdODA",
+            "canonical_byte_length": 491,
+            "canonical_sha256": "16fed60fe326435e1265fb5c8b2dcc191b0e99c709e830fb7a150ab6d1d05101",
+            "prev_hash": "sha256:4d401d50f64b31240df9f02ac9a569fa9eeae7efe61834647e2d18c8444c51ac",
+            "prev_hash_equals_seq0_entry_hash": true
+          }
+        ]
+      },
+      "proves": "Linkage: seq=0 prev_hash equals genesis(session_id); seq=1 prev_hash equals seq=0 entry_hash. A verifier that checks signatures only — without linkage — would still pass this vector, so the conformance runner asserts the linkage equalities explicitly."
+    },
+    {
+      "id": "canonicalization-key-order",
+      "description": "args_hash MUST be SHA-256 over RFC 8785 JCS canonical bytes. The same logical args presented in different key orders MUST produce the same hash.",
+      "receipt": "vectors/canonicalization-key-order/chain.jsonl",
+      "receipt_sha256": "ce4da0ce7f723360bde7e374d916a9d5aeb349c8d4f0677c5becc26ce905733b",
+      "receipt_byte_length": 643,
+      "inputs": {
+        "raw_args_unsorted": {
+          "b": 2,
+          "a": 1
+        },
+        "raw_args_sorted_equivalent": {
+          "a": 1,
+          "b": 2
+        },
+        "jcs_canonical_bytes": "{\"a\":1,\"b\":2}",
+        "jcs_canonical_byte_length": 13,
+        "expected_args_hash": "sha256:43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777"
+      },
+      "expected": {
+        "verify": "VALID",
+        "session_id": "00000000-0000-4000-8000-000000000006",
+        "record_count": 1,
+        "args_hash_in_receipt_matches_expected": true,
+        "entries": [
+          {
+            "seq": 0,
+            "request_commitment": "sha256:074181b22acbd2495022f89ad99eb8462c7c52bac81cbee9382140b602d820e8",
+            "entry_hash": "sha256:ef3e3bf5022c4c776e0930e55463c4b9526452a65714ab1fc86f76f8e2e3419b",
+            "sig": "CQH09VJoLZE3A_jmHga3GbhiOI9HgfLNgXdWw_ScyomP_qP_ypQVHdKPtf4gLsf95RYs90gXX-tJkcbrMofVDw",
+            "canonical_byte_length": 547,
+            "canonical_sha256": "ef3e3bf5022c4c776e0930e55463c4b9526452a65714ab1fc86f76f8e2e3419b"
+          }
+        ]
+      },
+      "proves": "Conforming implementations use real JCS, not JSON.stringify. An implementer who serialises {b:2,a:1} naively (without key-sort) will derive a different args_hash and the conformance check fails."
+    }
+  ]
+}

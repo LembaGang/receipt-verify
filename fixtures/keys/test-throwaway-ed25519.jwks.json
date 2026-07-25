@@ -1,0 +1,21 @@
+{
+  "_warning": "THROWAWAY TEST KEYS. Derived from seeds published in tools/make-throwaway-fixtures.mjs. Never use for anything real.",
+  "keys": [
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "kid": "test-throwaway-ed25519-ad18dd83",
+      "use": "sig",
+      "alg": "EdDSA",
+      "x": "m1CE3W_BeBmP9s3ZGILIDY8-yNhkUfufs4qRsBC8xLs"
+    },
+    {
+      "kty": "OKP",
+      "crv": "Ed25519",
+      "kid": "test-throwaway-ed25519-b67a106d",
+      "use": "sig",
+      "alg": "EdDSA",
+      "x": "ev2ipX0gYZJLt_PIgmalcJ_rSGx0WHP8HW7vRXgMReY"
+    }
+  ]
+}

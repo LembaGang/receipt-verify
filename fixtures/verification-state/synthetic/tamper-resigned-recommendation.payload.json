@@ -1,0 +1,16 @@
+{
+  "v_verdict": "supported",
+  "iss": "https://verifier.test-throwaway.invalid",
+  "v_confidence": 0.91,
+  "exp": 1900000000,
+  "v_adversarial_result": "resilient",
+  "iat": 1750000000,
+  "v_recommendation": "weak_supported",
+  "sub": "claim:sha256:27dfce3b87229e59f268c64d50e954a6d7b640bd75557ed0185b622284d0ec1b",
+  "v_gate": "act",
+  "v_gate_mapping": "v0.3.0-2026-05-30",
+  "v_gate_mapping_hash": "433eb75d823912b33aa3a8b4dd2cc3201a03f053b0af583d150ae04b6be3c919",
+  "v_claim": {
+    "hash": "27dfce3b87229e59f268c64d50e954a6d7b640bd75557ed0185b622284d0ec1b"
+  }
+}

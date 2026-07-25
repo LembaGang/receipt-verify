@@ -1,0 +1,8 @@
+THROWAWAY Ed25519 seeds (hex) — published on purpose so these fixtures regenerate.
+Anyone holding these can sign as the kids below. That is the point: they prove nothing about anyone.
+
+test-throwaway-ed25519-ad18dd83
+746573742d7468726f77617761792d726563656970742d7665726966792d3031
+
+test-throwaway-ed25519-b67a106d
+746573742d7468726f77617761792d726563656970742d7665726966792d3032

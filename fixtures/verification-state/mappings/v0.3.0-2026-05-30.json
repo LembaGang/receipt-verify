@@ -1,0 +1,53 @@
+{
+  "mapping_id": "v0.3.0-2026-05-30",
+  "spec": "draft-krausz-verification-state-01 §5.1 Table 2, transcribed",
+  "note": "The draft binds receipts to a mapping document by id and SHA-256 digest but does not specify the document's schema, and no mapping document is published at any location the draft or the reference fixtures name. This document is receipt-verify's transcription of the §5.1 decision table into the schema defined in src/mapping.ts. It is NOT an artifact published by the draft author. See FINDINGS.md.",
+  "confidence_threshold": 0.7,
+  "rules": [
+    {
+      "v_verdict": "supported",
+      "confidence": ">=",
+      "v_adversarial_result": "resilient",
+      "v_recommendation": "confident_supported"
+    },
+    {
+      "v_verdict": "supported",
+      "confidence": ">=",
+      "v_adversarial_result": "not_checked",
+      "v_recommendation": "un_probed_not_cleared"
+    },
+    {
+      "v_verdict": "supported",
+      "confidence": "any",
+      "v_adversarial_result": "vulnerable",
+      "v_recommendation": "vulnerable_supported"
+    },
+    {
+      "v_verdict": "supported",
+      "confidence": "<",
+      "v_adversarial_result": ["resilient", "not_checked"],
+      "v_recommendation": "weak_supported"
+    },
+    {
+      "v_verdict": "refuted",
+      "confidence": "any",
+      "v_adversarial_result": "any",
+      "v_recommendation": "refuted"
+    },
+    {
+      "v_verdict": ["unverifiable", "unknown"],
+      "confidence": "any",
+      "v_adversarial_result": "any",
+      "v_recommendation": "unverifiable"
+    }
+  ],
+  "gate": {
+    "confident_supported": "act",
+    "un_probed_not_cleared": "halt",
+    "vulnerable_supported": "halt",
+    "weak_supported": "halt",
+    "refuted": "halt",
+    "unverifiable": "halt",
+    "error": "halt"
+  }
+}

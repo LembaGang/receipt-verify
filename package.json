@@ -1,0 +1,32 @@
+{
+  "name": "receipt-verify",
+  "version": "0.1.0-dev",
+  "private": true,
+  "description": "Cross-format agent-receipt verifier. Recomputes and returns a tri-state verdict per receipt, under a named format.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "receipt-verify": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "snapshot": "node tools/snapshot.mjs",
+    "fixtures": "node tools/make-throwaway-fixtures.mjs",
+    "cli": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@headlessoracle/chirindo": "0.3.0",
+    "canonicalize": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
