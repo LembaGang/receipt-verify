@@ -1,0 +1,14 @@
+# Snapshots are byte-exact evidence. Their sha256 values are pinned in
+# fixtures/provenance.md and, for the conformance corpus, asserted against the
+# upstream manifest by the test suite. Line-ending normalization would rewrite
+# those bytes on checkout and silently invalidate every pin — so these paths are
+# never normalized.
+fixtures/** -text
+refs/** -text
+
+# Source and docs normalize to LF in the repository.
+* text=auto eol=lf
+*.ts text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
