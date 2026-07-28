@@ -1,0 +1,13 @@
+{
+  "payload": {
+    "type": "protectmcp:decision",
+    "issued_at": "2026-06-28T12:41:00Z",
+    "issuer_id": "sb:issuer:BTHQTy7E1W77",
+    "committed_fields_root": "035f35659f871881017f60df5883d67cec5b91bde1d8df612941caf1dbe4a935"
+  },
+  "signature": {
+    "alg": "EdDSA",
+    "kid": "sb:issuer:BTHQTy7E1W77",
+    "sig": "08a5895ba678b9ff0efd0d2e20dcc4e16d1a6a61a0e08cb9b94980f44f3baf1df055a3ebf08abfcf80d84f68893ceac641399a1c197272a80f4dbee49d05f206"
+  }
+}

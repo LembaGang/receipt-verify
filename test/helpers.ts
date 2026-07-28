@@ -13,6 +13,18 @@ export const COMPOSED = join(VSTATE, "spec-examples", "v0.3-composed");
 export const MAPPINGS = join(VSTATE, "mappings");
 export const THROWAWAY_JWKS = join(FIX, "keys", "test-throwaway-ed25519.jwks.json");
 
+export const ACTA = join(FIX, "acta");
+export const ACTA_SYNTH = join(ACTA, "synthetic");
+export const ACTA_PUB = join(ACTA, "published");
+export const ACTA_JWKS = join(ACTA, "keys", "acta-throwaway.jwks.json");
+export const REFS = join(ROOT, "refs");
+
+/**
+ * One hour after the latest synthetic ACTA receipt's `issued_at`. Pinned so the
+ * reported receipt age never depends on the wall clock.
+ */
+export const ACTA_NOW = Math.floor(Date.parse("2026-06-28T13:00:00Z") / 1000);
+
 export function read(path: string): Buffer {
   return readFileSync(path);
 }

@@ -6,7 +6,7 @@ implementation of a receipt verifier MAY use this set to demonstrate
 byte-parity conformance with the format.
 
 This document is *not* the format specification. The normative format
-specification is the Internet-Draft *draft-msebenzi-evidence-state-00*
+specification is the Internet-Draft *draft-msebenzi-evidence-action-00*
 ("the I-D"). This document defines (a) the verification algorithm in
 prose, (b) the conformance vectors, and (c) the published trust material
 required to verify them offline.
@@ -477,5 +477,5 @@ This document itself requests no IANA action.
 - RFC 8174 — Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words
 - RFC 8259 — The JavaScript Object Notation (JSON) Data Interchange Format
 - RFC 8785 — JSON Canonicalization Scheme (JCS)
-- *draft-msebenzi-evidence-state-00* — Evidence-state framework I-D
+- *draft-msebenzi-evidence-action-00* — Evidence-action framework I-D
   (defines the `evidence.action/0` record schema)

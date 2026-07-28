@@ -1,0 +1,17 @@
+{
+  "payload": {
+    "type": "protectmcp:decision",
+    "issued_at": "2026-06-28T12:02:00Z",
+    "issuer_id": "sb:issuer:BTHQTy7E1W77",
+    "tool_name": "Bash",
+    "decision": "allow",
+    "policy_digest": "sha256:cb6f676694ae1d2b12c25e7d82b830825c4590f091829689ee13a964224c82eb",
+    "sequence": 2,
+    "previousReceiptHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "signature": {
+    "alg": "EdDSA",
+    "kid": "sb:issuer:BTHQTy7E1W77",
+    "sig": "5f26233075c18b6f5394a3d32604fc7f55ac1248650cffbc5ce84058cf06663601c3ee9961ebfaa196f19d823ac3619feaab27a0f9f73da8e1d2db278290a70f"
+  }
+}

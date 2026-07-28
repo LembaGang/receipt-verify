@@ -8,8 +8,9 @@
 import type { Adapter } from "./types.js";
 import { evidenceActionAdapter } from "./adapters/evidence-action.js";
 import { verificationStateAdapter } from "./adapters/verification-state.js";
+import { actaAdapter } from "./adapters/acta.js";
 
-export const ADAPTERS: Adapter[] = [evidenceActionAdapter, verificationStateAdapter];
+export const ADAPTERS: Adapter[] = [evidenceActionAdapter, verificationStateAdapter, actaAdapter];
 
 export function adapterByFormat(name: string): Adapter | undefined {
   const n = name.toLowerCase();
@@ -18,6 +19,9 @@ export function adapterByFormat(name: string): Adapter | undefined {
   }
   if (n === "verification" || n === "verification.*" || n === "verification-state") {
     return verificationStateAdapter;
+  }
+  if (n === "acta" || n === "acta.receipt/0" || n === "acta-receipt") {
+    return actaAdapter;
   }
   return undefined;
 }
@@ -36,4 +40,4 @@ export function detectFormat(bytes: Uint8Array): DetectOutcome {
   };
 }
 
-export const FORMAT_NAMES = ["evidence.action", "verification"] as const;
+export const FORMAT_NAMES = ["evidence.action", "verification", "acta"] as const;

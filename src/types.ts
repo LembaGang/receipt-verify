@@ -86,6 +86,16 @@ export interface VerifyOptions {
    * object rather than as pinned bytes.
    */
   canonicalizePayload?: boolean;
+  /**
+   * The predecessor receipt, for formats that carry a chain link. Supplied as
+   * bytes so the digest is taken over exactly what was on the wire.
+   */
+  previousReceipt?: Uint8Array;
+  /**
+   * Disclosed (name, value, salt, proof) tuples, for formats whose receipts
+   * commit to field values rather than carrying them in cleartext.
+   */
+  disclosures?: Uint8Array;
   /** Clock tolerance in seconds for exp/nbf. */
   clockToleranceSec?: number;
   /** Fixed evaluation time (epoch seconds). Tests pin this; the CLI does not. */

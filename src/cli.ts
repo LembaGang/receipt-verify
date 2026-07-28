@@ -21,6 +21,8 @@ Options:
   --mapping-dir <dir> directory of mapping documents, for formats that bind to one
   --payload <file>    detached-JWS payload: the bytes the signature covers
   --payload-jcs       canonicalize --payload with RFC 8785 JCS before verifying
+  --prev <file>       predecessor receipt, for formats carrying a chain link
+  --disclose <file>   disclosed {name, value, salt, proof} tuples, for committed fields
   --clock-tolerance <s>  seconds of clock tolerance for exp/nbf (default 60)
   --now <epoch>       evaluate time-based checks at this instant, for reproducible runs
   --json              emit the machine-readable verdict object
@@ -38,6 +40,8 @@ interface Args {
   mappingDir?: string;
   payload?: string;
   payloadJcs: boolean;
+  prev?: string;
+  disclose?: string;
   clockTolerance?: number;
   now?: number;
   json: boolean;
@@ -85,6 +89,18 @@ export function parseArgs(argv: string[]): Args | string {
         const v = next();
         if (v === null) return "--payload needs a value";
         a.payload = v;
+        break;
+      }
+      case "--prev": {
+        const v = next();
+        if (v === null) return "--prev needs a value";
+        a.prev = v;
+        break;
+      }
+      case "--disclose": {
+        const v = next();
+        if (v === null) return "--disclose needs a value";
+        a.disclose = v;
         break;
       }
       case "--clock-tolerance": {
@@ -148,11 +164,18 @@ export async function run(argv: string[]): Promise<{ result: VerifyResult | null
   if (parsed.mappingDir !== undefined) opts.mappingDir = parsed.mappingDir;
   if (parsed.clockTolerance !== undefined) opts.clockToleranceSec = parsed.clockTolerance;
   if (parsed.now !== undefined) opts.now = parsed.now;
-  if (parsed.payload !== undefined) {
+  // The three optional byte inputs fail the same way: an unreadable companion
+  // file is an io_error, never a quietly-skipped check.
+  for (const [flag, path, field] of [
+    ["--payload", parsed.payload, "detachedPayload"],
+    ["--prev", parsed.prev, "previousReceipt"],
+    ["--disclose", parsed.disclose, "disclosures"],
+  ] as const) {
+    if (path === undefined) continue;
     try {
-      opts.detachedPayload = readFileSync(parsed.payload);
+      opts[field] = readFileSync(path);
     } catch (e) {
-      const r = unverifiable(chosen.format, "io_error", `could not read --payload ${parsed.payload}: ${(e as Error).message}`);
+      const r = unverifiable(chosen.format, "io_error", `could not read ${flag} ${path}: ${(e as Error).message}`);
       return { result: r, text: parsed.json ? jsonResult(r) : formatResult(r), exitCode: exitCodeFor(r) };
     }
   }

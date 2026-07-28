@@ -1,0 +1,16 @@
+{
+  "payload": {
+    "type": "protectmcp:decision",
+    "issued_at": "2026-06-28T12:21:00Z",
+    "issuer_id": "sb:issuer:39ZbyFkkZMaU",
+    "tool_name": "Write",
+    "decision": "allow",
+    "sequence": 2,
+    "previousReceiptHash": "026d57289dbffb0d87cb3dccc477cb97a417164e481a724ff2c20600ab67c8b6"
+  },
+  "signature": {
+    "alg": "ES256",
+    "kid": "sb:issuer:39ZbyFkkZMaU",
+    "sig": "a6257ea1c86a7580921843d6a71bda31007229246abaab9ea76bcb14721911b8d4ae29979c676fa8016fe8111c62dc5a4a399c72bff8f5c91e1fab8a282f757e"
+  }
+}

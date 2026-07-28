@@ -1,0 +1,31 @@
+{
+  "_warning": "THROWAWAY TEST KEYS. Ed25519 seeds are published in tools/make-throwaway-fixtures.mjs; the P-256 scalar is published in tools/make-acta-fixtures.mjs. Never use for anything real.",
+  "_shape": "draft-farley-acta-signed-receipts-02 §4.3 (/.well-known/acta-keys.json)",
+  "keys": [
+    {
+      "crv": "Ed25519",
+      "x": "m1CE3W_BeBmP9s3ZGILIDY8-yNhkUfufs4qRsBC8xLs",
+      "kty": "OKP",
+      "kid": "sb:issuer:BTHQTy7E1W77",
+      "use": "sig",
+      "alg": "EdDSA"
+    },
+    {
+      "crv": "Ed25519",
+      "x": "ev2ipX0gYZJLt_PIgmalcJ_rSGx0WHP8HW7vRXgMReY",
+      "kty": "OKP",
+      "kid": "sb:issuer:9H74DikBPw9o",
+      "use": "sig",
+      "alg": "EdDSA"
+    },
+    {
+      "kty": "EC",
+      "x": "a2rqsL2vgG_d2fPNzBBoFDsyPMF6_db5JTisCeYDEQA",
+      "y": "cJXe2ruukj3utFR9CLu8r-Q0DhIz7jINbExEA11I62c",
+      "crv": "P-256",
+      "kid": "sb:issuer:39ZbyFkkZMaU",
+      "use": "sig",
+      "alg": "ES256"
+    }
+  ]
+}

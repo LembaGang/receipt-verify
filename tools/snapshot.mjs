@@ -19,7 +19,38 @@ const UA = { "user-agent": "receipt-verify/0.1.0-dev (fixture snapshot)" };
 const GH_RAW = "https://raw.githubusercontent.com/TKCollective/agentoracle-receipt-spec/HEAD/";
 const GH_TREE = "https://api.github.com/repos/TKCollective/agentoracle-receipt-spec/git/trees/HEAD?recursive=1";
 const JWKS_URL = "https://agentoracle.co/.well-known/jwks.json";
-const DRAFT_URL = "https://www.ietf.org/archive/id/draft-krausz-verification-state-01.txt";
+
+const DRAFT_URLS = [
+  "https://www.ietf.org/archive/id/draft-krausz-verification-state-01.txt",
+  "https://www.ietf.org/archive/id/draft-farley-acta-signed-receipts-02.txt",
+  "https://www.ietf.org/archive/id/draft-marques-asqav-compliance-receipts-07.txt",
+];
+
+// The ACTA test-vector corpus. draft-farley-acta-signed-receipts-02 §5.10 says
+// "an interoperability test suite is published alongside this draft"; the only
+// locator the draft gives for one is [I-D.agent-governance-testvectors], which
+// resolves here. What that repository actually publishes is snapshotted below
+// so the gap between the two can be stated from bytes rather than from memory —
+// see FINDINGS.md §E1. Paths are listed explicitly rather than swept: the
+// repository also carries a2a-trust-header and cedar-policy-gate corpora that
+// are not ACTA receipts and would misrepresent the set if folded in.
+const ACTA_RAW = "https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/";
+const ACTA_FILES = [
+  "README.md",
+  "spec.md",
+  "expected/receipt-schema.json",
+  "expected/chain.jsonl",
+  "fixtures/keys/README.md",
+  "aps-gateway-enforcement/README.md",
+  "aps-gateway-enforcement/2-external-verification/receipt.json",
+  "aps-gateway-enforcement/2-external-verification/jwks.json",
+  "aps-gateway-enforcement/2-external-verification/canonical.txt",
+  "aps-gateway-enforcement/2-external-verification/expected-output.json",
+  "aps-gateway-enforcement/2-external-verification/README.md",
+  "aps-gateway-enforcement/4-portability/receipt.json",
+  "aps-gateway-enforcement/4-portability/jwks.json",
+  "aps-gateway-enforcement/4-portability/expected-output.json",
+];
 
 // Local read-only corpus. Snapshotted too: tests must not depend on a path
 // outside this repo, and the manifest pins each receipt's sha256 so the copy is
@@ -41,15 +72,23 @@ const VECTORS_FILES = [
 const sha256 = (b) => createHash("sha256").update(b).digest("hex");
 const entries = [];
 
+/**
+ * Recursive: the acta fixtures nest one chain per candidate digest scope in
+ * their own subdirectories, and an unpinned fixture is a fixture whose bytes
+ * nothing is asserting — which is the whole thing provenance.md exists to stop.
+ */
 function listFiles(dir) {
+  let out = [];
   try {
-    return readdirSync(dir, { withFileTypes: true })
-      .filter((d) => d.isFile())
-      .map((d) => join(dir, d.name))
-      .sort();
+    for (const d of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, d.name);
+      if (d.isFile()) out.push(p);
+      else if (d.isDirectory()) out = out.concat(listFiles(p));
+    }
   } catch {
     return [];
   }
+  return out.sort();
 }
 
 function writeOut(relPath, bytes, source, retrievedAt) {
@@ -72,12 +111,13 @@ async function fetchBytes(url) {
 }
 
 async function main() {
-  // ---- 1. I-D text ------------------------------------------------------
-  {
+  // ---- 1. I-D texts -----------------------------------------------------
+  for (const url of DRAFT_URLS) {
     const at = new Date().toISOString();
-    const bytes = await fetchBytes(DRAFT_URL);
-    writeOut("refs/draft-krausz-verification-state-01.txt", bytes, DRAFT_URL, at);
-    console.log("refs/draft-krausz-verification-state-01.txt");
+    const bytes = await fetchBytes(url);
+    const rel = "refs/" + url.slice(url.lastIndexOf("/") + 1);
+    writeOut(rel, bytes, url, at);
+    console.log(rel);
   }
 
   // ---- 2. agentoracle-receipt-spec /examples ----------------------------
@@ -112,13 +152,23 @@ async function main() {
     console.log("  " + rel);
   }
 
-  // ---- 5. provenance.md -------------------------------------------------
+  // ---- 5. ACTA test-vector corpus ---------------------------------------
+  for (const p of ACTA_FILES) {
+    const at = new Date().toISOString();
+    const bytes = await fetchBytes(ACTA_RAW + p);
+    writeOut(join("fixtures", "acta", "published", p), bytes, ACTA_RAW + p, at);
+    console.log("  " + p);
+  }
+
+  // ---- 6. provenance.md -------------------------------------------------
   // Locally generated files are listed separately. They are NOT snapshots of
   // anything remote, and conflating the two would misrepresent where the bytes
   // came from — which is the only thing this file exists to say.
   const generated = [];
   for (const rel of listFiles(join(ROOT, "fixtures", "verification-state", "synthetic")).concat(
     listFiles(join(ROOT, "fixtures", "verification-state", "mappings")),
+    listFiles(join(ROOT, "fixtures", "acta", "synthetic")),
+    listFiles(join(ROOT, "fixtures", "acta", "keys")),
     listFiles(join(ROOT, "fixtures", "keys")),
   )) {
     const bytes = readFileSync(rel);
@@ -152,10 +202,20 @@ async function main() {
     "",
     "## Generated here, not snapshotted",
     "",
-    "These files are produced by `node tools/make-throwaway-fixtures.mjs` and by",
-    "hand (the mapping documents). They are not copies of any published artifact.",
-    "The signing key is a throwaway whose seed is published in the generator, and",
-    "every file it signs carries `test-throwaway` in the key id.",
+    "These files are produced by `node tools/make-throwaway-fixtures.mjs`, by",
+    "`node tools/make-acta-fixtures.mjs`, and by hand (the mapping documents).",
+    "They are not copies of any published artifact.",
+    "",
+    "The signing keys are throwaways whose seeds are published in the generators.",
+    "The `verification.*` fixtures carry `test-throwaway` in the key id; the",
+    "`acta` fixtures use the §2.1.1 `sb:issuer:<base58>` kid form over the same",
+    "throwaway seeds, so the kid alone does not mark them — `fixtures/acta/keys/`",
+    "carries the warning instead.",
+    "",
+    "The `acta` set exists because draft-farley-acta-signed-receipts-02 §5.10",
+    "announces an interoperability suite that its own test-vector reference does",
+    "not contain. These are OUR construction of that suite, not the draft",
+    "author's. See FINDINGS.md §E1.",
     "",
     "| file | bytes | sha256 |",
     "|---|---|---|",

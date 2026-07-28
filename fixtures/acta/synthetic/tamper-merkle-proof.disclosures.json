@@ -1,0 +1,56 @@
+{
+  "disclosures": [
+    {
+      "name": "agent_tier",
+      "value": "signed-known",
+      "salt": "zoEGs9J6RE_LlTh3NiFZn6_SWcp0ytMdzWM2hQkLYTA",
+      "proof": {
+        "index": 0,
+        "tree_size": 4,
+        "siblings": [
+          "09cdba290c013b20789c81524ca264a86d58bd7edd1275b8a612ed6253d45a0d",
+          "15ae59956f32dacfc868d501c0e4b71b936460dd8a126a0618559137d7070086"
+        ]
+      }
+    },
+    {
+      "name": "decision",
+      "value": "deny",
+      "salt": "5guDb-grsDEaQGPNRmdXdhK62IFMF2aZHNT6eeWWa2g",
+      "proof": {
+        "index": 1,
+        "tree_size": 4,
+        "siblings": [
+          "6f6cef7b38bcea772347263c628bf93bcd5b2452a794e9ff9aefde18a4b2ab04",
+          "15ae59956f32dacfc868d501c0e4b71b936460dd8a126a0618559137d7070086"
+        ]
+      }
+    },
+    {
+      "name": "session_id",
+      "value": "ses_7f8a2b",
+      "salt": "53C5f_5iwVyHl9AU1gS7a6hH6vF4nmYvPdLuHQdMw2o",
+      "proof": {
+        "index": 2,
+        "tree_size": 4,
+        "siblings": [
+          "89fd54ae64894c6d8e39affb467620a4af20ac331d65549ba9c83f1037200bd9",
+          "1b74bf983849274da9760a5cedcd8610ff26f894a35eccbb7f8c3a05b720e439"
+        ]
+      }
+    },
+    {
+      "name": "tool_name",
+      "value": "delete_database",
+      "salt": "NTUYAi6s_wn6RzpwYVkWV3LPC5FgVaXYSeEK1yZ7Ecs",
+      "proof": {
+        "index": 3,
+        "tree_size": 4,
+        "siblings": [
+          "1795c61f0d35b9a9ef899142eebe909b30db0ee426cbc4db6a932795d278e83b",
+          "1b74bf983849274da9760a5cedcd8610ff26f894a35eccbb7f8c3a05b720e439"
+        ]
+      }
+    }
+  ]
+}

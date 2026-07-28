@@ -1,0 +1,72 @@
+{
+  "disclosures": [
+    {
+      "name": "agent_tier",
+      "value": "evidenced",
+      "salt": "zoEGs9J6RE_LlTh3NiFZn6_SWcp0ytMdzWM2hQkLYTA",
+      "proof": {
+        "index": 0,
+        "tree_size": 5,
+        "siblings": [
+          "38db388a74abe96edd0ef6508e248af33aff79f3b52d4b0473198c33e02c6353",
+          "5f28c2dd9f87ec815d8524ad79c699f5d651b3d00ea90d7cc9907a7b7dab8f92",
+          "b8ee5e9be343325484033319b8905f97bf71dcaad82acf6a6da025bb13dbcbb7"
+        ]
+      }
+    },
+    {
+      "name": "decision",
+      "value": "allow",
+      "salt": "5guDb-grsDEaQGPNRmdXdhK62IFMF2aZHNT6eeWWa2g",
+      "proof": {
+        "index": 1,
+        "tree_size": 5,
+        "siblings": [
+          "20e39c52d7de3eec1a3d6c0c77341ce0fef08b83da9753625b2e90b2926887e8",
+          "5f28c2dd9f87ec815d8524ad79c699f5d651b3d00ea90d7cc9907a7b7dab8f92",
+          "b8ee5e9be343325484033319b8905f97bf71dcaad82acf6a6da025bb13dbcbb7"
+        ]
+      }
+    },
+    {
+      "name": "required_tier",
+      "value": "signed-known",
+      "salt": "1Ye_uEmLPYJ4qtbMTJSbnHK5QGBo7GXBdM-qFWBnS6s",
+      "proof": {
+        "index": 2,
+        "tree_size": 5,
+        "siblings": [
+          "bad412c402da2d47b4d9770c11d444e6130843d6a88b4e3a89d2995a5da10d47",
+          "21cf389860a55f43401c6acadfebebde002ba43da10eeda70c72e57c80c5a3b5",
+          "b8ee5e9be343325484033319b8905f97bf71dcaad82acf6a6da025bb13dbcbb7"
+        ]
+      }
+    },
+    {
+      "name": "session_id",
+      "value": "ses_11c4de",
+      "salt": "53C5f_5iwVyHl9AU1gS7a6hH6vF4nmYvPdLuHQdMw2o",
+      "proof": {
+        "index": 3,
+        "tree_size": 5,
+        "siblings": [
+          "65f7220bd6dd45683fbfa5c3ecb6dfb4592212d700af03cb495219c14d89abb5",
+          "21cf389860a55f43401c6acadfebebde002ba43da10eeda70c72e57c80c5a3b5",
+          "b8ee5e9be343325484033319b8905f97bf71dcaad82acf6a6da025bb13dbcbb7"
+        ]
+      }
+    },
+    {
+      "name": "tool_name",
+      "value": "http.get",
+      "salt": "NTUYAi6s_wn6RzpwYVkWV3LPC5FgVaXYSeEK1yZ7Ecs",
+      "proof": {
+        "index": 4,
+        "tree_size": 5,
+        "siblings": [
+          "8bf950029f6de382651ca88de291dd6a785c8eb587d8c24bafbfbc274be85077"
+        ]
+      }
+    }
+  ]
+}

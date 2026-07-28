@@ -9,8 +9,20 @@ import { join } from "node:path";
 import { exitCodeFor, formatResult, invalid, jsonResult, unverifiable, valid } from "../src/verdict.js";
 import { evidenceActionAdapter } from "../src/adapters/evidence-action.js";
 import { verificationStateAdapter } from "../src/adapters/verification-state.js";
+import { actaAdapter } from "../src/adapters/acta.js";
 import type { ResolvedKey, VerifyResult } from "../src/types.js";
-import { COMPOSED, EVIDENCE, MAPPINGS, SYNTH, THROWAWAY_JWKS, FIXED_NOW, read } from "./helpers.js";
+import {
+  ACTA_JWKS,
+  ACTA_NOW,
+  ACTA_SYNTH,
+  COMPOSED,
+  EVIDENCE,
+  MAPPINGS,
+  SYNTH,
+  THROWAWAY_JWKS,
+  FIXED_NOW,
+  read,
+} from "./helpers.js";
 
 const KEY: ResolvedKey = { kid: "k1", thumbprint: "tp1", alg: "EdDSA", origin: "somewhere.json" };
 
@@ -93,6 +105,30 @@ describe("invariants hold across every fixture", () => {
     cases.push([
       `published/${n}`,
       () => verificationStateAdapter.verify(read(join(COMPOSED, n)), { jwks: COMPOSED, mappingDir: MAPPINGS, now: FIXED_NOW }),
+    ]);
+  }
+
+  // acta.receipt/0. The chain and commitment cases carry their companion file
+  // so the INVALID paths that only exist once a predecessor or a disclosure set
+  // is supplied are covered by the invariants too.
+  const actaFile = (rel: string) => join(ACTA_SYNTH, ...rel.split("/"));
+  for (const [n, extra] of [
+    ["cleartext.receipt.json", {}],
+    ["committed-4.receipt.json", { disclosures: read(actaFile("committed-4.disclosures.json")) }],
+    ["committed-5.receipt.json", { disclosures: read(actaFile("committed-5.disclosures.json")) }],
+    ["chain-farley/002.receipt.json", { previousReceipt: read(actaFile("chain-farley/001.receipt.json")) }],
+    ["chain-mixed-alg/002.receipt.json", { previousReceipt: read(actaFile("chain-mixed-alg/001.receipt.json")) }],
+    ["chain-marques-payload/002.receipt.json", { previousReceipt: read(actaFile("chain-marques-payload/001.receipt.json")) }],
+    ["tamper-payload-mutated.receipt.json", {}],
+    ["tamper-issuer-kid-mismatch.receipt.json", {}],
+    ["tamper-merkle-root.receipt.json", { disclosures: read(actaFile("committed-4.disclosures.json")) }],
+    ["unresolvable-kid.receipt.json", {}],
+    ["alg-mldsa65.receipt.json", {}],
+    ["sigscope-4.1.receipt.json", {}],
+  ] as const) {
+    cases.push([
+      `acta/${n}`,
+      () => actaAdapter.verify(read(actaFile(n)), { jwks: ACTA_JWKS, now: ACTA_NOW, ...extra }),
     ]);
   }
 

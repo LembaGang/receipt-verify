@@ -1,0 +1,18 @@
+{
+  "payload": {
+    "type": "protectmcp:decision",
+    "issued_at": "2026-06-28T12:03:00Z",
+    "issuer_id": "sb:issuer:BTHQTy7E1W77",
+    "tool_name": "Write",
+    "decision": "deny",
+    "reason": "tier_insufficient",
+    "policy_digest": "sha256:cb6f676694ae1d2b12c25e7d82b830825c4590f091829689ee13a964224c82eb",
+    "sequence": 3,
+    "previousReceiptHash": "0da34e91dc6b27477bfff0c9ebdb7a7956937c45108effcae085924fd9f101d9"
+  },
+  "signature": {
+    "alg": "EdDSA",
+    "kid": "sb:issuer:BTHQTy7E1W77",
+    "sig": "f22134eaf546d48b054d0d1d7b044d16726fbade53862b52573eaba37949d8cd9fdd7ec799f16072fc2436c58054577992423a70f34dc43febabf2763f8a4801"
+  }
+}

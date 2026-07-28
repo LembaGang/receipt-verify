@@ -85,11 +85,13 @@ A recorded transcript is in `cc-output/receipt-verify-demo-2026-07-25.md`.
 ```
 receipt-verify <file> [options]
 
-  --format <name>        evidence.action | verification   (default: auto-detect)
+  --format <name>        evidence.action | verification | acta   (default: auto-detect)
   --jwks <path|url>      published JWK Set: a .json file, a directory of them, or an https URL
   --mapping-dir <dir>    directory of mapping documents
   --payload <file>       detached-JWS payload: the bytes the signature covers
   --payload-jcs          canonicalize --payload with RFC 8785 JCS before verifying
+  --prev <file>          predecessor receipt, for formats carrying a chain link
+  --disclose <file>      disclosed {name, value, salt, proof} tuples, for committed fields
   --clock-tolerance <s>  clock tolerance for exp/nbf (default 60)
   --now <epoch>          evaluate time-based checks at a fixed instant
   --json                 machine-readable verdict object
@@ -197,6 +199,78 @@ hash-match is `UNVERIFIABLE`; the tool never substitutes a default ruleset.
 `sha256-<hex>`, because the draft, its own example, and the published fixtures
 each use a different one of the three. This leniency is documented rather than
 silent — see `FINDINGS.md`.
+
+---
+
+## Format 3 — `acta.receipt/0`
+
+Per **draft-farley-acta-signed-receipts-02** (`refs/`), with
+**draft-marques-asqav-compliance-receipts-07** read as a *profile layered on
+it* — never as a competing normative source. Where the two disagree, farley
+decides and the disagreement is reported on the verdict.
+
+Not a JWS. The envelope is `{payload, signature: {alg, kid, sig}}` with a
+lowercase-hex signature over RFC 8785 JCS bytes (§2.1). Keys resolve by `kid`
+from a published JWK Set (§4.3). `EdDSA` and `ES256` verify; a declared
+`ML-DSA-65` is `UNVERIFIABLE`/`unsupported_algorithm`, because a signature this
+tool cannot check is not a signature it may call good *or* bad.
+
+### The two contradictions, and what the tool does about them
+
+The draft gives two incompatible answers for **which bytes the signature
+covers**, and the draft plus its profile give three for **which bytes the chain
+digest covers**. In both cases the rule here is the same: recompute under the
+normative reading, and when that fails, say whether the receipt is consistent
+with a *known alternative* reading.
+
+| | Normative here | Detected and named on failure |
+|---|---|---|
+| Signature scope | farley §5.6 — receipt object minus `signature` | farley §4.1 step 2 — the inner `payload` member alone |
+| Chain digest scope | farley §5.7 — whole envelope, signature included | marques §5.3 read two ways, both signature-exclusive |
+
+A detected variant is an **explanation attached to a refusal**. It is never a
+reason to accept. A receipt built to a variant returns `INVALID` naming the
+variant; a receipt matching no known scope returns `INVALID` saying so.
+
+§5.6 is chosen over §4.1 because it is the later explicitly-normative
+clarification *and* because it is the reading the one checkable published
+receipt actually verifies under — recomputed in `test/acta.test.ts` against a
+published `canonical.txt`, byte-for-byte. Full derivation in `FINDINGS.md` §E2.
+
+### Checks that did not run are reported, never assumed
+
+A `previousReceiptHash` with no `--prev`, or a `committed_fields_root` with no
+`--disclose`, is annotated as unchecked and contributes nothing to the verdict
+in either direction:
+
+```
+annotation: chain_link=present but not checked (no --prev)
+annotation: commitment_check=not performed (no --disclose)
+```
+
+### Commitment mode
+
+§5.1–§5.5 are implemented in full: RFC 6962 domain separation (`0x00` leaf,
+`0x01` internal), the recursive largest-power-of-two split for non-power-of-two
+leaf counts, `JCS({name, salt, value})` canonical leaves, byte-lexicographic
+name ordering, and §5.5 inclusion proofs. Proofs carry no left/right bit; the
+side is re-derived from `(index, tree_size)` via the §5.1 split rule.
+
+The Merkle code in `src/adapters/acta.ts` and in `tools/make-acta-fixtures.mjs`
+is deliberately **two independent implementations**. Sharing it would make the
+commitment fixtures verify against themselves.
+
+### Fixtures
+
+§5.10 announces an interoperability suite with a six-item minimum set. The
+draft's only test-vector reference does not contain any of the six, and scopes
+itself to revision -01 (`FINDINGS.md` §E1). So:
+
+- `fixtures/acta/published/` — what the cited reference *does* publish.
+- `fixtures/acta/synthetic/` — **this repository's** construction of the six,
+  plus the tamper matrix and one chain per candidate digest scope. Built by
+  `node tools/make-acta-fixtures.mjs` from throwaway keys whose seeds are
+  published in the generator.
 
 ---
 

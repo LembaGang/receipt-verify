@@ -1,0 +1,6 @@
+{
+  "_note": "The exact bytes the signature covers, per §5.6. Recorded as a separate artifact so a second implementation can byte-compare its canonicalization without re-deriving our reading of §5.6.",
+  "scope": "farley-5.6 (receipt object minus `signature`)",
+  "jcs": "{\"payload\":{\"agent_tier\":\"signed-known\",\"decision\":\"deny\",\"issued_at\":\"2026-06-28T12:00:00Z\",\"issuer_id\":\"sb:issuer:BTHQTy7E1W77\",\"policy_digest\":\"sha256:a8f3c91e5b2d4a6f8c0e1d3b5a7f9c2e4d6b8a0f1c3e5d7b9a1f3c5e7d9b1f3c\",\"reason\":\"tier_insufficient\",\"required_tier\":\"privileged\",\"session_id\":\"ses_7f8a2b\",\"tool_name\":\"delete_database\",\"type\":\"protectmcp:decision\"}}",
+  "sha256": "0a83dacf88dba5a801b2d4bb7519306f8788dbd716b1a89da7009b8d85e48100"
+}

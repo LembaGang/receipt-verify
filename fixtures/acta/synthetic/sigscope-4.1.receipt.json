@@ -1,0 +1,14 @@
+{
+  "payload": {
+    "type": "protectmcp:decision",
+    "issued_at": "2026-06-28T12:30:00Z",
+    "issuer_id": "sb:issuer:BTHQTy7E1W77",
+    "tool_name": "Read",
+    "decision": "allow"
+  },
+  "signature": {
+    "alg": "EdDSA",
+    "kid": "sb:issuer:BTHQTy7E1W77",
+    "sig": "c3b49a038e2ce970792c385b48afe5e54879cef9f460e84fd2d97708999bf72074e0e367f9e809f44728d578db77fc1e9b1079a5318561f98878ee1fa0c3850f"
+  }
+}
