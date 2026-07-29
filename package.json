@@ -4,6 +4,7 @@
   "private": true,
   "description": "Cross-format agent-receipt verifier. Recomputes and returns a tri-state verdict per receipt, under a named format.",
   "license": "Apache-2.0",
+  "author": "Michael Msebenzi",
   "type": "module",
   "engines": {
     "node": ">=20"

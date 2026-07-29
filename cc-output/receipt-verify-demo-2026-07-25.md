@@ -6,6 +6,16 @@ after `npm install && npm run build`.
 
 Environment: Node v24.13.0, npm 11.9.0, Windows 11.
 
+> **Superseded in part, 2026-07-29.** The output below is left exactly as it was
+> recorded and is still a true record of that run. Two things have since changed
+> in the artifacts it exercises, so do not read it as current behaviour:
+>
+> - Block C's composed fixture returns `UNVERIFIABLE` / `mapping_unresolvable`
+>   here because no mapping document was published at the time. One is published
+>   now and the same fixture verifies; see `FINDINGS-rerun-2026-07-29.md`.
+> - Results now also carry a `coverage` block naming the checks a run did not
+>   evaluate. It did not exist when this was recorded.
+
 ---
 
 ## The three-command demo

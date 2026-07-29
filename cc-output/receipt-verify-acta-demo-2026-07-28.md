@@ -6,6 +6,13 @@ after `npm install && npm run build`.
 
 Environment: Node v24.13.0, npm 11.9.0, Windows 11.
 
+> **Superseded in part, 2026-07-29.** The output below is left exactly as it was
+> recorded and is still a true record of that run. The suite totals shown near
+> the end are from that date; the suite has since grown. Results now also carry
+> a `coverage` block naming the checks a run did not evaluate, which did not
+> exist when this was recorded. The `acta.receipt/0` verdicts themselves are
+> unchanged.
+
 Format 3 is **draft-farley-acta-signed-receipts-02**, with
 **draft-marques-asqav-compliance-receipts-07** read as a profile layered on it.
 Both draft texts are snapshotted in `refs/` and pinned by sha256 in

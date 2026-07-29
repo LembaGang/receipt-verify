@@ -19,7 +19,7 @@ issuer's, not as this tool's recommendation.
 
 | Verdict | Exit | Means | Names a key? |
 |---|---|---|---|
-| `VALID` | 0 | Every check completed and passed. | Yes — `verified under key …` |
+| `VALID` | 0 | Every check this tool implements for the format completed and passed. | Yes — `verified under key …` |
 | `INVALID — key-binding` | 1 | A published key resolved, and the receipt provably fails to bind to it. | Yes — `checked against resolved key …` |
 | `UNVERIFIABLE` | 1 | The check could not be completed. Fail-closed. | **No.** Never prints a "verified under key" line. |
 
@@ -46,6 +46,7 @@ prose and may be reworded between releases.
   "detail": "v_gate: mapping acme-v0.9-2026-01-01 not resolvable (searched …)",
   "resolved_key": null,
   "annotations": { "jws_signature_check": "passed", "failed_at_step": 2 },
+  "coverage": { "stopped_at": "mapping_binding", "checks_not_evaluated": [] },
   "exit_code": 1
 }
 ```

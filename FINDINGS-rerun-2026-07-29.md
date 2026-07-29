@@ -448,7 +448,7 @@ here asserts the claim is untrue — only that no published artifact bears on it
 
 Re-run after re-pinning, across all three formats.
 
-| | before (2026-07-28, commit `0822c42`) | after (2026-07-29) |
+| | before (2026-07-28, commit `886b0b6`) | after (2026-07-29) |
 |---|---|---|
 | test files | 8 | 8 |
 | passed | 213 | 222 |
@@ -492,3 +492,32 @@ Spec-and-format summary, suitable for quoting.
 
 Three new observations were opened by the rerun (R1–R3 above). One concerns this
 implementation; two concern the published sample fixtures.
+
+---
+
+## Appendix — history rewrite, 2026-07-29
+
+Every commit in this repository was rewritten so that author and committer are
+one canonical identity, and each was re-signed. Two early commits had been
+authored as `receipt-verify <mmsebenzi@gmail.com>`, which is a project name, not
+a person; a signature over a commit whose author is not a person attests less
+than it appears to.
+
+The repository has no remote and has never been pushed or fetched, so the
+rewrite reconciles with nothing published and requires no force-push.
+
+Commit SHAs therefore changed. Local SHAs cited anywhere in this repository were
+updated to their post-rewrite equivalents; upstream pins (`GH_COMMIT` in
+`tools/snapshot.mjs`, the revisions in `fixtures/provenance.md`, and every digest
+under `refs/`) are foreign SHAs and content addresses and are untouched.
+
+| before | after | subject |
+|---|---|---|
+| `a39b3be67b7ca6b7f8622e97afe0d1a4f9a6f54c` | `acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc` | receipt-verify 0.1.0-dev: tri-state cross-format receipt verifier |
+| `16ad1bd095e0dcc1e705a7a3868c0ebdff031585` | `14d1185bef1fb477c23218c4649e7dfe9b86763f` | Pin fixture bytes: never normalize line endings under fixtures/ and refs/ |
+| `0822c422f27edc303e8c849cbbb97537f7304579` | `886b0b6099d98f897f313305d228f5f7e50edb4e` | feat: ACTA adapter (acta.receipt/0) |
+| `b45815ed9973b339793d45dba824691b574960dd` | `2f6ac797c6f6659f4f147ee32bd5c2b2637b3715` | Re-verify four errata against the published fixes |
+| `702bd8a6be270e769316636cf8677609fa8e064b` | `0e3947b61ee0c08234a05ee154940a409c21872b` | Coverage manifest |
+
+The single in-repository citation of a rewritten SHA was the suite-baseline row
+above, which named the pre-rerun commit.
