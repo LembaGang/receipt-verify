@@ -1,0 +1,38 @@
+# gitleaks allowlist — one line per finding, each classified by hand.
+#
+# This file does NOT assert "no secrets". It asserts that every finding below
+# was looked at and identified. Its purpose is that a future scan surfaces only
+# NEW findings instead of re-reporting these ten every time.
+#
+# Two categories appear here:
+#
+#  1. `jwt` on fixtures/verification-state/synthetic/*.compact.jws
+#     These files ARE JWS compact serializations — that is what the fixture is.
+#     Each is signed by the throwaway Ed25519 key whose seed is published in
+#     fixtures/keys/test-throwaway-ed25519.seed.txt and hardcoded in
+#     tools/make-throwaway-fixtures.mjs. Every kid carries `test-throwaway`.
+#     The payloads are public claim data. Nothing here is confidential.
+#
+#  2. `generic-api-key` on FINDINGS.md
+#     A high-entropy token in prose that is a JWKS `kid` —
+#     `ao-composed-2026-07-ed25519-3d44ba27` — i.e. a PUBLIC key identifier
+#     from a published JWK Set, quoted while recording that the endpoint had
+#     added a third key.
+#
+# NOTE, and read this before trusting a green scan: gitleaks does NOT flag the
+# two files in this repository that actually contain private key bytes —
+# fixtures/keys/test-throwaway-ed25519.seed.txt (raw Ed25519 seeds) and
+# fixtures/verification-state/spec-examples/jwks-fixture-detached.json (a JWK
+# with a `d` member). Both are deliberately-published fixture keys, documented
+# in NOTICE. A green gitleaks run is therefore necessary and not sufficient;
+# the key inventory in NOTICE is the authority.
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/flat-act.attached.compact.jws:jwt:1
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/flat-halt.attached.compact.jws:jwt:1
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/tamper-resigned-confidence.attached.compact.jws:jwt:1
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/tamper-resigned-exp.attached.compact.jws:jwt:1
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/tamper-resigned-gate.attached.compact.jws:jwt:1
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/tamper-resigned-mapping-hash.attached.compact.jws:jwt:1
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/tamper-resigned-mapping-id.attached.compact.jws:jwt:1
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/tamper-resigned-missing-mapping-hash.attached.compact.jws:jwt:1
+acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc:fixtures/verification-state/synthetic/tamper-resigned-recommendation.attached.compact.jws:jwt:1
+886b0b6099d98f897f313305d228f5f7e50edb4e:FINDINGS.md:generic-api-key:660
