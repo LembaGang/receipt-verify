@@ -30,6 +30,7 @@ import {
   type ParsedJws,
 } from "../jws.js";
 import { normalizeDigest, recompute, resolveMapping, type Gate } from "../mapping.js";
+import { specStepOf } from "../coverage.js";
 
 export const FORMAT = "verification.*";
 export const COMPOSED_ENVELOPE = "verification.v0.3+composed";
@@ -166,8 +167,8 @@ type LegOutcome =
       ok: false;
       reason: "mapping_unresolvable" | "mapping_hash_mismatch" | "recompute_mismatch" | "malformed_member";
       detail: string;
-      /** The §4.3 step that refused. Reported so a caller knows how far the check got. */
-      step: number;
+      /** The coverage-manifest check that refused. Its §4.3 step is looked up. */
+      check: string;
     };
 
 function checkLeg(leg: LegClaims, mappingDir: string | undefined): LegOutcome {
@@ -179,17 +180,17 @@ function checkLeg(leg: LegClaims, mappingDir: string | undefined): LegOutcome {
       return {
         ok: false,
         reason: "mapping_hash_mismatch",
-        step: 2,
+        check: "mapping_binding",
         detail: `${leg.label}: mapping ${e.mappingId} at ${e.origin} digests to ${e.actual}, receipt binds ${e.expected}`,
       };
     }
     if (e.kind === "malformed") {
-      return { ok: false, reason: "malformed_member", step: 2, detail: `${leg.label}: mapping ${e.mappingId} at ${e.origin}: ${e.message}` };
+      return { ok: false, reason: "malformed_member", check: "mapping_binding", detail: `${leg.label}: mapping ${e.mappingId} at ${e.origin}: ${e.message}` };
     }
     return {
       ok: false,
       reason: "mapping_unresolvable",
-      step: 2,
+      check: "mapping_binding",
       detail: `${leg.label}: mapping ${e.mappingId} not resolvable (searched ${e.searched})`,
     };
   }
@@ -200,12 +201,12 @@ function checkLeg(leg: LegClaims, mappingDir: string | undefined): LegOutcome {
     v_confidence: leg.v_confidence,
     v_adversarial_result: leg.v_adversarial_result,
   });
-  if (!rc.ok) return { ok: false, reason: "recompute_mismatch", step: 3, detail: `${leg.label}: ${rc.message}` };
+  if (!rc.ok) return { ok: false, reason: "recompute_mismatch", check: "recommendation_recompute", detail: `${leg.label}: ${rc.message}` };
   if (rc.recommendation !== leg.v_recommendation) {
     return {
       ok: false,
       reason: "recompute_mismatch",
-      step: 4,
+      check: "recommendation_match",
       detail: `${leg.label}: recomputed v_recommendation ${rc.recommendation}, receipt signed ${leg.v_recommendation}`,
     };
   }
@@ -215,7 +216,7 @@ function checkLeg(leg: LegClaims, mappingDir: string | undefined): LegOutcome {
     return {
       ok: false,
       reason: "recompute_mismatch",
-      step: 6,
+      check: "gate_match",
       detail: `${leg.label}: recomputed gate ${rc.gate} from ${rc.recommendation}, receipt signed ${leg.v_gate}`,
     };
   }
@@ -354,34 +355,35 @@ export const verificationStateAdapter: Adapter = {
       parsed = parseJws(bytes);
     } catch (e) {
       const msg = e instanceof JwsParseError ? e.message : (e as Error).message;
-      return unverifiable(FORMAT, "malformed_receipt", `not a JWS this tool can read: ${msg}`);
+      return unverifiable(FORMAT, "malformed_receipt", `not a JWS this tool can read: ${msg}`, undefined, "jws_signature");
     }
 
     if (!opts.jwks) {
-      return unverifiable(FORMAT, "key_unresolvable", "no JWKS source given (--jwks); §4.1 requires kid to resolve in the issuer's published JWKS");
+      return unverifiable(FORMAT, "key_unresolvable", "no JWKS source given (--jwks); §4.1 requires kid to resolve in the issuer's published JWKS", undefined, "jws_signature");
     }
     let sources: JwksSource[];
     try {
       sources = await loadJwksSources(opts.jwks);
     } catch (e) {
-      return unverifiable(FORMAT, "io_error", `could not read JWKS at ${opts.jwks}: ${(e as Error).message}`);
+      return unverifiable(FORMAT, "io_error", `could not read JWKS at ${opts.jwks}: ${(e as Error).message}`, undefined, "jws_signature");
     }
 
     const pr = resolvePayload(parsed, opts);
-    if (!pr.ok) return unverifiable(FORMAT, "malformed_receipt", pr.detail);
+    if (!pr.ok) return unverifiable(FORMAT, "malformed_receipt", pr.detail, undefined, "jws_signature");
 
     // ---- step 1: every signature present must verify -----------------------
     const keys: ResolvedKey[] = [];
     for (const [i, sig] of parsed.signatures.entries()) {
       const label = parsed.signatures.length > 1 ? `signatures[${i}] ` : "";
       const out = verifyOne(sig, pr.bytes, sources);
-      if (out.kind === "unverifiable") return unverifiable(FORMAT, "key_unresolvable", `${label}${out.detail}`);
+      if (out.kind === "unverifiable") return unverifiable(FORMAT, "key_unresolvable", `${label}${out.detail}`, undefined, "jws_signature");
       if (out.kind === "bad_signature") {
         return invalid(
           FORMAT,
           "signature_invalid",
           `${label}signature does not verify over the ${pr.detached ? (pr.canonicalized ? "JCS-canonicalized detached" : "detached") : "attached"} payload (${parsed.serialization} serialization)`,
           out.key,
+          "jws_signature",
         );
       }
       keys.push(out.key);
@@ -394,12 +396,23 @@ export const verificationStateAdapter: Adapter = {
     // the protocol got, so a caller can tell "the signature is bad" apart from
     // "the signature is fine and something downstream could not be completed"
     // WITHOUT that ever becoming a claim that the receipt verified.
-    const stalled = (reason: Parameters<typeof unverifiable>[1], detail: string, step: number): VerifyResult =>
-      unverifiable(FORMAT, reason, detail, {
-        jws_signature_check: "passed",
-        signers_verified: keys.length,
-        failed_at_step: step,
-      });
+    // `failed_at_step` is looked up from the coverage manifest rather than
+    // written at each call site, so the §4.3 step a refusal reports and the
+    // check the coverage block names cannot drift apart.
+    const stalled = (reason: Parameters<typeof unverifiable>[1], detail: string, check: string): VerifyResult => {
+      const step = specStepOf(FORMAT, check);
+      return unverifiable(
+        FORMAT,
+        reason,
+        detail,
+        {
+          jws_signature_check: "passed",
+          signers_verified: keys.length,
+          ...(step === undefined ? {} : { failed_at_step: step }),
+        },
+        check,
+      );
+    };
 
     // ---- payload ----------------------------------------------------------
     let payload: Record<string, unknown>;
@@ -408,7 +421,7 @@ export const verificationStateAdapter: Adapter = {
       if (o === null || typeof o !== "object" || Array.isArray(o)) throw new Error("payload is not a JSON object");
       payload = o as Record<string, unknown>;
     } catch (e) {
-      return stalled("malformed_receipt", `payload is not a JSON object: ${(e as Error).message}`, 2);
+      return stalled("malformed_receipt", `payload is not a JSON object: ${(e as Error).message}`, "payload_profile");
     }
 
     const composed = payload["envelope_kind"] === COMPOSED_ENVELOPE;
@@ -423,38 +436,38 @@ export const verificationStateAdapter: Adapter = {
       // resolve MUST be absent, never null. An explicit null is a grammar break.
       for (const k of ["mycelium_trail_id", "v_gate", "v_gate_skill", "screen_ref"]) {
         if (k in payload && payload[k] === null) {
-          return stalled("malformed_member", `${k} is null; an unresolved sibling pointer MUST be absent, not null`, 2);
+          return stalled("malformed_member", `${k} is null; an unresolved sibling pointer MUST be absent, not null`, "sibling_pointer_grammar");
         }
       }
       for (const name of ["v_gate", "v_gate_skill", "screen_ref"]) {
         const leg = payload[name];
         if (leg === undefined) continue;
         if (leg === null || typeof leg !== "object") {
-          return stalled("malformed_member", `${name} is present but not an object`, 2);
+          return stalled("malformed_member", `${name} is present but not an object`, "payload_profile");
         }
         const v = (leg as Record<string, unknown>)["verdict"];
         if (typeof v !== "string") {
-          return stalled("malformed_member", `${name}.verdict missing or not a string`, 2);
+          return stalled("malformed_member", `${name}.verdict missing or not a string`, "payload_profile");
         }
         composedVerdicts.push(v);
         if (name === "v_gate") {
           const g = composedGateLeg(leg as Record<string, unknown>);
-          if (typeof g === "string") return stalled("malformed_member", g, 2);
+          if (typeof g === "string") return stalled("malformed_member", g, "payload_profile");
           if (g !== null) legs.push(g);
         }
       }
       if (composedVerdicts.length === 0) {
-        return stalled("malformed_member", "composed envelope carries no sibling pointer legs", 2);
+        return stalled("malformed_member", "composed envelope carries no sibling pointer legs", "payload_profile");
       }
     } else {
       const leg = flatLeg(payload);
-      if (typeof leg === "string") return stalled("malformed_member", leg, 2);
+      if (typeof leg === "string") return stalled("malformed_member", leg, "payload_profile");
       legs.push(leg);
     }
 
     for (const leg of legs) {
       const out = checkLeg(leg, opts.mappingDir);
-      if (!out.ok) return stalled(out.reason, out.detail, out.step);
+      if (!out.ok) return stalled(out.reason, out.detail, out.check);
     }
 
     // ---- screen_ref content address (composed profile only) ----------------
@@ -471,17 +484,17 @@ export const verificationStateAdapter: Adapter = {
       const screen = sr["screen"];
       if (declared !== undefined) {
         if (screen === null || typeof screen !== "object" || Array.isArray(screen)) {
-          return stalled("malformed_member", "screen_ref.action_ref is present but screen_ref.screen is not an object to recompute it from", 4);
+          return stalled("malformed_member", "screen_ref.action_ref is present but screen_ref.screen is not an object to recompute it from", "screen_ref_action_ref");
         }
         if (typeof declared !== "string") {
-          return stalled("malformed_member", `screen_ref.action_ref is ${JSON.stringify(declared)}, expected a lowercase-hex SHA-256 string`, 4);
+          return stalled("malformed_member", `screen_ref.action_ref is ${JSON.stringify(declared)}, expected a lowercase-hex SHA-256 string`, "screen_ref_action_ref");
         }
         const recomputed = createHash("sha256").update(jcsBytes(screen)).digest("hex");
         if (recomputed !== declared.toLowerCase()) {
           return stalled(
             "recompute_mismatch",
             `screen_ref: action-ref-v1 over the JCS bytes of screen_ref.screen recomputes to ${recomputed}, receipt signed ${declared}`,
-            4,
+            "screen_ref_action_ref",
           );
         }
       }
@@ -491,7 +504,7 @@ export const verificationStateAdapter: Adapter = {
     if (composed) {
       const rule = payload["composed_decision_rule"];
       if (rule !== "AND_PRESENT") {
-        return stalled("malformed_member", `composed_decision_rule is ${JSON.stringify(rule)}; this tool implements AND_PRESENT only`, 4);
+        return stalled("malformed_member", `composed_decision_rule is ${JSON.stringify(rule)}; this tool implements AND_PRESENT only`, "composed_decision_rule");
       }
       const signedDecision = payload["composed_decision"];
       const recomputed = andPresent(composedVerdicts);
@@ -499,14 +512,14 @@ export const verificationStateAdapter: Adapter = {
         return stalled(
           "recompute_mismatch",
           `AND_PRESENT over [${composedVerdicts.join(", ")}] recomputes to ${recomputed}, receipt signed ${JSON.stringify(signedDecision)}`,
-          4,
+          "composed_decision_rule",
         );
       }
     }
 
     // ---- step 7 -----------------------------------------------------------
     const t = checkTimes(payload, opts, !composed);
-    if (!t.ok) return stalled(t.reason, t.detail, 7);
+    if (!t.ok) return stalled(t.reason, t.detail, t.reason === "malformed_member" ? "registered_claims" : "time_window");
 
     // ---- step 8 -----------------------------------------------------------
     const gateValue = composed ? String(payload["composed_decision"]) : String(payload["v_gate"]);

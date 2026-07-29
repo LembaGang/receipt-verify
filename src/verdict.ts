@@ -2,6 +2,7 @@
 // decided. Keeping this in one module is what makes the tri-state contract
 // enforceable rather than aspirational.
 
+import { checksNotEvaluated, type NotEvaluated } from "./coverage.js";
 import type { ReasonCode, ResolvedKey, VerifyResult } from "./types.js";
 
 export function valid(
@@ -31,8 +32,11 @@ export function invalid(
   >,
   detail: string,
   resolvedKey: ResolvedKey,
+  stoppedAt?: string,
 ): VerifyResult {
-  return { verdict: "INVALID", reason, detail, format, resolvedKey };
+  return stoppedAt === undefined
+    ? { verdict: "INVALID", reason, detail, format, resolvedKey }
+    : { verdict: "INVALID", reason, detail, format, resolvedKey, stoppedAt };
 }
 
 /**
@@ -45,10 +49,12 @@ export function unverifiable(
   reason: ReasonCode,
   detail: string,
   annotations?: Record<string, string | number | boolean>,
+  stoppedAt?: string,
 ): VerifyResult {
-  return annotations === undefined
-    ? { verdict: "UNVERIFIABLE", reason, detail, format }
-    : { verdict: "UNVERIFIABLE", reason, detail, format, annotations };
+  const base: VerifyResult = { verdict: "UNVERIFIABLE", reason, detail, format };
+  if (annotations !== undefined) base.annotations = annotations;
+  if (stoppedAt !== undefined) base.stoppedAt = stoppedAt;
+  return base;
 }
 
 /** VALID exits 0. INVALID and UNVERIFIABLE both exit 1. */
@@ -87,7 +93,24 @@ export function formatResult(r: VerifyResult): string {
       lines.push(`annotation: ${k}=${String(v)}${note}`);
     }
   }
+
+  // A refusal says which checks it did NOT get to. Without this, a reader has
+  // no way to tell a check that ran and passed from one that never ran — and
+  // reading a refusal as "everything before it was fine" is exactly the
+  // inference that hid comp-r04's unevaluated recompute.
+  const missed = checksNotEvaluated(r.format, r.stoppedAt);
+  if (missed.length > 0) {
+    if (r.stoppedAt) lines.push(`stopped at: ${r.stoppedAt}`);
+    for (const m of groupByReason(missed)) lines.push(`not evaluated (${m.reason}): ${m.ids.join(", ")}`);
+  }
   return lines.join("\n");
+}
+
+function groupByReason(missed: NotEvaluated[]): { reason: string; ids: string[] }[] {
+  const order: NotEvaluated["reason"][] = ["not_reached", "not_implemented"];
+  return order
+    .map((reason) => ({ reason, ids: missed.filter((m) => m.reason === reason).map((m) => m.id) }))
+    .filter((g) => g.ids.length > 0);
 }
 
 /** Stable JSON rendering. This is the agent-facing surface. */
@@ -101,6 +124,13 @@ export function jsonResult(r: VerifyResult): string {
       detail: r.detail,
       resolved_key: r.resolvedKey ?? null,
       annotations: r.annotations ?? {},
+      // Always present, like resolved_key: a caller reads one field rather than
+      // probing for absence. `stopped_at` is null exactly when evaluation ran
+      // to the end of the format's checks.
+      coverage: {
+        stopped_at: r.stoppedAt ?? null,
+        checks_not_evaluated: checksNotEvaluated(r.format, r.stoppedAt),
+      },
       exit_code: exitCodeFor(r),
     },
     null,

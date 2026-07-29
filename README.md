@@ -53,6 +53,49 @@ prose and may be reworded between releases.
 `resolved_key` is always present and is `null` exactly when the verdict is
 `UNVERIFIABLE` — one field to test, never a probe for absence.
 
+### Coverage: what a verdict does *not* say
+
+A refusal stops the protocol, and every check behind it goes unevaluated. The
+danger is that this is invisible: the verdict is right, the reason is right, and
+nothing distinguishes *"this check ran and passed"* from *"this check does not
+exist here"*. So every result carries a `coverage` block:
+
+```json
+"coverage": {
+  "stopped_at": "mapping_binding",
+  "checks_not_evaluated": [
+    { "id": "recommendation_recompute", "reason": "not_reached", "status": "implemented", "…": "…" },
+    { "id": "signing_trust_ref_quorum", "reason": "not_implemented", "status": "not_implemented", "…": "…" }
+  ]
+}
+```
+
+`stopped_at` is `null` exactly when evaluation ran to the end of the format's
+checks. Two reasons are distinguished:
+
+- **`not_reached`** — implemented, but evaluation stopped before it.
+- **`not_implemented`** — declared by a normative source or by the published
+  conformance corpus, and **not evaluated by this tool at all**. These are
+  reported on every result, *including `VALID`* — a VALID verdict does not mean
+  every declared check was evaluated, and saying so plainly is the point.
+
+The declarations live in `src/coverage.ts`, one manifest per format, each check
+carrying its id, its source, and its status (`implemented`, `conditional`,
+`reported_only`, `delegated`, `not_implemented`). Currently declared but not
+implemented:
+
+| format | check | why |
+|---|---|---|
+| `verification.*` | `signing_trust_ref_quorum` | Published payloads carry `signing_trust_ref`; the quorum shape it names is not resolved or checked. |
+| `verification.*` | `sibling_leg_mapping_binding` | Only the `v_gate` leg's mapping binding is resolved. |
+| `verification.*` | `inline_threshold_agreement` | Inline `v_gate_threshold` is not cross-checked against the mapping's threshold (§5.2). |
+| `acta.receipt/0` | `mldsa65_signature` | No ML-DSA implementation available; a declared ML-DSA-65 receipt is `UNVERIFIABLE`/`unsupported_algorithm`. |
+
+The manifest declares coverage. It does not verify anything, and no verdict is
+derived from it. It exists because a declared recompute (`action-ref-v1`) sat
+unevaluated behind an unresolvable mapping until the mapping was published —
+see `FINDINGS-rerun-2026-07-29.md` R1.
+
 ---
 
 ## Three-command demo
@@ -317,7 +360,7 @@ the point, and it is why the key proves nothing about anyone. Regenerate with
 
 ```bash
 npm run typecheck
-npm test                            # 222 tests, no network
+npm test                            # 253 tests, no network
 RECEIPT_VERIFY_LIVE=1 npm test      # adds the live-JWKS integration test
 npm run snapshot                    # re-pull remote fixtures + rewrite provenance
 npm run fixtures                    # regenerate throwaway-signed fixtures

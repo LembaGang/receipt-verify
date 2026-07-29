@@ -325,7 +325,7 @@ export const actaAdapter: Adapter = {
 
   async verify(bytes: Uint8Array, opts: VerifyOptions): Promise<VerifyResult> {
     const p = parseEnvelope(bytes);
-    if (!p.ok) return unverifiable(FORMAT, "malformed_receipt", p.detail);
+    if (!p.ok) return unverifiable(FORMAT, "malformed_receipt", p.detail, undefined, "envelope_shape");
     const env = p.env;
     const { alg, kid, sig } = env.signature;
 
@@ -335,6 +335,8 @@ export const actaAdapter: Adapter = {
         FORMAT,
         "malformed_receipt",
         `signature.sig is not lowercase hexadecimal; §2.1.1 fixes the encoding (${sig.length} chars given)`,
+        undefined,
+        "signature_encoding",
       );
     }
     if (!(VERIFIABLE_ALGS as readonly string[]).includes(alg)) {
@@ -345,6 +347,8 @@ export const actaAdapter: Adapter = {
         known
           ? `signature.alg is ${alg}: named by §5.8 but not implemented by this tool, so the signature cannot be checked either way`
           : `signature.alg is ${JSON.stringify(alg)}; this tool verifies ${VERIFIABLE_ALGS.join(" and ")} (§2.1.1)`,
+        undefined,
+        known ? "mldsa65_signature" : "algorithm_supported",
       );
     }
     const verifiableAlg = alg as VerifiableAlg;
@@ -355,13 +359,15 @@ export const actaAdapter: Adapter = {
         FORMAT,
         "key_unresolvable",
         "no JWKS source given (--jwks); §4.2 step 4 resolves the key from the issuer's published JWK Set (§4.3, /.well-known/acta-keys.json)",
+        undefined,
+        "key_resolution",
       );
     }
     let sources: JwksSource[];
     try {
       sources = await loadJwksSources(opts.jwks);
     } catch (e) {
-      return unverifiable(FORMAT, "io_error", `could not read JWKS at ${opts.jwks}: ${(e as Error).message}`);
+      return unverifiable(FORMAT, "io_error", `could not read JWKS at ${opts.jwks}: ${(e as Error).message}`, undefined, "key_resolution");
     }
     const resolved = resolveKid(sources, kid);
     if (!resolved.ok) {
@@ -374,7 +380,7 @@ export const actaAdapter: Adapter = {
             : e.kind === "unsupported_key"
               ? `key for kid ${kid} at ${e.origin} is unsupported: ${e.message}`
               : `malformed JWKS at ${e.origin}: ${e.message}`;
-      return unverifiable(FORMAT, "key_unresolvable", detail);
+      return unverifiable(FORMAT, "key_unresolvable", detail, undefined, "key_resolution");
     }
     const key: ResolvedKey = {
       kid,
@@ -399,6 +405,7 @@ export const actaAdapter: Adapter = {
           ? "signature does not verify over the §5.6 bytes (receipt object minus `signature`), but DOES verify over the §4.1 step 2 bytes (the inner `payload` member alone). The draft specifies both: §4.1 says canonicalize the payload, §5.6 says canonicalize the receipt minus the signature. This tool implements §5.6 and refuses rather than pick the reading that happens to pass — see FINDINGS.md §E2"
           : "signature does not verify over the §5.6 bytes (receipt object minus `signature`), and does not verify over the §4.1 step 2 bytes either",
         key,
+        "signature_scope_5_6",
       );
     }
 
@@ -410,22 +417,23 @@ export const actaAdapter: Adapter = {
       signature_scope: "farley-5.6 (receipt object minus `signature`)",
       alg,
     };
-    const stalled = (reason: Parameters<typeof unverifiable>[1], detail: string): VerifyResult =>
-      unverifiable(FORMAT, reason, detail, { ...annotations, signature_check: "passed" });
+    const stalled = (reason: Parameters<typeof unverifiable>[1], detail: string, check: string): VerifyResult =>
+      unverifiable(FORMAT, reason, detail, { ...annotations, signature_check: "passed" }, check);
 
     // ---- §2.2 common payload fields ---------------------------------------
     const type = str(env.payload["type"]);
     const issuedAt = str(env.payload["issued_at"]);
     const issuerId = str(env.payload["issuer_id"]);
-    if (type === null) return stalled("malformed_member", "payload.type missing or not a string; §2.2 makes it REQUIRED");
-    if (issuedAt === null) return stalled("malformed_member", "payload.issued_at missing or not a string; §2.2 makes it REQUIRED");
-    if (issuerId === null) return stalled("malformed_member", "payload.issuer_id missing or not a string; §2.2 makes it REQUIRED");
+    if (type === null) return stalled("malformed_member", "payload.type missing or not a string; §2.2 makes it REQUIRED", "common_payload_fields");
+    if (issuedAt === null) return stalled("malformed_member", "payload.issued_at missing or not a string; §2.2 makes it REQUIRED", "common_payload_fields");
+    if (issuerId === null) return stalled("malformed_member", "payload.issuer_id missing or not a string; §2.2 makes it REQUIRED", "common_payload_fields");
 
     const at = parseIssuedAt(issuedAt);
     if (at === null) {
       return stalled(
         "malformed_member",
         `payload.issued_at ${JSON.stringify(issuedAt)} is not an RFC 3339 timestamp with a timezone designator; §2.2 requires one`,
+        "common_payload_fields",
       );
     }
 
@@ -437,6 +445,7 @@ export const actaAdapter: Adapter = {
         "key_binding_mismatch",
         `payload.issuer_id is ${JSON.stringify(issuerId)} but signature.kid is ${JSON.stringify(kid)}; §2.2 requires them to match`,
         key,
+        "issuer_id_kid_binding",
       );
     }
 
@@ -459,6 +468,7 @@ export const actaAdapter: Adapter = {
         return stalled(
           "malformed_member",
           `committed_fields_root is ${JSON.stringify(rootRaw)}; §5.1 requires the lowercase hex encoding of a 32-byte root`,
+          "commitment_root",
         );
       }
       if (opts.disclosures === undefined) {
@@ -471,11 +481,11 @@ export const actaAdapter: Adapter = {
           if (!Array.isArray(list)) throw new Error("expected an array, or an object with a `disclosures` array");
           ds = list as Disclosure[];
         } catch (e) {
-          return stalled("malformed_member", `--disclose is not a readable disclosure set: ${(e as Error).message}`);
+          return stalled("malformed_member", `--disclose is not a readable disclosure set: ${(e as Error).message}`, "commitment_root");
         }
         const c = checkCommitment(root, ds);
-        if (c.kind === "malformed") return stalled("malformed_member", `disclosure set: ${c.detail}`);
-        if (c.kind === "mismatch") return invalid(FORMAT, "content_commitment_mismatch", c.detail, key);
+        if (c.kind === "malformed") return stalled("malformed_member", `disclosure set: ${c.detail}`, "commitment_root");
+        if (c.kind === "mismatch") return invalid(FORMAT, "content_commitment_mismatch", c.detail, key, "commitment_root");
         annotations["commitment_check"] = `passed (${c.leaves} leaves)`;
       }
     }
@@ -488,6 +498,7 @@ export const actaAdapter: Adapter = {
         return stalled(
           "malformed_member",
           `previousReceiptHash is ${JSON.stringify(prevRaw)}; §5.7 requires the lowercase hex encoding of a SHA-256 digest`,
+          "chain_linkage",
         );
       }
       if (prev === GENESIS) {
@@ -499,7 +510,7 @@ export const actaAdapter: Adapter = {
         annotations["chain_link"] = "present but not checked (no --prev)";
       } else {
         const pp = parseEnvelope(opts.previousReceipt);
-        if (!pp.ok) return stalled("malformed_member", `--prev is not a readable ACTA receipt: ${pp.detail}`);
+        if (!pp.ok) return stalled("malformed_member", `--prev is not a readable ACTA receipt: ${pp.detail}`, "chain_linkage");
 
         const computed = CHAIN_SCOPES.map((s) => ({ ...s, value: s.of(pp.env) }));
         const normative = computed[0]!;
@@ -515,6 +526,7 @@ export const actaAdapter: Adapter = {
               ? `previousReceiptHash does not match the predecessor under §5.7 (expected ${normative.value}), but DOES match it under ${variant.name} — ${variant.note}. draft-marques-asqav-compliance-receipts-07 §5.3 mandates that signature-exclusive scope while citing farley §5.7 as its authority; the two scopes digest different bytes. This tool implements §5.7 and refuses rather than accept either silently — see FINDINGS.md §E3`
               : `previousReceiptHash ${prev} does not match the predecessor under §5.7 (${normative.value}), nor under either signature-exclusive reading of marques §5.3 (${computed[1]!.value}, ${computed[2]!.value})`,
             key,
+            "chain_linkage",
           );
         }
       }

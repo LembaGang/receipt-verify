@@ -43,6 +43,15 @@ export interface VerifyResult {
    * Reported so a caller can see it; never used to pick the verdict.
    */
   annotations?: Record<string, string | number | boolean>;
+  /**
+   * The `src/coverage.ts` check id at which evaluation stopped, on any result
+   * that did not run the format's checks to the end. Everything ordered after
+   * it was not evaluated, and the output says so rather than leaving a caller
+   * to infer that a refusal implies the checks behind it passed.
+   *
+   * Absent on VALID: evaluation reached the end.
+   */
+  stoppedAt?: string;
 }
 
 export type ReasonCode =

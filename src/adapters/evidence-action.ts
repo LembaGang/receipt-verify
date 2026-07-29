@@ -105,17 +105,17 @@ function mapResult(r: ChirindoResult, key: ResolvedKey): VerifyResult {
             : r.reason === "prev_hash linkage broken"
               ? "chain_linkage_broken"
               : "content_commitment_mismatch";
-      return invalid(FORMAT, reason, `entry ${r.entry}: ${r.reason}`, key);
+      return invalid(FORMAT, reason, `entry ${r.entry}: ${r.reason}`, key, "chain_verification");
     }
     case "invalid":
       if (r.reason === "key_binding_mismatch") {
-        return invalid(FORMAT, "key_binding_mismatch", `entry ${r.entry}: ${r.reason}`, key);
+        return invalid(FORMAT, "key_binding_mismatch", `entry ${r.entry}: ${r.reason}`, key, "chain_verification");
       }
-      return unverifiable(FORMAT, r.reason === "insecure_jwks_uri" ? "malformed_receipt" : "key_unresolvable", `entry ${r.entry}: ${r.reason}`);
+      return unverifiable(FORMAT, r.reason === "insecure_jwks_uri" ? "malformed_receipt" : "key_unresolvable", `entry ${r.entry}: ${r.reason}`, undefined, "chain_verification");
     case "empty":
-      return unverifiable(FORMAT, "empty_receipt", "chain contains no records");
+      return unverifiable(FORMAT, "empty_receipt", "chain contains no records", undefined, "chain_verification");
     case "unverifiable":
-      return unverifiable(FORMAT, "key_unresolvable", r.reason);
+      return unverifiable(FORMAT, "key_unresolvable", r.reason, undefined, "chain_verification");
   }
 }
 
@@ -125,18 +125,18 @@ export const evidenceActionAdapter: Adapter = {
 
   async verify(bytes: Uint8Array, opts: VerifyOptions): Promise<VerifyResult> {
     if (!opts.jwks) {
-      return unverifiable(FORMAT, "key_unresolvable", "no JWKS source given (--jwks); this tool will not verify against an implicit key");
+      return unverifiable(FORMAT, "key_unresolvable", "no JWKS source given (--jwks); this tool will not verify against an implicit key", undefined, "key_resolution");
     }
     const kid = firstKid(bytes);
     if (kid === null) {
-      return unverifiable(FORMAT, "malformed_receipt", "first record is not a JSON object carrying a `kid`");
+      return unverifiable(FORMAT, "malformed_receipt", "first record is not a JSON object carrying a `kid`", undefined, "kid_extraction");
     }
 
     let sources;
     try {
       sources = await loadJwksSources(opts.jwks);
     } catch (e) {
-      return unverifiable(FORMAT, "io_error", `could not read JWKS at ${opts.jwks}: ${(e as Error).message}`);
+      return unverifiable(FORMAT, "io_error", `could not read JWKS at ${opts.jwks}: ${(e as Error).message}`, undefined, "key_resolution");
     }
 
     const resolved = resolveKid(sources, kid);
@@ -150,7 +150,7 @@ export const evidenceActionAdapter: Adapter = {
             : e.kind === "unsupported_key"
               ? `key for kid ${kid} at ${e.origin} is unsupported: ${e.message}`
               : `malformed JWKS at ${e.origin}: ${e.message}`;
-      return unverifiable(FORMAT, "key_unresolvable", detail);
+      return unverifiable(FORMAT, "key_unresolvable", detail, undefined, "key_resolution");
     }
 
     const key: ResolvedKey = {
@@ -164,7 +164,7 @@ export const evidenceActionAdapter: Adapter = {
     try {
       pem = publicKeyFromJwk(resolved.value.jwk).export({ format: "pem", type: "spki" }).toString();
     } catch (e) {
-      return unverifiable(FORMAT, "key_unresolvable", `key for kid ${kid} is not an Ed25519 public key: ${(e as Error).message}`);
+      return unverifiable(FORMAT, "key_unresolvable", `key for kid ${kid} is not an Ed25519 public key: ${(e as Error).message}`, undefined, "key_resolution");
     }
 
     const scratch = materialise(bytes, resolved.value.jwk, pem);
@@ -180,7 +180,7 @@ export const evidenceActionAdapter: Adapter = {
     } catch (e) {
       // A parse failure inside the published verifier is a refusal to complete
       // the check, not evidence against the receipt.
-      return unverifiable(FORMAT, "malformed_receipt", `@headlessoracle/chirindo could not parse the chain: ${(e as Error).message}`);
+      return unverifiable(FORMAT, "malformed_receipt", `@headlessoracle/chirindo could not parse the chain: ${(e as Error).message}`, undefined, "chain_verification");
     } finally {
       rmSync(scratch.dir, { recursive: true, force: true });
     }
