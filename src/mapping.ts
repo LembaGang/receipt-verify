@@ -27,6 +27,8 @@ export interface MappingRule {
   confidence: ConfidenceTest;
   v_adversarial_result: string | string[];
   v_recommendation: string;
+  /** Precedence, when the document declares it. Lower wins. */
+  order?: number;
 }
 
 export interface MappingDocument {
@@ -36,6 +38,13 @@ export interface MappingDocument {
   rules: MappingRule[];
   /** recommendation -> gate. Total over every recommendation the rules can emit. */
   gate: Record<string, Gate>;
+  /**
+   * True when the rules carry their own precedence and the FIRST match governs
+   * (the published `recommendation_rules` schema, which numbers its rules with
+   * `order`). False/absent means the rules are expected to be mutually
+   * exclusive and a disagreeing overlap is a refusal, not a tie-break.
+   */
+  ordered?: boolean;
 }
 
 export interface ResolvedMapping {
@@ -69,10 +78,86 @@ export function digestOfMappingDocument(doc: unknown): string {
   return createHash("sha256").update(jcsBytes(doc)).digest("hex");
 }
 
+/**
+ * Recognise the schema agentoracle.co publishes at /mappings/<sha256>.json.
+ *
+ * Until 2026-07-29 no mapping document was published anywhere the draft or its
+ * fixtures named, so the schema above was defined here (FINDINGS.md A4/B4, D1).
+ * A published document now exists and is content-addressed, so it — not this
+ * tool's transcription — is what the composed fixtures bind to. The two
+ * schemas carry the same §5.1 Table 2 decision content in different shapes;
+ * this normalizes the published one onto the internal one.
+ *
+ * The digest is NOT taken over the normalized form. `resolveMapping` digests
+ * the document exactly as published, which is the only thing the receipt's
+ * content-address can bind.
+ */
+function isPublishedSchema(d: Record<string, unknown>): boolean {
+  return (
+    Array.isArray(d["recommendation_rules"]) &&
+    d["threshold"] !== null &&
+    typeof d["threshold"] === "object" &&
+    d["gate_map"] !== null &&
+    typeof d["gate_map"] === "object"
+  );
+}
+
+function normalizePublished(d: Record<string, unknown>): Record<string, unknown> | string {
+  const threshold = d["threshold"] as Record<string, unknown>;
+  if (typeof threshold["value"] !== "number") return "threshold.value is not a number";
+
+  const rules: MappingRule[] = [];
+  const src = [...(d["recommendation_rules"] as unknown[])];
+  for (const [i, r] of src.entries()) {
+    if (r === null || typeof r !== "object") return `recommendation_rules[${i}] is not an object`;
+    const rr = r as Record<string, unknown>;
+    if (typeof rr["then"] !== "string") return `recommendation_rules[${i}].then is not a string`;
+    if (typeof rr["order"] !== "number") return `recommendation_rules[${i}].order is not a number`;
+    const when = (rr["when"] ?? {}) as Record<string, unknown>;
+
+    // A rule keyed on `condition` (the error case) is not derivable from the
+    // §4.3 (v_verdict, v_confidence, v_adversarial_result) triple. Carrying it
+    // as a wildcard would make it match everything; it is dropped instead, and
+    // its gate entry survives in gate_map for a receipt that signs it directly.
+    if (when["condition"] !== undefined) continue;
+
+    const conf = when["v_confidence"];
+    const confidence: ConfidenceTest =
+      conf === ">=threshold" ? ">=" : conf === "<threshold" ? "<" : conf === undefined || conf === "any" ? "any" : (null as never);
+    if ((confidence as unknown) === null) {
+      return `recommendation_rules[${i}].when.v_confidence is ${JSON.stringify(conf)}, expected ">=threshold", "<threshold" or "any"`;
+    }
+
+    rules.push({
+      v_verdict: (when["v_verdict"] ?? "any") as string | string[],
+      confidence,
+      v_adversarial_result: (when["v_adversarial_result"] ?? "any") as string | string[],
+      v_recommendation: rr["then"],
+      order: rr["order"],
+    } as MappingRule & { order: number });
+  }
+  rules.sort((a, b) => (a as MappingRule & { order: number }).order - (b as MappingRule & { order: number }).order);
+
+  return {
+    mapping_id: d["mapping_id"],
+    spec: d["normative_source"],
+    confidence_threshold: threshold["value"],
+    rules,
+    gate: d["gate_map"],
+    ordered: true,
+  };
+}
+
 function validateDocument(o: unknown, mappingId: string, origin: string): MappingDocument | MappingFailure {
   const bad = (message: string): MappingFailure => ({ kind: "malformed", mappingId, origin, message });
   if (o === null || typeof o !== "object") return bad("not a JSON object");
-  const d = o as Record<string, unknown>;
+  let d = o as Record<string, unknown>;
+
+  if (isPublishedSchema(d)) {
+    const n = normalizePublished(d);
+    if (typeof n === "string") return bad(n);
+    d = n;
+  }
   if (d["mapping_id"] !== mappingId) {
     return bad(`document declares mapping_id ${JSON.stringify(d["mapping_id"])}, receipt names ${JSON.stringify(mappingId)}`);
   }
@@ -170,7 +255,10 @@ export function recompute(doc: MappingDocument, input: RecomputeInput): Recomput
       message: `no rule in mapping ${doc.mapping_id} matches (v_verdict=${input.v_verdict}, v_confidence=${input.v_confidence}, v_adversarial_result=${input.v_adversarial_result})`,
     };
   }
-  if (hits.length > 1) {
+  // An ordered document resolves its own overlaps: the lowest `order` governs.
+  // An unordered one does not, so a disagreeing overlap is a refusal — picking
+  // one would be this tool inventing a precedence the document does not state.
+  if (hits.length > 1 && !doc.ordered) {
     const recs = [...new Set(hits.map((h) => h.v_recommendation))];
     if (recs.length > 1) {
       return { ok: false, message: `mapping ${doc.mapping_id} is ambiguous: rules disagree (${recs.join(", ")})` };

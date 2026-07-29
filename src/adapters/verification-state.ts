@@ -13,7 +13,8 @@
 //
 // No published fixture uses the flat profile; see FINDINGS.md.
 
-import { jcs } from "@headlessoracle/chirindo/dist/vendor/recorder/index.js";
+import { createHash } from "node:crypto";
+import { jcs, jcsBytes } from "@headlessoracle/chirindo/dist/vendor/recorder/index.js";
 import type { Adapter, ResolvedKey, VerifyOptions, VerifyResult } from "../types.js";
 import { invalid, unverifiable, valid } from "../verdict.js";
 import { loadJwksSources, resolveKid, type JwksSource } from "../jwks.js";
@@ -454,6 +455,36 @@ export const verificationStateAdapter: Adapter = {
     for (const leg of legs) {
       const out = checkLeg(leg, opts.mappingDir);
       if (!out.ok) return stalled(out.reason, out.detail, out.step);
+    }
+
+    // ---- screen_ref content address (composed profile only) ----------------
+    // `action_ref` is an action-ref-v1 content address over the four-field
+    // `screen` preimage the block carries: lowercase-hex SHA-256 of its JCS
+    // bytes. It is recomputed rather than trusted — an emitted hash taken on
+    // faith would let a screen leg claim a screening decision it never derived.
+    // Until the mapping document was published this check was unreachable: §4.3
+    // step 2 refused first, so comp-r04 was non-VALID for a reason other than
+    // the one it exists to test (FINDINGS.md B7).
+    if (composed && payload["screen_ref"] !== undefined) {
+      const sr = payload["screen_ref"] as Record<string, unknown>;
+      const declared = sr["action_ref"];
+      const screen = sr["screen"];
+      if (declared !== undefined) {
+        if (screen === null || typeof screen !== "object" || Array.isArray(screen)) {
+          return stalled("malformed_member", "screen_ref.action_ref is present but screen_ref.screen is not an object to recompute it from", 4);
+        }
+        if (typeof declared !== "string") {
+          return stalled("malformed_member", `screen_ref.action_ref is ${JSON.stringify(declared)}, expected a lowercase-hex SHA-256 string`, 4);
+        }
+        const recomputed = createHash("sha256").update(jcsBytes(screen)).digest("hex");
+        if (recomputed !== declared.toLowerCase()) {
+          return stalled(
+            "recompute_mismatch",
+            `screen_ref: action-ref-v1 over the JCS bytes of screen_ref.screen recomputes to ${recomputed}, receipt signed ${declared}`,
+            4,
+          );
+        }
+      }
     }
 
     // ---- composition recompute (composed profile only) ---------------------

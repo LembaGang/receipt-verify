@@ -150,7 +150,10 @@ describe("detached payload options", () => {
 });
 
 describe("published composed fixture through the CLI", () => {
-  it("stalls fail-closed at the mapping binding and says so", async () => {
+  it("verifies end to end and names the key it verified under", async () => {
+    // This stalled at the mapping binding until 2026-07-29, when the document
+    // it content-addresses was published (FINDINGS-rerun-2026-07-29.md
+    // erratum 1). The CLI now completes all eight steps.
     const { result, exitCode, text } = await run([
       join(COMPOSED, "jws-001.json"),
       "--format", "verification",
@@ -158,7 +161,26 @@ describe("published composed fixture through the CLI", () => {
       "--mapping-dir", MAPPINGS,
       "--now", String(FIXED_NOW),
     ]);
+    expect(result?.verdict).toBe("VALID");
+    expect(exitCode).toBe(0);
+    expect(text).toContain("verified under key");
+  });
+
+  it("still prints no key line when a mapping does not resolve", async () => {
+    // The property the previous version of this test was really guarding: a
+    // stall must never read as a verification. Exercised now against a receipt
+    // whose mapping id genuinely does not resolve, rather than against a
+    // published fixture that has since been fixed.
+    const { result, exitCode, text } = await run([
+      join(SYNTH, "tamper-resigned-mapping-id.attached.flattened.json"),
+      "--format", "verification",
+      "--jwks", THROWAWAY_JWKS,
+      "--mapping-dir", MAPPINGS,
+      "--now", String(FIXED_NOW),
+    ]);
     expect(result?.verdict).toBe("UNVERIFIABLE");
+    expect(result?.reason).toBe("mapping_unresolvable");
+    expect(result?.resolvedKey).toBeUndefined();
     expect(exitCode).toBe(1);
     expect(text).not.toContain("verified under key");
   });

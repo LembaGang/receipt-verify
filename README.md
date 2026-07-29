@@ -43,7 +43,7 @@ prose and may be reworded between releases.
   "verdict": "UNVERIFIABLE",
   "reason": "mapping_unresolvable",
   "format": "verification.*",
-  "detail": "v_gate: mapping agentoracle-v0.3-2026-05-30 not resolvable (searched …)",
+  "detail": "v_gate: mapping acme-v0.9-2026-01-01 not resolvable (searched …)",
   "resolved_key": null,
   "annotations": { "jws_signature_check": "passed", "failed_at_step": 2 },
   "exit_code": 1
@@ -183,12 +183,26 @@ No published fixture uses the flat profile. See `FINDINGS.md`.
 ### Mapping documents
 
 The draft binds a receipt to a mapping document by identifier and digest but
-does not specify that document's schema, and no mapping document is published
-at any location the draft or the reference fixtures name. **The schema in
-`src/mapping.ts` is therefore defined by this tool**, and
-`fixtures/verification-state/mappings/v0.3.0-2026-05-30.json` is this tool's
-transcription of the §5.1 decision table — not an artifact published by the
-draft author.
+does not specify that document's schema, its serialization, or how an
+identifier resolves to a retrievable location. Two schemas are therefore read:
+
+| document | schema | provenance |
+|---|---|---|
+| `mappings/agentoracle-v0.3-2026-05-30.json` | `recommendation_rules` / `threshold` / `gate_map` | **published** by the issuer at `agentoracle.co/mappings/`, content-addressed; snapshotted |
+| `mappings/v0.3.0-2026-05-30.json` | `rules` / `confidence_threshold` / `gate` | **this tool's** transcription of the §5.1 decision table, written when no document was published |
+
+The published document is served as its own RFC 8785 JCS bytes, so the digest
+over the file as served and the digest over its canonicalization are the same
+value — `0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0`,
+which is both the content address in its URL and the `v_gate_mapping_hash` the
+eleven composed fixtures carry.
+
+The two documents are independent transcriptions of the same table. They agree
+on recommendation and gate across all 60 cells of the input domain, which is
+asserted in `test/mapping.test.ts` rather than assumed. Where a document
+declares rule precedence with `order`, the lowest-numbered match governs; where
+it does not, a disagreeing overlap is a refusal, because picking one would be
+this tool inventing a precedence the document does not state.
 
 Resolution is local-only. Fetching a mapping document at verify time would make
 the verdict depend on what a remote host served at that instant, which is the
@@ -280,6 +294,12 @@ Everything under `fixtures/` and `refs/` is a byte-exact snapshot, pinned by
 sha256 with its source URL and retrieval time in `fixtures/provenance.md`.
 Regenerate with `npm run snapshot`.
 
+Remote git sources are pinned to a **commit**, not to `HEAD` — see `GH_COMMIT`
+in `tools/snapshot.mjs`. A moving ref means a re-run silently re-bases every
+fixture on whatever the branch tip happens to be, and the provenance table then
+records a digest for bytes nobody chose. `agentoracle-receipt-spec` is currently
+pinned at `196df22b255e7173d4eb6b20e833cc4e8ae6d35d`.
+
 The test suite never touches the network. The one exception is
 `test/live-jwks.test.ts`, which is explicitly marked, skipped unless
 `RECEIPT_VERIFY_LIVE=1`, and allowed to skip offline — it is not allowed to pass
@@ -297,7 +317,7 @@ the point, and it is why the key proves nothing about anyone. Regenerate with
 
 ```bash
 npm run typecheck
-npm test                            # 166 tests, no network
+npm test                            # 222 tests, no network
 RECEIPT_VERIFY_LIVE=1 npm test      # adds the live-JWKS integration test
 npm run snapshot                    # re-pull remote fixtures + rewrite provenance
 npm run fixtures                    # regenerate throwaway-signed fixtures
@@ -305,6 +325,20 @@ npm run fixtures                    # regenerate throwaway-signed fixtures
 
 `src/adapters/*.ts` implement one `Adapter` interface (`detect?`, `verify`), so
 adding a third format is a new file plus a registry line in `src/detect.ts`.
+
+---
+
+## Findings
+
+| document | scope |
+|---|---|
+| `FINDINGS.md` | Observations recorded while implementing against the published artifacts, as of 2026-07-25 (§A–§D) and 2026-07-28 (§E). Entries are not amended after the fact. |
+| `FINDINGS-rerun-2026-07-29.md` | Re-verification of four errata against the artifacts published in response, with per-erratum verdicts and recomputed evidence, new entries `R1`–`R3`, and the suite baseline comparison. |
+
+Where a `FINDINGS.md` entry's subject has since changed, the change is recorded
+in the rerun document and cross-referenced — `FINDINGS.md` is a dated record, not
+a live status page. Entries currently superseded in whole or in part: `B2`, `B3`,
+`B4`, `B7`, and `B1` (see `R2`).
 
 Status: `0.1.0-dev`. Not published. No conformance claim is made beyond what the
 test suite demonstrates against the fixtures in this repository.

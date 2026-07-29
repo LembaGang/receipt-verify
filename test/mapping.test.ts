@@ -116,3 +116,61 @@ describe("digest spelling leniency", () => {
     expect(normalizeDigest("A".repeat(64))).toBe(hex);
   });
 });
+
+describe("the published mapping document", () => {
+  // agentoracle.co began publishing a mapping document on 2026-07-29. It uses
+  // its own schema (`recommendation_rules` / `threshold` / `gate_map`), not the
+  // one this tool defined while none was published. See
+  // FINDINGS-rerun-2026-07-29.md erratum 1.
+  const PUBLISHED_ID = "agentoracle-v0.3-2026-05-30";
+  const raw = readFileSync(join(MAPPINGS, `${PUBLISHED_ID}.json`));
+  const CONTENT_ADDRESS = "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0";
+
+  it("resolves and hash-matches under the digest the fixtures bind", () => {
+    const r = resolveMapping(MAPPINGS, PUBLISHED_ID, `sha256-${CONTENT_ADDRESS}`);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.digestHex).toBe(CONTENT_ADDRESS);
+  });
+
+  it("is served as its own JCS bytes, so the file digest is the content address", () => {
+    expect(digestOfMappingDocument(JSON.parse(raw.toString("utf8")))).toBe(CONTENT_ADDRESS);
+  });
+
+  it("carries the seven-value recommendation enum, gate-mapped in full", () => {
+    const d = JSON.parse(raw.toString("utf8")) as {
+      enums: { v_recommendation: string[] };
+      gate_map: Record<string, string>;
+    };
+    expect(d.enums.v_recommendation).toHaveLength(7);
+    expect(d.enums.v_recommendation).toContain("un_probed_not_cleared");
+    for (const r of d.enums.v_recommendation) expect(d.gate_map[r]).toMatch(/^(act|halt)$/);
+  });
+
+  // The two documents are independent transcriptions of §5.1 Table 2 — one by
+  // the draft author, one here. Agreement across the whole input domain is what
+  // makes normalizing the published schema onto the internal one safe; a single
+  // divergent cell would mean the recompute depends on which document you read.
+  it("agrees with this repository's transcription on every input in the domain", () => {
+    const published = resolveMapping(MAPPINGS, PUBLISHED_ID, `sha256-${CONTENT_ADDRESS}`);
+    expect(published.ok).toBe(true);
+    if (!published.ok) return;
+
+    let compared = 0;
+    for (const v_verdict of ["supported", "refuted", "unverifiable", "unknown"]) {
+      for (const v_adversarial_result of ["resilient", "vulnerable", "not_checked"]) {
+        for (const v_confidence of [0, 0.69, 0.7, 0.71, 1]) {
+          const input = { v_verdict, v_confidence, v_adversarial_result };
+          const a = recompute(published.value.doc, input);
+          const b = recompute(doc, input);
+          expect(a.ok).toBe(b.ok);
+          if (a.ok && b.ok) {
+            expect(a.recommendation).toBe(b.recommendation);
+            expect(a.gate).toBe(b.gate);
+          }
+          compared++;
+        }
+      }
+    }
+    expect(compared).toBe(60);
+  });
+});

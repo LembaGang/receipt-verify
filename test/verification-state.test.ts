@@ -8,7 +8,9 @@
 
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { jcs } from "@headlessoracle/chirindo/dist/vendor/recorder/index.js";
 import { verificationStateAdapter as adapter, detect } from "../src/adapters/verification-state.js";
 import { COMPOSED, MAPPINGS, SYNTH, THROWAWAY_JWKS, FIXED_NOW, read } from "./helpers.js";
 
@@ -207,18 +209,40 @@ describe("verification.* — published fixtures (snapshots)", () => {
   const ACCEPT = ["001", "002", "003", "004", "005", "006", "007"];
 
   it.each(ACCEPT)(
-    "jws-%s: every published signature verifies under the published JWKS",
+    "jws-%s: verifies end to end, all eight §4.3 steps",
     async (n) => {
       const r = await adapter.verify(pub(`jws-${n}.json`), composedJwks);
-      // Step 1 passes for all seven. The suite then stalls at step 2 because no
-      // mapping document is published for the ids these receipts bind to — the
-      // fail-closed outcome, recorded in FINDINGS.md.
-      expect(r.annotations?.["jws_signature_check"]).toBe("passed");
-      expect(r.verdict).toBe("UNVERIFIABLE");
-      expect(r.reason).toBe("mapping_unresolvable");
-      expect(r.resolvedKey).toBeUndefined();
+      // Until 2026-07-29 these stalled at step 2: the mapping document the
+      // v_gate leg binds was not published at any location a stranger could
+      // reach, so the fail-closed outcome was UNVERIFIABLE/mapping_unresolvable
+      // (FINDINGS.md B4). The document is published and content-addressed now,
+      // the fixtures were regenerated against its real digest, and the whole
+      // protocol completes. See FINDINGS-rerun-2026-07-29.md erratum 1.
+      expect(r.verdict).toBe("VALID");
+      expect(r.reason).toBe("verified");
+      expect(r.resolvedKey).toBeDefined();
     },
   );
+
+  it("the mapping the accept vectors bind resolves to the published document, by digest", () => {
+    // The content-address is the whole mechanism: the receipt names a digest,
+    // and the document that digest identifies is the one whose rules governed
+    // the recompute above. Recomputed here rather than taken on trust.
+    const payload = JSON.parse(
+      Buffer.from(
+        (JSON.parse(pub("jws-001.json").toString("utf8")) as { payload: string }).payload,
+        "base64url",
+      ).toString("utf8"),
+    ) as { v_gate: { mapping_id: string; v_gate_mapping_hash: string } };
+
+    const raw = readFileSync(join(MAPPINGS, `${payload.v_gate.mapping_id}.json`));
+    const digest = createHash("sha256").update(raw).digest("hex");
+    expect(payload.v_gate.v_gate_mapping_hash).toBe(`sha256-${digest}`);
+    expect(digest).toBe("0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0");
+    // Published as JCS bytes, so the digest over the file as served and the
+    // digest over its canonicalization are the same value.
+    expect(Buffer.from(jcs(JSON.parse(raw.toString("utf8"))), "utf8").equals(raw)).toBe(true);
+  });
 
   it("jws-r01 (signature tampered after the fact) is INVALID and names the failing signer", async () => {
     const r = await adapter.verify(pub("jws-r01.json"), composedJwks);
@@ -234,9 +258,33 @@ describe("verification.* — published fixtures (snapshots)", () => {
     expect(r.detail).toContain("mycelium_trail_id");
   });
 
-  it.each(["r03", "r04"])("jws-%s is non-VALID", async (n) => {
-    const r = await adapter.verify(pub(`jws-${n}.json`), composedJwks);
+  // Both were unreachable while step 2 refused: each was correctly non-VALID,
+  // but for the mapping failure rather than the condition it exists to test
+  // (FINDINGS.md B7). With the mapping resolvable they now fail where declared.
+  it("jws-r03 fails on the composition rule it was built to test", async () => {
+    const r = await adapter.verify(pub("jws-r03.json"), composedJwks);
     expect(r.verdict).not.toBe("VALID");
+    expect(r.reason).toBe("recompute_mismatch");
+    expect(r.detail).toContain("AND_PRESENT");
+    expect(r.annotations?.["failed_at_step"]).toBe(4);
+  });
+
+  it("jws-r04 fails on the screen_ref content address it was built to test", async () => {
+    const r = await adapter.verify(pub("jws-r04.json"), composedJwks);
+    expect(r.verdict).not.toBe("VALID");
+    expect(r.reason).toBe("recompute_mismatch");
+    expect(r.detail).toContain("action-ref-v1");
+  });
+
+  it("action-ref-v1 recomputes to the declared value on every accept vector carrying a screen_ref", () => {
+    for (const n of ACCEPT) {
+      const p = JSON.parse(readFileSync(join(COMPOSED, `payload-${n}.json`), "utf8")) as {
+        screen_ref?: { screen: unknown; action_ref: string };
+      };
+      if (!p.screen_ref) continue;
+      const recomputed = createHash("sha256").update(Buffer.from(jcs(p.screen_ref.screen), "utf8")).digest("hex");
+      expect(recomputed).toBe(p.screen_ref.action_ref);
+    }
   });
 
   it("tampering any signed claim in a published fixture flips it off VALID", async () => {

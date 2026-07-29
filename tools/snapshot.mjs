@@ -16,9 +16,36 @@ import { fileURLToPath } from "node:url";
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const UA = { "user-agent": "receipt-verify/0.1.0-dev (fixture snapshot)" };
 
-const GH_RAW = "https://raw.githubusercontent.com/TKCollective/agentoracle-receipt-spec/HEAD/";
-const GH_TREE = "https://api.github.com/repos/TKCollective/agentoracle-receipt-spec/git/trees/HEAD?recursive=1";
+// Pinned to a commit, not to HEAD. A moving ref means a re-run silently
+// re-bases every fixture on whatever the branch tip happens to be, and the
+// provenance table then records a digest for bytes nobody chose. Bump this
+// deliberately, and diff the table when you do.
+//
+// 196df22 — "fixtures(detached): rotate to fixture-suite kid, add RFC 7797
+//            b64=false + crit + JCS", 2026-07-29T05:17:01Z. Parent 99a0d39,
+//            "fixtures: regenerate composed v0.3 vectors with real AO mapping
+//            hash", 2026-07-29T04:58:03Z, which is where the eleven composed
+//            vectors in this snapshot come from — they are byte-identical at
+//            both commits (verified 2026-07-29).
+const GH_COMMIT = "196df22b255e7173d4eb6b20e833cc4e8ae6d35d";
+const GH_RAW = `https://raw.githubusercontent.com/TKCollective/agentoracle-receipt-spec/${GH_COMMIT}/`;
+const GH_TREE = `https://api.github.com/repos/TKCollective/agentoracle-receipt-spec/git/trees/${GH_COMMIT}?recursive=1`;
 const JWKS_URL = "https://agentoracle.co/.well-known/jwks.json";
+
+// The mapping document the composed fixtures content-address. Published
+// 2026-07-29; before that no mapping document existed at any location the
+// draft or its fixtures named (FINDINGS.md A4/B4). Both URLs serve the same
+// bytes: one addressed by digest, one by mapping id.
+const MAPPING_URLS = [
+  [
+    "https://agentoracle.co/mappings/0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0.json",
+    "fixtures/verification-state/mappings/published/agentoracle-v0.3-2026-05-30.by-digest.json",
+  ],
+  [
+    "https://agentoracle.co/mappings/agentoracle-v0.3-2026-05-30.json",
+    "fixtures/verification-state/mappings/agentoracle-v0.3-2026-05-30.json",
+  ],
+];
 
 const DRAFT_URLS = [
   "https://www.ietf.org/archive/id/draft-krausz-verification-state-01.txt",
@@ -125,7 +152,10 @@ async function main() {
     const tree = await (await fetch(GH_TREE, { headers: UA })).json();
     const wanted = tree.tree
       .filter((t) => t.type === "blob" && t.path.startsWith("examples/"))
-      .filter((t) => !t.path.includes("__pycache__"))
+      // __pycache__ is a build artifact; .gitignore is the upstream project's
+      // own repo machinery and would govern git's treatment of fixtures/ if
+      // copied in. Neither is a fixture.
+      .filter((t) => !t.path.includes("__pycache__") && !t.path.endsWith(".gitignore"))
       .map((t) => t.path);
     for (const p of wanted) {
       const at = new Date().toISOString();
@@ -141,6 +171,14 @@ async function main() {
     const bytes = await fetchBytes(JWKS_URL);
     writeOut("fixtures/verification-state/jwks/agentoracle.co.well-known.jwks.json", bytes, JWKS_URL, at);
     console.log("fixtures/verification-state/jwks/agentoracle.co.well-known.jwks.json");
+  }
+
+  // ---- 3b. published mapping documents ----------------------------------
+  for (const [url, rel] of MAPPING_URLS) {
+    const at = new Date().toISOString();
+    const bytes = await fetchBytes(url);
+    writeOut(rel, bytes, url, at);
+    console.log(rel);
   }
 
   // ---- 4. local evidence.action conformance corpus ----------------------
@@ -165,12 +203,19 @@ async function main() {
   // anything remote, and conflating the two would misrepresent where the bytes
   // came from — which is the only thing this file exists to say.
   const generated = [];
+  // A file already listed above is a snapshot of something published; listing
+  // it again under "generated here" would claim this repository authored bytes
+  // it only copied. The published mapping document lives in the same directory
+  // as the local transcription, so the two are separated by provenance, not by
+  // path.
+  const snapshotted = new Set(entries.map((e) => e.path));
   for (const rel of listFiles(join(ROOT, "fixtures", "verification-state", "synthetic")).concat(
     listFiles(join(ROOT, "fixtures", "verification-state", "mappings")),
     listFiles(join(ROOT, "fixtures", "acta", "synthetic")),
     listFiles(join(ROOT, "fixtures", "acta", "keys")),
     listFiles(join(ROOT, "fixtures", "keys")),
   )) {
+    if (snapshotted.has(relative(ROOT, rel).replace(/\\/g, "/"))) continue;
     const bytes = readFileSync(rel);
     generated.push({
       path: relative(ROOT, rel).replace(/\\/g, "/"),

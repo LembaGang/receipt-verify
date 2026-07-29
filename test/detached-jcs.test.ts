@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { jcs } from "@headlessoracle/chirindo/dist/vendor/recorder/index.js";
 import { verificationStateAdapter as adapter } from "../src/adapters/verification-state.js";
@@ -128,54 +129,85 @@ describe("detached JWS + JCS-canonicalized payload", () => {
 });
 
 describe("the published detached sample", () => {
-  // sample_receipt_detached_jws.json is the only detached artifact published
-  // anywhere in the fixture set. It is the attached sample with the payload
-  // member removed: same protected header, same signature bytes.
+  // Rebuilt upstream at 196df22 (2026-07-29). Before that it was an ordinary
+  // RFC 7515 detached JWS carrying no `b64`/`crit`, signed over the attached
+  // sample's JSON.stringify insertion-order bytes — see FINDINGS.md B2/B3 and
+  // FINDINGS-rerun-2026-07-29.md errata 2 and 3. These tests assert the
+  // rebuilt artifact's properties directly; a revert upstream fails them.
   const dir = join(COMPOSED, "..");
   const detached = readFileSync(join(dir, "sample_receipt_detached_jws.json"));
   const attached = readFileSync(join(dir, "sample_receipt_attached_jws.json"));
+  const samplePayload = readFileSync(join(dir, "sample_payload.json"));
+  const liveJwks = join(dir, "..", "jwks", "agentoracle.co.well-known.jwks.json");
+  const canonical = Buffer.from(jcs(JSON.parse(samplePayload.toString("utf8"))), "utf8");
 
-  it("carries the same signature and protected header as the attached sample", () => {
-    const d = JSON.parse(detached.toString("utf8")) as Record<string, string>;
-    const a = JSON.parse(attached.toString("utf8")) as Record<string, string>;
-    expect(d["signature"]).toBe(a["signature"]);
-    expect(d["protected"]).toBe(a["protected"]);
-    expect(d["payload"]).toBeUndefined();
+  it("is an RFC 7797 b64:false detached JWS, with b64 listed in crit", () => {
+    const sig = parseJws(detached).signatures[0]!;
+    expect(sig.header["b64"]).toBe(false);
+    expect(sig.header["crit"]).toEqual(["b64"]);
+    expect(isUnencodedPayload(sig)).toBe(true);
   });
 
-  it("is an ordinary RFC 7515 detached JWS, not an RFC 7797 b64:false one", () => {
-    const parsed = parseJws(detached);
-    const sig = parsed.signatures[0]!;
-    expect(sig.header["b64"]).toBeUndefined();
-    expect(sig.header["crit"]).toBeUndefined();
-    expect(isUnencodedPayload(sig)).toBe(false);
+  it("is signed under a fixture-suite kid that resolves in the published JWKS", () => {
+    const sig = parseJws(detached).signatures[0]!;
+    expect(sig.header["kid"]).toBe("ao-fixture-detached-rfc7797-2026-07-ed25519-0f8bf2a5");
+    const jwks = JSON.parse(readFileSync(liveJwks, "utf8")) as { keys: { kid: string }[] };
+    expect(jwks.keys.map((k) => k.kid)).toContain(sig.header["kid"]);
   });
 
-  it("verifies when the exact attached payload octets are supplied", async () => {
-    // The signature covers the base64url-decoded octets of the attached
-    // sample's payload member — not the bytes of sample_payload.json, and not
-    // their JCS canonicalization. See FINDINGS.md.
-    const a = JSON.parse(attached.toString("utf8")) as Record<string, string>;
-    const exact = Buffer.from(a["payload"]!, "base64url");
+  it("the shipped canonical payload equals JCS(sample_payload.json), byte for byte", () => {
+    const shipped = readFileSync(join(dir, "sample_receipt_detached_payload_canonical.bin"));
+    expect(shipped.equals(canonical)).toBe(true);
+    expect(createHash("sha256").update(shipped).digest("hex")).toBe(
+      "b1bf26165f251af4c9d756bcae4b512d31f93f092d0c1cec53b7091ad3f4047a",
+    );
+  });
+
+  it("verifies against the JCS canonicalization of sample_payload.json", async () => {
+    // This is the erratum-3 property: a stranger reconstructs the payload from
+    // the published sample_payload.json, canonicalizes with RFC 8785, and the
+    // signature holds. Before the rebuild it did not.
     const r = await adapter.verify(detached, {
-      jwks: join(dir, "..", "jwks", "agentoracle.co.well-known.jwks.json"),
+      jwks: liveJwks,
       now: FIXED_NOW,
-      detachedPayload: exact,
+      detachedPayload: samplePayload,
+      canonicalizePayload: true,
     });
-    // This receipt predates the verification.* claim set, so it stops at the
-    // payload profile check — but only AFTER the signature verified.
+    // The receipt is receipt_version 0.1 and carries no verification.* claim
+    // set, so it stops at the payload profile check — but only AFTER the
+    // signature verified over the canonicalized octets.
     expect(r.annotations?.["jws_signature_check"]).toBe("passed");
     expect(r.verdict).toBe("UNVERIFIABLE");
   });
 
-  it("does NOT verify against the JCS canonicalization of sample_payload.json", async () => {
+  it("does NOT verify against JSON.stringify insertion order", async () => {
+    // The failure mode the rebuild removed, asserted from the other side so a
+    // regression to stringify-order signing cannot pass silently.
+    const stringifyOrder = Buffer.from(JSON.stringify(JSON.parse(samplePayload.toString("utf8"))), "utf8");
+    expect(stringifyOrder.equals(canonical)).toBe(false);
     const r = await adapter.verify(detached, {
-      jwks: join(dir, "..", "jwks", "agentoracle.co.well-known.jwks.json"),
+      jwks: liveJwks,
       now: FIXED_NOW,
-      detachedPayload: readFileSync(join(dir, "sample_payload.json")),
-      canonicalizePayload: true,
+      detachedPayload: stringifyOrder,
+      canonicalizePayload: false,
     });
     expect(r.verdict).toBe("INVALID");
     expect(r.reason).toBe("signature_invalid");
+  });
+
+  it("no longer shares signing material with the attached sample", () => {
+    // B1 recorded the two as byte-identical in `protected` and `signature`.
+    // The rebuild rotated the detached fixture onto its own key, so the pair
+    // now demonstrates two different canonicalizations under two different
+    // kids. Recorded as R2 in FINDINGS-rerun-2026-07-29.md.
+    const d = JSON.parse(detached.toString("utf8")) as Record<string, string>;
+    const a = JSON.parse(attached.toString("utf8")) as Record<string, string>;
+    expect(d["signature"]).not.toBe(a["signature"]);
+    expect(d["protected"]).not.toBe(a["protected"]);
+    expect(d["payload"]).toBeUndefined();
+    // The attached sample is unchanged and still signs stringify-order bytes.
+    expect(createHash("sha256").update(Buffer.from(a["payload"]!, "base64url")).digest("hex")).toBe(
+      "80a54bbd286ade5355ab77bc5b6faffba0d7442bc5f3b84b9df26f97db1c824a",
+    );
   });
 });
