@@ -120,7 +120,8 @@ node dist/cli.js fixtures/verification-state/synthetic/flat-act.detached.flatten
   --payload fixtures/verification-state/synthetic/flat-act.payload.json --payload-jcs
 ```
 
-A recorded transcript is in `cc-output/receipt-verify-demo-2026-07-25.md`.
+The three commands above are the demo in full — run them and you have it. No
+recorded transcript is committed.
 
 ---
 

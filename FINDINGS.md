@@ -360,7 +360,7 @@ first document and "marques" the second.
 
 ### E1. §5.10 announces a test suite that the draft's only test-vector reference does not contain
 
-farley §5.10 (line 988) states "An interoperability test suite is published
+farley §5.10 (line 990) states "An interoperability test suite is published
 alongside this draft" and gives a six-item minimum set:
 
 1. a cleartext receipt with no `committed_fields_root`;
@@ -380,7 +380,7 @@ file tree was enumerated via the GitHub trees API on 2026-07-28
 `previousReceiptHash` in any file.
 
 The repository also scopes itself to the previous revision. Its `spec.md`
-(`fixtures/acta/published/spec.md`, line 116) reads: "This spec is tied to
+(`fixtures/acta/published/spec.md`, line 125) reads: "This spec is tied to
 `draft-farley-acta-signed-receipts-01`. When the draft revises to `-02`, this
 repo will tag a v0.x release that exercises the old format, and the `main`
 branch will move to the new format." The draft is at -02; `main` has not moved.
@@ -391,8 +391,8 @@ this repository's construction, not the draft author's.
 
 ### E2. §4.1 step 2 and §5.6 specify different signing inputs
 
-farley §4.1 step 2 (line 707) — the signing process — reads "Canonicalize the
-payload using JCS [RFC8785]". §2.2 (line 268) defines the payload as the inner
+farley §4.1 step 2 (line 705) — the signing process — reads "Canonicalize the
+payload using JCS [RFC8785]". §2.2 (line 256) defines the payload as the inner
 object: the member carrying `type`, `issued_at`, `issuer_id`.
 
 farley §5.6, titled "Signature Scope (Normative Clarification)" (line 916),
@@ -537,9 +537,9 @@ public key can verify a receipt without network access or API calls" as a
 purpose of the format, and §1 goal 1 is "Portable evidence [...] stored,
 transmitted, and verified independently".
 
-farley §8.1 (line 1116) says "Verifiers SHOULD reject receipts with timestamps
-that are unreasonably old (implementation-defined; 24 hours is RECOMMENDED as a
-default)."
+farley §8.1 (lines 1098–1099) says "Verifiers SHOULD reject receipts with
+timestamps that are unreasonably old (implementation-defined; 24 hours is
+RECOMMENDED as a default)."
 
 A verifier following §8.1's default rejects every receipt in an audit older than
 a day, which is the case §1 exists to serve. The draft carries no field or
@@ -588,10 +588,10 @@ bad.
 
 ### E10. §5.5 inclusion proofs carry no direction bit; the construction survives it
 
-farley §5.5 (line 963) specifies an inclusion proof as "the leaf's zero-based
-index within the canonically-sorted leaf list, the total `tree_size`, and the
-ordered list of siblings [...] along the path from the leaf to the root". No
-left/right indicator is carried.
+farley §5.5, "Selective Disclosure" (lines 901–904), specifies an inclusion
+proof as "the leaf's zero-based index within the canonically-sorted leaf list,
+the total `tree_size`, and the ordered list of siblings [...] along the path
+from the leaf to the root". No left/right indicator is carried.
 
 This is recorded as an observation rather than a defect: because §5.1 fixes the
 split at "the largest power of two strictly less than n", the side of each
