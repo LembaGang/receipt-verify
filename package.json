@@ -1,7 +1,6 @@
 {
-  "name": "receipt-verify",
-  "version": "0.1.0-dev",
-  "private": true,
+  "name": "@headlessoracle/receipt-verify",
+  "version": "0.1.0",
   "description": "Cross-format agent-receipt verifier. Recomputes and returns a tri-state verdict per receipt, under a named format.",
   "license": "Apache-2.0",
   "author": "Michael Msebenzi",
@@ -12,6 +11,15 @@
   "bin": {
     "receipt-verify": "dist/cli.js"
   },
+  "files": [
+    "dist",
+    "NOTICE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LembaGang/receipt-verify.git"
+  },
+  "homepage": "https://github.com/LembaGang/receipt-verify#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -21,7 +29,7 @@
     "cli": "tsx src/cli.ts"
   },
   "dependencies": {
-    "@headlessoracle/chirindo": "0.3.0",
+    "@headlessoracle/chirindo": "0.4.0",
     "canonicalize": "^2.0.0"
   },
   "devDependencies": {

@@ -317,7 +317,7 @@ const evidenceAction: FormatCoverage = {
   format: "evidence.action/0",
   sources: [
     "agent-action-receipt-vectors SPEC.md + manifest.json",
-    "@headlessoracle/chirindo@0.3.0 (published npm artifact)",
+    "@headlessoracle/chirindo@0.4.0 (published npm artifact)",
   ],
   orderNote:
     "Verification proper is delegated to a published artifact, which does not expose a step model. `order` covers only what this repository does around that call.",
@@ -341,7 +341,7 @@ const evidenceAction: FormatCoverage = {
       id: "chain_verification",
       order: 3,
       title: "Signatures, request commitments, and prev_hash linkage across the chain",
-      source: "@headlessoracle/chirindo@0.3.0 runVerify",
+      source: "@headlessoracle/chirindo@0.4.0 runVerify",
       status: "delegated",
       note: "Evaluated by the published artifact, not by code here. This repository asserts only that all six conformance vectors reproduce their manifest-declared outcomes through it.",
     },
@@ -357,7 +357,7 @@ const evidenceAction: FormatCoverage = {
       id: "jwks_uri_policy",
       order: 5,
       title: "Rejection of an insecure jwks_uri named inside the chain",
-      source: "@headlessoracle/chirindo@0.3.0",
+      source: "@headlessoracle/chirindo@0.4.0",
       status: "delegated",
       note: "The published artifact decides this; this repository only translates its `insecure_jwks_uri` result into a refusal. Not reachable on the offline path used here, which supplies the key from a JWK Set rather than from a URI inside the chain.",
     },

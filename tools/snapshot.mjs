@@ -14,7 +14,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const UA = { "user-agent": "receipt-verify/0.1.0-dev (fixture snapshot)" };
+const UA = { "user-agent": "receipt-verify/0.1.0 (fixture snapshot)" };
 
 // Pinned to a commit, not to HEAD. A moving ref means a re-run silently
 // re-bases every fixture on whatever the branch tip happens to be, and the

@@ -131,7 +131,7 @@ export async function fetchJwks(url: string, timeoutMs = 5000): Promise<JwksSour
     throw new Error(`JWKS URL must use https: ${url}`);
   }
   const res = await fetch(url, {
-    headers: { "user-agent": "receipt-verify/0.1.0-dev", accept: "application/json" },
+    headers: { "user-agent": "receipt-verify/0.1.0", accept: "application/json" },
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);

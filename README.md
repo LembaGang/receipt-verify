@@ -1,6 +1,6 @@
 # receipt-verify
 
-`0.1.0-dev` — a cross-format verifier for agent receipts. It reads a receipt,
+`0.1.0` — a cross-format verifier for agent receipts. It reads a receipt,
 recomputes everything the receipt claims, and returns one of three verdicts.
 
 **Verdicts attach to RECEIPTS under FORMATS — never to vendors, and this tool
@@ -12,6 +12,26 @@ trustworthy, that the claim inside the receipt is true, or that you should
 proceed with whatever the receipt describes. Where a receipt records its own
 gate decision, that value is reported as an annotation and labelled as the
 issuer's, not as this tool's recommendation.
+
+## Install
+
+```bash
+npm install -g @headlessoracle/receipt-verify
+receipt-verify --help
+```
+
+Or run it without installing:
+
+```bash
+npx @headlessoracle/receipt-verify chain.jsonl \
+  --format evidence.action --jwks issuer-jwks.json
+```
+
+The first positional argument is the receipt file. `--format` names the format
+and may be omitted to auto-detect by shape; `--jwks` supplies the published key
+material. Every option is listed under [Usage](#usage), and commands runnable
+against this repository's own fixtures are under
+[Three-command demo](#three-command-demo).
 
 ---
 
@@ -155,7 +175,7 @@ published, public material anyone can fetch.
 ## Format 1 — `evidence.action/0`
 
 Verification is delegated to the **published npm artifact**
-`@headlessoracle/chirindo@0.3.0`, not to a local checkout. This adapter supplies
+`@headlessoracle/chirindo@0.4.0`, not to a local checkout. This adapter supplies
 public-key-only key resolution and translates that package's five-state result
 onto the tri-state contract:
 
@@ -385,5 +405,5 @@ in the rerun document and cross-referenced — `FINDINGS.md` is a dated record, 
 a live status page. Entries currently superseded in whole or in part: `B2`, `B3`,
 `B4`, `B7`, and `B1` (see `R2`).
 
-Status: `0.1.0-dev`. Not published. No conformance claim is made beyond what the
-test suite demonstrates against the fixtures in this repository.
+Status: `0.1.0`. No conformance claim is made beyond what the test suite
+demonstrates against the fixtures in this repository.

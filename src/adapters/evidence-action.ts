@@ -1,7 +1,7 @@
 // Adapter: evidence.action/0 and evidence.action/1.
 //
 // Verification is delegated to the PUBLISHED npm artifact
-// @headlessoracle/chirindo@0.3.0 — not a local checkout. This adapter's job is
+// @headlessoracle/chirindo@0.4.0 — not a local checkout. This adapter's job is
 // the translation layer: public-key-only key resolution in, and Chirindo's
 // five-state result mapped onto this tool's tri-state contract out.
 
