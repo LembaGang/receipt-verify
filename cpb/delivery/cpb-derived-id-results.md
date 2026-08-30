@@ -100,17 +100,21 @@ value" and publishes no digest.
 It is no longer only a regression pin. Two implementations, working independently from the same
 Appendix A walkthrough, produced the same derived identifier.
 
-**The ordering is provable from git by a third party, not asserted here.** At commit `1886b40`:
+**The ordering is recorded in commit history, not asserted here.** At commit `1886b40`:
 
 - searched the whole tree at that commit, the digest `1009a072` appears in exactly one file —
   `test/cpb/construction.test.ts:59`, as `APPENDIX_A_DIGEST`, labelled REGRESSION PIN and sourced to
   Appendix A;
-- the only mention of `jcs-n/derived-id` anywhere at that commit is `cpb-provenance.md:85`, the
-  inventory table, which lists the directory and its three **filenames** and no file content;
+- the only mention of `jcs-n/derived-id` anywhere at that commit is at line 85 of the provenance
+  file — `cpb/PROVENANCE_T1.md` as it is named in that tree, delivered here as
+  `cpb-provenance.md` — the inventory table, which lists the directory and its three **filenames**
+  and no file content;
 - `1886b40` is dated 2026-08-30T18:47:45Z, and the vector files were first opened after it.
 
-So the pin was written from the draft, before the vector that confirms it was read. Anyone holding
-`1886b40` and `e0ad1c7` re-derives that ordering with `git grep`.
+So the pin was written from the draft, before the vector that confirms it was read. That ordering is
+checkable with `git grep` against `1886b40` by anyone holding the commit. It is not published: these
+commits are local at the time of writing, so the check cannot be run from a public clone today. The
+commit can be provided on request.
 
 **What this anchor does and does not cover.** It anchors §5's composition — exclusion-set removal
 then CANONICAL-DIGEST — on one payload class with a single-member exclusion set. It does not anchor
