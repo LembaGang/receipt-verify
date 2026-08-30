@@ -20,7 +20,13 @@
 import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 
-import { runIdentifierGrammar, runJcsNKats, runSubjectBindingDiff } from "../../cpb/run-vectors.js";
+import {
+  runDerivedId,
+  runIdentifierGrammar,
+  runJcsNKats,
+  runMutants,
+  runSubjectBindingDiff,
+} from "../../cpb/run-vectors.js";
 
 const DIR = process.env["CPB_VECTORS_DIR"];
 const AVAILABLE = DIR !== undefined && existsSync(DIR);
@@ -61,6 +67,56 @@ describe.runIf(AVAILABLE)("their vectors, against our implementation", () => {
     // No assertion on the agreement count: it is an observation about two
     // constructions, not a threshold this implementation must meet.
     expect(pinned.filter((r) => r.verdict === "AGREE").length).toBeGreaterThan(0);
+  });
+
+  it("T3B-STRUCTURAL — every construction-independent check on jcs-n/derived-id agrees", () => {
+    // The only external check that exists anywhere for our §5 work: removal by
+    // deletion, carried-identifier mismatch, and the SD precondition in both
+    // directions. Construction-independent, so the withdrawn algorithm token
+    // these vectors declare does not bear on it.
+    const rows = runDerivedId(dir).filter((r) => r.set === "T3B-STRUCTURAL");
+    expect(rows.length).toBe(6);
+    expect(
+      rows.filter((r) => r.verdict !== "AGREE").map((r) => `${r.vector} ${r.check}`),
+    ).toEqual([]);
+  });
+
+  it("T3B-DIGEST — every compared byte agrees, and every comparison was readable", () => {
+    // Readability is decided mechanically by carriesNormalizableMember, not by
+    // eye: a row is only comparable against a jcs-n-pinned value when nothing
+    // survives exclusion that the two constructions treat differently.
+    const rows = runDerivedId(dir).filter((r) => r.set === "T3B-DIGEST");
+    expect(rows.length).toBe(7);
+    expect(rows.filter((r) => r.check.includes("NOT READABLE"))).toEqual([]);
+    expect(rows.filter((r) => r.verdict !== "AGREE").map((r) => r.check)).toEqual([]);
+  });
+
+  it("T3B — their derived_id equals the value our T2 tests pinned from Appendix A", () => {
+    // The external anchor. cpb/T3B_RESULTS.md carries the git proof that the
+    // pin predates any read of this vector.
+    const rows = runDerivedId(dir).filter((r) => r.check.startsWith("derived identifier"));
+    expect(rows.length).toBeGreaterThan(0);
+    const basic = rows.find((r) => r.vector.startsWith("derived-id-01"));
+    expect(basic?.expected).toBe("1009a072df7fc0bfc6fcf49ca2f194067f6c0136c871a88d4fbd66a13361c1d1");
+    expect(basic?.ours).toBe(basic?.expected);
+  });
+
+  it("MUTANTS — every wrong construction marked mustBeDetected is caught", () => {
+    // The falsification, run rather than asserted in prose. If this ever passes
+    // with a required mutant undetected, the 16/16 above stopped meaning
+    // anything and this test is the thing that says so.
+    const results = runMutants(dir);
+    const missed = results.filter((m) => m.mustBeDetected && !m.detected);
+    expect(missed.map((m) => m.id)).toEqual([]);
+  });
+
+  it("MUTANTS — M1 collapses diff-01 onto THEIR pinned jcs_n digest", () => {
+    // Measured against their bytes, not ours: this is what makes the shipped
+    // mutant equivalent to editing cpb/canonical-digest.ts by hand, and it is
+    // the exact failure the subject-binding-diff set was built to expose.
+    const m1 = runMutants(dir).find((m) => m.id === "M1-collapse-to-jcs-n");
+    expect(m1?.collapsedOntoPinnedJcsN).toBe(true);
+    expect(m1?.rowsRed).toBe(12);
   });
 
   it("SUPPLEMENTARY — our §5.1 decoder refuses both pinned malformed identifiers", () => {
