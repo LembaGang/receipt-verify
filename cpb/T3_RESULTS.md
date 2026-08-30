@@ -219,3 +219,44 @@ authorized and was not done; whether a future cycle should is a decision for the
 **Expiry.** Every claim above is true of their commit `e0ad1c7` and of our commit `1886b40`. The
 manifest digests in the header are the re-check: recompute them against a later clone, and a changed
 value means a vector moved and this table needs rerunning, not reinterpreting.
+
+---
+
+# APPENDED 2026-08-30, AFTER THE T3 RATIFICATION
+
+**Supersede, never edit: the section above stands as written. This narrows one claim in it.**
+
+The red-proof described above was performed by editing `cpb/canonical-digest.ts` by hand, running,
+and reverting. That proved the point for one person on one afternoon and left nothing a third party
+could re-derive — the same defect class as a prose ambiguity log, and the reason the T3 ratification
+made shipping it a requirement.
+
+**The mutations are now shipped and run on every invocation.** `cpb/mutants.ts` carries six named
+wrong constructions; `runSubjectBindingDiff` takes the digest function as a parameter, defaulting to
+the real `canonicalDigestJcs`; and the harness runs all four PRIMARY vectors against every mutant
+beside the real implementation:
+
+```
+M1-collapse-to-jcs-n               DETECTED  12/16 rows red
+M2-strip-null-members-only         DETECTED   4/16 rows red
+M3-strip-empty-members-only        DETECTED   8/16 rows red
+M4-serialize-with-json-stringify   DETECTED  12/16 rows red
+M5-uppercase-hex-output            DETECTED   4/16 rows red
+M6-strip-nested-nulls-only         NOT DETECTED by these four vectors
+```
+
+M1 reproduces the hand edit numerically — 12/16 red, and diff-01 collapsing to
+`163468697dd1eca263fef4dc5311a0711eb32b8fcc4083b6447973b7f5b42a5d`. That equality is **checked, not
+narrated**: the harness reads the `jcs_n` digest their own vector pins and asserts the collapse lands
+on it, and a failure raises the exit code.
+
+M6 is shipped deliberately undetected. A wrong construction these four vectors cannot see is a
+statement about the vector set's reach, and it belongs beside the agreement count rather than
+omitted from it.
+
+**What a shipped mutant proves, stated precisely.** These are injected at the harness's seam, not by
+editing the module, so a mutant proves that THE VECTOR COMPARISON DISCRIMINATES between the correct
+construction and this wrong one. The equivalence to an in-place edit is established numerically for
+M1 by the row count and the collapsed digest matching what the hand edit produced.
+
+See also `cpb/T3B_RESULTS.md` for the three `jcs-n/derived-id` vectors, authorised after this run.
