@@ -271,3 +271,40 @@ therefore wins: `git check-attr -a` reports `text: auto, eol: lf` for
 The `-text` protection those two lines were written to provide is not in effect for them. It causes
 no corruption for the -02 draft, whose content is already LF and whose resolved `eol` is `lf`.
 Flagged per scope discipline; **not changed this cycle.**
+
+---
+
+# APPENDED 2026-08-30, AFTER T2. DISCLOSURE — SCOPE OF §2's "lib/ was not entered" CLAIM
+
+**Supersede, never edit: §2 above stands as written. It was true of T1. This block records what
+changed in T2 and narrows the claim.**
+
+§2 states that `lib/` "was not entered, listed, opened or grepped". That held through T1 and through
+the whole of T2's implementation. It stopped being true, in one respect, **after** the T2
+implementation was frozen and committed as `1886b405f31030c67a28e3c09fb09bc7446ffbe8`.
+
+**What happened.** After the freeze, opening
+`vectors/subject-binding-diff/README.md` under the Lead's grant, that file named its harness as
+`check_vectors.py`. No such file appeared in T1's inventory, whose scope was `vectors/` only. Rather
+than report an absence from a partial search (canon R34's escalation bar), the filename was
+enumerated across the whole repository with
+`find . -path ./.git -prune -o -name '*.py' -print`. That command **printed the filenames of 9
+modules under `lib/cpb/` and 10 under `lib/tests/`**, along with the 5 under `.github/` and the 2
+under `vectors/`.
+
+**What was and was not exposed.**
+- Exposed: 25 Python **filenames**, of which 19 are under `lib/`.
+- Not exposed: no file under `lib/` was opened, read, grepped, or had any content displayed. No
+  function, constant, expected value or algorithm step of theirs was seen.
+
+**Why it cannot have affected the implementation.** The T2 implementation was already committed at
+`1886b40` before this command ran. Every file under `cpb/` and `test/cpb/` is fixed in that commit
+and none has been modified since.
+
+**The command that should have been run** is
+`find . -path ./lib -prune -o -name 'check_vectors*' -print`, which answers the same question
+without traversing `lib/`. All subsequent enumeration in this exercise prunes `./lib`.
+
+**The result the enumeration produced,** for the record: `check_vectors.py` exists at
+`.github/check_vectors.py`, not under `vectors/`. The README's reference is accurate; T1's inventory
+simply did not cover `.github/`. No absence claim was made or escalated on this point.
