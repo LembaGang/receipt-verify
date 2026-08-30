@@ -260,20 +260,6 @@ not a conformance result and forms no part of the vector runs reported separatel
 
 ---
 
-## 8. FLAGGED, NOT FIXED — in this repository, outside the scope of this exercise
-
-`.gitattributes` line 6 sets `fixtures/** -text` and line 7 `refs/** -text`, with the stated intent
-that pinned evidence bytes are "never normalized". Line 10, `* text=auto eol=lf`, matches later and
-therefore wins: `git check-attr -a` reports `text: auto, eol: lf` for
-`refs/draft-mih-sokolov-scitt-payload-binding-02.txt`, for the pre-existing
-`refs/draft-farley-acta-signed-receipts-02.txt`, and for `fixtures/acta`. Checked: those three paths.
-
-The `-text` protection those two lines were written to provide is not in effect for them. It causes
-no corruption for the -02 draft, whose content is already LF and whose resolved `eol` is `lf`.
-Flagged rather than fixed; **not changed here.**
-
----
-
 # APPENDED 2026-08-30. DISCLOSURE — SCOPE OF §2's "lib/ was not entered" CLAIM
 
 **§2 above is left as written rather than edited, and was accurate when written. This block
