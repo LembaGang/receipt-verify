@@ -360,3 +360,61 @@ Three of these would stop a conforming implementation rather than merely make it
 The rest are choices a careful implementer can make and document. Every one of them is a place where
 two implementations could diverge while both believing they conform, which is the failure mode the
 draft exists to close.
+
+
+---
+
+# APPENDED 2026-09-01 — CORRECTIONS ISSUED TO THE AUTHORS ON 2026-08-31
+
+**Supersede, never edit. Everything above stands as written and remains a true record of what was
+observed on 2026-08-30. This block records what was found to be wrong in it, and what the corrected
+values are. Each item was sent to Anton Sokolov and Steven Mih in writing on 2026-08-31 before it was
+recorded here.**
+
+The general cause of the largest group below is one defect repeated: digests were computed over a
+**working tree** on Windows carrying CRLF line endings, and published as though they pinned the
+repository. A clone on Linux or macOS yields LF and different digests. The content-addressed value —
+`git cat-file blob <commit>:<path> | sha256sum` — is what should have been published, and is what a
+reader should use. Verified 2026-09-01: all 77 vector files differ in bytes between the two
+checkouts and all 77 parse to identical values, so **no measured result depends on this**; what was
+defective is the provenance layer, whose only job is to let a reader check the rest.
+
+### 1. A1's duplicate-key negative is wrong as a conclusion
+A1 records that §4, §4.1, §5, §5.1, §7 and §7.1 of -02 state no duplicate-key rule. That search is
+accurate. The conclusion — that this implementation therefore states none either — is not.
+
+§4.1 step 1 delegates to RFC 8785, and the registry entry for `jcs` gives its Reference as **RFC 8785
+§3**. **RFC 8785 §3.1** requires that data be adapted for I-JSON and states that JSON objects **MUST
+NOT** exhibit duplicate property names. **RFC 7493 §2.3** states it again. The vector's own
+description — `37-must-fail-duplicate-key.json` — reads "explicit departure from **RFC 8785 §3.1**
+preserve-as-is". Three artefacts held during this exercise contradicted the conclusion.
+
+The root cause is recorded in §0 of this document: **RFC 8785 itself was not fetched or read this
+session.** A negative about a delegating specification was drawn without searching the document it
+delegates to. Naming that limit did not license a conclusion that required having read it.
+
+The finding survives in a better form, and is not ours alone: an independent implementer building a
+separate consuming implementation made the identical error in the same week and corrected it
+publicly. Two implementers, two languages, both reaching for an ordinary JSON parser and both
+producing a value where RFC 8785 requires refusal, is a far stronger argument that §4.1 should state
+its refusal set explicitly than either party observing that the text is silent — because it is not
+silent, and both missed it anyway.
+
+### 2. A11 overstates the prefixed-representation finding
+The narrow part stands: "prefix" occurs twice in the -02 text, at lines 775 and 2006, and neither
+says what the prefix is. What was not done was checking the authors' own artefacts before
+characterising it. **`REGISTRY.md` line 331** registers a live entry whose representation is
+`sha256:` followed by 64 lowercase hex characters, and the vector
+**`vectors/typed-refs/fail/03-representation-mismatch.json`** carries an instance of it and quotes
+the authors' -00 §4.1 defining it.
+
+The corrected finding is narrower and more useful: **a representation the authors' registry registers
+and their vectors exercise is defined nowhere in the normative text.** That is a real gap. It is not
+the one A11 described, and A11's claim that this is "the single strongest under-determination" in the
+three sections does not survive the check.
+
+### 3. One "Checked:" sentence is false
+The entry stating that §5 cites Section 5.1 is wrong. §5 spans lines 733-798 and contains **zero**
+occurrences of the word "Section". The only citation of Section 5.1 in the whole 2072-line document
+is at **line 864, inside §7.1**. The remainder of that sentence — that neither body cites any part of
+§8 — is correct.

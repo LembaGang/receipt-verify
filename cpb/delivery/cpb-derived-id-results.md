@@ -139,3 +139,53 @@ On that last row, stated because it bounds the result: `03-sd-encoded-form.json`
 entries. Those are labels, not digests. The vector exercises **that the SD-encoded form is what gets
 digested**, which is §5's actual requirement, and does not exercise any SD hashing — which is
 consistent, since -02 defines none.
+
+
+---
+
+# APPENDED 2026-09-01 — CORRECTIONS ISSUED TO THE AUTHORS ON 2026-08-31
+
+**Supersede, never edit. Everything above stands as written and remains a true record of what was
+observed on 2026-08-30. This block records what was found to be wrong in it, and what the corrected
+values are. Each item was sent to Anton Sokolov and Steven Mih in writing on 2026-08-31 before it was
+recorded here.**
+
+The general cause of the largest group below is one defect repeated: digests were computed over a
+**working tree** on Windows carrying CRLF line endings, and published as though they pinned the
+repository. A clone on Linux or macOS yields LF and different digests. The content-addressed value —
+`git cat-file blob <commit>:<path> | sha256sum` — is what should have been published, and is what a
+reader should use. Verified 2026-09-01: all 77 vector files differ in bytes between the two
+checkouts and all 77 parse to identical values, so **no measured result depends on this**; what was
+defective is the provenance layer, whose only job is to let a reader check the rest.
+
+### 1. The three per-file digests are working-tree (CRLF) values
+Published above: `39b5b2aacfa13a11…`, `63a62a0a7a34d01d…`, `8d6c26f133271616…`.
+**Correct (git blob digests at `e0ad1c7`):**
+```
+9e3cce8269062b2c3f5b34874f11b0dc8f09d7669d4487f0b098bb019caaa338  01-basic-derived-id.json
+0a9d409adfdffe67b3dbec61aa1a60f22120af36ffe5f4a9626ee8d32aaa4cf2  02-carried-id-mismatch.json
+118f284a6b1b868001e0fee6c2bdc4102c4556ff0e7451cbcf7fbf28ead61322  03-sd-encoded-form.json
+```
+
+### 2. "All three payloads carry `record_id: null`" is false
+`02-carried-id-mismatch.json` carries a 64-character string of zeroes, not null. The conclusion drawn
+from it still holds; the stated fact does not.
+
+### 3. "Each carries an `after_exclusion` and a `normalized` block" is false
+`02-carried-id-mismatch.json` carries **neither**. Its keys are `id, description, algorithm,
+payload_class, exclusion_set, spec_ref, must_fail, failure_reason, full_payload, correct_derived_id,
+carried_id, note`. `runDerivedId` in `cpb/run-vectors.ts` guards with
+`if (v.after_exclusion !== undefined)`, so the code already knew what the prose asserted. This
+sentence is the evidence offered for the readability predicate, so it is not cosmetic.
+
+### 4. "6 of 6 AGREE" overstates the external check
+Three of those six rows compare this harness's own hardcoded literals against this implementation,
+not against anything the vectors pin: `"verified"`; `"carried_identifier_mismatch / failed"` (the
+vector pins `failure_reason: "carried_id_mismatch"`, a different token, and pins no disposition); and
+`"refused (sd_encoded_form_required)"` (`03-sd-encoded-form.json` has `must_fail: null` and
+`failure_reason: null` — it pins no refusal expectation at all). **Three rows are external.** The
+document calls this "the only external check that exists anywhere for our §5 work", which makes the
+overstatement material.
+
+### 5. These are not the only vectors exercising §5
+Seven do, not three. See `cpb/T3_RESULTS.md`, appended block, item 6.

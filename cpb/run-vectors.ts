@@ -174,19 +174,32 @@ export function runJcsNKats(vectorsDir: string): Row[] {
     const v = JSON.parse(readFileSync(join(dir, file), "utf8")) as KatVector;
 
     // Two of the 38 (enumerated: all 38 read, 36 carry an `input` member and 2
-    // do not) carry no canonicalization input at all. 20- and 21- pin an
+    // do not) carry no TOP-LEVEL `input` member. 20- and 21- pin an
     // identifier-grammar failure and carry `cited_artifact` plus
-    // `typed_reference_with_wrong_representation` instead. There is nothing to
-    // canonicalize, so they are marked N/A rather than run — an earlier version
-    // of this harness read the absent `input` and reported our boundary
-    // refusing `undefined`, which said nothing about either implementation.
+    // `typed_reference_with_wrong_representation` instead.
+    //
+    // CORRECTED 2026-09-01 (letter to A. Sokolov, 2026-08-31). An earlier
+    // version of this comment said these vectors "carry no canonicalization
+    // input at all" and that "there is nothing to canonicalize". That is FALSE.
+    // Both carry `cited_artifact.payload` — {"action":"read","resource":
+    // "sensor-7"} — with an exclusion set, a declared representation, and a
+    // pinned `correct_derived_id_bare_hex`. Recomputed under this
+    // implementation both yield
+    // 2f9bba43e30273e2e87c7ef659a0f36f1e11f8e0c10489afe4d267c996505c37,
+    // matching the vectors' pinned value.
+    //
+    // The scope of the original negative was the KEY NAME `input`; the
+    // conclusion drawn was about the FILE. This harness still does not reach
+    // `cited_artifact.payload`, so these rows remain unevaluated HERE — but
+    // they are unevaluated by this harness, not uncanonicalizable in the
+    // vector. Re-deriving them is scheduled for the corrected package.
     if (v.input === undefined) {
       rows.push({
         set: "OBSERVED",
         vector: `${v.id} (${file})`,
         check: "jcs-n pinned digest vs our jcs digest",
         expected: `MUST-FAIL: ${v.failure_reason ?? "unstated"}`,
-        ours: "NOT RUN: vector carries no canonicalization input",
+        ours: "NOT RUN BY THIS HARNESS: no top-level `input`; a canonicalizable payload IS present at cited_artifact.payload",
         verdict: "N/A",
       });
       continue;
@@ -525,7 +538,7 @@ function main(): void {
   const pinned = evaluated.filter((r) => !r.expected.startsWith("MUST-FAIL:"));
   const same = pinned.filter((r) => r.verdict === "AGREE");
   console.log(
-    `\n  ${observed.length} vectors = ${na.length} N/A (no canonicalization input)` +
+    `\n  ${observed.length} vectors = ${na.length} NOT EVALUATED HERE (no top-level input member; a payload is present at cited_artifact.payload)` +
       ` + ${mustFail.length} pinned MUST-FAIL under jcs-n` +
       ` + ${pinned.length} pinned with a digest.`,
   );

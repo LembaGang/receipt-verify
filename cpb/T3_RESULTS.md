@@ -260,3 +260,75 @@ construction and this wrong one. The equivalence to an in-place edit is establis
 M1 by the row count and the collapsed digest matching what the hand edit produced.
 
 See also `cpb/T3B_RESULTS.md` for the three `jcs-n/derived-id` vectors, authorised after this run.
+
+
+---
+
+# APPENDED 2026-09-01 — CORRECTIONS ISSUED TO THE AUTHORS ON 2026-08-31
+
+**Supersede, never edit. Everything above stands as written and remains a true record of what was
+observed on 2026-08-30. This block records what was found to be wrong in it, and what the corrected
+values are. Each item was sent to Anton Sokolov and Steven Mih in writing on 2026-08-31 before it was
+recorded here.**
+
+The general cause of the largest group below is one defect repeated: digests were computed over a
+**working tree** on Windows carrying CRLF line endings, and published as though they pinned the
+repository. A clone on Linux or macOS yields LF and different digests. The content-addressed value —
+`git cat-file blob <commit>:<path> | sha256sum` — is what should have been published, and is what a
+reader should use. Verified 2026-09-01: all 77 vector files differ in bytes between the two
+checkouts and all 77 parse to identical values, so **no measured result depends on this**; what was
+defective is the provenance layer, whose only job is to let a reader check the rest.
+
+### 1. The four per-file vector digests are working-tree (CRLF) values
+Published above: `abe763277cdbd308…`, `e7a5594fe9ff6866…`, `42dbe79d2603f977…`, `f983698821d1c0ca…`.
+**Correct (git blob digests at `e0ad1c7`):**
+```
+9ee197c5f25cf634f8930c5e30f1a8e8d2cd9b2a93cac3917bdb1fe93e24898c  diff-01-null-member.json
+55a4b4e1260c0689cb918b71879c5c4db2e727b96f589d848b8119f96e6772d4  diff-02-empty-object-member.json
+c845c2dbef8787e07fe106d7990c4929e453743fe237b069ddf2142c3ef453ba  diff-03-empty-array-member.json
+c660f2da9e4200155c7d772990682280a7143be3d5ac8dd0ea203546785a1a7e  diff-04-float-member.json
+```
+
+### 2. The manifest recipe does not reproduce its own published value
+The header states the manifest digest as "sha256 over `sha256sum` of the sorted file list". Followed
+as written that yields `a64c17121bba9b64ada23433dbe5bead5103731980219c948ff54da16407a293`. The
+published `1b5e5902…` requires **`sha256sum -b`**, whose output separator differs. A reader following
+the stated recipe would conclude the vectors had moved.
+
+### 3. "Working tree clean" is true only on the machine it was run on
+The `git status --porcelain` empty claim holds on the Windows checkout. On a Linux or macOS clone of
+the same commit the same command reports the CRLF delta.
+
+### 4. The measurement base is understated: 23 of 29, not 19 of 25
+Four of the eleven pinned MUST-FAIL kats — **13, 27, 28 and 29** — also carry a pinned conforming
+digest under the key **`jcs_n_correct_digest`**, which the `KatVector` interface in
+`cpb/run-vectors.ts` does not declare. Our plain JCS reproduces all four exactly
+(`0b985be82ae90bcb…`, `f5d570fa6125f49b…`, `7ac9c6bd87cdda62…`, `64e35d3d1ba080ba…`). So the
+comparable base is **29** and the agreement is **23 of 29**. The buckets above are presented as
+disjoint and are not: those four fall in both. Those four are the NFC-boundary, lowercase-escape,
+named-short-escape and UTF-16 key-sort cases — RFC 8785 conformance anchors that the coverage
+manifest records as "not derived this session". They were derived, and they passed.
+
+### 5. "No canonicalization input at all" is false for kats 20 and 21
+Both carry `cited_artifact.payload` = `{"action":"read","resource":"sensor-7"}` with an exclusion
+set, a declared representation and a pinned `correct_derived_id_bare_hex`. Recomputed here, both
+yield `2f9bba43e30273e2e87c7ef659a0f36f1e11f8e0c10489afe4d267c996505c37`, matching the vectors. The
+scope of the original negative was the KEY NAME `input`; the conclusion was drawn about the file.
+Corrected in `cpb/run-vectors.ts` on 2026-09-01 in the comment and the run-output label; re-deriving
+the rows is scheduled for the corrected package.
+
+### 6. Three vectors are not "the only ones that exercise §5"
+**Seven do.** Alongside kats 20 and 21, the typed-refs vectors `pass/01`, `pass/02`, `fail/01`,
+`fail/03` and `fail/06` each carry a payload, an exclusion set of `doc_id` and a pinned derived
+identifier; all five reproduce
+`0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb` under this construction.
+`fail/01` is the sharpest: its excluded member holds the non-null string `"secret-id-123"`, a
+stronger discrimination of deletion from nulling than any of the three vectors used.
+
+### 7. The duplicate-key negative was drawn without reading the delegated document
+The claim that no section of -02 states a duplicate-key rule is accurate as a search of those six
+sections and **wrong as a conclusion**. The registry entry for `jcs` gives its Reference as RFC 8785
+§3; RFC 8785 §3.1 requires I-JSON input and states that JSON objects MUST NOT exhibit duplicate
+property names; RFC 7493 §2.3 repeats it; and kat-37's own description calls itself "an explicit
+departure from RFC 8785 §3.1". A conforming implementation refuses that vector before an object
+exists. This one produced a value, which is a defect here and was reported as a gap in their text.

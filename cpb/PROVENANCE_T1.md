@@ -308,3 +308,43 @@ without traversing `lib/`. All subsequent enumeration in this exercise prunes `.
 **The result the enumeration produced,** for the record: `check_vectors.py` exists at
 `.github/check_vectors.py`, not under `vectors/`. The README's reference is accurate; T1's inventory
 simply did not cover `.github/`. No absence claim was made or escalated on this point.
+
+
+---
+
+# APPENDED 2026-09-01 — CORRECTIONS ISSUED TO THE AUTHORS ON 2026-08-31
+
+**Supersede, never edit. Everything above stands as written and remains a true record of what was
+observed on 2026-08-30. This block records what was found to be wrong in it, and what the corrected
+values are. Each item was sent to Anton Sokolov and Steven Mih in writing on 2026-08-31 before it was
+recorded here.**
+
+The general cause of the largest group below is one defect repeated: digests were computed over a
+**working tree** on Windows carrying CRLF line endings, and published as though they pinned the
+repository. A clone on Linux or macOS yields LF and different digests. The content-addressed value —
+`git cat-file blob <commit>:<path> | sha256sum` — is what should have been published, and is what a
+reader should use. Verified 2026-09-01: all 77 vector files differ in bytes between the two
+checkouts and all 77 parse to identical values, so **no measured result depends on this**; what was
+defective is the provenance layer, whose only job is to let a reader check the rest.
+
+### 1. The README byte count and digest are the working tree, not the repository
+Recorded above: `README.md` at `e0ad1c7`, 4862 bytes, sha256
+`596bada4465de96892cb8b86b992c8aa7a173c59b1c5bf016bc540d4d7c4963a`.
+**Correct:** the committed blob is **4759 bytes**, sha256
+**`1814b45b61f63b7c685218ae9c91e47ae4c02cb51a395e0a9ef0b69494bd068a`**.
+The 103-byte difference is the line count. This document diagnoses exactly this artefact correctly
+for the draft text in its own section 1; it was not applied here.
+
+### 2. The disclosure arithmetic is wrong, in the one paragraph whose value was arithmetic precision
+Recorded above: the `find` "printed the filenames of 9 modules under `lib/cpb/` and 10 under
+`lib/tests/`", and "Exposed: 25 Python filenames, of which 19 are under `lib/`."
+**Correct, re-counted 2026-09-01:** `lib/cpb/` holds **8**, `lib/tests/` 10, `.github/` 5,
+`vectors/` 2. Total **25** — which is right — but **18**, not 19, are under `lib/`, and the four
+stated components sum to 26 rather than the 25 claimed.
+
+### 3. The PR #72 finding is stale and carried no expiry
+Recorded above: PR #72 open, `main` "has not moved since the PR was opened".
+**Correct:** PR #72 has merged. Upstream `main` is now
+**`eba249c8518bbf417068fb911f7bafa66e214d12`**, verified by `git ls-remote` on 2026-08-31 and
+independently corroborated by a third party citing the same head. The finding was true when written
+on 2026-08-30 and false within hours. It should have carried an as-of stamp, as the vector table does.
