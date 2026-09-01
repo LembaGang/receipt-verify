@@ -4,6 +4,14 @@
 // farley, never as a competing normative source — where the two disagree,
 // farley decides and the disagreement is reported.
 //
+// 2026-09-01: draft-marques-asqav-compliance-receipts-08 (31 Aug 2026, pinned in
+// refs/) §4 states that rule itself: "an ACTA-family receipt verified under its
+// native format keeps the digest scope its own format defines." The -07
+// contradiction recorded in FINDINGS.md E3 is resolved in -08; this adapter's
+// behaviour was already the -08 rule. A Compliance Receipt under -08 carries a
+// top-level `anchors` array and a payload-member signature scope; it is NOT an
+// ACTA receipt and this adapter declines it at detection (see detect()).
+//
 // Three things about this format make it unlike the other two adapters:
 //
 //   * It is not a JWS. The envelope is {payload, signature:{alg,kid,sig}} with
@@ -120,7 +128,16 @@ function parseEnvelope(bytes: Uint8Array): ParseOutcome {
  */
 export function detect(bytes: Uint8Array): boolean {
   const p = parseEnvelope(bytes);
-  return p.ok;
+  if (!p.ok) return false;
+  // A top-level `anchors` array is the draft-marques-asqav-compliance-receipts-08
+  // envelope ({payload, signature, anchors}; §4, §5.4), never an ACTA §2.1
+  // envelope. farley -02 and -03 define no such member, and no ACTA fixture
+  // carries one (checked 2026-09-01). Claiming it here would route a conformant
+  // Compliance Receipt through the whole-receipt signature scope and return a
+  // false INVALID, so this adapter declines and detection reports the format as
+  // unrecognized, which tells the caller to name it.
+  if (Array.isArray(p.env.rest["anchors"])) return false;
+  return true;
 }
 
 // --------------------------------------------------------------------------
@@ -523,7 +540,7 @@ export const actaAdapter: Adapter = {
             FORMAT,
             "chain_linkage_broken",
             variant
-              ? `previousReceiptHash does not match the predecessor under §5.7 (expected ${normative.value}), but DOES match it under ${variant.name} — ${variant.note}. draft-marques-asqav-compliance-receipts-07 §5.3 mandates that signature-exclusive scope while citing farley §5.7 as its authority; the two scopes digest different bytes. This tool implements §5.7 and refuses rather than accept either silently — see FINDINGS.md §E3`
+              ? `previousReceiptHash does not match the predecessor under §5.7 (expected ${normative.value}), but DOES match it under ${variant.name} — ${variant.note}. This tool implements farley §5.7 (whole-receipt scope). draft-marques-asqav-compliance-receipts-08 §4 confirms an ACTA-family receipt keeps that scope; a link built to the marques payload-member scope belongs to a Compliance Receipt, which is not an ACTA receipt and is not verified by this adapter — see FINDINGS.md §E3 and its 2026-09-01 supersession`
               : `previousReceiptHash ${prev} does not match the predecessor under §5.7 (${normative.value}), nor under either signature-exclusive reading of marques §5.3 (${computed[1]!.value}, ${computed[2]!.value})`,
             key,
             "chain_linkage",

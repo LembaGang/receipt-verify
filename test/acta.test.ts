@@ -12,6 +12,17 @@
 // Second, where the draft contradicts itself the test asserts the REFUSAL and
 // its explanation, not a resolution. A test that pinned one reading as "right"
 // would be inventing a normative answer the documents do not contain.
+//
+// 2026-09-01: draft-marques-asqav-compliance-receipts-08 §4 (31 Aug 2026,
+// pinned in refs/) resolves the contradiction the second point describes: an
+// ACTA-family receipt keeps farley §5.7's whole-receipt scope, and the
+// payload-member scope belongs to -08's Compliance Receipt envelope, which
+// src/adapters/acta.ts now declines at detection. The chain-digest tests below
+// still assert the refusal; what they assert about its explanation is that it
+// cites the -08 resolution, not a contradiction. The -07 pin in the
+// snapshot-integrity block stays, because -07 is the revision the adapter was
+// written against and the file is still tracked; the -08 pin is added beside
+// it because the refusal text now cites -08.
 
 import { describe, expect, it } from "vitest";
 import { join } from "node:path";
@@ -42,6 +53,12 @@ describe("acta — snapshot integrity", () => {
     );
     expect(sha256Hex(read(join(REFS, "draft-marques-asqav-compliance-receipts-07.txt")))).toBe(
       "082615447288fa1e983fa2cfb7aa7356fbb35d05d65ea256f66111487746d52f",
+    );
+  });
+
+  it("refs/ holds the -08 revision the 2026-09-01 refusal text cites", () => {
+    expect(sha256Hex(read(join(REFS, "draft-marques-asqav-compliance-receipts-08.txt")))).toBe(
+      "ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0",
     );
   });
 });
@@ -314,7 +331,9 @@ describe("acta — chain-digest contradiction (farley §5.7 vs marques §5.3)", 
       expect(r.verdict).toBe("INVALID");
       expect(r.reason).toBe("chain_linkage_broken");
       expect(r.detail).toContain(`DOES match it under ${variantName}`);
-      expect(r.detail).toContain("refuses rather than accept either silently");
+      expect(r.detail).toContain(
+        "draft-marques-asqav-compliance-receipts-08 §4 confirms an ACTA-family receipt keeps that scope",
+      );
       expect(r.resolvedKey).toBeDefined();
     });
   }

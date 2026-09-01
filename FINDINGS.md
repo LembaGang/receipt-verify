@@ -666,3 +666,93 @@ snapshot on 2026-07-28 changed two files unrelated to this work:
   are unaffected.
 
 Both were accepted into the snapshot. The full suite passes against them.
+
+
+---
+
+# APPENDED 2026-09-01 — FULL-HISTORY AUDIT BEFORE EXTERNAL CIRCULATION
+
+**Supersede, never edit. Every entry above stands as a record of what was observed on the date it
+states. This block records what a full re-read on 2026-09-01 found to be superseded, contradicted by
+the fixtures now shipped, or stated wider than its search.**
+
+### A1. B4's title is wider than its body; the body stands
+Title (:148): *"No mapping document is published, so §4.3 step 2 cannot be completed from published
+material."* Body (:157-158): *"No document producing either digest is published anywhere this
+implementation could locate."* The body names its own scope and was true of it. The rerun's erratum 1
+shows why: the digest every composed fixture carried on 2026-07-25 (`3b1f2d8e…`) was replaced on
+2026-07-29 by one that resolves (`0a782639…`, `FINDINGS-rerun-2026-07-29.md` lines 122-142), which is
+what a placeholder replaced by a computed value looks like; the draft author has since described it
+as exactly that (2026-08-30, private correspondence, restated in the interop row he signed for deposit
+on 2026-08-31). The title says more than the body: erratum 1, quoted as sent at lines 116-118 of the
+rerun, took a mapping document to exist on the issuer's endpoints before this run, on the strength of
+the draft author's note of 8 June, which is outside this repository; whether or not one did, no
+document producing the fixtures' digest did. The phrase *"a resolution-path gap, not an existence gap"* in that erratum is
+this repository author's own diagnosis, as sent to the draft author, not a reply from him. The finding
+survives as: **the mapping document was not resolvable from the receipt by any path a stranger could
+follow.** The title's "No mapping document is published" is withdrawn as wider than its search; the
+body is not. The title is the same class of unscoped negative the CPB package corrected on 2026-08-31,
+in a file that correction did not reach.
+
+### A2. Section B measured pre-repair bytes; the snapshot in this repository is post-repair
+Section B was written 2026-07-25 against fixtures fetched at HEAD that day. The tree under
+`fixtures/verification-state/spec-examples/` was re-snapshotted 2026-07-29 at `196df22` after the
+author's repairs (`fixtures/provenance.md`). Four B-section claims are contradicted by the fixtures
+now shipped beside them, and one quotation is not in the snapshot:
+- **B1** (:101-103) "protected and signature byte-identical" — in the shipped pair both differ.
+- **B2** (:112-117) "no `b64` and no `crit`" — the shipped detached header carries `"b64":false,"crit":["b64"]`.
+- **B4 / A2** (:48, :153) mapping hash `sha256-3b1f2d8e…` — the shipped `payload-001.json` carries `sha256-0a782639…`.
+- **E15** (:659-661) "gained a third key" — the shipped JWKS carries four kids.
+- **B3** (:143-144) quotes `examples/README.md` on "a byte-accurate canonical serializer on both sides"
+  — the shipped README does not contain that sentence. B3's measured table still reproduces.
+The source line at :92-93 ("retrieved 2026-07-25 from …/HEAD/examples/") describes the bytes Section
+B measured, not the bytes this repository ships; both are true of different snapshots and the file
+did not say so. `FINDINGS-rerun-2026-07-29.md` cross-references A1, A2, A4, B1, B2, B3, B4, B7, B8
+and does not cross-reference B3's absent quotation or E15. Both are recorded here.
+
+### A3. C5 is superseded: the advisory it reports was closed on 2026-08-10
+C5 (:274-281) reports a moderate `@hono/node-server` advisory reachable through
+`@modelcontextprotocol/server-everything` in `@headlessoracle/chirindo@0.3.0`. Commit `cbe4d38`
+moved this repository to `chirindo@0.4.0`, whose declared dependencies are exactly
+`{"canonicalize": "^2.0.0"}` — runtime closure 108 to 2, zero advisories. C5 is a true record of
+0.3.0 and does not describe the dependency this repository ships. C2 (no library entry point) was
+re-checked 2026-09-01 and still holds in 0.4.0.
+
+### A4. Section E cites farley -02; -03 (29 August 2026) renumbered the sections
+`draft-farley-acta-signed-receipts-03`, sha256
+`bcde71799a621305254ea8b442fc829ac6d65fcff039f365e8a2349d8e902f19`, 96433 bytes, rebuilt the section
+structure. The -02 sections §5.5 to §5.10 that E1, E2, E3, E5, E7 to E11 and E14 cite do not carry
+those numbers in -03; §8.1 is now "Passport Manifest"; Appendix C is now titled "Changes from -02",
+which closes **E11**. Every E-entry is pinned to -02 by digest at :345-349 and remains a true record
+of -02. -03 is now tracked in `refs/` and pinned in `fixtures/provenance.md`.
+
+### A5. Section E cites marques -07; -08 (31 August 2026) resolves E3
+`draft-marques-asqav-compliance-receipts-08`, sha256
+`ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0`, 392828 bytes, 7840 lines, is a
+rewrite: §4 is a new "Canonicalization Scope" section, and -07's §5.3 (the digest-scope section E3,
+E4 and E5 cite) is now "Hash-Chain Linkage". **E3 was correct about -07** — re-read from the pinned
+bytes 2026-09-01 — and **-08 §4 resolves it**, verbatim: *"No digest in this profile covers the
+envelope including the signature member. Receipts outside this profile are not re-scoped by this
+section: an ACTA-family receipt verified under its native format keeps the digest scope its own
+format defines… An implementation that verifies both Compliance Receipts and upstream ACTA-family
+receipts therefore switches digest scope on receipt format."* That is the rule this repository
+implemented on 2026-07-28 (`src/adapters/acta.ts` header: "where the two disagree, farley decides"),
+now stated by -08's author. E4 and E5 remain true of -07 and have not been re-read against -08; that
+re-read is scheduled. -08 is tracked in `refs/` and pinned.
+
+One observation against -08, recorded here for the date and for its author: §4 (line 657) describes
+§5.7's scope as "the envelope-minus-anchors object"; §5.7 itself defines `envelope_hash` over "the
+three-key object {payload, signature, anchors}" and states "B MUST NOT… strip the anchors array";
+-08's change list (line ~7251) agrees with §5.7. Two implementations reading §4 and §5.7 compute
+different bytes for `envelope_hash`. Same class as E3 against -07. Resolution belongs to -08's author.
+
+### A6. A machine path is not a provenance source
+:233-234 cites `C:\Users\User\agent-action-receipt-vectors` as the source of
+`fixtures/evidence-action/`. No reader can resolve that path. The corpus is a private snapshot whose
+per-file digests in `fixtures/provenance.md` are the provenance; the path is withdrawn as a citation.
+
+### A7. Six citations were corrected in place on 2026-08-02 and this file did not say so
+Commit `1fb91c9` corrected six line citations (E1 twice, E2 twice, E7, E10). Its message states no
+claim, quotation or measured value changed; the corrected citations were re-verified 2026-09-01. The
+companion document says entries are "never edited in place"; this file carried no erratum for those
+six edits. Recorded now so the git history and the prose agree.

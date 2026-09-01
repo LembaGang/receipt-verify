@@ -205,7 +205,7 @@ const acta: FormatCoverage = {
   format: "acta.receipt/0",
   sources: [
     "draft-farley-acta-signed-receipts-02",
-    "draft-marques-asqav-compliance-receipts-07 (read as a profile layered on farley)",
+    "draft-marques-asqav-compliance-receipts-07 (read as a profile layered on farley; its §5.3 scope contradiction is resolved in -08 §4, 31 Aug 2026, pinned in refs/)",
   ],
   orderNote:
     "farley numbers steps only within §4.1 and §4.2. `order` is this tool's evaluation order across the whole receipt and is not a numbering the draft assigns.",
@@ -298,9 +298,9 @@ const acta: FormatCoverage = {
       id: "chain_scope_variant",
       order: 12,
       title: "Whether a failing chain link matches a signature-exclusive scope instead",
-      source: "draft-marques-asqav-compliance-receipts-07 §5.3",
+      source: "draft-marques-asqav-compliance-receipts-07 §5.3; resolved in -08 §4",
       status: "reported_only",
-      note: "Three candidate scopes exist for one field (FINDINGS.md E3, E4). farley §5.7 is normative here; the two marques readings are computed only to name which one a failing link matches.",
+      note: "farley §5.7 is normative for ACTA receipts, and draft-marques-asqav-compliance-receipts-08 §4 confirms it. The two marques readings were candidate explanations for a failing link under -07 (FINDINGS.md E3, E4); under -08 a payload-member-scoped link belongs to a Compliance Receipt, which this adapter declines at detection rather than mis-verifies.",
     },
     {
       id: "replay_age",

@@ -521,3 +521,45 @@ under `refs/`) are foreign SHAs and content addresses and are untouched.
 
 The single in-repository citation of a rewritten SHA was the suite-baseline row
 above, which named the pre-rerun commit.
+
+
+---
+
+# APPENDED 2026-09-01 — FULL-HISTORY AUDIT BEFORE EXTERNAL CIRCULATION
+
+**Supersede, never edit. Everything above stands as a record of 2026-07-29.**
+
+### B1. "The repository has no remote and has never been pushed or fetched" (lines 506-507)
+True when written. False from 2026-08-10: `origin` is `https://github.com/LembaGang/receipt-verify.git`
+and `origin/master` is `cbe4d38`. The rewritten history has since been pushed, and the remote carries
+the post-rewrite SHAs listed in the Appendix. The sentence's argument held on its date and does not
+hold now.
+
+### B2. The address at line 502
+That line records that two early commits were re-authored from `receipt-verify <mmsebenzi@gmail.com>`
+to one canonical identity. Verified 2026-09-01: the address appears in zero commit author or
+committer fields, so the rewrite achieved what it describes; the prose describing it is now the only
+place the address appears in this repository. It stands, with this note.
+
+### B3. "74 snapshot entries" (line 65)
+The snapshot table in `fixtures/provenance.md` carries 73 rows (lines 16-88, counted three ways on
+2026-09-01). The generated-here table is separate and carries 81. No combination yields 74.
+
+### B4. Retrieval timestamps
+Line 54 gives 2026-07-29T09:49Z for three files. `fixtures/provenance.md` records the same three, same
+digests, fetched at 10:01:35-38Z. The 09:49Z fetch was the first; the 10:01Z fetch re-pinned the same
+bytes and is the one the provenance table records. Same bytes, two clocks.
+
+### B5. Two references inside the quoted errata point outside this repository
+"Your Jun 8 note" (lines 116-118) and "April's silent failure mode" (lines 245-246) are this
+repository author's own words, quoted above as sent to the draft author, and refer to earlier private
+correspondence between the two in the same channel: the draft author's note of 8 June, and an April
+exchange. Neither is in this repository, and neither is needed to check anything here; every verdict
+above is recomputed from the pinned bytes. The draft author cleared the quoted errata for external
+circulation, unrestricted, on 2026-08-31, asking only that they not be excerpted from their repair
+timeline — the Disclosure state table at the top of this file.
+
+### B6. R3's title is wider than its body
+Line 426, "No published artifact exercises the production detached wire format", is scoped by its own
+body (lines 442-443) to `TKCollective/agentoracle-receipt-spec @ 196df22`, `examples/README.md`, and
+the body says "nothing here asserts the claim is untrue." Read the title with the body's scope.

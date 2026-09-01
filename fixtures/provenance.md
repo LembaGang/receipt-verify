@@ -187,3 +187,22 @@ author's. See FINDINGS.md §E1.
 | `fixtures/acta/keys/acta-throwaway.jwks.json` | 943 | `b31e4f4d2a429fe2233a610b163ea96cb9b31d919c94a5217f65aa608848d6d3` |
 | `fixtures/keys/test-throwaway-ed25519.jwks.json` | 561 | `4c4146101fa23c6a7fc4f79420667b40b6862751147aea8a5b2067f575fec7bd` |
 | `fixtures/keys/test-throwaway-ed25519.seed.txt` | 382 | `2d5f040fc66defc66f6807f6f7700466b8ab402e5b88abbce4b78e4df858c3fd` |
+
+
+## Appended 2026-09-01 — three `refs/` entries this table did not carry
+
+The opening sentence of this file says every file under `refs/` is a byte-exact snapshot with an
+entry here. On 2026-08-30 one tracked draft had no entry — `draft-mih-sokolov-scitt-payload-binding-02`
+— and it was the one draft whose author would receive this repository. Two further drafts are added
+in the same pass. All three fetched from the IETF archive; all three LF-only; all three digests
+computed on the device at the time stated.
+
+| path | bytes | sha256 | retrieved |
+|---|---|---|---|
+| `refs/draft-mih-sokolov-scitt-payload-binding-02.txt` | 92428 | `47ab675797d7edfe905c13b8482735239d9c5ceb318accbc33e4a5a51e5ec875` | 2026-08-30 (see `cpb/PROVENANCE_T1.md` §1) |
+| `refs/draft-marques-asqav-compliance-receipts-08.txt` | 392828 | `ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0` | 2026-09-01 |
+| `refs/draft-farley-acta-signed-receipts-03.txt` | 96433 | `bcde71799a621305254ea8b442fc829ac6d65fcff039f365e8a2349d8e902f19` | 2026-08-31 |
+
+Flagged, not changed: fourteen entries above cite `ScopeBlind/agent-governance-testvectors/HEAD/`,
+a moving ref. `tools/snapshot.mjs` pins the TKCollective source by commit and not this one. Those
+entries remain true of the bytes they describe; they cannot be re-fetched to the same bytes.

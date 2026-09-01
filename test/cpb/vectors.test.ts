@@ -125,3 +125,14 @@ describe.runIf(AVAILABLE)("their vectors, against our implementation", () => {
     for (const r of rows) expect(r.verdict).toBe("AGREE");
   });
 });
+
+// The second half of the pattern this file's header cites from
+// test/live-jwks.test.ts: when the gate is off, the OFF state is a printed,
+// passing row rather than an absence. This makes the skip visible in the
+// suite output. It does not change the exit code — a machine-readable signal
+// for "vectors never loaded" is a separate change, not made here.
+describe.runIf(!AVAILABLE)("their vectors, against our implementation", () => {
+  it("is skipped unless CPB_VECTORS_DIR points at a clone of action-state-group/scitt-payload-binding", () => {
+    expect(AVAILABLE).toBe(false);
+  });
+});
