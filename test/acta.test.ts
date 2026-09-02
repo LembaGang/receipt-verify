@@ -408,14 +408,21 @@ describe("acta — chain-digest contradiction (farley §5.7 vs marques §5.3)", 
 // genesis seed and recomputed each vector's own `canonical` and `sha256` but
 // not that derived literal. That was established against a clone. A clone is
 // not evidence this repository holds: it can be rewritten, and this machine
-// keeps no history for it. So the two states either side of #416 are pinned as
-// fixtures, taken with `git cat-file blob` and never from a worktree, and the
+// keeps no history for it. So the states around #416 are pinned as fixtures,
+// taken with `git cat-file blob` and never from a worktree, and the
 // identification is re-derived here from those bytes.
+//
+// Three commits are pinned, which is what lets the block say WHEN as well as
+// WHICH: `3e13a0d` seeds the vector (#197, 2026-05-18), `4cbdfc0` is the last
+// state before #416, `ee8a3e7` is #416 itself. At `3e13a0d` the published
+// literal EQUALS the digest of the envelope beside it — it was correct when it
+// was written — and it is unchanged through `4cbdfc0`. So the defect is dated:
+// it begins at #416 and it is a staleness, not a value that was never right.
 //
 // What this block does NOT assert: that `0d6c88a1…` is correct for the
 // envelope the vectors publish today. It is not — that is the finding. These
-// assertions pin WHICH bytes produce it, which is what turns M6 from a negative
-// into a defect with a named cause.
+// assertions pin WHICH bytes produce it and WHEN it stopped matching, which is
+// what turns M6 from a negative into a defect with a named cause and a date.
 // --------------------------------------------------------------------------
 
 describe("acta — M6: the published envelope_hash is the pre-#416 three-key digest", () => {
@@ -430,15 +437,43 @@ describe("acta — M6: the published envelope_hash is the pre-#416 three-key dig
 
   type Vector = { name: string; input: Record<string, unknown> };
 
-  // Last state before #416, and first state after it. `ee8a3e7` is also the
-  // last commit to touch conformance/vectors.json before `05c1c49`, so its blob
-  // and the 05c1c49 fixture's are one upstream object — pinned separately
-  // anyway, because what this block is about is the commit each state belongs
-  // to, not the number of distinct blobs.
+  // Where the vector was seeded, the last state before #416, and the first
+  // state after it. `ee8a3e7` is also the last commit to touch
+  // conformance/vectors.json before `05c1c49`, so its blob and the 05c1c49
+  // fixture's are one upstream object — pinned separately anyway, because what
+  // this block is about is the commit each state belongs to, not the number of
+  // distinct blobs.
   const corpus = {
+    "3e13a0d": read(join(FIX, "asqav", "history", "3e13a0d", "conformance", "vectors.json")),
     "4cbdfc0": read(join(FIX, "asqav", "history", "4cbdfc0", "conformance", "vectors.json")),
     ee8a3e7: read(join(FIX, "asqav", "history", "ee8a3e7", "conformance", "vectors.json")),
     "05c1c49": read(join(ASQAV_05C1C49, "conformance", "vectors.json")),
+  };
+
+  /**
+   * Change one byte, and only one: the last digit of the genesis seed inside
+   * the envelope vector, 0 -> 1. Chosen because it keeps the JSON parseable, so
+   * a control built on it fails on the digest rather than on a throw. Returns a
+   * copy; the caller's bytes are untouched.
+   */
+  const mutateOneByte = (source: Buffer): Buffer => {
+    const bytes = Buffer.from(source);
+    const vectorAt = bytes.indexOf(`"name": "${ENVELOPE}"`);
+    if (vectorAt < 0) throw new Error("envelope vector not found in the bytes");
+    const seedAt = bytes.indexOf(`"${SEED}"`, vectorAt);
+    if (seedAt < 0) throw new Error("genesis seed not found after the envelope vector");
+    const lastZero = seedAt + SEED.length; // opening quote + SEED.length - 1
+    if (bytes[lastZero] !== 0x30) throw new Error("expected '0' at the seed's last digit");
+    bytes[lastZero] = 0x31;
+    return bytes;
+  };
+
+  /** How many byte positions differ, so a control can prove its edit was one byte wide. */
+  const byteDistance = (a: Buffer, b: Buffer): number => {
+    if (a.length !== b.length) return Math.max(a.length, b.length);
+    let n = 0;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++;
+    return n;
   };
 
   const vectorsOf = (bytes: Buffer): Vector[] => (JSON.parse(bytes.toString("utf8")) as { vectors: Vector[] }).vectors;
@@ -487,13 +522,32 @@ describe("acta — M6: the published envelope_hash is the pre-#416 three-key dig
   it("pins the bytes this block reads: upstream blob bytes, not a checkout", () => {
     // core.autocrlf is true on this machine, so a working-tree copy of these
     // files would digest differently. These came out of `git cat-file blob`.
+    expect(sha256Hex(corpus["3e13a0d"])).toBe("c1f87953fd17143780a07ddade63d715a7dab7a328b2080fafb9c791ef87d68a");
     expect(sha256Hex(corpus["4cbdfc0"])).toBe("68610d93ea1dda19176b6a68a5293d07bbc38118e5c4fc725b8b9a639839fa3a");
     expect(sha256Hex(corpus["ee8a3e7"])).toBe("2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a");
     expect(sha256Hex(corpus["05c1c49"])).toBe("2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a");
   });
 
+  it("was CORRECT when first written: at 3e13a0d the literal equals the digest beside it", () => {
+    // #197 seeded the vector on 2026-05-18. Both halves are asserted, because
+    // only the pair is the claim: the digest is the value M6 is about, AND the
+    // published literal at that commit is that same value. This is what makes
+    // M6 a staleness with a date rather than a value that was never right.
+    expect(threeKeyDigest(corpus["3e13a0d"])).toBe(PRE_416);
+    expect(publishedEnvelopeHash(corpus["3e13a0d"])).toBe(PRE_416);
+    expect(publishedEnvelopeHash(corpus["3e13a0d"])).toBe(threeKeyDigest(corpus["3e13a0d"]));
+  });
+
+  it("carries the sha256:-prefixed genesis seed at 3e13a0d, the member #416 later changed", () => {
+    const payload = envelopeOf(corpus["3e13a0d"])["payload"] as Record<string, string>;
+    expect(payload["previousReceiptHash"]).toBe(SEED);
+  });
+
   it("digests to the published envelope_hash at 4cbdfc0, the last state before #416", () => {
     expect(threeKeyDigest(corpus["4cbdfc0"])).toBe(PRE_416);
+    // And the envelope did not move at all between seeding and that commit, so
+    // the value stayed correct for the whole of its pinned life before #416.
+    expect(differingMembers(envelopeOf(corpus["3e13a0d"]), envelopeOf(corpus["4cbdfc0"]))).toEqual([]);
   });
 
   it("digests to something else at ee8a3e7 and at 05c1c49, every state after #416", () => {
@@ -528,31 +582,29 @@ describe("acta — M6: the published envelope_hash is the pre-#416 three-key dig
     expect(differingMembers(envelopeOf(corpus["ee8a3e7"]), envelopeOf(corpus["05c1c49"]))).toEqual([]);
   });
 
-  it("CONTROL: one byte changed in the 4cbdfc0 bytes and the digest no longer reaches PRE_416", () => {
-    // Without this the block above proves only that two constants were typed in
-    // correctly. Mutate one byte of the fixture in this test's own copy — the
-    // last digit of the genesis seed inside the envelope vector, 0 -> 1, chosen
-    // because it keeps the JSON parseable so the failure is the digest and not
-    // a throw — and PRE_416 must no longer be reachable from these bytes.
-    const bytes = Buffer.from(corpus["4cbdfc0"]);
-    const vectorAt = bytes.indexOf(`"name": "${ENVELOPE}"`);
-    expect(vectorAt).toBeGreaterThan(-1);
-    const seedAt = bytes.indexOf(`"${SEED}"`, vectorAt);
-    expect(seedAt).toBeGreaterThan(-1);
-    const lastZero = seedAt + 1 + SEED.length - 1;
-    expect(bytes[lastZero]).toBe(0x30); // '0'
-    bytes[lastZero] = 0x31; // '1'
+  // Without these, the block above proves only that a handful of constants were
+  // typed in correctly. Each control mutates one byte of one pinned fixture in
+  // the test's own copy and requires PRE_416 to stop being reachable from it.
+  // Both pre-#416 fixtures get one, because they carry different assertions:
+  // 4cbdfc0 backs the "last state before #416" digest, 3e13a0d backs the "was
+  // correct when first written" pair, and a control over one says nothing about
+  // the other.
+  for (const commit of ["4cbdfc0", "3e13a0d"] as const) {
+    it(`CONTROL: one byte changed in the ${commit} bytes and the digest no longer reaches PRE_416`, () => {
+      const bytes = mutateOneByte(corpus[commit]);
 
-    // One byte, and only one: a wider edit would make the failure below
-    // unattributable to the single-byte change this control claims to make.
-    expect(bytes.length).toBe(corpus["4cbdfc0"].length);
-    let differingBytes = 0;
-    for (let i = 0; i < bytes.length; i++) if (bytes[i] !== corpus["4cbdfc0"][i]) differingBytes++;
-    expect(differingBytes).toBe(1);
+      // One byte, and only one: a wider edit would make the failure below
+      // unattributable to the single-byte change this control claims to make.
+      expect(bytes.length).toBe(corpus[commit].length);
+      expect(byteDistance(bytes, corpus[commit])).toBe(1);
 
-    expect(threeKeyDigest(bytes)).not.toBe(PRE_416);
-    expect(threeKeyDigest(bytes)).not.toBe(POST_416);
-    // The unmutated copy is untouched, so the assertions above still hold.
-    expect(threeKeyDigest(corpus["4cbdfc0"])).toBe(PRE_416);
-  });
+      expect(threeKeyDigest(bytes)).not.toBe(PRE_416);
+      expect(threeKeyDigest(bytes)).not.toBe(POST_416);
+      // The published literal is a literal: mutating the envelope cannot move
+      // it, which is exactly the decoupling M6 is about.
+      expect(publishedEnvelopeHash(bytes)).toBe(PRE_416);
+      // And the unmutated fixture is untouched, so the assertions above hold.
+      expect(threeKeyDigest(corpus[commit])).toBe(PRE_416);
+    });
+  }
 });

@@ -419,3 +419,49 @@ copy and requires the digest to stop reaching `0d6c88a1…`. Both were exercised
 before the commit: one byte of the `4cbdfc0` fixture was changed on disk, five of the block's six
 tests failed, and the file was restored from the blob. The sixth reads only the post-`#416` fixtures,
 which is why it stayed green.
+
+## Appended 2026-09-02 — `3e13a0d`, the commit that seeded the vector, pinned to date M6
+
+The section above pins the two states either side of `#416` and establishes *which* bytes produce the
+published `0d6c88a1…`. It does not establish *when* the literal stopped matching, because the state
+before `4cbdfc0` was not in the repository: the identification sweep found the value unchanged back to
+`3e13a0d`, but that evidence lived in report prose rather than in the suite. `3e13a0d` is
+`feat(conformance): seed counterparty_binding vectors (#197)`, the commit that created the vector.
+With it pinned, the finding is dated from bytes this repository holds.
+
+Taken with `git cat-file blob 3e13a0d:conformance/vectors.json`, never from a worktree, for the same
+`core.autocrlf` reason as the entries above.
+
+| fixture path | commit | date | upstream blob | bytes | sha256 |
+|---|---|---|---|---|---|
+| `fixtures/asqav/history/3e13a0d/conformance/vectors.json` | `3e13a0d8b18e1543404a4ef9f1bca46b8602ac81` | 2026-05-18 20:35:36 +0000 | `abc752f371c6c6abb3e9054730fd102f0a84eaf6` | 28970 | `c1f87953fd17143780a07ddade63d715a7dab7a328b2080fafb9c791ef87d68a` |
+
+The blob id was confirmed with `git rev-parse 3e13a0d:conformance/vectors.json` against the upstream
+clone before the file was written, and `git rev-parse HEAD:<path>` returns the same id after the
+commit, so this pin is checkable upstream without digesting anything. 20 vectors at this commit,
+against 21 from `4cbdfc0` onward.
+
+**What the bytes say.** At `3e13a0d` the three-key digest of
+`counterparty_binding_envelope_byte_equality.input` is
+`0d6c88a16e96fd3429be13e44dc957062f77d417dc0c3ea28e4fa496230de2a9` and the `envelope_hash` published
+in `counterparty_binding_happy_path` decodes to the same value. **The literal was correct when it was
+first written.** `payload.previousReceiptHash` is the `sha256:`-prefixed genesis seed, the member
+`#416` later changed. A member-by-member diff of the envelope at `3e13a0d` against `4cbdfc0` is empty:
+the envelope did not move between seeding and the last state before `#416`, so the value was correct
+for the whole of its pinned life until that commit.
+
+This changes what M6 is. Not a value that never matched anything and had to be searched for — a
+derived literal that was right on the day it was written, stayed right for 78 days, and went stale at
+one commit that edited its input and did not recompute it. The defect has a date: `ee8a3e7`,
+2026-08-04 21:03:12 +0200.
+
+**Same `.gitattributes` flaw, same harmlessness, recorded a third time.** `git check-attr text eol`
+reports `text: set, eol: lf` for this file too. It is LF-only (`grep -c $'\r'` returns 0) and its
+staged blob was verified to carry the upstream blob id and the sha256 above.
+
+**What would turn this pin red.** `test/acta.test.ts` asserts the sha256 before digesting, and a
+control mutates one byte of these bytes in the test's own copy and requires `0d6c88a1…` to stop being
+reachable. Exercised the other way before the commit: one byte of this fixture was changed on disk,
+five of the block's tests failed — the byte pin, the "correct when first written" pair, the genesis
+seed assertion, the `4cbdfc0` test (which also asserts the empty diff against this commit), and this
+commit's own control — and the file was restored from the blob.
