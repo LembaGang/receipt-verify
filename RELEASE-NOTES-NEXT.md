@@ -134,3 +134,4 @@ does not pretend to.
 
 Provenance: CC insight-adapter-v3 report, 2026-09-03, T2.2.
 (report dated for its scheduled day; the run and the commits are 2026-09-02 — see fixtures/provenance.md, correction of 2026-09-02)
+fixtures/provenance.md now carries a corrections: front-matter block (append-only, keyed to section headings); introduced 2026-09-02 for the schema-v3 section date.

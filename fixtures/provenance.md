@@ -1,4 +1,19 @@
+---
+corrections:
+  - id: C-2026-09-02-1
+    section: "Appended 2026-09-03 — Insight's repaired package (schema v3) and the second registry pin"
+    field: "section date"
+    stated: "2026-09-03"
+    actual: "2026-09-02"
+    evidence: "commits 7506c18 (2026-09-02T12:17:39Z) and ff1639e (2026-09-02T12:20:23Z); the section's own table records the registry retrieval at 2026-09-02T11:54:27Z"
+    cause: "the handoff and report files were named for the day the work was scheduled (CC_HANDOFF_2026-09-03_insight-adapter-v3-addendum.md, CC_REPORT_2026-09-03_insight-adapter-v3.md); the date was copied from the filename"
+    corrected_on: "2026-09-02"
+    corrected_in: "2e63fb6 (appended paragraph 'Correction 2026-09-02.' under the section) and this entry"
+    original_text_edited: false
+---
 # Fixture provenance
+
+**Corrections.** The YAML front matter at the top of this file lists every retraction of a statement made in it, keyed to the exact text of the section heading it corrects. Original text is never edited: a correction is an appended paragraph under the section plus an entry in the front matter, so a reader parsing headings can also read the retraction. Entries are append-only and carry the commit that made them.
 
 Every fixture in this directory (and `refs/`) is a byte-exact snapshot of a
 remote or external source. The test suite reads these snapshots and never
