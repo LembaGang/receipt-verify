@@ -520,7 +520,18 @@ npm test                            # 260 tests, no network
 RECEIPT_VERIFY_LIVE=1 npm test      # adds the live-JWKS and live exit-contract tests
 npm run snapshot                    # re-pull remote fixtures + rewrite provenance
 npm run fixtures                    # regenerate throwaway-signed fixtures
+npm run walk                        # recompute every declared digest in the pinned corpora
 ```
+
+`npm run walk` reads `walker/scopes.json` -- the byte scope each pinned corpus's
+own document names for each of its declared digests, with the document and line
+range -- recomputes every one of them from the corpus bytes, and writes
+`walker/report.json`. It exits 1 when a declared digest disagrees with its
+recomputation, which it currently does: the Asqav corpus carries a stale
+`counterparty_binding.envelope_hash` in five vectors (FINDINGS-rerun M6).
+Every `jcs(...)` construction is canonicalized twice, by this repository's JCS
+and independently by the Python one in `tools/asqav_envelope_hash.py`, and no
+digest is compared until both agree on the bytes.
 
 `src/adapters/*.ts` implement one `Adapter` interface (`detect?`, `verify`), so
 adding a third format is a new file plus a registry line in `src/detect.ts`.

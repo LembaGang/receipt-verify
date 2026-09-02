@@ -184,3 +184,10 @@ same envelope before SDK commit `ee8a3e7` (PR #416) changed
 the derived literal — reproduced from the blob bytes of all eight commits
 touching `conformance/vectors.json`, still stale in five vectors at the upstream
 tip `f67ecad`, and the 37-candidate sweep is superseded by the identification.
+
+Added `npm run walk`: a digest walker that recomputes every declared digest in
+the pinned corpora under the scope its own document names (`walker/scopes.json`,
+253 registered fields with document line ranges, 416 unregistered and listed),
+cross-checking two independent JCS serialisers before any comparison. It finds
+M6 unaided and exits 1 — the check that would have caught the stale literal on
+the day the corpus was pinned rather than 29 days later.
