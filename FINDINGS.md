@@ -777,6 +777,25 @@ M5, but §5.3 lines 944-948 and §4 lines 651-653.
 block or the rerun should implement `-08` §5.7 as it stands. `-09` did not exist as bytes on 2026-09-02
 and no verdict is rendered on it here.
 
+**Appended 2026-09-02, 14:47Z — M6 is identified, and the record should not leave it standing as an open negative.**
+The published `counterparty_binding.envelope_hash` `0d6c88a1…`
+(`DWyIoW6W/TQpvhPkTclXBi931BfcDD6ijk+kliMN4qk=`) is the three-key digest of the
+peer envelope as it stood before SDK commit `ee8a3e7` (PR #416, 2026-08-04
+21:03:12 +0200), which changed one member — `payload.previousReceiptHash`, from
+`"sha256:" + "0"×64` to the bare 64-zero hex — and recomputed each vector's
+`canonical` and `sha256` but not that derived literal. It was reproduced from
+the blob bytes of all eight commits touching `conformance/vectors.json`
+(`0d6c88a1…` at `3e13a0d`, `7f0b869`, `4cbdfc0`; `e89bf2fe…` at `ee8a3e7` and
+after) and confirmed directly by restoring the seed member on the pinned
+`05c1c49` envelope, which yields `0d6c88a1…` exactly; the stale value is echoed
+in five vectors and is still at the upstream tip `f67ecad` (2026-09-02 11:52:03
++0200, `grep -c DWyIoW6W conformance/vectors.json` = 13). The 37-candidate sweep
+recorded in `FINDINGS-rerun-2026-09-02.md` is therefore superseded by
+identification rather than extended — it searched only byte strings derived from
+the envelope as published at `05c1c49`, and the pre-`#416` envelope was outside
+that set.
+
+
 ### A6. A machine path is not a provenance source
 :233-234 cites `C:\Users\User\agent-action-receipt-vectors` as the source of
 `fixtures/evidence-action/`. No reader can resolve that path. The corpus is a private snapshot whose

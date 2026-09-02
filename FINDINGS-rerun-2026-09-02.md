@@ -475,6 +475,69 @@ drafted 2 September, is that the `-09` vector be re-checked against the `-09`
 sentence before it posts. M6 is the same class of gap one revision earlier: a
 published value that no test compares to anything.
 
+**Appended 2026-09-02, 14:47Z — identified. The value is the same three-key digest, one SDK commit earlier.**
+`0d6c88a16e96fd3429be13e44dc957062f77d417dc0c3ea28e4fa496230de2a9`
+(`DWyIoW6W/TQpvhPkTclXBi931BfcDD6ijk+kliMN4qk=`) is
+SHA-256(JCS({`payload`, `signature`, `anchors`})) — scope (a), the three-key
+object — over this vector's own envelope **as it stood before SDK commit
+`ee8a3e7`**, *"docs(corpus): align CLI docs, genesis pins, JCS dialect, and
+expected shapes with shipped semantics (criterion 436)"* (PR #416, 2026-08-04
+21:03:12 +0200). One member changed there: `payload.previousReceiptHash`, from
+the seed form `"sha256:" + "0"×64` (71 characters, three-key canonical 894
+bytes) to the bare form `"0"×64` (64 characters, 887 bytes). `ee8a3e7`
+recomputed each vector's own `canonical` and `sha256` against the new member but
+not the derived `envelope_hash`, which is carried as a literal in the
+`counterparty_binding` blocks and is asserted by no test. So the published value
+is not wrong in the sense of never having been right: it is a correct scope-(a)
+digest of a superseded envelope. **The 37-candidate sweep recorded above is
+superseded by this identification** — the sweep digested only byte strings
+derived from the envelope *as published at* `05c1c49`, and the pre-`#416`
+envelope was outside the set it searched, which is why it returned a true
+negative on a value that was reachable all along.
+
+Reproduced 2026-09-02 from blob bytes, never the worktree
+(`git cat-file blob <commit>:conformance/vectors.json`), digested with
+`tools/asqav_envelope_hash.py`. `git log -- conformance/vectors.json` returns
+**eight** commits, not the seven the handoff directing this append states; all
+eight are listed, and the three oldest predate the vector's existence.
+
+| commit | date | `payload.previousReceiptHash` | three-key SHA-256 |
+|---|---|---|---|
+| `4e4caf4` | 2026-09-01 22:35:10 +0200 | bare 64-zero | `e89bf2fe64bd7dab3a606ea265ca14f88f4d161ec0485062a7facee4902c655f` |
+| `ee8a3e7` | 2026-08-04 21:03:12 +0200 | bare 64-zero | `e89bf2fe64bd7dab3a606ea265ca14f88f4d161ec0485062a7facee4902c655f` |
+| `4cbdfc0` | 2026-07-28 12:53:24 +0200 | `sha256:` + 64-zero | `0d6c88a16e96fd3429be13e44dc957062f77d417dc0c3ea28e4fa496230de2a9` |
+| `7f0b869` | 2026-07-04 09:55:45 +0200 | `sha256:` + 64-zero | `0d6c88a16e96fd3429be13e44dc957062f77d417dc0c3ea28e4fa496230de2a9` |
+| `3e13a0d` | 2026-05-18 20:35:36 +0000 | `sha256:` + 64-zero | `0d6c88a16e96fd3429be13e44dc957062f77d417dc0c3ea28e4fa496230de2a9` |
+| `048d010` | 2026-05-16 19:12:44 +0000 | — | vector absent (14 vectors) |
+| `e67eea5` | 2026-04-22 22:57:48 +0200 | — | vector absent (8 vectors) |
+| `0afe7d8` | 2026-04-22 22:54:47 +0200 | — | vector absent (3 vectors) |
+
+The value first appears with the vector itself at `3e13a0d` (#197) and changes
+only at `ee8a3e7`. **Direct check**, independent of the history: take the
+`05c1c49` envelope this rerun pins — its blob is byte-identical to
+`fixtures/asqav/05c1c49/conformance/vectors.json`, both sha256
+`2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a`, 31790 bytes
+— set `payload.previousReceiptHash` back to `"sha256:" + "0"×64` and change
+nothing else; the three-key digest is `0d6c88a1…`, the published value, exactly.
+As published at `05c1c49` the same object digests to `e89bf2fe…`, the vector's
+own `sha256` field.
+
+The stale literal is echoed in five vectors — `counterparty_binding_happy_path`,
+`_envelope_byte_equality`, `_base64url_tolerance`, `_opaque_receipt_ref`,
+`_transport_label_non_trust` — and is **still present upstream**: `git fetch`
+2026-09-02 14:4xZ puts the tip at `f67ecad0fefd947ea9b99ae638e4637add256cd1`,
+*"fix(verifier): resolve the signing key by the signed thumbprint, then kid,
+agent bind, issuer (#448)"*, 2026-09-02 11:52:03 +0200, where
+`grep -c DWyIoW6W conformance/vectors.json` returns **13** — the same 13 lines
+across the same five vectors as at `05c1c49`. Twenty-nine days after `#416` the
+derived value has not been recomputed.
+
+This narrows M6 without softening it. What no test asserts is unchanged; the
+finding now names the mechanism (a derived literal not recomputed when its input
+moved) rather than only the symptom, and the fix is a recomputation of one
+value, not an investigation.
+
+
 ### M7. Eight of sixteen `asqav-*` vectors carry no anchor and expect `verified`, against §5.4's own MUST
 
 `-08` §5.4, lines 1052 and 1074–1075:

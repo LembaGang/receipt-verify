@@ -177,3 +177,10 @@ of that decline rule. No Asqav adapter was built; every `asqav.*` check remains
 the format.
 
 Provenance: CC marques-08-rerun report, 2026-09-02.
+
+M6 identified after that report: `0d6c88a1…` is the same three-key digest of the
+same envelope before SDK commit `ee8a3e7` (PR #416) changed
+`payload.previousReceiptHash` off the `sha256:` genesis seed without recomputing
+the derived literal — reproduced from the blob bytes of all eight commits
+touching `conformance/vectors.json`, still stale in five vectors at the upstream
+tip `f67ecad`, and the 37-candidate sweep is superseded by the identification.
