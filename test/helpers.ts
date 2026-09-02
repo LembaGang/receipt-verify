@@ -52,6 +52,25 @@ export const INSIGHT_V3_NOW = 1788342810;
  */
 export const ASQAV_05C1C49 = join(FIX, "asqav", "05c1c49");
 
+/**
+ * The domain-repaired package (schema v4, 44 signed fields), the 15:45Z registry
+ * pin that publishes ExecutionReceipt v4, and the production sample pinned at
+ * 15:46Z. The sample is kept both as the endpoint returned it -- wrapper and all,
+ * because the wrapper is where the SYNTHETIC label lives and that is the point of
+ * H8 -- and as the bare attestation object the adapter reads.
+ */
+export const INSIGHT_PKG_V4 = join(INSIGHT, "execution-receipt-bytes-2026-09-02-v4.json");
+export const INSIGHT_REGISTRY_1545 = join(dirname(FIX), "refs", "insight-oracle-keys-2026-09-02T1545Z.json");
+export const INSIGHT_SAMPLE_1546 = join(INSIGHT, "execution-sample-2026-09-02T1546Z.json");
+export const INSIGHT_SAMPLE_ATTESTATION_1546 = join(INSIGHT, "execution-sample-attestation-2026-09-02T1546Z.json");
+
+/**
+ * Eleven seconds after the v4 receipt's `executedAt` (1788361979), inside its
+ * 600-second window. Pinned for the same reason the other two instants are: the
+ * window had closed long before these bytes were read.
+ */
+export const INSIGHT_V4_NOW = 1788361990;
+
 export const ACTA = join(FIX, "acta");
 export const ACTA_SYNTH = join(ACTA, "synthetic");
 export const ACTA_PUB = join(ACTA, "published");

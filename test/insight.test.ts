@@ -36,9 +36,14 @@ import {
   INSIGHT_NOW,
   INSIGHT_PKG,
   INSIGHT_PKG_V3,
+  INSIGHT_PKG_V4,
   INSIGHT_REGISTRY,
   INSIGHT_REGISTRY_1154,
+  INSIGHT_REGISTRY_1545,
+  INSIGHT_SAMPLE_1546,
+  INSIGHT_SAMPLE_ATTESTATION_1546,
   INSIGHT_V3_NOW,
+  INSIGHT_V4_NOW,
   read,
   sha256Hex,
 } from "./helpers.js";
@@ -68,11 +73,27 @@ const v3base: VerifyOptions = {
   allowUnregisteredSigner: true,
 };
 
+const V4_BYTES = read(INSIGHT_PKG_V4);
+const REG_1545_BYTES = read(INSIGHT_REGISTRY_1545);
+const SAMPLE_BYTES = read(INSIGHT_SAMPLE_1546);
+const v4 = JSON.parse(V4_BYTES.toString("utf8")) as Record<string, any>;
+const sampleAtt = JSON.parse(read(INSIGHT_SAMPLE_ATTESTATION_1546).toString("utf8")) as Record<string, any>;
+
+/** The domain-repaired package against the 15:45Z registry pin. */
+const v4base: VerifyOptions = {
+  registry: REG_1545_BYTES,
+  registryOrigin: "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+  now: INSIGHT_V4_NOW,
+  allowUnregisteredSigner: true,
+};
+
 const bytesOf = (v: unknown): Buffer => Buffer.from(JSON.stringify(v), "utf8");
 const verify = (v: unknown, extra: Partial<VerifyOptions> = {}): Promise<VerifyResult> =>
   insightAdapter.verify(bytesOf(v), { ...base, ...extra });
 const verifyV3 = (v: unknown, extra: Partial<VerifyOptions> = {}): Promise<VerifyResult> =>
   insightAdapter.verify(bytesOf(v), { ...v3base, ...extra });
+const verifyV4 = (v: unknown, extra: Partial<VerifyOptions> = {}): Promise<VerifyResult> =>
+  insightAdapter.verify(bytesOf(v), { ...v4base, ...extra });
 /** A deep copy, so a mutation in one test cannot leak into another. */
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
@@ -441,7 +462,12 @@ describe("insight — detection", () => {
     expect(detect(Buffer.from('{"payload":{},"signature":{"alg":"EdDSA","kid":"k","sig":"00"}}', "utf8"))).toBe(false);
     // An attester without an eip712 block is not enough to claim.
     expect(detect(Buffer.from(`{"attester":"${ATTESTER}","signature":"0x${"1".repeat(130)}","data":{}}`, "utf8"))).toBe(false);
-    expect(insightFixtures.length).toBe(2);
+    // A guard on the corpus, not on the adapter: it fails whenever a file is
+    // added under fixtures/insight/, so a new fixture cannot quietly widen what
+    // "claims ZERO of the other fixtures" above is measured against. Was 2 (the
+    // found and repaired packages); round 3 added the v4 package, the production
+    // sample as the endpoint returned it, and the attestation extracted from it.
+    expect(insightFixtures.length).toBe(5);
   });
 });
 
@@ -917,5 +943,225 @@ describe("insight v3 — --rpc corroborates without overwriting", () => {
     } finally {
       globalThis.fetch = real;
     }
+  });
+});
+
+// --------------------------------------------------------------------------
+// Round 3: the domain-repaired package (schema v4) and the production sample.
+//
+// v4 moved `environment` from a declared-but-unsigned domain member into the
+// signed message as the 44th field. That closes H7 for the package: in v3 the
+// label sat beside the signature, and a label beside a signature is not a
+// property of it. These tests assert the closure the way it has to be asserted
+// -- by changing the field and showing the recovered address moves -- rather
+// than by observing that the field is present.
+//
+// The domain is back to the three standard members, so the adapter's H7 rule
+// takes branch (a) and no `domain_extra_fields_*` annotation appears. That
+// absence is asserted too: it is the difference between v3 and v4.
+// --------------------------------------------------------------------------
+
+describe("insight v4 — snapshot integrity", () => {
+  it("the v4 package is the 44,472 bytes the round-3 note recomputed", () => {
+    expect(sha256Hex(V4_BYTES)).toBe("fb403a85d6bd9af3ce7243cdae0b753a53a4a5cad816efde3a3ffc247bd98781");
+    expect(V4_BYTES.length).toBe(44472);
+  });
+
+  it("the 15:45Z registry pin is the single fetch the note recorded", () => {
+    expect(sha256Hex(REG_1545_BYTES)).toBe("76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2");
+    expect(REG_1545_BYTES.length).toBe(17019);
+  });
+
+  it("the production sample is the 15:46Z pin, wrapper included", () => {
+    expect(sha256Hex(SAMPLE_BYTES)).toBe("a3698a472f72578170266f6be42ae4c46ad6c7bd4e1f9f58309be5bfd9c6263a");
+    expect(SAMPLE_BYTES.length).toBe(4675);
+  });
+
+  it("the extracted attestation is the wrapper's own attestation object, unaltered", () => {
+    // The pin the adapter reads is a copy. Assert it against the wrapper it came
+    // from, so the copy cannot drift from the bytes that were fetched.
+    const wrapped = JSON.parse(SAMPLE_BYTES.toString("utf8")) as Record<string, any>;
+    expect(sampleAtt).toEqual(wrapped["data"]["attestation"]);
+  });
+});
+
+describe("insight v4 — the signed field count and the domain", () => {
+  it("signs 44 fields and carries only the three standard domain members", () => {
+    expect(Object.keys(v4.receipt.data)).toHaveLength(44);
+    expect(v4.receipt.schemaVersion).toBe(4);
+    expect(Object.keys(v4.receipt.eip712.domain).sort()).toEqual(["chainId", "name", "version"]);
+    expect(extraDomainKeys(v4.receipt.eip712.domain)).toEqual([]);
+  });
+
+  it("recovers the attester, and the uid is the digest", () => {
+    const d = eip712Digest(v4.receipt.eip712.domain, v4.receipt.eip712.primaryType, v4.receipt.eip712.types, v4.receipt.data);
+    expect(`0x${Buffer.from(d).toString("hex")}`).toBe("0x54a787220982817ae482d01e07c90144c69cf02b6d011c4567ecbd28bfeff9b4");
+    expect(v4.receipt.uid).toBe("0x54a787220982817ae482d01e07c90144c69cf02b6d011c4567ecbd28bfeff9b4");
+    expect(recoverAddress(d, v4.receipt.signature)?.toLowerCase()).toBe(ATTESTER.toLowerCase());
+  });
+
+  it("H7 CLOSED: changing environment moves the recovered address off the attester", () => {
+    // v3's environment could be edited without touching the signature, because
+    // it was a domain member the standard encoder never reads. In v4 it is
+    // signed, and this is what "signed" means.
+    const t = clone(v4.receipt);
+    expect(t.data.environment).toBe("nonproduction");
+    t.data.environment = "production";
+    const d = eip712Digest(t.eip712.domain, t.eip712.primaryType, t.eip712.types, t.data);
+    expect(recoverAddress(d, t.signature)?.toLowerCase()).toBe("0x0e29cb8e6f430160466c996a8c5008f1d5838876");
+  });
+
+  it("H7 CLOSED: stripping environment back to the 43-field v3 layout moves it too", () => {
+    // The other direction: a verifier that read v4 bytes under the v3 type would
+    // not merely mis-report the environment, it would fail to recover the signer.
+    const t = clone(v4.receipt);
+    delete t.data.environment;
+    t.eip712.types[t.eip712.primaryType] = t.eip712.types[t.eip712.primaryType].filter(
+      (f: { name: string }) => f.name !== "environment",
+    );
+    expect(t.eip712.types[t.eip712.primaryType]).toHaveLength(43);
+    const d = eip712Digest(t.eip712.domain, t.eip712.primaryType, t.eip712.types, t.data);
+    expect(recoverAddress(d, t.signature)?.toLowerCase()).toBe("0x1056ca3b619a7e908d565d9b7c84a981544532a0");
+  });
+});
+
+describe("insight v4 — through the adapter", () => {
+  // The WHOLE package, not the bare receipt: the attribution, the deltas and
+  // the precedence line are recomputed from the gates, the raw logs and the
+  // request preimage the package carries beside the receipt. Handed the receipt
+  // alone the adapter still returns VALID and still checks the signature -- it
+  // simply has nothing to recompute those annotations from. This is the same
+  // input the CLI run in CC_REPORT_2026-09-02_insight-v4.md was given.
+  it("is VALID, reports the registry schema as v4, and raises no domain-extras annotation", async () => {
+    const r = await verifyV4(v4);
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["registry_schema"]).toBe("match (v4)");
+    // The v3 run raised these. Their absence is the repair.
+    expect(Object.keys(r.annotations ?? {}).filter((k) => k.includes("domain_extra_fields"))).toEqual([]);
+  });
+
+  it("binds both gates, so no gate is reported unbound", async () => {
+    const r = await verifyV4(v4);
+    expect(Object.keys(r.annotations ?? {}).filter((k) => k.includes("unbound_gates"))).toEqual([]);
+    expect(r.annotations?.["pre_trade_uids_hash"]).toContain("keccak(src || dst)");
+  });
+
+  it("reports the two flows and the realised price as exact strings", async () => {
+    // Strings, not numbers: 31.383501031910547456 does not survive a double, and
+    // the whole point of the attribution is that it is exact.
+    const r = await verifyV4(v4);
+    expect(r.annotations?.["counterparty_net_bought"]).toBe("+74681.028186");
+    expect(r.annotations?.["counterparty_net_sold"]).toBe("-31.383501031910547456");
+    expect(r.annotations?.["counterparty_realised_price"]).toBe("2379.627056588262663338");
+    expect(String(r.annotations?.["attribution"])).toContain("clean_single_pool_fill");
+  });
+
+  it("reports the realised price destination-received over source-paid, in USDC per WETH", async () => {
+    // Round 2 reported this pair in the other orientation. The receipt's own
+    // asset order is WETH -> USDC, so the realised rate is USDC per WETH, and
+    // 2379.6 is that number; the reciprocal would be 0.00042.
+    const r = await verifyV4(v4);
+    const price = Number(r.annotations?.["counterparty_realised_price"]);
+    expect(price).toBeGreaterThan(2000);
+    expect(price).toBeLessThan(3000);
+    // The asset ids are CAIP-19, not symbols: WETH and USDC by contract address.
+    expect(String(v4.receipt.data.sourceAssetId).toLowerCase()).toContain("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
+    expect(String(v4.receipt.data.destinationAssetId).toLowerCase()).toContain("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
+  });
+
+  it("recomputes the quote from the gates and both deltas agree at -8.478830 bps", async () => {
+    const r = await verifyV4(v4);
+    expect(String(r.annotations?.["quoted_price_recomputed_from_gates"])).toContain("238164641414");
+    expect(r.annotations?.["delta_bps_unrounded"]).toBe("-8.478830");
+    expect(r.annotations?.["delta_bps_signed_integers"]).toBe("-8.478830");
+  });
+
+  it("reports precedence after_block and recomputes the status as UNDETERMINED", async () => {
+    const r = await verifyV4(v4);
+    expect(String(r.annotations?.["precedence"])).toContain("after_block");
+    expect(String(r.annotations?.["priceExecutionStatus_recomputed"])).toContain("UNDETERMINED");
+    expect(r.annotations?.["measured_fields_hash"]).toContain("match");
+  });
+});
+
+describe("insight v4 — the registry at 15:45Z", () => {
+  const reg = JSON.parse(REG_1545_BYTES.toString("utf8")) as Record<string, any>;
+
+  it("publishes ExecutionReceipt at schemaVersion 4 and retires V3 for signing", () => {
+    expect(reg.schemas.ExecutionReceipt.schemaVersion).toBe(4);
+    expect(reg.schemas.ExecutionReceiptV3.schemaVersion).toBe(3);
+    expect(reg.schemas.ExecutionReceiptV3.retiredForSigning).toBe(true);
+  });
+
+  it("carries the rotated production key the sample signs with", () => {
+    const kids = (reg.public_keys as Array<Record<string, any>>).map((k) => k.key_id);
+    expect(kids).toContain("insight-oracle-safety-v2-202609");
+    const rotated = (reg.public_keys as Array<Record<string, any>>).find((k) => k.key_id === "insight-oracle-safety-v2-202609");
+    expect(rotated?.public_key).toBe("0x6506F789Edd43338A416f59822A63F309f97E8ce");
+    expect(rotated?.revoked).toBe(false);
+  });
+});
+
+describe("insight v4 — the production sample", () => {
+  it("is VALID with the key resolved from the registry, no unregistered-signer flag", async () => {
+    // The package needs --allow-unregistered-signer because it is signed with an
+    // anvil test key. The sample does not: this is the production flow.
+    const r = await insightAdapter.verify(bytesOf(sampleAtt), {
+      registry: REG_1545_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      now: INSIGHT_V4_NOW,
+    });
+    expect(r.verdict).toBe("VALID");
+    expect(r.resolvedKey?.kid).toBe("insight-oracle-safety-v2-202609");
+    expect(r.annotations?.["registry_schema"]).toBe("match (v4)");
+    expect(String(r.annotations?.["identity"])).toContain("signer_in_registry");
+  });
+
+  it("recovers the production key, and the uid is the digest", () => {
+    const d = eip712Digest(sampleAtt.eip712.domain, sampleAtt.eip712.primaryType, sampleAtt.eip712.types, sampleAtt.data);
+    expect(`0x${Buffer.from(d).toString("hex")}`).toBe(sampleAtt.uid);
+    expect(recoverAddress(d, sampleAtt.signature)?.toLowerCase()).toBe("0x6506f789edd43338a416f59822a63f309f97e8ce");
+  });
+
+  it("H7 CLOSED in production: flipping environment moves the recovered address", () => {
+    const t = clone(sampleAtt);
+    expect(t.data.environment).toBe("production");
+    t.data.environment = "nonproduction";
+    const d = eip712Digest(t.eip712.domain, t.eip712.primaryType, t.eip712.types, t.data);
+    expect(recoverAddress(d, t.signature)?.toLowerCase()).toBe("0x3d52d61ba941e900242e4bfab9cd7da732d0258a");
+  });
+
+  it("H8: the 44 signed fields carry no mark that this is a sample, while the wrapper does", () => {
+    // The finding, as a test. A party that strips the wrapper holds a genuine
+    // production-key signature over a settlement that never happened, and a
+    // verifier checking signature + registry -- which is what the test above
+    // does, and it returns VALID -- has nothing to object to.
+    //
+    // Recorded here rather than as an adapter annotation because the adapter
+    // cannot see the wrapper: handed the whole sample document it returns
+    // UNVERIFIABLE/format_unrecognized, asserted below. So `synthetic_label_
+    // unsigned` cannot be an annotation without teaching the adapter a wrapper
+    // shape no document defines, and inventing that shape would be worse than
+    // recording the gap.
+    const signedBytes = JSON.stringify(sampleAtt.data);
+    for (const mark of ["SYNTHETIC", "synthetic", "Synthetic", "sample", "Sample", "demo", "DEMO"]) {
+      expect(signedBytes).not.toContain(mark);
+    }
+    const wrapper = JSON.parse(SAMPLE_BYTES.toString("utf8")) as Record<string, any>;
+    expect(JSON.stringify(wrapper.data.note)).toContain("SYNTHETIC");
+    expect(wrapper.data.isSample).toBe(true);
+    // And the signed fields assert the opposite of "sample" where it counts.
+    expect(sampleAtt.data.environment).toBe("production");
+    expect(sampleAtt.data.fillStatus).toBe("FULL");
+    expect(sampleAtt.data.slippageSatisfied).toBe(true);
+  });
+
+  it("H8 control: the adapter cannot see the wrapper, which is why this is test-only", async () => {
+    const r = await insightAdapter.verify(SAMPLE_BYTES, {
+      registry: REG_1545_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      now: INSIGHT_V4_NOW,
+    });
+    expect(r.verdict).not.toBe("VALID");
   });
 });
