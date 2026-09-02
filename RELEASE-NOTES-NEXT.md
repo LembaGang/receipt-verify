@@ -135,3 +135,45 @@ does not pretend to.
 Provenance: CC insight-adapter-v3 report, 2026-09-03, T2.2.
 (report dated for its scheduled day; the run and the commits are 2026-09-02 — see fixtures/provenance.md, correction of 2026-09-02)
 fixtures/provenance.md now carries a corrections: front-matter block (append-only, keyed to section headings); introduced 2026-09-02 for the schema-v3 section date.
+
+### 11. The `-08` rerun: four errata closed, three new findings against the profile and its vectors
+
+`FINDINGS-rerun-2026-09-02.md` re-verifies the four July errata sent to the
+author of `draft-marques-asqav-compliance-receipts` against `-08` (31 Aug 2026,
+sha256 `ee3ca5d7…`, 392,828 B, 7,840 lines — pin printed and equal) and against
+the author's own conformance vectors at `asqav-sdk@05c1c49`, the commit `-08`
+pins in its own reference section. **All four errata are RESOLVED as sent**, each
+by the route the erratum proposed, and `FINDINGS.md` E3/E4/E5/E8 are re-graded
+with `-07` and `-08` line numbers. The chain-digest resolution is corroborated
+byte-for-byte in the shipped vectors: `asqav-03-chain-link` reproduces under the
+payload-member scope and `acta-02-chain-link` under the whole-receipt scope, and
+neither reproduces under the other.
+
+Three findings opened, and only the first was known before this run:
+
+- **M5** — `-08` states the `counterparty_binding.envelope_hash` scope two ways
+  (§4 line 657 "envelope-minus-anchors" vs §5.7 lines 1351–1369 "three-key
+  object"; the change list agrees with §5.7). Author-acknowledged 2026-09-02
+  13:07:20Z: §4 is the intent, `-09` corrects §5.7 and adds an explicit `scope`
+  member. Graded here as `-08` reads, on his instruction.
+- **M6** — the `envelope_hash` value published in the vectors matches **neither**
+  scope, and disagrees with its own vector's `sha256` field though that vector's
+  description says one is the base64 of the other. 37 candidate byte strings were
+  tried. Nothing in the SDK's suite asserts that value against anything.
+- **M7** — eight of sixteen `asqav-*` vectors carry no anchor and declare
+  `"outcome": "verified"`, against §5.4's "Verifiers MUST reject Compliance
+  Receipts that lack at least one valid anchor".
+
+Shipped with it: `tools/asqav_envelope_hash.py`, a self-contained RFC 8785
+implementation (no third-party package; the rerun was allowed no endpoint but the
+git clone) that reproduces 21/21 of the SDK's own published canonical strings —
+the control that makes its disagreement on `envelope_hash` mean something. Five
+tests in `test/acta.test.ts` pin the adapter's refusal of the `-08` envelope
+against the author's vector bytes, including a control asserting the refusal
+fires on the `anchors` key and not on an incidental parse failure. The
+`acta.receipt/0` coverage manifest now names the `-08` pin by digest as the source
+of that decline rule. No Asqav adapter was built; every `asqav.*` check remains
+`not_implemented` and the tool reports `format_unrecognized` rather than naming
+the format.
+
+Provenance: CC marques-08-rerun report, 2026-09-02.

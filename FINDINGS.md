@@ -746,6 +746,37 @@ three-key object {payload, signature, anchors}" and states "B MUST NOT… strip 
 -08's change list (line ~7251) agrees with §5.7. Two implementations reading §4 and §5.7 compute
 different bytes for `envelope_hash`. Same class as E3 against -07. Resolution belongs to -08's author.
 
+**Appended 2026-09-02, 14:2xZ — the author's ruling on the two-scope observation above, and the -08 rerun.**
+The observation in the previous paragraph was sent to the draft author on 2026-09-02 at 09:00:13Z
+(Gmail `1a06158f54654490`). He ruled at 13:07:20Z the same day (Gmail `1a0623b358cfaf65`, bytes held by
+the founder; this repository holds the ruling only as reported in `CC_HANDOFF_2026-09-02_marques-08-rerun.md`,
+not as bytes it read). The ruling: **§4 carries the intent** — the counterparty binding is over the
+envelope minus anchors — **and §5.7 is the stray**, because anchors are OPTIONAL and can change after
+issuance when an OpenTimestamps proof upgrades, so a digest over them would pin a passing state of the
+peer's receipt rather than its signed bytes. `-09` corrects §5.7, adds an explicit `scope` member to
+`counterparty_binding`, and re-pins the vector that hashed the three-key object. For the `-08` rerun he
+directed, quoted from the handoff: **"for the -08 rerun, grade the text as 5.7 reads today"**, text and
+implementation scored separately.
+
+**This side guessed the other way, and the record says so.** The paragraph above reads "I think 5.7 and
+the change list carry your intent and section 4's sentence is the stray" — the reverse of the ruling.
+The reasoning offered here (anchors are part of what the peer emitted) is not the reasoning that
+settles it; mutability after issuance is, and it was not considered. The observation that the two
+sections disagree was correct; the guess at which one was the stray was wrong.
+
+The rerun ran 2026-09-02 and is `FINDINGS-rerun-2026-09-02.md`. It records that all four July errata are
+RESOLVED as sent (E3, E4, E5, E8), that the chain-scope resolution is corroborated byte-for-byte in the
+author's own vectors at `asqav-sdk@05c1c49`, and it opens M5 (this disagreement), M6 (the published
+`counterparty_binding.envelope_hash` matches neither candidate scope, nor its own vector's `sha256`) and
+M7 (eight of sixteen `asqav-*` vectors carry no anchor yet expect `verified`, against §5.4's "Verifiers
+MUST reject"). It also corrects which sentence of §4 carries E3's resolution: not "No digest in this
+profile covers the envelope including the signature member" (line 658-659), which is itself one side of
+M5, but §5.3 lines 944-948 and §4 lines 651-653.
+
+**Forward note.** `-09` moves the `envelope_hash` scope to envelope-minus-anchors. Nobody reading this
+block or the rerun should implement `-08` §5.7 as it stands. `-09` did not exist as bytes on 2026-09-02
+and no verdict is rendered on it here.
+
 ### A6. A machine path is not a provenance source
 :233-234 cites `C:\Users\User\agent-action-receipt-vectors` as the source of
 `fixtures/evidence-action/`. No reader can resolve that path. The corpus is a private snapshot whose
