@@ -187,8 +187,10 @@ const MUTATED = {
 // ---- composed profile ----------------------------------------------------
 // General JWS serialization, two issuers over one canonical payload. These
 // exist because every published composed fixture stalls at §4.3 step 2 (its
-// mapping document is not published anywhere), so the AND_PRESENT composition
-// and the multi-signer path would otherwise never be exercised end-to-end.
+// mapping document was not resolvable from the receipt by any path a stranger
+// could follow, as of 2026-07-25; see FINDINGS.md A1), so the AND_PRESENT
+// composition and the multi-signer path would otherwise never be exercised
+// end-to-end.
 function composedPayload(overrides = {}) {
   return {
     receipt_version: "0.3.0-composed",

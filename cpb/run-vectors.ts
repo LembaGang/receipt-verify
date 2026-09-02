@@ -235,6 +235,14 @@ export function runJcsNKats(vectorsDir: string): Row[] {
 /**
  * SUPPLEMENTARY — the two vectors the OBSERVED run marks N/A.
  *
+ * 2026-09-02: the sentence below ("carry no canonicalization input") is the
+ * claim withdrawn in the 2026-08-31 correction: kat-20 and kat-21 DO carry a
+ * canonicalizable payload, at cited_artifact.payload, together with an
+ * exclusion set, a declared representation and a pinned derived identifier,
+ * and both reproduce under this construction. The runtime label at the
+ * bottom of this file was corrected on 2026-08-31; this comment was not.
+ * The paragraph below is left as written so the record shows what changed.
+ *
  * kat-20 and kat-21 carry no canonicalization input because they are not
  * canonicalization cases: each pins an identifier STRING that must be rejected
  * on its grammar, which is §5.1's rule and one this implementation does have.

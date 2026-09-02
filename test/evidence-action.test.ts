@@ -28,7 +28,7 @@ const EXPECTED_VERDICT: Record<string, "VALID" | "INVALID" | "UNVERIFIABLE"> = {
   UNRESOLVED: "UNVERIFIABLE",
 };
 
-const vectorPath = (rel: string) => join(EVIDENCE, rel.replace(/\//g, "\\"));
+const vectorPath = (rel: string) => join(EVIDENCE, ...rel.split("/"));
 
 describe("evidence.action — snapshot integrity", () => {
   it("has all six vectors", () => {
