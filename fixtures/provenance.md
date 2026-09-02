@@ -465,3 +465,63 @@ reachable. Exercised the other way before the commit: one byte of this fixture w
 five of the block's tests failed — the byte pin, the "correct when first written" pair, the genesis
 seed assertion, the `4cbdfc0` test (which also asserts the empty diff against this commit), and this
 commit's own control — and the file was restored from the blob.
+
+## Appended 2026-09-02 — the digest walker's scope registry, and what it covers
+
+`walker/scopes.json` records, for every pinned corpus, the byte scope its own governing document names
+for each declared digest, with the document and line range. `tools/walk-digests.ts` recomputes each one
+and reports `match` / `mismatch` / `unregistered` / `serializer_disagreement`. This section records what
+the registry covers on the day it was written, so a later coverage change is visible as a diff rather
+than as an unremarked drift.
+
+Counts from the run on this commit's corpora:
+
+| corpus | registered | declared | inferred | match | mismatch | unregistered |
+|---|---|---|---|---|---|---|
+| `acta/published` | 1 | 1 | 0 | 1 | 0 | 10 |
+| `acta/synthetic` | 5 | 3 | 2 | 5 | 0 | 70 |
+| `asqav/05c1c49` | 54 | 12 | 42 | 44 | **10** | 44 |
+| `asqav/history/3e13a0d` | 50 | 10 | 40 | 50 | 0 | 22 |
+| `asqav/history/4cbdfc0` | 52 | 10 | 42 | 52 | 0 | 28 |
+| `asqav/history/ee8a3e7` | 52 | 10 | 42 | 42 | **10** | 28 |
+| `cpb` | 0 | 0 | 0 | 0 | 0 | 0 |
+| `delivery` | 21 | 0 | 21 | 21 | 0 | 70 |
+| `evidence-action` | 7 | 7 | 0 | 7 | 0 | 49 |
+| `insight` | 0 | 0 | 0 | 0 | 0 | 0 |
+| `verification-state` | 11 | 11 | 0 | 11 | 0 | 95 |
+| **total** | **253** | **64** | **189** | **233** | **20** | **416** |
+
+`declared` means the cited document states that scope for that field; `inferred` means the document is
+silent and the scope was taken from the corpus's own self-description, with that source named in the
+registry entry. The 20 mismatches are M6 and nothing else: the stale `envelope_hash` in the five
+`counterparty_binding_*` vectors, at the two commits where it is stale and at neither of the two where
+it is not.
+
+**416 unregistered fields is the honest number, and it is the interesting one.** They are counted and
+listed by JSON pointer in `walker/report.json`, never silently skipped, and they do not fail the run —
+a field whose scope no document states is not a field this repository can call wrong. The bulk of them:
+
+- **`insight/`** — every digest-shaped value is a `0x`-prefixed EVM word (keccak-256 transaction, gate
+  request and reason-code hashes). Not SHA-256 over JCS, no governing document in `refs/`, preimages
+  not in the corpus.
+- **`evidence-action/` and `delivery/` `request_commitment`** (34 fields) — `SPEC.md` defines it as
+  `"sha256:" + hex(SHA-256(JCS(request_descriptor(event))))` at lines 35 and 111 but **never defines
+  `request_descriptor`**. The construction is unexecutable as written. Recorded as a documentation gap,
+  not worked around.
+- **`verification-state/` `v_gate_mapping_hash`** — content-addressed by design; recomputable only for
+  the mapping documents the corpus holds. 11 resolve against `fixtures/verification-state/mappings/`
+  and are checked; the rest name documents this repository does not hold, so there is nothing to
+  disagree with.
+- **`cpb/`** — TypeScript sources and Markdown result tables, no JSON corpus data; its 64-hex tokens sit
+  in prose and code, not in fields addressable by JSON pointer.
+- The remainder are payload members (`policy_digest`, `action_ref`, `payload_digest`, `args_hash`,
+  `claim_hash`, `skill_hash`, key thumbprints) whose preimages are not in the corpus.
+
+**Two registry errors were found by the corpora and corrected before this was committed**, both mine
+and neither a corpus defect. First, the envelope-resolution rule initially followed only
+`originating_envelope_ref` and so missed two of M6's five vectors; the corpus's own description strings
+name the originating envelope for the other two, and the rule now says so explicitly and marks that
+step `inferred`. Second, the genesis construction hardcoded `v: "evidence.action/0"` while `delivery/`
+declares `evidence.action/1`, which produced four false mismatches; the construction now uses the
+record's own `v` token, which is what `SPEC.md` §6 means by the format version, and all four match. The
+digest scopes themselves were never changed to make a result go away.

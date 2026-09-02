@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "written": "2026-09-02",
+  "purpose": "Every declared digest in the pinned corpora, with the byte scope the corpus's own governing document names for it. Read by tools/walk-digests.ts, which recomputes each one and reports match / mismatch / unregistered / serializer_disagreement.",
+  "how_to_read": {
+    "rules": "Each rule names ONE scope, taken from a document by line number, and the walker expands it deterministically over the corpus bytes. A rule is one entry per (corpus, field kind) rather than per concrete field: the concrete fields are an enumeration of bytes, the scope is the claim, and only the claim can be reviewed against a document. Every concrete field a rule expands to appears as its own row in walker/report.json.",
+    "unregistered": "Concrete digest-shaped fields no rule covers, listed by JSON pointer with the reason. They are counted and printed, never silently skipped, and they do not fail the run: an unrecomputable field is not a wrong field.",
+    "status": {
+      "declared": "the cited document states this scope for this field",
+      "inferred": "the document is silent; the scope is taken from the corpus's own self-description (a header member, a description string, or the fixture generator) and that source is named"
+    }
+  },
+  "documents": {
+    "marques-08": {
+      "path": "refs/draft-marques-asqav-compliance-receipts-08.txt",
+      "sha256": "ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0"
+    },
+    "farley-02": {
+      "path": "refs/draft-farley-acta-signed-receipts-02.txt",
+      "sha256": "14501a68a86e3cc403f56967b19b732316ad3cc2fc011ce3d14aec9c1de68bd2"
+    },
+    "krausz-01": {
+      "path": "refs/draft-krausz-verification-state-01.txt",
+      "sha256": "22c5ce262bdf4e63ef538a308e7a8455e93c4143b9e1726b7b64720615d516db"
+    },
+    "evidence-action-spec": {
+      "path": "fixtures/evidence-action/SPEC.md",
+      "sha256": "5bd90aefeb8a48ef15894d8d6b59c1d5a41671895afedd5511e656f34a3a79f3",
+      "note": "Corpus-internal normative document, not an IETF draft in refs/. Cited as the owning document for the evidence.action/0 format because it is the only document that states these scopes."
+    }
+  },
+  "corpora": [
+    {
+      "id": "asqav/05c1c49",
+      "dir": "fixtures/asqav/05c1c49",
+      "rules": [
+        {
+          "id": "asqav.vector.canonical",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_vector_canonical",
+          "field": "/vectors/{i}/canonical",
+          "construction": "jcs(/vectors/{i}/input)",
+          "encoding": "utf8",
+          "status": "inferred",
+          "scope_source": "the corpus's own header members: version 2, canonicalization \"RFC 8785 JCS\", hash_algorithm \"SHA-256\". marques-08 cites this corpus but does not define its schema.",
+          "document": null,
+          "lines": null
+        },
+        {
+          "id": "asqav.vector.sha256",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_vector_sha256",
+          "field": "/vectors/{i}/sha256",
+          "construction": "sha256(utf8(/vectors/{i}/canonical))",
+          "encoding": "hex",
+          "status": "inferred",
+          "scope_source": "same corpus header; each vector's own description states the digest is over its canonical form.",
+          "document": null,
+          "lines": null
+        },
+        {
+          "id": "asqav.counterparty.envelope_hash",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_envelope_hash",
+          "field": "/vectors/{i}/counterparty_binding/{envelope_hash,envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url} and the same members under /vectors/{i}/input/counterparty_binding",
+          "construction": "sha256(jcs({payload,signature,anchors} of this vector's originating envelope))",
+          "which_envelope": {
+            "1": "the vector named by originating_envelope_ref, when the vector carries one (happy_path, base64url_tolerance)",
+            "2": "the vector's own input, when that input is itself the three-key envelope (envelope_byte_equality, whose description reads 'A's full signed envelope ({payload, signature, anchors})')",
+            "3": "otherwise the file's single declared originating envelope -- the vector whose input is a three-key object and whose description declares it to be A's full signed envelope and says 'Base64 of the digest is the value B places in counterparty_binding.envelope_hash on the happy-path vector'. This covers opaque_receipt_ref and transport_label_non_trust, which vary one non-envelope member and name no envelope of their own.",
+            "4": "otherwise unregistered: no envelope can be resolved, and guessing one would manufacture a result",
+            "status_note": "Resolution steps 1 and 2 are read from the corpus's structure; step 3 is read from the corpus's description strings and is therefore inferred, not declared. The DIGEST SCOPE is declared throughout (marques-08 s5.7); only the identity of A's envelope is resolved this way."
+          },
+          "encoding": "per field suffix: envelope_hash and envelope_hash_base64 base64, envelope_hash_hex hex, envelope_hash_base64url base64url",
+          "status": "declared",
+          "document": "marques-08",
+          "lines": "1351-1369",
+          "quote": "Base64-encoded SHA-256 digest computed over A's entire serialized signed envelope, including A's signature bytes ... the envelope is the three-key object {\"payload\", \"signature\", \"anchors\"} ... B MUST NOT re-canonicalize A's payload or strip the anchors array before computing the digest.",
+          "alt_scope": {
+            "construction": "sha256(jcs({payload,signature} -- anchors stripped))",
+            "document": "marques-08",
+            "lines": "657",
+            "graded": false,
+            "note": "The -09 forward scope. Recomputed and reported for information; never used to decide match/mismatch, because -08 as it reads today is the graded text (the author's instruction of 2026-09-02 13:07:20Z, recorded in FINDINGS.md A5)."
+          }
+        },
+        {
+          "id": "asqav.chain.asqav.payload",
+          "file": "verifier/conformance-vectors/asqav-03-chain-link/receipt.json",
+          "kind": "chain_prev_payload",
+          "field": "/payload/previousReceiptHash",
+          "construction": "sha256(jcs(/payload of verifier/conformance-vectors/asqav-03-chain-link/predecessor.json))",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "marques-08",
+          "lines": "944-948",
+          "quote": "populated with the lowercase hex encoding of SHA-256(JCS(R)), where R is the payload member of the immediately prior receipt ... the digest covers R, NOT the envelope object"
+        },
+        {
+          "id": "asqav.chain.acta.whole",
+          "file": "verifier/conformance-vectors/acta-02-chain-link/receipt.json",
+          "kind": "chain_prev_whole",
+          "field": "/payload/previousReceiptHash",
+          "construction": "sha256(jcs(whole receipt object of verifier/conformance-vectors/acta-02-chain-link/predecessor.json, signature included))",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "farley-02",
+          "lines": "930-936",
+          "quote": "The previousReceiptHash field MUST be the lowercase hex encoding of SHA-256(JCS(receipt)), where receipt is the entire signed receipt object including the signature field."
+        }
+      ]
+    },
+    {
+      "id": "asqav/history/3e13a0d",
+      "dir": "fixtures/asqav/history/3e13a0d",
+      "inherits_rules_from": "asqav/05c1c49",
+      "only_files": ["conformance/vectors.json"]
+    },
+    {
+      "id": "asqav/history/4cbdfc0",
+      "dir": "fixtures/asqav/history/4cbdfc0",
+      "inherits_rules_from": "asqav/05c1c49",
+      "only_files": ["conformance/vectors.json"]
+    },
+    {
+      "id": "asqav/history/ee8a3e7",
+      "dir": "fixtures/asqav/history/ee8a3e7",
+      "inherits_rules_from": "asqav/05c1c49",
+      "only_files": ["conformance/vectors.json"]
+    },
+    {
+      "id": "acta/published",
+      "dir": "fixtures/acta/published",
+      "rules": [
+        {
+          "id": "acta.published.canonical_sha256",
+          "file": "*/expected-output.json",
+          "kind": "acta_canonical_sha256",
+          "field": "/receipt_canonical_sha256",
+          "construction": "sha256(jcs(sibling receipt.json minus the signature member))",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "farley-02",
+          "lines": "916-928",
+          "quote": "5.6. Signature Scope ... signature field removed prior to canonicalization. The signature field MUST be removed from the object, not set to null or to the empty string."
+        }
+      ]
+    },
+    {
+      "id": "acta/synthetic",
+      "dir": "fixtures/acta/synthetic",
+      "rules": [
+        {
+          "id": "acta.synthetic.chain.farley",
+          "file": "chain-farley/*.receipt.json",
+          "kind": "chain_prev_whole",
+          "field": "/payload/previousReceiptHash",
+          "construction": "sha256(jcs(whole predecessor receipt object, signature included))",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "farley-02",
+          "lines": "930-936"
+        },
+        {
+          "id": "acta.synthetic.chain.mixed-alg",
+          "file": "chain-mixed-alg/*.receipt.json",
+          "kind": "chain_prev_whole",
+          "field": "/payload/previousReceiptHash",
+          "construction": "sha256(jcs(whole predecessor receipt object, signature included))",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "farley-02",
+          "lines": "930-936"
+        },
+        {
+          "id": "acta.synthetic.chain.marques-payload",
+          "file": "chain-marques-payload/*.receipt.json",
+          "kind": "chain_prev_payload",
+          "field": "/payload/previousReceiptHash",
+          "construction": "sha256(jcs(/payload of the predecessor receipt))",
+          "encoding": "hex",
+          "status": "inferred",
+          "scope_source": "These are OUR fixtures, generated by tools/make-acta-fixtures.mjs, and the directory name declares which scope each chain was built under. The marques payload scope is registered here because that is what the fixture exists to exercise; registering it under farley's whole-receipt scope would manufacture a mismatch the corpus never claimed. FINDINGS.md E2/E3 and test/acta.test.ts record the split.",
+          "document": "marques-08",
+          "lines": "944-948",
+          "note": "Document lines given for the scope itself; the ASSIGNMENT of this scope to this directory is inferred, not declared."
+        },
+        {
+          "id": "acta.synthetic.chain.marques-signing-input",
+          "file": "chain-marques-signing-input/*.receipt.json",
+          "kind": "unregistered_rule",
+          "field": "/payload/previousReceiptHash",
+          "construction": null,
+          "status": "inferred",
+          "scope_source": "Directory name declares a third scope (the signing input) that no document in refs/ defines as a chain-digest scope. Left unrecomputed rather than guessed.",
+          "document": null,
+          "lines": null
+        }
+      ]
+    },
+    {
+      "id": "verification-state",
+      "dir": "fixtures/verification-state",
+      "rules": [
+        {
+          "id": "vstate.mapping_hash",
+          "file": "**/*.json",
+          "kind": "vstate_mapping_hash",
+          "field": "any pointer ending in /v_gate_mapping_hash",
+          "construction": "sha256(raw bytes of the mapping document under fixtures/verification-state/mappings/ whose digest it names)",
+          "encoding": "sha256-prefixed hex (the corpus writes the separator as '-', e.g. sha256-0a78...)",
+          "status": "declared",
+          "document": "krausz-01",
+          "lines": "810-819",
+          "quote": "Receipts MUST bind to a content-addressed mapping via the v_gate_mapping_hash field (SHA-256) ... Verifier implementations MUST verify the SHA-256 digest of the fetched mapping document against v_gate_mapping_hash before use",
+          "note": "Content-addressed by construction: a value is recomputable here only when the document it addresses is in the corpus. Values naming a document this repository does not hold are reported unregistered with that reason, never as a mismatch -- there is nothing to disagree with."
+        }
+      ]
+    },
+    {
+      "id": "evidence-action",
+      "dir": "fixtures/evidence-action",
+      "rules": [
+        {
+          "id": "ea.genesis_prev_hash",
+          "file": "vectors/*/chain.jsonl",
+          "kind": "ea_genesis_prev",
+          "field": "#1/prev_hash (the seq=0 record)",
+          "construction": "\"sha256:\" + hex(sha256(jcs({v: <the record's own v token>, session_id: <the record's session_id>, marker: \"genesis\"})))",
+          "encoding": "sha256-prefixed hex",
+          "status": "declared",
+          "document": "evidence-action-spec",
+          "lines": "118-127"
+        },
+        {
+          "id": "ea.chain_prev_hash",
+          "file": "vectors/*/chain.jsonl",
+          "kind": "ea_chain_prev",
+          "field": "#N/prev_hash for N > 1",
+          "construction": "\"sha256:\" + hex(sha256(jcs(record N-1 minus its sig member)))",
+          "encoding": "sha256-prefixed hex",
+          "status": "declared",
+          "document": "evidence-action-spec",
+          "lines": "33-34, 109"
+        },
+        {
+          "id": "ea.checkpoint_last_entry_hash",
+          "file": "vectors/*/chain.jsonl",
+          "kind": "ea_checkpoint_last",
+          "field": "/last_entry_hash on a checkpoint record",
+          "construction": "\"sha256:\" + hex(sha256(jcs(the last non-checkpoint record minus its sig member)))",
+          "encoding": "sha256-prefixed hex",
+          "status": "declared",
+          "document": "evidence-action-spec",
+          "lines": "86, 109"
+        }
+      ]
+    },
+    {
+      "id": "delivery",
+      "dir": "fixtures/delivery",
+      "rules": [
+        {
+          "id": "delivery.genesis_prev_hash",
+          "file": "*/chain.jsonl",
+          "kind": "ea_genesis_prev",
+          "field": "#1/prev_hash (the seq=0 record)",
+          "construction": "\"sha256:\" + hex(sha256(jcs({v: <the record's own v token>, session_id: <the record's session_id>, marker: \"genesis\"})))",
+          "encoding": "sha256-prefixed hex",
+          "status": "inferred",
+          "scope_source": "These chains declare v=\"evidence.action/1\", one version on from the evidence.action/0 corpus SPEC.md governs. No delivery-specific document states a scope, so the /0 constructions are applied with the record's OWN v token substituted into the genesis object, which is what the SPEC's genesis form means by the format version. Marked inferred because applying a /0 document to a /1 corpus is an inference, not a declaration.",
+          "document": "evidence-action-spec",
+          "lines": "118-127"
+        },
+        {
+          "id": "delivery.chain_prev_hash",
+          "file": "*/chain.jsonl",
+          "kind": "ea_chain_prev",
+          "field": "#N/prev_hash for N > 1",
+          "construction": "\"sha256:\" + hex(sha256(jcs(record N-1 minus its sig member)))",
+          "encoding": "sha256-prefixed hex",
+          "status": "inferred",
+          "scope_source": "same v token as evidence-action",
+          "document": "evidence-action-spec",
+          "lines": "33-34, 109"
+        },
+        {
+          "id": "delivery.checkpoint_last_entry_hash",
+          "file": "*/chain.jsonl",
+          "kind": "ea_checkpoint_last",
+          "field": "/last_entry_hash on a checkpoint record",
+          "construction": "\"sha256:\" + hex(sha256(jcs(the last non-checkpoint record minus its sig member)))",
+          "encoding": "sha256-prefixed hex",
+          "status": "inferred",
+          "scope_source": "same v token as evidence-action",
+          "document": "evidence-action-spec",
+          "lines": "86, 109"
+        }
+      ]
+    },
+    {
+      "id": "insight",
+      "dir": "fixtures/insight",
+      "rules": [],
+      "corpus_note": "Every digest-shaped value in this corpus is a 0x-prefixed 32-byte EVM word (keccak-256 transaction hashes, gate request hashes, reason-code hashes) produced by on-chain contracts and by Insight's own gate service. No document in refs/ governs them, the preimages are not in the corpus, and they are not SHA-256-over-JCS at all. All are unregistered."
+    },
+    {
+      "id": "cpb",
+      "dir": "cpb",
+      "rules": [],
+      "corpus_note": "cpb/ holds TypeScript sources and Markdown result tables, no JSON corpus data. Its digest-shaped tokens are 64-hex strings inside prose and code, not fields of a document the walker can address by JSON pointer. Counted as non-field tokens in the report, not registered."
+    }
+  ]
+}
