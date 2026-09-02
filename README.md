@@ -512,6 +512,24 @@ the point, and it is why the key proves nothing about anyone. Regenerate with
 
 ---
 
+## Verifying the history
+
+Every commit here is SSH-signed. `SIGNING_KEYS` (repository root) is an
+ssh `allowed_signers` file carrying the one public signing key, fingerprint
+`SHA256:KFZr0BiXIrvl/hsri0vzciGsj+suWiBqHYBwdnnyJXg` (check it with
+`ssh-keygen -lf SIGNING_KEYS`), and `sh tools/verify-history.sh` verifies every
+commit in the history against it, printing one line each and exiting non-zero on
+the first bad or unsigned commit. `git verify-commit HEAD` works too, once you
+run `git config gpg.ssh.allowedSignersFile SIGNING_KEYS` — the script calls
+`ssh-keygen -Y verify` directly so it needs no such configuration, which is what
+makes it usable in a fresh clone and in CI.
+
+If you were sent a bundle of this repository and want to check it yourself, that
+command is the whole of it: no key material to obtain, nothing to trust but the
+fingerprint above.
+
+---
+
 ## Development
 
 ```bash
