@@ -38,9 +38,17 @@ export interface VerifyResult {
   format: string;
   resolvedKey?: ResolvedKey;
   /**
-   * Information carried by the receipt that is NOT this tool's decision.
-   * Notably `receipt_gate` — the gate value the issuer recorded (act/halt).
-   * Reported so a caller can see it; never used to pick the verdict.
+   * State read out of the receipt that is NOT this tool's decision. Two kinds
+   * live here, and the difference matters when reading one:
+   *
+   *  - CARRIED — a value the issuer wrote into the signed bytes. `receipt_gate`
+   *    is the gate value the issuer recorded (act/halt).
+   *  - RECOMPUTED — a value derived from those same signed bytes by the format's
+   *    own rules. `delivery` (proven | unproven | none) is the x402 pairing of a
+   *    payment reference against an output commitment.
+   *
+   * Both are reported so a caller can see them. Neither is ever used to pick the
+   * verdict, and neither is reflected in the exit code.
    */
   annotations?: Record<string, string | number | boolean>;
   /**

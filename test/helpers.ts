@@ -12,6 +12,7 @@ export const SYNTH = join(VSTATE, "synthetic");
 export const COMPOSED = join(VSTATE, "spec-examples", "v0.3-composed");
 export const MAPPINGS = join(VSTATE, "mappings");
 export const THROWAWAY_JWKS = join(FIX, "keys", "test-throwaway-ed25519.jwks.json");
+export const DELIVERY = join(FIX, "delivery");
 
 export const ACTA = join(FIX, "acta");
 export const ACTA_SYNTH = join(ACTA, "synthetic");

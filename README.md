@@ -33,6 +33,64 @@ material. Every option is listed under [Usage](#usage), and commands runnable
 against this repository's own fixtures are under
 [Three-command demo](#three-command-demo).
 
+## Try it in 30 seconds
+
+No clone, no build, no local fixtures — a published receipt, a live published
+JWKS, and one verdict. Needs only Node 20+.
+
+```bash
+# Windows PowerShell 5.1 aliases `curl` to Invoke-WebRequest — use pwsh or bash.
+curl -sO https://raw.githubusercontent.com/LembaGang/chirindo/ba181f25056c9863b8d449f9aa743921082818ae/examples/observe-only-agent/sample-chain/sample.jsonl
+curl -so jwks.json https://headlessoracle.com/.well-known/jwks.json
+npx -y @headlessoracle/receipt-verify sample.jsonl --jwks jwks.json
+```
+
+```
+VALID — 1 record(s), chain intact, all signatures verified, session jwks-demo-00000000-0000-0000-0000-000000000001
+format: evidence.action/0
+reason: verified
+verified under key ed25519/nQgjxdLXI3wJ (thumbprint wtAZI2K-eYTci4gj56MRgMr9HQkbXUKnrqhF6J9JEWU) resolved from jwks.json
+```
+
+Exit code `0`. Nothing here is this repository's own material: the receipt is
+signed by [chirindo](https://github.com/LembaGang/chirindo) and the key resolves
+from a JWKS served on the public internet.
+
+Now break it. Change **one byte** of the receipt — the recorded decision `allow`
+becomes `bllow` — and verify again:
+
+```bash
+node -e "const fs=require('fs');fs.writeFileSync('tampered.jsonl',fs.readFileSync('sample.jsonl','utf8').replace('allow','bllow'))"
+npx -y @headlessoracle/receipt-verify tampered.jsonl --jwks jwks.json
+```
+
+```
+INVALID — key-binding: entry 0: signature invalid
+format: evidence.action/0
+reason: signature_invalid
+checked against resolved key ed25519/nQgjxdLXI3wJ (thumbprint wtAZI2K-eYTci4gj56MRgMr9HQkbXUKnrqhF6J9JEWU) resolved from jwks.json
+stopped at: chain_verification
+not evaluated (not_reached): result_translation, jwks_uri_policy
+```
+
+Exit code `1`. Note the last two lines: the run stopped at `chain_verification`,
+so `result_translation` and `jwks_uri_policy` were never evaluated and the tool
+says so rather than letting a refusal imply they passed. That is the
+[coverage block](#coverage-what-a-verdict-does-not-say), and it is printed on
+every result — including `VALID` ones.
+
+The receipt URL is pinned to a commit, so the bytes it returns cannot move under
+the pasted output — they are sha256
+`e5932dd16952bbf39e0d42992c39fb5466c588f073af22b3352f379b14681208`. The JWKS is
+deliberately *not* pinned — it is fetched live, which is what makes this a real
+key resolution rather than a replayed one. Key `ed25519/nQgjxdLXI3wJ` stays
+resolvable across rotations under chirindo's add-and-retain invariant
+(`docs/JWKS-OPS.md`): a key that has signed a receipt is never removed.
+
+`VALID` here says this receipt is internally consistent and binds to that key.
+It says nothing about the issuer, and it is not a gate decision — see
+[The tri-state contract](#the-tri-state-contract).
+
 ---
 
 ## The tri-state contract
@@ -73,6 +131,82 @@ prose and may be reworded between releases.
 
 `resolved_key` is always present and is `null` exactly when the verdict is
 `UNVERIFIABLE` — one field to test, never a probe for absence.
+
+### x402 delivery state
+
+For `evidence.action/*`, a VALID result carries the delivery state in
+`annotations`, recomputed from the same signed bytes the signature check
+covered — the presence of `x402_payment_ref` on a record, paired with whether
+that record's event commits to a `result_hash`:
+
+```json
+"annotations": { "delivery": "unproven", "delivery_reason": "no_output_commitment", "delivery_entry": 0 }
+```
+
+| `delivery` | Meaning |
+|---|---|
+| `proven` | A payment reference and an output commitment are both sealed in the bytes. |
+| `unproven` | A payment was referenced and no output was committed to. `delivery_reason` and `delivery_entry` name which record and why. |
+| `none` | No payment claim. An ordinary receipt. |
+
+`delivery` is always present on VALID — `none` is emitted, not omitted, so a
+caller reads one field rather than distinguishing absent-from-none. It appears
+**only** on VALID: a delivery claim inside bytes that failed their own integrity
+check is not evidence of a delivery.
+
+> **`proven` is an attestation of COMMITMENT, not of correctness.** It proves the
+> operator committed, in bytes it cannot alter, to a payment reference and to the
+> hash of an output. It does not prove the output was correct, useful, or what
+> the consumer actually received — that needs receiver-side signing.
+
+**By default the exit code does not encode delivery.** `VALID` with
+`delivery: "unproven"` exits **0**, because this tool's status answers *"did the
+receipt verify"*, and it did. An agent reading only the status would treat a
+settled-but-nothing-delivered receipt as fine, so either branch on the
+`delivery` field — or ask for the gate:
+
+#### `--require-delivery`
+
+Opt-in, off by default. With it, **only `delivery: "proven"` exits 0**:
+
+| `delivery` | Default | `--require-delivery` |
+|---|---|---|
+| `proven` | 0 | 0 |
+| `unproven` | 0 | **1** |
+| `none` | 0 | **1** |
+| *(format has no delivery concept)* | 0 | **1** |
+
+```console
+$ receipt-verify chain.jsonl --jwks jwks.json --require-delivery
+VALID — 1 record(s), chain intact, all signatures verified, session …
+annotation: delivery=unproven (recomputed from the signed bytes; never moves the verdict — --require-delivery is gating the EXIT CODE on it)
+delivery gate: NOT SATISFIED (delivery_unproven, delivery=unproven) — --require-delivery forces exit 1; the receipt itself is still VALID
+$ echo $?
+1
+```
+
+**The flag moves the exit code and never the verdict.** A receipt that verified
+is `VALID` whatever policy the caller applied to it; calling it `INVALID` would
+be a false statement about the bytes. So `--require-delivery` is the one case
+where `verdict: "VALID"` can carry `exit_code: 1`, and `--json` says so
+explicitly rather than leaving an agent to parse prose:
+
+```json
+"delivery_gate": { "required": true, "observed": "unproven", "satisfied": false, "reason": "delivery_unproven" },
+"exit_code": 1
+```
+
+`delivery_gate` is `null` when the flag is not passed — one field to read either
+way. `reason` is a closed vocabulary: `delivery_unproven`, `no_payment_claim`,
+`no_delivery_state`.
+
+**`none` fails the gate**, and this is a deliberate divergence from Chirindo,
+whose CLI exits 0 on `none` because its flag is the inverse
+(`--allow-unproven-delivery`, strict by default). A caller who passes
+`--require-delivery` is asserting *"I paid for this; show me something was
+delivered"* — and a receipt that never claimed a payment has not shown that.
+Answering 0 there would be the fail-open the flag exists to remove. Verifying an
+ordinary non-payment receipt? Don't pass the flag.
 
 ### Coverage: what a verdict does *not* say
 
@@ -382,8 +516,8 @@ the point, and it is why the key proves nothing about anyone. Regenerate with
 
 ```bash
 npm run typecheck
-npm test                            # 253 tests, no network
-RECEIPT_VERIFY_LIVE=1 npm test      # adds the live-JWKS integration test
+npm test                            # 260 tests, no network
+RECEIPT_VERIFY_LIVE=1 npm test      # adds the live-JWKS and live exit-contract tests
 npm run snapshot                    # re-pull remote fixtures + rewrite provenance
 npm run fixtures                    # regenerate throwaway-signed fixtures
 ```

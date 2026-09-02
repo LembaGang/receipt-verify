@@ -1,93 +1,58 @@
-# Next release — open items
+# Release notes — next version
 
-Items accepted for a future release but deliberately not in `0.1.0`. Each entry
-states the problem, why it matters, and the fix direction. Entries are removed
-when shipped, not amended.
+Working notes for changes queued against the next release. Entries are removed
+when shipped and folded into the version's release notes. Numbers are stable
+IDs, not an ordering — gaps mean an item shipped or moved, never that it was
+renumbered.
 
----
+## 0.1.2
 
-## 0.1.1
+### 1. The verdict does not identify the verifier that produced it
 
-### 1. The `--json` verdict carries no verifier version
+A verdict archived today and read in a year states VALID without stating
+VALID-according-to-what. Two verdicts from different builds of this tool are
+indistinguishable on paper even where the builds disagree. The verdict (text
+and `--json`) should carry the package name and version, read from
+`package.json` at build time, not hardcoded.
 
-**Problem.** A verdict object identifies its *schema*
-(`"schema": "receipt-verify/verdict/0"`) but not the build that produced it.
-There is no field an agent can read to learn which version of this tool
-computed the result.
+Provenance: RELEASE-NOTES 0.1.0 review, 2026-08-10.
 
-**Why it matters.** `coverage.checks_not_evaluated` is build-dependent by
-design — it is the field that tells a consumer what a `VALID` verdict does
-*not* cover, and its contents change as checks move from `not_implemented` to
-`implemented`. Two verdicts, both `VALID`, both `schema/0`, one produced by
-`0.1.0` and one by a later build that implements `mldsa65_signature`, are
-**not the same claim**. Today an agent archiving verdicts has no way to tell
-them apart after the fact, and the schema version does not help: the schema is
-stable precisely while the coverage set moves underneath it.
+### 2. Publishing is not structurally bound to building and testing
 
-This is a fail-open property in an otherwise fail-closed tool. Every other
-unknown here resolves to the restricted state; this one silently resolves to
-"assume the coverage set you're holding is current."
+`npm publish` today relies on the operator having run the build and the suite
+first. The 0.1.0 release did this by procedure (the runbook), not by
+structure. A `prepublishOnly` script running `typecheck && build && test`
+makes the gate part of the artifact path — a publish from a stale `dist/` or
+a red suite fails closed instead of shipping.
 
-**Fix direction.** One change, two payoffs:
+Provenance: RELEASE-NOTES 0.1.0 review, 2026-08-10.
 
-1. Derive the version from `package.json` in a single place at build time,
-   replacing the four hand-maintained copies that exist today
-   (`package.json`, `src/cli.ts` USAGE banner, `src/jwks.ts` user-agent,
-   `tools/snapshot.mjs` user-agent). The `0.1.0` preflight caught a drift
-   between them by grep; the next one might not.
-2. Emit that version on the verdict object alongside `schema` — e.g. a
-   `verifier` field — so a `coverage` block is always attributable to the build
-   whose manifest defined it.
+### 4. An empty `--out` directory writes nothing and exits 0
 
-**Compatibility.** Adding a field to the verdict object is additive and does
-not break `schema/0` consumers branching on `verdict`/`reason`. Removing or
-renaming one later would; decide the field name once and treat it as stable.
+`--out` pointed at a directory that does not exist silently skips the write
+path. The run should either create the directory or fail with a named reason;
+silence is the one behaviour a coverage-manifest tool should never exhibit.
 
-**Provenance.** Found during the `0.1.0` release preflight,
-`cc-output/receipt-verify-0.1.0-preflight.md` §10.
+Provenance: RELEASE-NOTES 0.1.0 review, 2026-08-10.
 
----
+### 5. URL receipt input (`receipt-verify <https://…>`)
 
-### 2. `npm publish` can ship a stale or empty `dist/`
+The receipt argument accepts file paths only; a URL is read as a relative
+path and fails with a misleading `ENOENT`. Accepting `https://` receipt
+input makes the try-it block one command instead of three and is the shape
+the probe design assumes. **Ordering constraint (binding): this lands only
+after the exit-code fix (item 3), or the fetch it introduces spreads the
+teardown race to the receipt path on every verdict.** The fix is in 0.1.1;
+the constraint is satisfied — implement against 0.1.1 or later only.
 
-**Problem.** `package.json` declares no `prepack`, `prepare`, or
-`prepublishOnly` script, and `dist/` is gitignored. `npm publish` therefore
-packs whatever happens to be sitting in `dist/` at that instant — it does not
-build, and it does not check that anything is there.
+Provenance: CC zero-friction report, 2026-08-12, Job 1 + Job 4.
 
-**Why it matters.** The failure is silent and it is asymmetric. Publishing from
-a tree whose `dist/` is stale ships a package whose behaviour does not match
-its own source or its own test suite, and nothing in the publish output says
-so. Publishing after a `git clean -xdf`, or from a fresh clone, ships a package
-with **no `dist/` at all** — `"files": ["dist", "NOTICE"]` resolves to just
-`NOTICE`, `bin` points at a file that does not exist, and the first thing a
-consumer sees is a broken binary. In `0.1.0` this was held off by a procedure
-note in the release commands. A procedure that has to be remembered is not a
-control.
+### 6. `snapshot.mjs` exits via `process.exit()` after network I/O
 
-**Fix direction.** Make it structural:
+Same pattern as the fixed CLI defect: `scripts/snapshot.mjs` calls
+`process.exit()` after `fetch()` completes. It is dev-tooling, not the shipped
+binary, and it has not been observed to crash — but it is the identical race
+armed, and the fix is the identical one-line change. Do it when the file is
+next touched; do not ship a release for it alone.
 
-```json
-"prepublishOnly": "npm run build && npm test"
-```
-
-Publish then cannot proceed unless the build succeeds and the suite is green,
-and the `dist/` being packed is the one that build just produced.
-
-**Design notes for whoever implements it.**
-
-- `prepublishOnly` runs on `npm publish` only. It does **not** run on
-  `npm pack`, so a preflight that packs by hand still needs an explicit
-  `npm run build` first — which is what the `0.1.0` preflight did. If the
-  intent is to cover `npm pack` as well, `prepack` is the hook that fires on
-  both; the tradeoff is that `prepack` also fires on `npm install <folder>`
-  and in some CI paths where running the full suite is unwanted.
-- The hook needs devDependencies present at publish time (`tsc`, `vitest`).
-  That is true of a normal maintainer machine and false in a
-  `--omit=dev` environment; if publishing ever moves to CI, the job must
-  install dev deps.
-- Consider pairing it with a guard that fails when `dist/cli.js` is absent
-  after the build, so a silently-empty `outDir` cannot pass either.
-
-**Provenance.** Hazard identified while writing the `0.1.0` publish runbook;
-mitigated procedurally for `0.1.0`, deferred to structural fix here.
+Provenance: CC 0.1.1 build report, 2026-08-12.

@@ -72,6 +72,39 @@ function materialise(bytes: Uint8Array, jwk: { kid?: string }, pem: string): Scr
 }
 
 /**
+ * Project the delivery state out of the result the verifier already returned.
+ *
+ * This reads nothing new. `delivery`, `deliveryEntry` and `deliveryReason` are
+ * fields of Chirindo's own VALID result, recomputed from the same signed bytes
+ * the signature check just covered: the presence of `x402_payment_ref` on a
+ * record, paired with whether that record's event carries a `result_hash`.
+ * Until now this adapter received all three and dropped them, so the delivery
+ * state was reachable only by running Chirindo's CLI directly — which is why
+ * the pinned tool could not report the grade that lives in the bytes it reads.
+ *
+ * Three properties this deliberately holds to:
+ *
+ *  - It appears ONLY on VALID. The other four Chirindo results carry no
+ *    delivery field, and rightly so: a delivery claim inside bytes that failed
+ *    their integrity check is not evidence of anything.
+ *  - `delivery` is ALWAYS present on VALID, "none" included. A caller reads one
+ *    field rather than distinguishing absent-from-none — the same reason
+ *    `coverage.stopped_at` is emitted as null rather than omitted.
+ *  - It does NOT move the verdict or the exit code. VALID with
+ *    `delivery: "unproven"` still exits 0 here, where Chirindo's CLI exits 1.
+ *    That divergence is deliberate and load-bearing — see README — but it means
+ *    an agent gating on delivery MUST branch on this field, not on the status.
+ */
+function deliveryAnnotations(
+  r: Extract<ChirindoResult, { kind: "valid" }>,
+): Record<string, string | number | boolean> {
+  const a: Record<string, string | number | boolean> = { delivery: r.delivery };
+  if (r.deliveryEntry !== undefined) a["delivery_entry"] = r.deliveryEntry;
+  if (r.deliveryReason !== undefined) a["delivery_reason"] = r.deliveryReason;
+  return a;
+}
+
+/**
  * Map Chirindo's result onto the tri-state contract.
  *
  * The dividing line is whether a published key was resolved AND the receipt was
@@ -95,6 +128,7 @@ function mapResult(r: ChirindoResult, key: ResolvedKey): VerifyResult {
         `${r.count} record(s), chain intact, all signatures verified, session ${r.sessionId}` +
           (r.hasCheckpoint ? ", checkpoint verified" : ""),
         key,
+        deliveryAnnotations(r),
       );
     case "tampered": {
       const reason =
