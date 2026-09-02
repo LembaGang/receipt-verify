@@ -97,4 +97,38 @@ Resolve by re-fetching and diffing against this pin before the next package is
 verified; `test/insight.test.ts` asserts the pinned bytes, so a re-pin that
 removes the divergence turns that test red on purpose.
 
-Provenance: CC insight-adapter report, 2026-09-02, T1.2.
+**Resolved 2026-09-02T11:54Z, and the first reading was the right one.** A
+second single fetch (`refs/insight-oracle-keys-2026-09-02T1154Z.json`) publishes
+the same 43 fields under `schemaVersion` **3**, with `ExecutionReceiptV2` (32)
+and `ExecutionReceiptV1` (30) retained beside them and marked
+`retiredForSigning`. So the document had changed without its version moving, and
+the author has since corrected it. Both pins are kept; the assertion is
+re-pointed at the corrected one and the old state is asserted beside it, so the
+regression stays named rather than merely gone.
+
+Provenance: CC insight-adapter report, 2026-09-02, T1.2; CC insight-adapter-v3
+report, 2026-09-03, T1.
+
+### 10. Non-standard EIP-712 domain members, and how the tool reads three schema versions
+
+`src/adapters/insight.ts` now reads an artefact against the registry type for
+its OWN `schemaVersion` rather than against whatever the registry currently
+calls the type, and reports a version the registry marks `retiredForSigning` as
+exactly that. It also handles a domain object carrying a member EIP-712 does not
+admit: both candidate separators are computed and the result says which one the
+signature was made under (`domain_extra_fields_unsigned` /
+`domain_extra_fields_signed`), never crashing on the key and never dropping it
+silently. Insight's 09:53Z receipt declares `environment` in its domain and did
+NOT sign it, so eth-account and ethers both refuse the artefact before any check
+runs — the tool reads it and says so.
+
+What this does NOT close: the encoding used for the second separator (extra
+members appended as `string`, in the domain object's order) has no authority
+behind it. EIP-712 assigns no type to a member it does not admit, so a signer
+who encoded `environment` as `bytes32`, or ahead of `chainId`, would recover
+under neither separator and be reported as a signature failure. The two
+constructions tried are named in the detail so that case is legible, but the
+adapter cannot enumerate every encoding a non-standard domain might use, and it
+does not pretend to.
+
+Provenance: CC insight-adapter-v3 report, 2026-09-03, T2.2.

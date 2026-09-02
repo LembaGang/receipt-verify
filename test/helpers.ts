@@ -19,12 +19,29 @@ export const INSIGHT_PKG = join(INSIGHT, "execution-receipt-bytes-2026-09-02.jso
 export const INSIGHT_REGISTRY = join(dirname(FIX), "refs", "insight-oracle-keys-2026-09-02.json");
 
 /**
+ * The 09:53Z repaired package (schema v3) and the second registry pin, taken at
+ * 11:54Z. Both live beside the 06:08Z package and the 09:09Z pin rather than
+ * replacing them: the tool has to verify all of them and say which is which, so
+ * the superseded bytes stay in the suite.
+ */
+export const INSIGHT_PKG_V3 = join(INSIGHT, "execution-receipt-bytes-2026-09-02-repaired.headless.json");
+export const INSIGHT_REGISTRY_1154 = join(dirname(FIX), "refs", "insight-oracle-keys-2026-09-02T1154Z.json");
+
+/**
  * One second after the package's `executedAt`, so it sits inside the validity
  * window of all three artefacts (the gates close at 1788328169, the receipt at
  * 1788328199). Pinned, because every one of them had already expired by the time
  * the package was read — which is itself asserted, at `validUntil + 1`.
  */
 export const INSIGHT_NOW = 1788327600;
+
+/**
+ * Seven seconds after the repaired package's `executedAt` (1788342803), inside
+ * the window of all three of its artefacts (the gates close at 1788343373, the
+ * receipt at 1788343403). Pinned for the same reason INSIGHT_NOW is: all three
+ * had expired long before the bytes were read.
+ */
+export const INSIGHT_V3_NOW = 1788342810;
 
 export const ACTA = join(FIX, "acta");
 export const ACTA_SYNTH = join(ACTA, "synthetic");

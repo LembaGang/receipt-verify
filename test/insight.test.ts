@@ -25,17 +25,31 @@
 import { describe, expect, it } from "vitest";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { insightAdapter, detect, eip712Digest, findDuplicateKey, recoverAddress, FORMAT } from "../src/adapters/insight.js";
+import { insightAdapter, detect, eip712Digest, extraDomainKeys, findDuplicateKey, recoverAddress, FORMAT } from "../src/adapters/insight.js";
 import { evidenceActionAdapter } from "../src/adapters/evidence-action.js";
 import { verificationStateAdapter } from "../src/adapters/verification-state.js";
 import { actaAdapter } from "../src/adapters/acta.js";
 import { detectFormat } from "../src/detect.js";
 import type { VerifyOptions, VerifyResult } from "../src/types.js";
-import { FIX, INSIGHT_NOW, INSIGHT_PKG, INSIGHT_REGISTRY, read, sha256Hex } from "./helpers.js";
+import {
+  FIX,
+  INSIGHT_NOW,
+  INSIGHT_PKG,
+  INSIGHT_PKG_V3,
+  INSIGHT_REGISTRY,
+  INSIGHT_REGISTRY_1154,
+  INSIGHT_V3_NOW,
+  read,
+  sha256Hex,
+} from "./helpers.js";
 
 const PKG_BYTES = read(INSIGHT_PKG);
 const REG_BYTES = read(INSIGHT_REGISTRY);
 const pkg = JSON.parse(PKG_BYTES.toString("utf8")) as Record<string, any>;
+
+const V3_BYTES = read(INSIGHT_PKG_V3);
+const REG_1154_BYTES = read(INSIGHT_REGISTRY_1154);
+const v3 = JSON.parse(V3_BYTES.toString("utf8")) as Record<string, any>;
 
 const ATTESTER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
@@ -46,9 +60,19 @@ const base: VerifyOptions = {
   allowUnregisteredSigner: true,
 };
 
+/** The repaired package against the 11:54Z registry pin. */
+const v3base: VerifyOptions = {
+  registry: REG_1154_BYTES,
+  registryOrigin: "refs/insight-oracle-keys-2026-09-02T1154Z.json",
+  now: INSIGHT_V3_NOW,
+  allowUnregisteredSigner: true,
+};
+
 const bytesOf = (v: unknown): Buffer => Buffer.from(JSON.stringify(v), "utf8");
 const verify = (v: unknown, extra: Partial<VerifyOptions> = {}): Promise<VerifyResult> =>
   insightAdapter.verify(bytesOf(v), { ...base, ...extra });
+const verifyV3 = (v: unknown, extra: Partial<VerifyOptions> = {}): Promise<VerifyResult> =>
+  insightAdapter.verify(bytesOf(v), { ...v3base, ...extra });
 /** A deep copy, so a mutation in one test cannot leak into another. */
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
@@ -224,17 +248,40 @@ describe("insight — registry schema comparison", () => {
     expect(names).toContain("oracleDataAgeAtExecSeconds");
   });
 
-  // …but the PINNED registry does not publish that type. The verification note's
-  // A8/B6 record the registry's ExecutionReceipt as the same 32 fields; at
-  // 09:09Z it is 43 fields under an unchanged schemaVersion 1. This test asserts
-  // what the bytes in refs/ actually say, so that if the registry is re-pinned
-  // and the divergence is gone, this test goes red and someone reads why.
-  // See fixtures/provenance.md, "Appended 2026-09-02".
-  it("the pinned registry publishes a 43-field ExecutionReceipt, still under schemaVersion 1", () => {
-    const live = JSON.parse(REG_BYTES.toString("utf8")) as any;
+  // The registry pin this assertion is made against has MOVED, and that is the
+  // point of the assertion.
+  //
+  // At 09:09Z (`refs/insight-oracle-keys-2026-09-02.json`, still pinned and
+  // still used by every test above) `ExecutionReceipt` was 43 fields published
+  // under an unchanged `schemaVersion` **1**, with no V1 or V2 entry beside it —
+  // a 43-field v3 type wearing the v1 number, which is a silent breaking change
+  // to a published type. The author has since confirmed that as the regression
+  // and corrected it. At 11:54Z the same 43 fields are published under
+  // `schemaVersion` 3, with `ExecutionReceiptV2` (32) and `ExecutionReceiptV1`
+  // (30) retained beside them and marked `retiredForSigning`.
+  //
+  // The assertion is re-pointed at the corrected pin so it now guards the fixed
+  // state; both pins stay in refs/ so the correction is visible in bytes.
+  // See fixtures/provenance.md, "Appended 2026-09-02" and "Appended 2026-09-03".
+  it("the 11:54Z registry pin publishes the 43-field ExecutionReceipt under schemaVersion 3, with v2 and v1 retired", () => {
+    const live = JSON.parse(REG_1154_BYTES.toString("utf8")) as any;
     const er = live.schemas.ExecutionReceipt;
-    expect(er.schemaVersion).toBe(1);
+    expect(er.schemaVersion).toBe(3);
     expect(er.eip712.types.ExecutionReceipt).toHaveLength(43);
+    expect(er.eip712.domain).toEqual({ name: "Insight Execution", version: "1", chainId: 1, environment: "production" });
+    expect(live.schemas.ExecutionReceiptV2.schemaVersion).toBe(2);
+    expect(live.schemas.ExecutionReceiptV2.retiredForSigning).toBe(true);
+    expect(live.schemas.ExecutionReceiptV2.eip712.types.ExecutionReceipt).toHaveLength(32);
+    expect(live.schemas.ExecutionReceiptV1.schemaVersion).toBe(1);
+    expect(live.schemas.ExecutionReceiptV1.retiredForSigning).toBe(true);
+    expect(live.schemas.ExecutionReceiptV1.eip712.types.ExecutionReceipt).toHaveLength(30);
+
+    // The state this test used to assert, kept so the regression is named and
+    // not merely gone: 43 fields under schemaVersion 1, no retired entries.
+    const before = JSON.parse(REG_BYTES.toString("utf8")) as any;
+    expect(before.schemas.ExecutionReceipt.schemaVersion).toBe(1);
+    expect(before.schemas.ExecutionReceipt.eip712.types.ExecutionReceipt).toHaveLength(43);
+    expect(before.schemas.ExecutionReceiptV2).toBeUndefined();
   });
 
   it("so the receipt is reported as a mismatch against the registry too, and it is not a verdict", async () => {
@@ -394,7 +441,7 @@ describe("insight — detection", () => {
     expect(detect(Buffer.from('{"payload":{},"signature":{"alg":"EdDSA","kid":"k","sig":"00"}}', "utf8"))).toBe(false);
     // An attester without an eip712 block is not enough to claim.
     expect(detect(Buffer.from(`{"attester":"${ATTESTER}","signature":"0x${"1".repeat(130)}","data":{}}`, "utf8"))).toBe(false);
-    expect(insightFixtures.length).toBe(1);
+    expect(insightFixtures.length).toBe(2);
   });
 });
 
@@ -406,5 +453,390 @@ describe("insight — a single attestation, outside its package", () => {
     expect(r.verdict).toBe("VALID");
     expect(r.annotations?.["uid_equals_digest"]).toBe(true);
     expect(String(r.annotations?.["precedence"])).toContain("not_checked");
+  });
+});
+
+// --------------------------------------------------------------------------
+// The repaired package, schema v3 (09:53Z).
+//
+// Same discipline as the block above: every literal here comes from the Lead's
+// second Python recheck (`VERIFICATION_NOTE_2026-09-02_insight-execution-
+// receipt-v3-recheck.md`, eth-account 0.14.0 plus a hand-written EIP-712
+// encoder), and the TypeScript path is the one written from the EIP text in
+// 076a87c. The only new encoding here is the extra-domain-field separator, and
+// it is driven red by a second address rather than merely by "does not recover".
+// --------------------------------------------------------------------------
+
+describe("insight v3 — snapshot integrity", () => {
+  it("the repaired package is the 39,871 bytes the recheck recomputed", () => {
+    expect(V3_BYTES.length).toBe(39871);
+    expect(sha256Hex(V3_BYTES)).toBe("e4a11b4de20a4dfdfdbaee29dadc1f7126b0b36c130bf6ba3c6a7ff5578eb89a");
+  });
+
+  it("the second registry ref is the single fetch of 2026-09-02T11:54Z", () => {
+    expect(REG_1154_BYTES.length).toBe(14854);
+    expect(sha256Hex(REG_1154_BYTES)).toBe("21675e382e6ead969d3b3fb823b3199327283152ab241be27d9c5b7177de23eb");
+  });
+
+  it("the package is schema v3, 43 signed fields, and carries all three layouts", () => {
+    expect(v3["meta"].schemaVersion).toBe(3);
+    expect(v3["meta"].signedFieldCount).toBe(43);
+    expect(v3["receipt"].data.schemaVersion).toBe(3);
+    expect(Object.keys(v3["receipt"].data)).toHaveLength(43);
+    expect(v3["schemas"].v1.signedFieldCount).toBe(30);
+    expect(v3["schemas"].v2.signedFieldCount).toBe(32);
+    expect(v3["schemas"].v3.signedFieldCount).toBe(43);
+  });
+});
+
+describe("insight v3 — independent agreement with the Lead's recheck", () => {
+  const artefacts = [
+    ["sourceGate", v3["preTrade"]["sourceGate"], "0xb60690e018b02ea58e60ac452d9e2b3ccc5c831e69845243e494467e25d07780"],
+    ["destinationGate", v3["preTrade"]["destinationGate"], "0x9f621b333368ceecbc5cee8afa5f594b30b3f4ac3c1a561ff695701555d237c8"],
+    ["receipt", v3["receipt"], "0x47ae79ce7d1360d86f6cd83f06ffa60adf421ea5703255a4eca91f0fa161833b"],
+  ] as const;
+
+  it.each(artefacts)("%s: our EIP-712 digest equals the artefact's uid, and the Lead's value (A1-A3)", (_n, a, expected) => {
+    const d = `0x${Buffer.from(eip712Digest(a.eip712.domain, a.eip712.primaryType, a.eip712.types, a.data)).toString("hex")}`;
+    expect(d).toBe(expected);
+    expect(d.toLowerCase()).toBe(String(a.uid).toLowerCase());
+  });
+
+  it.each(artefacts)("%s: recovery over that digest returns the stated attester", (_n, a) => {
+    const d = eip712Digest(a.eip712.domain, a.eip712.primaryType, a.eip712.types, a.data);
+    expect(recoverAddress(d, a.signature)?.toLowerCase()).toBe(ATTESTER.toLowerCase());
+  });
+
+  // B1 / H7, both ways. The assertion that carries the weight is the second one:
+  // encoding `environment` into the domain does not merely fail to recover the
+  // attester, it recovers ONE SPECIFIC other address. Change the extra-field
+  // encoding — its type, its position, its presence — and that address moves,
+  // so this test goes red for a reason a reader can name.
+  it("the receipt's domain carries `environment`, which EIP-712 does not admit", () => {
+    expect(v3["receipt"].eip712.domain).toEqual({
+      name: "Insight Execution",
+      version: "1",
+      chainId: 1,
+      environment: "nonproduction",
+    });
+    expect(extraDomainKeys(v3["receipt"].eip712.domain)).toEqual(["environment"]);
+    expect(extraDomainKeys(v3["preTrade"]["sourceGate"].eip712.domain)).toEqual([]);
+  });
+
+  it("recovers the attester with the five EIP-712 domain members ONLY", () => {
+    const a = v3["receipt"];
+    const d = eip712Digest(a.eip712.domain, a.eip712.primaryType, a.eip712.types, a.data, false);
+    expect(`0x${Buffer.from(d).toString("hex")}`).toBe(String(a.uid));
+    expect(recoverAddress(d, a.signature)?.toLowerCase()).toBe(ATTESTER.toLowerCase());
+  });
+
+  it("with `environment` encoded as a domain field the digest is 0x8ceaba12… and recovery moves to 0x9647bBCc…", () => {
+    const a = v3["receipt"];
+    const d = eip712Digest(a.eip712.domain, a.eip712.primaryType, a.eip712.types, a.data, true);
+    expect(`0x${Buffer.from(d).toString("hex")}`).toBe("0x8ceaba1226356c085fb56c58f7966acdf1dd4ecbae3a5ca34d027c0f84eaf390");
+    expect(recoverAddress(d, a.signature)).toBe("0x9647bbcc4fef90d34bba7a6755a50a3bcc02a4d9");
+    expect(recoverAddress(d, a.signature)?.toLowerCase()).not.toBe(ATTESTER.toLowerCase());
+  });
+
+  it("so the result names the extra member unsigned, and stays VALID", async () => {
+    const r = await verifyV3(v3);
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["domain_extra_fields_unsigned"]).toBe(
+      "[environment] — declared in the domain object, not in the signed bytes; standard verifiers reject this artefact",
+    );
+    expect(r.annotations?.["domain_extra_fields_digest_with_extras"]).toBe(
+      "0x8ceaba1226356c085fb56c58f7966acdf1dd4ecbae3a5ca34d027c0f84eaf390",
+    );
+    expect(r.annotations?.["domain_extra_fields_recovers_with_extras_as"]).toBe("0x9647bbcc4fef90d34bba7a6755a50a3bcc02a4d9");
+    expect(r.annotations?.["domain_extra_fields_signed"]).toBeUndefined();
+  });
+
+  // A7: the 32-byte packed concatenation, source first. The other three
+  // constructions are computed too, and the annotation names them, so a signer
+  // who changes the ordering is told which one they used.
+  it("preTradeUidsHash is keccak(preTradeUid || destinationPreTradeUid), packed, in that order", async () => {
+    const r = await verifyV3(v3);
+    expect(r.annotations?.["pre_trade_uids_hash"]).toBe(
+      "keccak(src || dst), packed — reproduced from preTradeUid and destinationPreTradeUid",
+    );
+    const others = String(r.annotations?.["pre_trade_uids_hash_other_constructions"]);
+    expect(others).not.toContain(String(v3["receipt"].data.preTradeUidsHash));
+    expect(others).toContain("keccak(dst || src), packed = ");
+    expect(others).toContain("keccak(abi.encode(bytes32[2])) = ");
+  });
+
+  it("binds BOTH gates, and says the destination gate's requestHash differs by design (A5, A6, H5)", async () => {
+    const r = await verifyV3(v3);
+    expect(r.annotations?.["binding"]).toBe("preTradeUid, requestHash, both asset ids and subjectChainId all equal");
+    expect(r.annotations?.["destination_gate_binding"]).toBe(
+      "destinationPreTradeUid equals the gate uid, subjectChainId equal, and the gate prices the mirror pair",
+    );
+    expect(String(r.annotations?.["destination_gate_request_hash"])).toContain("by design");
+    expect(r.annotations?.["request_hash_matches_canonical_request"]).toBe(true);
+    expect(r.annotations?.["destination_gate_request_hash_matches_canonical_request"]).toBe(true);
+    // Both gates are now named by the receipt, so nothing is left unbound.
+    expect(r.annotations?.["unbound_gates"]).toBeUndefined();
+  });
+
+  // A12 / H1-H3. The two flows are strings, not numbers: the WETH leg carries 19
+  // significant digits and a float would drop its last four.
+  it("attributes the fill to the counterparty, exactly (A11, A12)", async () => {
+    const r = await verifyV3(v3);
+    const a = r.annotations!;
+    expect(a["swap_sender"]).toBe("0x51c72848c68a965f66fa7a88855f9f7784502a7f");
+    expect(a["swap_recipient"]).toBe("0x51c72848c68a965f66fa7a88855f9f7784502a7f");
+    expect(a["swap_sender_equals_recipient"]).toBe(true);
+    expect(a["counterparty"]).toBe("0x51c72848c68a965f66fa7a88855f9f7784502a7f");
+    expect(a["counterparty_net_bought"]).toBe("+6.947146505950453595");
+    expect(a["counterparty_net_sold"]).toBe("-16499.740294");
+    expect(a["counterparty_realised_price"]).toBe("0.000421045809337782");
+    expect(String(a["attribution"])).toContain("clean_single_pool_fill");
+    expect(a["claim_role"]).toBe("THIRD_PARTY_OBSERVATION");
+    expect(a["receipt_subject_is_the_observed_counterparty"]).toBe(true);
+    expect(a["receipt_taker_is_the_observed_counterparty"]).toBe(true);
+    // The 06:08Z measurement must NOT appear: this fill has no beneficiary
+    // distinct from the recipient and no third party taking a share.
+    expect(a["beneficiary"]).toBeUndefined();
+    expect(a["third_party"]).toBeUndefined();
+    expect(a["fee_not_recorded"]).toBeUndefined();
+  });
+
+  // A13. Both deltas, because the pair of them is the finding (B3): the signed
+  // integers carry five significant digits at this orientation and scale.
+  it("recomputes the quote from BOTH gates and reports both deltas (A13)", async () => {
+    const r = await verifyV3(v3);
+    const a = r.annotations!;
+    expect(a["price_scale"]).toBe("8 (signed by the issuer)");
+    expect(a["quoted_price_at_scale"]).toBe("0.00042129");
+    expect(a["executed_price_at_scale"]).toBe("0.00042105");
+    expect(a["quoted_price_matches_gates"]).toBe(true);
+    expect(String(a["quoted_price_recomputed_from_gates"])).toContain("42129 = round(source consensus 100000000 / destination consensus 237366640242");
+    expect(String(a["delta_bps_unrounded"])).toBe("-5.777084");
+    expect(String(a["delta_bps_signed_integers"])).toBe("-5.696788");
+    expect(a["pool_price_exact"]).toBe("0.000421045809337782");
+  });
+
+  // A14 / H4. The receipt's own timestamps refute precedence, and the recomputed
+  // status follows them rather than the delta.
+  it("reports precedence after_block and refuses FAITHFUL (A14)", async () => {
+    const r = await verifyV3(v3);
+    const a = r.annotations!;
+    expect(String(a["precedence"])).toContain("after_block");
+    expect(String(a["precedence"])).toContain("30s AFTER executedAt 1788342803");
+    expect(String(a["precedence"])).toContain("must not be FAITHFUL");
+    // The declaration that ordering is unproven survives on a VALID result.
+    expect(String(a["precedence"])).toContain("not_checked");
+    expect(a["priceExecutionStatus_recomputed"]).toBe(
+      "UNDETERMINED (the gate was signed at or after the block, so no price precedence is available)",
+    );
+    expect(a["priceExecutionStatus_agrees"]).toBe(true);
+    expect(String(a["precedence_status_agrees"])).toContain("does not claim precedence");
+  });
+
+  it("recomputes measuredFieldsHash from the declared empty measured set (A9)", async () => {
+    const r = await verifyV3(v3);
+    expect(r.annotations?.["measured_fields_declared"]).toBe("the empty set");
+    expect(r.annotations?.["measured_fields_hash_recomputed"]).toBe(
+      "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+    );
+    expect(String(r.annotations?.["measured_fields_hash"])).toContain("match");
+  });
+
+  it("is VALID as sent, and UNVERIFIABLE without the unregistered-signer flag", async () => {
+    const r = await verifyV3(v3);
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["identity"]).toBe("signer_not_in_registry");
+    const strict = await insightAdapter.verify(V3_BYTES, { ...v3base, allowUnregisteredSigner: false });
+    expect(strict.verdict).toBe("UNVERIFIABLE");
+    expect(strict.reason).toBe("key_unresolvable");
+    expect(strict.stoppedAt).toBe("identity");
+  });
+});
+
+describe("insight v3 — the registry at 11:54Z, looked up by primaryType AND version", () => {
+  it("matches all three artefacts of the repaired package at v3", async () => {
+    const r = await verifyV3(v3);
+    expect(r.annotations?.["registry_schema"]).toBe("match (v3)");
+    expect(r.annotations?.["source_gate_registry_schema"]).toBe("match (v3)");
+    expect(r.annotations?.["destination_gate_registry_schema"]).toBe("match (v3)");
+    // The domain versions agree too, so no divergence line is printed.
+    expect(r.annotations?.["registry_domain_version"]).toBeUndefined();
+    expect(r.annotations?.["source_gate_registry_domain_version"]).toBeUndefined();
+  });
+
+  // The 06:08Z package run against the CURRENT registry. Its 32-field receipt is
+  // an exact match for the published ExecutionReceiptV2 — and that entry is
+  // retiredForSigning, which is the true statement about it. A lookup by
+  // primaryType alone would have compared it to the 43-field v3 type and called
+  // it a mismatch, which is a different and wrong claim about the same bytes.
+  it("reports the 06:08Z receipt as retired_for_signing (v2), not as a mismatch", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: REG_1154_BYTES, registryOrigin: "refs/insight-oracle-keys-2026-09-02T1154Z.json" });
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["registry_schema"]).toBe("retired_for_signing (v2)");
+    // Its gates were already at v3, and the registry has caught up with them:
+    // the 09:09Z pin reported these as `mismatch (schemaVersion 3 vs 2; …)`.
+    expect(r.annotations?.["source_gate_registry_schema"]).toBe("match (v3)");
+    expect(r.annotations?.["destination_gate_registry_schema"]).toBe("match (v3)");
+  });
+
+  it("the two packages are told apart by the tool, not by the reader", async () => {
+    const morning = await insightAdapter.verify(PKG_BYTES, { ...base, registry: REG_1154_BYTES });
+    const repaired = await verifyV3(v3);
+    expect(morning.annotations?.["registry_schema"]).toBe("retired_for_signing (v2)");
+    expect(repaired.annotations?.["registry_schema"]).toBe("match (v3)");
+    expect(String(morning.annotations?.["precedence"])).toContain("signed_before_block");
+    expect(String(repaired.annotations?.["precedence"])).toContain("after_block");
+    expect(String(morning.annotations?.["attribution"])).toContain("not_clean");
+    expect(String(repaired.annotations?.["attribution"])).toContain("clean_single_pool_fill");
+    expect(morning.annotations?.["domain_extra_fields_unsigned"]).toBeUndefined();
+    expect(repaired.annotations?.["domain_extra_fields_unsigned"]).toBeDefined();
+  });
+});
+
+describe("insight v3 — tamper", () => {
+  // A4: three artefacts, three different addresses, none of them the attester.
+  it.each([
+    ["sourceGate", "preTrade", "sourceGate"],
+    ["destinationGate", "preTrade", "destinationGate"],
+  ] as const)("subjectChainId + 1 on the %s moves the recovered address off the attester", (_n, a, b) => {
+    const art = clone(v3[a][b]);
+    art.data.subjectChainId = art.data.subjectChainId + 1;
+    const d = eip712Digest(art.eip712.domain, art.eip712.primaryType, art.eip712.types, art.data);
+    const rec = recoverAddress(d, art.signature);
+    expect(rec).not.toBeNull();
+    expect(rec?.toLowerCase()).not.toBe(ATTESTER.toLowerCase());
+  });
+
+  it("the three tampered artefacts recover three DIFFERENT addresses", () => {
+    const recovered = [v3["preTrade"]["sourceGate"], v3["preTrade"]["destinationGate"], v3["receipt"]].map((a: any) => {
+      const t = clone(a);
+      t.data.subjectChainId = t.data.subjectChainId + 1;
+      return recoverAddress(eip712Digest(t.eip712.domain, t.eip712.primaryType, t.eip712.types, t.data), t.signature);
+    });
+    expect(new Set(recovered).size).toBe(3);
+    expect(recovered).not.toContain(ATTESTER.toLowerCase());
+  });
+
+  it("moving preTradeUidsHash and its uid together is still caught, by the signature", async () => {
+    // The uid hash is a signed field, so it is edited on a re-signed copy: the
+    // signature check would otherwise fire first and this check would never run.
+    const p = clone(v3);
+    p["receipt"].data.preTradeUidsHash = `0x${"0".repeat(63)}1`;
+    p["receipt"].uid = `0x${Buffer.from(
+      eip712Digest(p["receipt"].eip712.domain, p["receipt"].eip712.primaryType, p["receipt"].eip712.types, p["receipt"].data),
+    ).toString("hex")}`;
+    const r = await verifyV3(p);
+    // The signature no longer covers these bytes, so THAT is what is reported —
+    // the root fault, not the symptom. The uid was moved with the edit, so the
+    // digest/uid comparison stays quiet and the signature is the only finding.
+    expect(r.verdict).toBe("INVALID");
+    expect(r.reason).toBe("signature_invalid");
+  });
+
+  it("a destination gate that prices a different pair breaks the binding", async () => {
+    const p = clone(v3);
+    // Re-sign is impossible here, so the gate is swapped for the SOURCE gate,
+    // which is validly signed and prices the wrong direction for this role.
+    p["preTrade"].destinationGate = clone(v3["preTrade"]["sourceGate"]);
+    const r = await verifyV3(p);
+    expect(r.verdict).toBe("INVALID");
+    expect(r.reason).toBe("content_commitment_mismatch");
+    expect(r.stoppedAt).toBe("binding");
+    expect(r.detail).toContain("destinationPreTradeUid");
+  });
+
+  // H7 branch (d). An edit to a signed field of an artefact that ALSO carries a
+  // non-standard domain member must name both attempts, because "the signature
+  // is invalid" without saying what was tried leaves a reader unable to tell a
+  // tampered receipt from one their library simply cannot encode.
+  it("a tampered v3 receipt is INVALID/signature_invalid and names BOTH candidate separators", async () => {
+    const p = clone(v3);
+    p["receipt"].data.executedPrice = p["receipt"].data.executedPrice + 1;
+    const r = await verifyV3(p);
+    expect(r.verdict).toBe("INVALID");
+    expect(r.reason).toBe("signature_invalid");
+    expect(r.stoppedAt).toBe("signature");
+    expect(r.detail).toContain("[environment]");
+    expect(r.detail).toContain("with the five EIP-712 members only the digest is");
+    expect(r.detail).toContain("appended as `string`");
+    // Both digests are named, and neither is the artefact's uid any more.
+    expect(r.detail).not.toContain(String(v3["receipt"].uid));
+  });
+
+  it("evaluated after validUntil, the repaired receipt is INVALID/expired", async () => {
+    const validUntil = v3["receipt"].data.validUntil as number;
+    const r = await verifyV3(v3, { now: validUntil + 1 });
+    expect(r.verdict).toBe("INVALID");
+    expect(r.reason).toBe("expired");
+    expect(r.stoppedAt).toBe("freshness");
+  });
+});
+
+// --------------------------------------------------------------------------
+// H7 branch (c): a signer that actually encoded its non-standard domain member.
+//
+// No such artefact exists in either package, and one cannot be forged from
+// them, so it is built here over a throwaway key generated at test time. The
+// branch is worth reaching: it is the difference between "we report the state
+// Insight happens to be in" and "we report whichever of the two states an
+// artefact is in", and an unreached branch is an untested one.
+// --------------------------------------------------------------------------
+
+describe("insight — a domain extra field that IS in the signed bytes", () => {
+  const TYPES = { Thing: [{ name: "value", type: "uint256" }] };
+  const DOMAIN = { name: "Custom Domain", version: "1", chainId: 1, environment: "production" };
+  const DATA = { value: 7 };
+
+  /** Sign a digest with a fixed throwaway key and return {attester, signature}. */
+  const signWith = async (digest: Uint8Array): Promise<{ attester: string; signature: string }> => {
+    const { secp256k1 } = await import("@noble/curves/secp256k1.js");
+    const { keccak_256 } = await import("@noble/hashes/sha3.js");
+    const priv = new Uint8Array(32).fill(0);
+    priv[31] = 42; // deterministic, throwaway, and never written to disk
+    const rs = secp256k1.sign(digest, priv, { prehash: false });
+    const pub = secp256k1.getPublicKey(priv, false);
+    const attester = `0x${Buffer.from(keccak_256(pub.slice(1)).slice(-20)).toString("hex")}`;
+    // The recovery bit is not read out of the library here: both are tried and
+    // the one this adapter's own recovery agrees with is kept. That keeps the
+    // test independent of which shape @noble/curves returns.
+    const body = Buffer.from(rs.slice(0, 64)).toString("hex");
+    for (const v of [27, 28]) {
+      const signature = `0x${body}${v.toString(16)}`;
+      if (recoverAddress(digest, signature)?.toLowerCase() === attester.toLowerCase()) return { attester, signature };
+    }
+    throw new Error("neither recovery bit reproduces the signing address");
+  };
+
+  it("is reported as domain_extra_fields_signed, and verifies", async () => {
+    const digest = eip712Digest(DOMAIN, "Thing", TYPES, DATA, true);
+    const { attester, signature } = await signWith(digest);
+    const art = { attester, signature, data: DATA, eip712: { domain: DOMAIN, types: TYPES, primaryType: "Thing" } };
+
+    const r = await insightAdapter.verify(bytesOf(art), { now: INSIGHT_V3_NOW, allowUnregisteredSigner: true });
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["domain_extra_fields_signed"]).toBe(
+      "[environment] — non-standard; verifiable only with a custom EIP712Domain type",
+    );
+    expect(r.annotations?.["domain_extra_fields_unsigned"]).toBeUndefined();
+    // The reported digest is the one the signature was actually made over.
+    expect(r.annotations?.["digest"]).toBe(`0x${Buffer.from(digest).toString("hex")}`);
+  });
+
+  it("the same message signed the STANDARD way lands in the other branch", async () => {
+    const digest = eip712Digest(DOMAIN, "Thing", TYPES, DATA, false);
+    const { attester, signature } = await signWith(digest);
+    const art = { attester, signature, data: DATA, eip712: { domain: DOMAIN, types: TYPES, primaryType: "Thing" } };
+
+    const r = await insightAdapter.verify(bytesOf(art), { now: INSIGHT_V3_NOW, allowUnregisteredSigner: true });
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["domain_extra_fields_unsigned"]).toBe(
+      "[environment] — declared in the domain object, not in the signed bytes; standard verifiers reject this artefact",
+    );
+    expect(r.annotations?.["domain_extra_fields_signed"]).toBeUndefined();
+    // The two separators are genuinely different, which is what makes the pair
+    // of tests above a discrimination rather than a coincidence.
+    expect(`0x${Buffer.from(digest).toString("hex")}`).not.toBe(
+      `0x${Buffer.from(eip712Digest(DOMAIN, "Thing", TYPES, DATA, true)).toString("hex")}`,
+    );
   });
 });

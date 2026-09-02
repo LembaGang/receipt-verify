@@ -245,3 +245,48 @@ match the live bytes exactly, so the rendering method was capable of being faith
 holds, `test/insight.test.ts` asserts the field list in the pinned bytes and the adapter reports
 `registry_schema: mismatch` for the receipt against this registry — never a match asserted against a
 document that does not say so.
+
+## Appended 2026-09-03 — Insight's repaired package (schema v3) and the second registry pin
+
+The 06:08Z package above is superseded for signing but NOT withdrawn: the tool must verify both and say
+which is which, so both stay pinned and both stay in the suite. The registry was fetched **once**, again,
+at a named UTC minute; the 09:09Z pin is kept beside it. Neither is re-fetched.
+
+| path | source | retrieved (UTC) | bytes | sha256 |
+|---|---|---|---|---|
+| `fixtures/insight/execution-receipt-bytes-2026-09-02-repaired.headless.json` | attachment to YuTao Peng's 10:04 local mail, via `cc-output/insight-2026-09-02/execution-receipt-bytes-2026-09-02-headless-repaired.headless.json` | 2026-09-02T09:53:54.871Z (the package's own `meta.generatedAt`) | 39871 | `e4a11b4de20a4dfdfdbaee29dadc1f7126b0b36c130bf6ba3c6a7ff5578eb89a` |
+| `refs/insight-oracle-keys-2026-09-02T1154Z.json` | https://www.oracleinsight.xyz/.well-known/oracle-keys.json | 2026-09-02T11:54:27Z (HTTP 200, `application/json`, 14854 bytes downloaded) | 14854 | `21675e382e6ead969d3b3fb823b3199327283152ab241be27d9c5b7177de23eb` |
+
+**What the second registry pin confirms**, against the founder's ~11:3xZ browser capture
+(`cc-output/insight-2026-09-02/registry_founder-capture_2026-09-02T113xZ.json`, held as content, not as
+a digest): `ExecutionReceipt` is published at `schemaVersion` 3 with 43 fields and domain
+`{name "Insight Execution", version "1", chainId 1, environment "production"}`; `ExecutionReceiptV2`
+(32 fields, `schemaVersion` 2) and `ExecutionReceiptV1` (30, 1) are retained and `retiredForSigning`;
+`OracleSafetyCheck` is published at `schemaVersion` 3, domain version "3", 27 fields, with
+`OracleSafetyCheckV2` (26) and `OracleSafetyCheckV1` (11) retained and `retiredForSigning`;
+`public_keys` carries the same two keys as every earlier observation. Field-for-field, the published
+`ExecutionReceipt` v3 type is identical to the repaired package's receipt type, and the published
+`OracleSafetyCheck` v3 type is identical to both packages' gate type.
+
+**Where the live bytes differ from the capture, recorded and not reconciled.** The capture renders each
+retired entry as a field COUNT (`"fields": 32`); the live bytes carry the retired entries' full
+`eip712.types`, keyed by the bare primary type (`ExecutionReceiptV2.eip712.types.ExecutionReceipt`).
+The live bytes also carry `issuer`, `mic`, `revoked_keys`, `attestation_enabled`, `OracleSafetyRecheck`,
+`OracleWatchCheck`, `OracleWatchCheckV1`, `CanonicalPreTradeRequest` and the endpoint URLs, none of
+which appear in the capture, and each `public_keys` entry carries `algorithm`, `validFrom` and
+`revoked` beyond the capture's three members. Every count and version the capture states is reproduced
+in the live bytes; the capture is an abridged rendering, and it is the rendering that differs, not the
+document. The expectation is left as the handoff wrote it.
+
+**What the second pin says about the first.** At 09:09Z `ExecutionReceipt` was 43 fields under
+`schemaVersion` **1** — a 43-field v3 type published under the v1 number, with no V1/V2 entries beside
+it. At 11:54Z the same 43 fields are published under `schemaVersion` 3 with V2 and V1 retained and
+retired. The 09:09Z state was the regression; it is confirmed corrected, and both pins are kept so the
+correction is visible in bytes rather than asserted.
+
+**Flagged, not fixed (outside this handoff's scope).** `git check-attr text` reports `text: set,
+eol: lf` — not `unset` — for both files above and for both 2026-09-02 pins, because `.gitattributes`
+orders `*.json text eol=lf` AFTER `fixtures/** -text` and `refs/** -text`, and the last matching line
+wins. It is harmless for these four files: all are LF-only, and each one's git blob was verified here
+to hash to the same sha256 as the bytes on disk. It would not be harmless for a snapshot that
+legitimately contained CRLF, which is exactly what those two lines were written to protect.

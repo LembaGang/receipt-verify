@@ -47,6 +47,12 @@ export interface Eip712Domain {
   chainId?: number | string;
   verifyingContract?: string;
   salt?: string;
+  /**
+   * Anything else the issuer wrote into the domain object. EIP-712 admits none:
+   * see `STANDARD_DOMAIN_FIELDS`. The index signature exists so such a key can
+   * be READ and reported rather than dropped on the floor by the type system.
+   */
+  [k: string]: unknown;
 }
 
 const keccak = (b: Uint8Array): Uint8Array => keccak_256(b);
@@ -184,24 +190,53 @@ export function hashStruct(primaryType: string, value: Record<string, unknown>, 
 }
 
 /**
+ * The five members EIP-712 admits in `EIP712Domain`, in the EIP's fixed order.
+ * The EIP is closed on this list: "the EIP712Domain struct … may contain the
+ * following fields", and the standard libraries enforce it (eth-account raises
+ * "Invalid domain key", ethers' TypedDataEncoder throws). A sixth key in a
+ * published domain object is therefore not a variation on the encoding; it is a
+ * document standard verifiers refuse to read at all.
+ */
+const STANDARD_DOMAIN_FIELDS: [string, string][] = [
+  ["name", "string"],
+  ["version", "string"],
+  ["chainId", "uint256"],
+  ["verifyingContract", "address"],
+  ["salt", "bytes32"],
+];
+
+/** Domain members EIP-712 does not admit, in the order the domain object gives them. */
+export function extraDomainKeys(domain: Eip712Domain): string[] {
+  const known = new Set(STANDARD_DOMAIN_FIELDS.map(([k]) => k));
+  return Object.keys(domain).filter((k) => !known.has(k) && domain[k] !== undefined && domain[k] !== null);
+}
+
+/**
  * "Definition of domainSeparator": hashStruct over the EIP712Domain struct built
  * from the fields actually PRESENT, in the EIP's fixed order. Insight's domains
  * carry name, version and chainId and no verifyingContract, so the struct is
  * EIP712Domain(string name,string version,uint256 chainId).
+ *
+ * `includeExtras` builds the OTHER separator: the standard fields as above,
+ * followed by every non-standard key in the order the domain object gives them,
+ * each typed `string`. There is no authority for that encoding — EIP-712 assigns
+ * no type to a member it does not admit — so it is never the default. It exists
+ * so the adapter can answer, for an artefact carrying such a key, which of the
+ * two separators the signer actually used, instead of guessing or crashing.
  */
-export function domainSeparator(domain: Eip712Domain): Uint8Array {
-  const order: [keyof Eip712Domain, string][] = [
-    ["name", "string"],
-    ["version", "string"],
-    ["chainId", "uint256"],
-    ["verifyingContract", "address"],
-    ["salt", "bytes32"],
-  ];
-  const present = order.filter(([k]) => domain[k] !== undefined && domain[k] !== null);
-  const types: Eip712Types = { EIP712Domain: present.map(([k, t]) => ({ name: k, type: t })) };
+export function domainSeparator(domain: Eip712Domain, includeExtras = false): Uint8Array {
+  const present = STANDARD_DOMAIN_FIELDS.filter(([k]) => domain[k] !== undefined && domain[k] !== null);
+  const fields: Eip712Field[] = present.map(([k, t]) => ({ name: k, type: t }));
   const value: Record<string, unknown> = {};
   for (const [k] of present) value[k] = domain[k];
-  return hashStruct("EIP712Domain", value, types);
+  if (includeExtras) {
+    for (const k of extraDomainKeys(domain)) {
+      fields.push({ name: k, type: "string" });
+      const v = domain[k];
+      value[k] = typeof v === "string" ? v : String(v);
+    }
+  }
+  return hashStruct("EIP712Domain", value, { EIP712Domain: fields });
 }
 
 /** The final construction: keccak256(0x19 || 0x01 || domainSeparator || hashStruct(message)). */
@@ -210,9 +245,14 @@ export function eip712Digest(
   primaryType: string,
   types: Eip712Types,
   message: Record<string, unknown>,
+  includeExtraDomainFields = false,
 ): Uint8Array {
   return keccak(
-    concatBytes(new Uint8Array([0x19, 0x01]), domainSeparator(domain), hashStruct(primaryType, message, types)),
+    concatBytes(
+      new Uint8Array([0x19, 0x01]),
+      domainSeparator(domain, includeExtraDomainFields),
+      hashStruct(primaryType, message, types),
+    ),
   );
 }
 
@@ -474,14 +514,28 @@ interface RegistryKey {
   publicKey: string;
   revoked: boolean;
 }
+/**
+ * One published type. `entryName` is the registry's own key
+ * (`ExecutionReceiptV2`); `primaryType` is the name the EIP-712 struct is
+ * actually signed under (`ExecutionReceipt`), which is what an artefact names.
+ * The registry keys retired versions under a suffixed entry name while leaving
+ * the struct name unsuffixed, so the two are not interchangeable and a lookup
+ * that used only one of them would match the wrong type.
+ */
 interface RegistrySchema {
+  entryName: string;
+  primaryType: string;
   schemaVersion?: number;
   domainVersion?: string;
+  retiredForSigning: boolean;
+  /** Field names in order. Empty when the registry publishes only a count. */
   fields: string[];
+  /** The count, whether it came from the field list or from a bare `fields: n`. */
+  fieldCount?: number;
 }
 interface Registry {
   keys: RegistryKey[];
-  schemas: Record<string, RegistrySchema>;
+  schemas: RegistrySchema[];
   gates: Record<string, unknown>;
   origin: string;
 }
@@ -499,7 +553,7 @@ function parseRegistry(bytes: Uint8Array, origin: string): Registry | { error: s
     if (e === null || pub === null) return { error: `registry at ${origin}: a public_keys entry has no \`public_key\`` };
     keys.push({ keyId: str(e["key_id"]) ?? pub, publicKey: pub, revoked: e["revoked"] === true });
   }
-  const schemas: Record<string, RegistrySchema> = {};
+  const schemas: RegistrySchema[] = [];
   const rawSchemas = obj(o["schemas"]);
   if (rawSchemas !== null) {
     for (const [name, v] of Object.entries(rawSchemas)) {
@@ -507,15 +561,29 @@ function parseRegistry(bytes: Uint8Array, origin: string): Registry | { error: s
       if (s === null) continue;
       const e = obj(s["eip712"]);
       const types = e === null ? null : obj(e["types"]);
-      const list = types === null ? null : types[name];
-      if (!Array.isArray(list)) continue;
-      const entry: RegistrySchema = { fields: list.map((f) => (obj(f) === null ? "" : (str(obj(f)!["name"]) ?? ""))) };
+      // The struct name, in the order the registry offers it: an explicit
+      // primaryType, else the sole key of the types map, else the entry name.
+      const typeKeys = types === null ? [] : Object.keys(types);
+      const primaryType =
+        (e === null ? null : str(e["primaryType"])) ?? (typeKeys.length === 1 ? typeKeys[0]! : typeKeys.includes(name) ? name : name);
+      const list = types === null ? null : types[primaryType];
+      const entry: RegistrySchema = {
+        entryName: name,
+        primaryType,
+        retiredForSigning: s["retiredForSigning"] === true,
+        fields: Array.isArray(list) ? list.map((f) => (obj(f) === null ? "" : (str(obj(f)!["name"]) ?? ""))) : [],
+      };
+      // A retired entry may publish a bare count instead of the field list.
+      const declaredCount = num(s["fields"]);
+      if (Array.isArray(list)) entry.fieldCount = list.length;
+      else if (declaredCount !== null) entry.fieldCount = declaredCount;
+      else continue; // neither a field list nor a count: nothing to compare against
       const sv = num(s["schemaVersion"]);
       if (sv !== null) entry.schemaVersion = sv;
-      const dom = e === null ? null : obj(e["domain"]);
+      const dom = (e === null ? null : obj(e["domain"])) ?? obj(s["domain"]);
       const dv = dom === null ? null : str(dom["version"]);
       if (dv !== null) entry.domainVersion = dv;
-      schemas[name] = entry;
+      schemas.push(entry);
     }
   }
   const er = obj(rawSchemas?.["ExecutionReceipt"]);
@@ -524,38 +592,78 @@ function parseRegistry(bytes: Uint8Array, origin: string): Registry | { error: s
 
 /**
  * Compare the artefact's own declared type against the registry's published one
- * for the same primaryType. This is REPORTED, never a verdict: a stranger who
- * builds the struct from the registry rather than from the artefact recovers a
- * different address, and that is worth saying out loud without deciding on the
- * issuer's behalf which of the two documents is wrong.
+ * for the same primaryType AND the same schemaVersion. This is REPORTED, never a
+ * verdict: a stranger who builds the struct from the registry rather than from
+ * the artefact recovers a different address, and that is worth saying out loud
+ * without deciding on the issuer's behalf which of the two documents is wrong.
+ *
+ * Version-aware lookup is what lets one tool read three generations of the same
+ * format. The registry retains retired layouts beside the current one, so
+ * "does the artefact match the registry" has no answer until the version is
+ * fixed: the 06:08Z package's 32-field receipt is a MISMATCH against the current
+ * 43-field ExecutionReceipt and an exact match against ExecutionReceiptV2, and
+ * only the second reading is a true statement about that artefact.
  */
-function compareRegistrySchema(art: Attestation, reg: Registry): { line: string; domainLine: string | null } {
-  const published = reg.schemas[art.primaryType];
-  if (published === undefined) {
-    return { line: `not_published (${art.primaryType} is not in ${reg.origin})`, domainLine: null };
-  }
-  const mine = (art.types[art.primaryType] ?? []).map((f) => f.name);
-  const theirs = published.fields;
+function fieldDiff(mine: string[], published: RegistrySchema): string[] {
   const parts: string[] = [];
-
-  const myVersion = num(art.data["schemaVersion"]);
-  if (myVersion !== null && published.schemaVersion !== undefined && myVersion !== published.schemaVersion) {
-    parts.push(`schemaVersion ${myVersion} vs ${published.schemaVersion}`);
+  const theirs = published.fields;
+  const count = published.fieldCount ?? theirs.length;
+  if (mine.length !== count) parts.push(`${mine.length} vs ${count} fields`);
+  if (theirs.length === 0) {
+    // A count-only entry supports no name comparison, and saying so is the
+    // difference between "the names agree" and "the names were never checked".
+    if (mine.length === count) parts.push(`${count} fields, but the registry publishes a count and no field list, so the names are not compared`);
+    return parts;
   }
-  if (mine.length !== theirs.length) parts.push(`${mine.length} vs ${theirs.length} fields`);
   const extra = mine.filter((n) => !theirs.includes(n));
   if (extra.length > 0) parts.push(`${extra.join(", ")} not in registry`);
   if (extra.length === 0 && mine.length === theirs.length && mine.some((n, i) => n !== theirs[i])) {
     parts.push("same names in a different order");
   }
+  return parts;
+}
 
-  const myDomain = str(art.domain.version as unknown);
-  const domainLine =
-    myDomain !== null && published.domainVersion !== undefined && myDomain !== published.domainVersion
-      ? `${myDomain} vs ${published.domainVersion}`
-      : null;
+function compareRegistrySchema(art: Attestation, reg: Registry): { line: string; domainLine: string | null } {
+  const candidates = reg.schemas.filter((s) => s.primaryType === art.primaryType);
+  if (candidates.length === 0) {
+    return { line: `not_published (${art.primaryType} is not in ${reg.origin})`, domainLine: null };
+  }
+  const mine = (art.types[art.primaryType] ?? []).map((f) => f.name);
+  const myVersion = num(art.data["schemaVersion"]);
+  const hit = myVersion === null ? undefined : candidates.find((c) => c.schemaVersion === myVersion);
 
-  return { line: parts.length === 0 ? "match" : `mismatch (${parts.join("; ")})`, domainLine };
+  // The version the artefact declares is published. Compare against THAT type,
+  // and say whether the registry still accepts it for signing.
+  if (hit !== undefined) {
+    const parts = fieldDiff(mine, hit);
+    const line =
+      hit.retiredForSigning
+        ? `retired_for_signing (v${myVersion!})${parts.length > 0 ? `; ${parts.join("; ")}` : ""}`
+        : parts.length === 0
+          ? `match (v${myVersion!})`
+          : `mismatch (v${myVersion!}: ${parts.join("; ")})`;
+    const myDomain = str(art.domain.version);
+    return {
+      line,
+      domainLine: myDomain !== null && hit.domainVersion !== undefined && myDomain !== hit.domainVersion ? `${myDomain} vs ${hit.domainVersion}` : null,
+    };
+  }
+
+  // No published type at the artefact's version. Fall back to the entry the
+  // registry names as current for this struct — the artefact is still comparable
+  // to SOMETHING, and reporting only "no entry at v3" would hide the shape of
+  // the divergence, which is the part a reader needs.
+  const current = candidates.find((c) => c.entryName === art.primaryType) ?? candidates[candidates.length - 1]!;
+  const parts: string[] = [];
+  if (myVersion !== null && current.schemaVersion !== undefined) {
+    parts.push(`schemaVersion ${myVersion} vs ${current.schemaVersion}`);
+  }
+  parts.push(...fieldDiff(mine, current));
+  const myDomain = str(art.domain.version);
+  return {
+    line: parts.length === 0 ? "match" : `mismatch (${parts.join("; ")})`,
+    domainLine: myDomain !== null && current.domainVersion !== undefined && myDomain !== current.domainVersion ? `${myDomain} vs ${current.domainVersion}` : null,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -629,21 +737,77 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
   // recorded rather than a count, so a reader can compare orders by eye.
   ann[p("schema_encode_type")] = encodeType(art.primaryType, art.types);
 
-  // ---- 3. digest ---------------------------------------------------------
-  let digestBytes: Uint8Array;
-  try {
-    digestBytes = eip712Digest(art.domain, art.primaryType, art.types, art.data);
-  } catch (e) {
-    return fail(
-      unverifiable(FORMAT, "malformed_member", `${art.label} does not EIP-712 encode: ${(e as Error).message}`, ann, "digest"),
-    );
+  // ---- 3. digest, and the non-standard domain member (H7) ----------------
+  //
+  // EIP-712 admits five members in EIP712Domain. When a domain object carries a
+  // sixth, there is no encoding the EIP endorses, so guessing one and reporting
+  // a single verdict would state as fact something the bytes do not settle.
+  // Both candidate separators are computed instead, and the result says which
+  // one the signature was actually made under. Neither path may crash on the
+  // key, and neither may drop it without saying so.
+  const extras = extraDomainKeys(art.domain);
+  const digestUnder = (includeExtras: boolean): Uint8Array | string => {
+    try {
+      return eip712Digest(art.domain, art.primaryType, art.types, art.data, includeExtras);
+    } catch (e) {
+      return (e as Error).message;
+    }
+  };
+  const stdDigest = digestUnder(false);
+  if (typeof stdDigest === "string") {
+    return fail(unverifiable(FORMAT, "malformed_member", `${art.label} does not EIP-712 encode: ${stdDigest}`, ann, "digest"));
   }
+  const stdRecovered = recoverAddress(stdDigest, art.signature);
+  const stdHolds = stdRecovered !== null && sameAddress(stdRecovered, art.attester);
+
+  let digestBytes = stdDigest;
+  let recovered = stdRecovered;
+  let signatureHolds = stdHolds;
+
+  if (extras.length > 0) {
+    const extDigest = digestUnder(true);
+    const extRecovered = typeof extDigest === "string" ? null : recoverAddress(extDigest, art.signature);
+    const extHolds = extRecovered !== null && sameAddress(extRecovered, art.attester);
+    const list = `[${extras.join(", ")}]`;
+    ann[p("domain_extra_fields_digest_standard_only")] = hex(stdDigest);
+    if (typeof extDigest !== "string") ann[p("domain_extra_fields_digest_with_extras")] = hex(extDigest);
+    if (extRecovered !== null) ann[p("domain_extra_fields_recovers_with_extras_as")] = extRecovered;
+
+    if (stdHolds && !extHolds) {
+      // (b) The signer's separator was the standard one. The extra member is
+      // metadata that the domain object presents as if it were signed.
+      ann[p("domain_extra_fields_unsigned")] =
+        `${list} — declared in the domain object, not in the signed bytes; standard verifiers reject this artefact`;
+    } else if (extHolds) {
+      // (c) The signer did encode it, so the artefact is self-consistent and
+      // still unreadable by any library that enforces the EIP's five members.
+      digestBytes = extDigest as Uint8Array;
+      recovered = extRecovered;
+      signatureHolds = true;
+      ann[p("domain_extra_fields_signed")] = `${list} — non-standard; verifiable only with a custom EIP712Domain type`;
+    } else {
+      // (d) Neither separator produces the stated attester. Both attempts are
+      // named, because "the signature is invalid" without saying what was tried
+      // is not a finding a reader can act on.
+      return fail(
+        invalid(
+          FORMAT,
+          "signature_invalid",
+          `${art.label} carries non-standard EIP-712 domain member(s) ${list} and its signature recovers the stated attester ` +
+            `${art.attester} under NEITHER candidate separator: with the five EIP-712 members only the digest is ${hex(stdDigest)} ` +
+            `and recovery gives ${stdRecovered ?? "no address (unparseable r||s||v)"}; with ${list} appended as \`string\` in the ` +
+            `domain object's order the digest is ${typeof extDigest === "string" ? `not computable (${extDigest})` : hex(extDigest)} ` +
+            `and recovery gives ${extRecovered ?? "no address"}`,
+          selfDeclaredKey(art),
+          "signature",
+        ),
+      );
+    }
+  }
+
   const digest = hex(digestBytes);
   ann[p("digest")] = digest;
-  const recovered = recoverAddress(digestBytes, art.signature);
   if (recovered !== null) ann[p("recovered_signer")] = recovered;
-
-  const signatureHolds = recovered !== null && sameAddress(recovered, art.attester);
   if (art.uid !== undefined) ann[p("uid_equals_digest")] = sameAddress(art.uid, digest);
 
   // PRECEDENCE between check 3 and check 4, and why it is this way round.
@@ -773,6 +937,35 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
 // 7. binding — receipt to the gate whose bytes it names
 // ---------------------------------------------------------------------------
 
+/**
+ * An integer amount rendered exactly at `decimals` places. `Number` carries 15-16
+ * significant digits and a WETH amount carries 19, so the counterparty's flow
+ * would lose its last four digits on the way through a float. These are evidence
+ * values; they are carried as strings so they arrive whole.
+ */
+function decimalString(v: bigint, decimals: number): string {
+  const neg = v < 0n;
+  const abs = neg ? -v : v;
+  const scale = 10n ** BigInt(decimals);
+  const whole = abs / scale;
+  const frac = (abs % scale).toString().padStart(decimals, "0");
+  return `${neg ? "-" : ""}${whole}${decimals > 0 ? `.${frac}` : ""}`;
+}
+
+/** numer/denom truncated (never rounded) to `places` decimals. No float. */
+function divideDecimal(numer: bigint, denom: bigint, places: number): string {
+  if (denom === 0n) return "undefined";
+  const neg = numer < 0n !== denom < 0n;
+  const a = numer < 0n ? -numer : numer;
+  const b = denom < 0n ? -denom : denom;
+  return `${neg ? "-" : ""}${decimalString((a * 10n ** BigInt(places)) / b, places)}`;
+}
+
+/** Round-half-up integer division, for recomputing a scaled fixed-point price. */
+function divRoundHalfUp(numer: bigint, denom: bigint): bigint {
+  return (2n * numer + denom) / (2n * denom);
+}
+
 /** Exact (numer/denom - 1) * 1e4, rendered with `dp` decimals. No float. */
 function ratioBps(numer: bigint, denom: bigint, dp = 6): string {
   if (denom === 0n) return "undefined";
@@ -785,25 +978,70 @@ function ratioBps(numer: bigint, denom: bigint, dp = 6): string {
 
 type BindOutcome = { ok: true; ann: Ann } | { ok: false; detail: string };
 
-function checkBinding(receipt: Attestation, gate: Attestation): BindOutcome {
+/**
+ * Bind the receipt to ONE gate, in the role the receipt gives it.
+ *
+ * `source` is the gate named by `preTradeUid`; the receipt's request IS that
+ * gate's request, so requestHash and both asset ids must be equal.
+ *
+ * `destination` is the gate named by `destinationPreTradeUid`, and it carries
+ * the MIRROR request — the same pair the other way round. Its `requestHash`
+ * therefore differs from the receipt's by design, and requiring equality there
+ * would report a correct package as broken. What must hold instead is that the
+ * two asset ids are each other's opposite, which is a stronger statement than
+ * "some second gate exists": it fails if the destination gate priced a
+ * different pair.
+ */
+function checkBinding(receipt: Attestation, gate: Attestation, role: "source" | "destination"): BindOutcome {
   const ann: Ann = {};
   const r = receipt.data;
   const g = gate.data;
   const mismatches: string[] = [];
+  const uidField = role === "source" ? "preTradeUid" : "destinationPreTradeUid";
 
-  if (gate.uid !== undefined && !sameAddress(str(r["preTradeUid"]) ?? "", gate.uid)) {
-    mismatches.push(`preTradeUid ${String(r["preTradeUid"])} != sourceGate.uid ${gate.uid}`);
+  if (gate.uid !== undefined && !sameAddress(str(r[uidField]) ?? "", gate.uid)) {
+    mismatches.push(`${uidField} ${String(r[uidField])} != ${role}Gate.uid ${gate.uid}`);
   }
-  for (const f of ["requestHash", "sourceAssetId", "destinationAssetId", "subjectChainId"]) {
-    if (JSON.stringify(r[f]) !== JSON.stringify(g[f])) {
-      mismatches.push(`${f} ${JSON.stringify(r[f])} != gate ${JSON.stringify(g[f])}`);
+  if (JSON.stringify(r["subjectChainId"]) !== JSON.stringify(g["subjectChainId"])) {
+    mismatches.push(`subjectChainId ${JSON.stringify(r["subjectChainId"])} != gate ${JSON.stringify(g["subjectChainId"])}`);
+  }
+
+  if (role === "source") {
+    for (const f of ["requestHash", "sourceAssetId", "destinationAssetId"]) {
+      if (JSON.stringify(r[f]) !== JSON.stringify(g[f])) {
+        mismatches.push(`${f} ${JSON.stringify(r[f])} != gate ${JSON.stringify(g[f])}`);
+      }
     }
+    // v2 receipts quote the source gate's consensus price directly. v3 derives
+    // the quote from BOTH gates, which `checkPrices` recomputes; asserting the
+    // v2 equality there would report every correct v3 receipt as unbound.
+    if (r["priceScale"] === undefined && JSON.stringify(r["quotedPrice"]) !== JSON.stringify(g["consensusPrice"])) {
+      mismatches.push(`quotedPrice ${JSON.stringify(r["quotedPrice"])} != gate consensusPrice ${JSON.stringify(g["consensusPrice"])}`);
+    }
+  } else {
+    const mirrored =
+      JSON.stringify(r["sourceAssetId"]) === JSON.stringify(g["destinationAssetId"]) &&
+      JSON.stringify(r["destinationAssetId"]) === JSON.stringify(g["sourceAssetId"]);
+    if (!mirrored) {
+      mismatches.push(
+        `the destination gate does not price the mirror of the receipt's pair: receipt ${String(r["sourceAssetId"])} -> ` +
+          `${String(r["destinationAssetId"])}, gate ${String(g["sourceAssetId"])} -> ${String(g["destinationAssetId"])}`,
+      );
+    }
+    ann["destination_gate_request_hash"] =
+      JSON.stringify(r["requestHash"]) === JSON.stringify(g["requestHash"])
+        ? `equal to the receipt's (${String(g["requestHash"])}) — NOT expected: the mirror request should hash differently`
+        : `${String(g["requestHash"])}, which differs from the receipt's ${String(r["requestHash"])} by design — the destination gate carries the mirror request`;
   }
-  if (JSON.stringify(r["quotedPrice"]) !== JSON.stringify(g["consensusPrice"])) {
-    mismatches.push(`quotedPrice ${JSON.stringify(r["quotedPrice"])} != gate consensusPrice ${JSON.stringify(g["consensusPrice"])}`);
-  }
+
   if (mismatches.length > 0) return { ok: false, detail: mismatches.join("; ") };
-  ann["binding"] = "preTradeUid, requestHash, both asset ids, subjectChainId and quotedPrice==consensusPrice all equal";
+  // The source role keeps the unprefixed annotation names it has always had;
+  // the destination role, which is new, is prefixed so the two never collide.
+  const k = (name: string): string => (role === "source" ? name : `destination_gate_${name}`);
+  ann[k("binding")] =
+    role === "source"
+      ? "preTradeUid, requestHash, both asset ids and subjectChainId all equal"
+      : "destinationPreTradeUid equals the gate uid, subjectChainId equal, and the gate prices the mirror pair";
 
   // The gate ships the canonical-request type it hashed, so requestHash is
   // recomputable here rather than merely compared field to field. This is the
@@ -820,17 +1058,37 @@ function checkBinding(receipt: Attestation, gate: Attestation): BindOutcome {
       for (const f of fields) message[f.name] = g[f.name];
       try {
         const recomputed = hex(eip712Digest(cd as Eip712Domain, cp, types, message));
-        ann["request_hash_recomputed"] = recomputed;
+        ann[k("request_hash_recomputed")] = recomputed;
         if (!sameAddress(recomputed, str(g["requestHash"]) ?? "")) {
-          return { ok: false, detail: `requestHash ${String(g["requestHash"])} is not the EIP-712 digest of the canonical request, which is ${recomputed}` };
+          return { ok: false, detail: `the ${role} gate's requestHash ${String(g["requestHash"])} is not the EIP-712 digest of the canonical request it ships, which is ${recomputed}` };
         }
-        ann["request_hash_matches_canonical_request"] = true;
+        ann[k("request_hash_matches_canonical_request")] = true;
       } catch (e) {
-        ann["request_hash_recomputed"] = `not recomputable: ${(e as Error).message}`;
+        ann[k("request_hash_recomputed")] = `not recomputable: ${(e as Error).message}`;
       }
     }
   }
   return { ok: true, ann };
+}
+
+/**
+ * `preTradeUidsHash` over the two gate uids. The package derives it as the
+ * keccak-256 of the two 32-byte values concatenated, source first — the packed
+ * encoding, not `abi.encode` of a `bytes32[]`, and not sorted. Three other
+ * orderings and encodings are computed here and reported when none matches, so
+ * a mismatch says which construction WOULD have produced the signed value
+ * rather than only that the signed value is unexplained.
+ */
+function uidsHashCandidates(src: string, dst: string): Record<string, string> {
+  const a = hexToBytes(src.slice(2));
+  const b = hexToBytes(dst.slice(2));
+  const arrayEncoded = concatBytes(word(32n), word(2n), a, b);
+  return {
+    "keccak(src || dst), packed": hex(keccak(concatBytes(a, b))),
+    "keccak(dst || src), packed": hex(keccak(concatBytes(b, a))),
+    "keccak(sorted, packed)": hex(keccak(src.toLowerCase() <= dst.toLowerCase() ? concatBytes(a, b) : concatBytes(b, a))),
+    "keccak(abi.encode(bytes32[2]))": hex(keccak(arrayEncoded)),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -859,8 +1117,22 @@ function words(dataHex: string): bigint[] {
 
 const scaled = (v: bigint, decimals: number): number => Number(v) / 10 ** decimals;
 
+/** What the decoded Swap event tells the later checks, beyond its annotations. */
+export interface SwapFacts {
+  sender: string | null;
+  recipient: string | null;
+  /** Token addresses, lowercase, as the package's `legs` name them. */
+  soldToken: string;
+  boughtToken: string;
+  soldDecimals: number;
+  boughtDecimals: number;
+  /** Raw integer amounts, positive: what the pool took in and what it paid out. */
+  soldAbs: bigint;
+  boughtAbs: bigint;
+}
+
 type SwapOutcome =
-  | { ok: true; ann: Ann; recipient: string | null; boughtAbs: bigint }
+  | { ok: true; ann: Ann; facts: SwapFacts }
   | { ok: false; detail: string }
   | { ok: "skip"; ann: Ann };
 
@@ -877,8 +1149,13 @@ function checkSwap(receipt: Attestation, onchain: Record<string, unknown>, opts:
     return { ok: false, detail: `rawSwapEvent topic0 ${topic0} is not keccak("${SWAP_SIGNATURE}") = ${expected}` };
   }
   ann["swap_topic0"] = `keccak("${SWAP_SIGNATURE}")`;
+  const sender = topics.length > 1 ? `0x${(str(topics[1]) ?? "").slice(-40)}` : null;
   const recipient = topics.length > 2 ? `0x${(str(topics[2]) ?? "").slice(-40)}` : null;
+  if (sender !== null) ann["swap_sender"] = sender;
   if (recipient !== null) ann["swap_recipient"] = recipient;
+  if (sender !== null && recipient !== null) {
+    ann["swap_sender_equals_recipient"] = sameAddress(sender, recipient);
+  }
 
   const w = words(str(ev["data"]) ?? "0x");
   if (w.length < 5) return { ok: false, detail: `rawSwapEvent data is ${w.length} words, expected 5` };
@@ -923,18 +1200,30 @@ function checkSwap(receipt: Attestation, onchain: Record<string, unknown>, opts:
   const quoted = num(receipt.data["quotedPrice"]);
   if (executed === null || quoted === null) return { ok: false, detail: "receipt carries no executedPrice/quotedPrice to compare against" };
 
-  // "At the receipt's precision": the receipt is 8-decimal fixed point, so the
-  // pool price is compared at 8 decimals rather than to the last float bit.
-  const executedHuman = executed / 1e8;
-  ann["receipt_executed_price"] = executedHuman;
-  const agrees = poolPrice.toFixed(8) === executedHuman.toFixed(8);
-  if (!agrees) {
-    return { ok: false, detail: `pool fill price ${poolPrice} does not equal the signed executedPrice ${executedHuman} at 8 decimals` };
-  }
-  ann["pool_price_equals_executed_price"] = "at 8 decimals, the receipt's own precision";
+  // v3 signs the fixed-point exponent as `priceScale`. v2 did not, and every v2
+  // artefact seen used 8; the assumption is recorded rather than made silently,
+  // because a wrong exponent moves the price by a factor of ten and nothing else
+  // in the artefact would contradict it.
+  const declaredScale = num(receipt.data["priceScale"]);
+  const scale = declaredScale ?? 8;
+  ann["price_scale"] = declaredScale !== null ? `${scale} (signed by the issuer)` : `${scale} (ASSUMED; this artefact declares no priceScale)`;
+  const scaleFactor = 10n ** BigInt(scale);
 
-  // Exact, from the integer amounts: (bought/10^db) / (sold/10^ds) / (quoted/1e8) - 1, in bps.
-  const numer = -amtBought * 10n ** BigInt(dSold) * 100000000n;
+  // "At the receipt's precision": the receipt is fixed point at `scale`, so the
+  // pool price is compared at that many decimals rather than to the last float
+  // bit. At WETH-per-USDC and scale 8 that is only five significant digits — one
+  // unit is 0.24 bps — so the comparison is reported with the precision it has.
+  const executedHuman = executed / Number(scaleFactor);
+  ann["receipt_executed_price"] = executedHuman;
+  const agrees = poolPrice.toFixed(scale) === executedHuman.toFixed(scale);
+  if (!agrees) {
+    return { ok: false, detail: `pool fill price ${poolPrice} does not equal the signed executedPrice ${executedHuman} at ${scale} decimals` };
+  }
+  ann["pool_price_equals_executed_price"] = `at ${scale} decimals, the receipt's own precision`;
+  ann["pool_price_exact"] = divideDecimal(-amtBought * 10n ** BigInt(dSold), amtSold * 10n ** BigInt(dBought), 18);
+
+  // Exact, from the integer amounts: (bought/10^db) / (sold/10^ds) / (quoted/10^scale) - 1, in bps.
+  const numer = -amtBought * 10n ** BigInt(dSold) * scaleFactor;
   const denom = amtSold * 10n ** BigInt(dBought) * BigInt(quoted);
   ann["delta_bps"] = ratioBps(numer, denom);
   const maxSlip = num(receipt.data["maxSlippageBps"]);
@@ -943,7 +1232,20 @@ function checkSwap(receipt: Attestation, onchain: Record<string, unknown>, opts:
     const faithful = withinNumer * 10000n <= denom * BigInt(maxSlip);
     ann["swap_status_under_signed_max"] = `${faithful ? "FAITHFUL" : "DEVIATED"} under maxSlippageBps ${maxSlip}`;
   }
-  return { ok: true, ann, recipient, boughtAbs: -amtBought };
+  return {
+    ok: true,
+    ann,
+    facts: {
+      sender,
+      recipient,
+      soldToken: sold,
+      boughtToken: bought,
+      soldDecimals: dSold,
+      boughtDecimals: dBought,
+      soldAbs: amtSold,
+      boughtAbs: -amtBought,
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -952,13 +1254,24 @@ function checkSwap(receipt: Attestation, onchain: Record<string, unknown>, opts:
 
 const TRANSFER_SIGNATURE = "Transfer(address,address,uint256)";
 
-function checkAttribution(
-  receipt: Attestation,
-  onchain: Record<string, unknown>,
-  recipient: string | null,
-  poolOut: bigint | null,
-  opts: VerifyOptions,
-): Ann {
+/**
+ * Attribution, counterparty-side.
+ *
+ * The 06:08Z package claimed a price "the taker realised" that did not
+ * reproduce; the repaired package narrows the claim to the party the pool
+ * actually settled with, and this check is built to that narrower claim and
+ * refuses to grade anything wider.
+ *
+ * A fill is CLEAN when one address is both the Swap's sender and its recipient,
+ * both legs settle to that address, and no other address moves either token in
+ * the transaction. Then, and only then, the realised rate is that address's own
+ * two flows, and it equals the pool leg by construction. Anything else -- a
+ * recipient that forwards, a fee taken by a third address, a multi-hop route --
+ * is reported as `not_clean` with the reason, the price is left to the receipt,
+ * and the beneficiary measurement is printed beside it without being called
+ * anyone's realised price. Never mis-graded, never silently skipped.
+ */
+function checkAttribution(receipt: Attestation, onchain: Record<string, unknown>, facts: SwapFacts | null, opts: VerifyOptions): Ann {
   const logs = onchain["rawTransferLogs"];
   if (!Array.isArray(logs) || logs.length === 0) return { attribution: "not_checked (package carries no rawTransferLogs)" };
   const ann: Ann = {};
@@ -983,28 +1296,75 @@ function checkAttribution(
   }
   ann["attribution_transfer_logs"] = counted;
 
-  const legs = obj(onchain["legs"]);
-  const bought = (str(legs?.["boughtToken"]) ?? "").toLowerCase();
-  const sold = (str(legs?.["soldToken"]) ?? "").toLowerCase();
-  const decOf = (a: string): number | undefined => opts.tokens?.[a] ?? BUILTIN_DECIMALS[a];
-  const dB = decOf(bought);
-  const dS = decOf(sold);
-  if (recipient === null || bought === "" || dB === undefined) {
+  // The receipt's own naming of the party, printed whether or not it is
+  // corroborated. `claimRole` is what scopes the claim, so it is never omitted.
+  const subject = str(receipt.data["subject"]);
+  const taker = str(receipt.data["taker"]);
+  const claimRole = str(receipt.data["claimRole"]);
+  if (claimRole !== null) ann["claim_role"] = claimRole;
+  if (subject !== null) ann["receipt_subject"] = subject;
+  if (taker !== null) ann["receipt_taker"] = taker;
+
+  if (facts === null || facts.recipient === null || facts.boughtToken === "") {
     return { ...ann, attribution: "not_checked (no swap recipient or unknown token decimals)" };
   }
+  const { sender, recipient, soldToken, boughtToken, soldDecimals: dS, boughtDecimals: dB } = facts;
+  const pool = (str(obj(onchain["rawSwapEvent"])?.["address"]) ?? "").toLowerCase();
 
-  const boughtNet = net[bought] ?? {};
-  ann["recipient_net_bought"] = scaled(boughtNet[recipient] ?? 0n, dB);
-  if (sold !== "" && dS !== undefined) ann["recipient_net_sold"] = scaled(net[sold]?.[recipient] ?? 0n, dS);
+  const boughtNet = net[boughtToken] ?? {};
+  const soldNet = net[soldToken] ?? {};
+  const movers = (m: Record<string, bigint>): string[] =>
+    Object.entries(m)
+      .filter(([a, v]) => v !== 0n && !sameAddress(a, pool))
+      .map(([a]) => a.toLowerCase());
+  const parties = [...new Set([...movers(boughtNet), ...movers(soldNet)])];
+
+  const recipientBought = boughtNet[recipient] ?? 0n;
+  const recipientSold = soldNet[recipient] ?? 0n;
+  const reasons: string[] = [];
+  if (sender !== null && !sameAddress(sender, recipient)) reasons.push(`the Swap's sender ${sender} is not its recipient ${recipient}`);
+  if (parties.length > 1) reasons.push(`${parties.length} addresses other than the pool move a leg of this trade (${parties.join(", ")})`);
+  if (recipientBought <= 0n) reasons.push(`the recipient's net of the bought token is ${decimalString(recipientBought, dB)}, which is not a receipt of it`);
+  if (recipientSold >= 0n) reasons.push(`the recipient's net of the sold token is ${decimalString(recipientSold, dS)}, which is not a payment of it`);
+  const clean = reasons.length === 0;
+
+  ann["counterparty"] = recipient;
+  ann["counterparty_net_bought"] = `${recipientBought > 0n ? "+" : ""}${decimalString(recipientBought, dB)}`;
+  ann["counterparty_net_sold"] = decimalString(recipientSold, dS);
+
+  if (clean) {
+    // Exact, from the integer flows. It equals the pool leg here because there
+    // is no fee path and nothing routes onward -- a property of THIS archetype,
+    // asserted above, not an assumption made about fills generally.
+    ann["counterparty_realised_price"] = divideDecimal(recipientBought * 10n ** BigInt(dS), -recipientSold * 10n ** BigInt(dB), 18);
+    ann["attribution"] =
+      `clean_single_pool_fill -- ${recipient} is both the Swap's sender and its recipient, both legs settle to it, ` +
+      `and no other address moves either token; its realised rate is the pool leg`;
+    for (const [label, named] of [
+      ["subject", subject],
+      ["taker", taker],
+    ] as const) {
+      if (named !== null) ann[`receipt_${label}_is_the_observed_counterparty`] = sameAddress(named, recipient);
+    }
+    const fee = num(receipt.data["actualFeeUsd"]);
+    if (fee === 0) ann["fee_recorded_zero"] = "consistent with the logs: no third party takes a share of this fill";
+    return ann;
+  }
+
+  ann["attribution"] =
+    `not_clean (${reasons.join("; ")}) -- the price is left to the receipt, and the measurement below is a different ` +
+    `quantity, not the realised price of anyone`;
 
   // The beneficiary is the largest net receiver of the bought token that is not
-  // the swap's own recipient. On this transaction the recipient nets zero and
-  // forwards everything on, so "who was paid" is a different address from "who
-  // the pool paid".
+  // the swap's own recipient. On the 06:08Z transaction the recipient nets zero
+  // and forwards everything on, so "who was paid" is a different address from
+  // "who the pool paid".
   const receivers = Object.entries(boughtNet)
     .filter(([a, v]) => v > 0n && !sameAddress(a, recipient))
     .sort((x, y) => (y[1] > x[1] ? 1 : y[1] < x[1] ? -1 : 0));
-  if (receivers.length === 0) return { ...ann, attribution: "recipient is the only net receiver of the bought token" };
+  ann["recipient_net_bought"] = scaled(recipientBought, dB);
+  ann["recipient_net_sold"] = scaled(recipientSold, dS);
+  if (receivers.length === 0) return ann;
 
   const [benefAddr, benefAmt] = receivers[0]!;
   ann["beneficiary"] = benefAddr;
@@ -1014,20 +1374,21 @@ function checkAttribution(
     const [thirdAddr, thirdAmt] = receivers[1]!;
     ann["third_party"] = thirdAddr;
     ann["third_party_received"] = scaled(thirdAmt, dB);
-    // Share OF THE POOL'S OUTPUT — what the trade produced — not of the
+    // Share OF THE POOL'S OUTPUT -- what the trade produced -- not of the
     // beneficiary's share of it. Rounded to four decimals of a percent, which is
     // where the exact ratio 178645992/21017175576 sits.
-    if (poolOut !== null && poolOut > 0n) {
-      ann["third_party_share_pct"] = Math.round((Number(thirdAmt) * 1e6) / Number(poolOut)) / 10000;
+    if (facts.boughtAbs > 0n) {
+      ann["third_party_share_pct"] = Math.round((Number(thirdAmt) * 1e6) / Number(facts.boughtAbs)) / 10000;
     }
   }
 
   const quoted = num(receipt.data["quotedPrice"]);
-  const soldAmt = sold === "" || dS === undefined ? null : -(net[sold]?.[recipient] ?? 0n);
-  if (quoted !== null && soldAmt !== null && soldAmt > 0n && dS !== undefined) {
+  const scale = num(receipt.data["priceScale"]) ?? 8;
+  const soldAmt = -recipientSold;
+  if (quoted !== null && soldAmt > 0n) {
     const realised = scaled(benefAmt, dB) / scaled(soldAmt, dS);
     ann["realised_price_to_beneficiary"] = realised;
-    const numer = benefAmt * 10n ** BigInt(dS) * 100000000n;
+    const numer = benefAmt * 10n ** BigInt(dS) * 10n ** BigInt(scale);
     const denom = soldAmt * 10n ** BigInt(dB) * BigInt(quoted);
     ann["realised_delta_bps"] = ratioBps(numer, denom);
 
@@ -1046,9 +1407,132 @@ function checkAttribution(
   const fee = num(receipt.data["actualFeeUsd"]);
   if (fee === 0 && receivers.length > 1) ann["fee_not_recorded"] = true;
 
-  ann["attribution"] =
-    `recipient nets ${scaled(boughtNet[recipient] ?? 0n, dB)} of the bought token and forwards it on; ` +
-    `beneficiary differs from the swap recipient`;
+  return ann;
+}
+
+// ---------------------------------------------------------------------------
+// 9b. prices at the signed scale, and the quote the gates imply
+// ---------------------------------------------------------------------------
+
+type PriceOutcome = { ok: true; ann: Ann } | { ok: false; detail: string };
+
+/**
+ * v3 signs `priceScale` and derives `quotedPrice` from BOTH gates: the source
+ * asset's consensus price over the destination asset's, carried at that scale.
+ * Recomputing it is what turns `bindingMode: VERIFIED` from a label into a
+ * checkable statement -- a receipt whose quote does not come out of the gates it
+ * names has not bound its price to them, however well the uids match.
+ *
+ * Two deltas are reported because they are two different measurements and the
+ * difference between them is a property of the format worth seeing. The
+ * unrounded one divides the pool's own integer amounts by the gates' consensus
+ * ratio. The signed-integer one divides the two scaled integers the issuer
+ * actually signed. At WETH-per-USDC and scale 8 the signed pair carries five
+ * significant digits -- one unit is 0.24 bps -- so they differ in the first
+ * decimal, and anyone recomputing from signed fields alone will get the second.
+ */
+function checkPrices(receipt: Attestation, sourceGate: Attestation | null, destinationGate: Attestation | null, facts: SwapFacts | null): PriceOutcome {
+  const ann: Ann = {};
+  const d = receipt.data;
+  const quoted = num(d["quotedPrice"]);
+  const executed = num(d["executedPrice"]);
+  if (quoted === null || executed === null) return { ok: true, ann: { prices: "not_checked (the receipt carries no quotedPrice/executedPrice)" } };
+  const scale = num(d["priceScale"]) ?? 8;
+  const scaleFactor = 10n ** BigInt(scale);
+
+  ann["quoted_price_at_scale"] = decimalString(BigInt(quoted), scale);
+  ann["executed_price_at_scale"] = decimalString(BigInt(executed), scale);
+
+  const srcC = sourceGate === null ? null : num(sourceGate.data["consensusPrice"]);
+  const dstC = destinationGate === null ? null : num(destinationGate.data["consensusPrice"]);
+  if (srcC !== null && dstC !== null && dstC !== 0 && d["priceScale"] !== undefined) {
+    const recomputed = divRoundHalfUp(BigInt(srcC) * scaleFactor, BigInt(dstC));
+    ann["quoted_price_recomputed_from_gates"] =
+      `${recomputed} = round(source consensus ${srcC} / destination consensus ${dstC} x 1e${scale}); ` +
+      `unrounded ${divideDecimal(BigInt(srcC) * scaleFactor, BigInt(dstC), 6)}`;
+    if (recomputed !== BigInt(quoted)) {
+      return {
+        ok: false,
+        detail:
+          `the receipt signs quotedPrice ${quoted}, but the two gates it binds to imply ${recomputed} ` +
+          `(source consensus ${srcC} / destination consensus ${dstC}, scaled by 1e${scale}). ` +
+          `bindingMode ${String(d["bindingMode"])} states the quote is derived from these gates and it is not`,
+      };
+    }
+    ann["quoted_price_matches_gates"] = true;
+
+    if (facts !== null) {
+      // Exact: (bought/10^dB) / (sold/10^dS) / (srcC/dstC) - 1, in bps.
+      const numer = facts.boughtAbs * 10n ** BigInt(facts.soldDecimals) * BigInt(dstC);
+      const denom = facts.soldAbs * 10n ** BigInt(facts.boughtDecimals) * BigInt(srcC);
+      ann["delta_bps_unrounded"] = ratioBps(numer, denom);
+      ann["delta_bps_basis"] =
+        "three deltas appear above and they are three different measurements: `delta_bps` is the pool fill against the " +
+        "SIGNED quotedPrice; `delta_bps_unrounded` is the pool fill against the gates' unrounded consensus ratio; " +
+        "`delta_bps_signed_integers` is executedPrice against quotedPrice, both exactly as the issuer signed them. They " +
+        `disagree in the first decimal because priceScale ${scale} in this orientation carries five significant digits ` +
+        "and one unit is 0.24 bps; a stranger recomputing from signed fields alone gets the third.";
+    }
+  }
+
+  ann["delta_bps_signed_integers"] = ratioBps(BigInt(executed), BigInt(quoted));
+
+  // The status the signed numbers support, recomputed. Precedence dominates:
+  // a gate signed after the block it gates cannot certify the price it quoted,
+  // whatever the delta, so the only honest recomputation is UNDETERMINED.
+  const pts = num(d["preTradeSignedAt"]);
+  const ex = num(d["executedAt"]);
+  const maxSlip = num(d["maxSlippageBps"]);
+  const statusField = "priceExecutionStatus" in d ? "priceExecutionStatus" : "executionStatus" in d ? "executionStatus" : null;
+  if (statusField !== null && maxSlip !== null) {
+    const diff = executed > quoted ? BigInt(executed - quoted) : BigInt(quoted - executed);
+    const within = diff * 10000n <= BigInt(quoted) * BigInt(maxSlip);
+    const afterBlock = pts !== null && ex !== null && pts >= ex;
+    const recomputedStatus = afterBlock ? "UNDETERMINED" : within ? "FAITHFUL" : "DEVIATED";
+    ann[`${statusField}_recomputed`] =
+      `${recomputedStatus} (${afterBlock ? "the gate was signed at or after the block, so no price precedence is available" : `delta ${ratioBps(BigInt(executed), BigInt(quoted))} bps against maxSlippageBps ${maxSlip}`})`;
+    const signedStatus = str(d[statusField]);
+    if (signedStatus !== null) {
+      ann[`${statusField}_agrees`] =
+        signedStatus === recomputedStatus ? true : `NO: the receipt signs ${signedStatus}, recomputation gives ${recomputedStatus}`;
+    }
+  }
+  return { ok: true, ann };
+}
+
+// ---------------------------------------------------------------------------
+// 9c. measuredFieldsHash, recomputed from the declared measured set
+// ---------------------------------------------------------------------------
+
+/**
+ * The receipt signs a hash over the set of fields it says were MEASURED rather
+ * than asserted. The package enumerates that set outside the signature, so this
+ * comparison is REPORTED and never a verdict, for the same reason
+ * `registry_schema` is: the unsigned side is the side that can be wrong, and
+ * calling the receipt invalid because a document beside it disagrees would put
+ * the fault in the wrong place. Saying nothing, though, would let an empty
+ * enumeration pass for a checked one.
+ */
+function checkMeasuredFields(receipt: Attestation, raw: Record<string, unknown>): Ann {
+  const signed = str(receipt.data["measuredFieldsHash"]);
+  if (signed === null) return {};
+  const block = obj(raw["measuredFields"]);
+  const declared = block === null ? null : block["measured"];
+  if (!Array.isArray(declared)) {
+    return { measured_fields_hash: `not_checked (the receipt signs ${signed}, and the package enumerates no measured set to recompute it from)` };
+  }
+  const names = declared.map((v) => str(v) ?? "").sort();
+  // The package's own enumerationNote: keccak256(join("-", sorted names)), and
+  // the empty set is the empty string, whose keccak is 0xc5d2...a470.
+  const preimage = names.join("-");
+  const recomputed = hex(keccak(utf8ToBytes(preimage)));
+  const ann: Ann = {
+    measured_fields_declared: names.length === 0 ? "the empty set" : names.join(", "),
+    measured_fields_hash_recomputed: recomputed,
+  };
+  ann["measured_fields_hash"] = sameAddress(recomputed, signed)
+    ? `match — keccak(${names.length === 0 ? '""' : JSON.stringify(preimage)}) equals the signed measuredFieldsHash`
+    : `MISMATCH — the signed measuredFieldsHash is ${signed}, but the package's declared measured set hashes to ${recomputed}`;
   return ann;
 }
 
@@ -1178,10 +1662,52 @@ async function checkChain(
 // the adapter
 // ---------------------------------------------------------------------------
 
-const PRECEDENCE_LINE =
-  "not_checked — that a gate existed BEFORE the trade cannot be established from these bytes. " +
+const PRECEDENCE_PROOF =
+  "that a gate existed BEFORE the trade cannot be established from these bytes. " +
   "Signature timestamps are package metadata and `checkedAt` is a signed field the signer chooses. " +
   "Anchoring the gate uid before the trade transaction is what would close it.";
+
+const PRECEDENCE_LINE = `not_checked — ${PRECEDENCE_PROOF}`;
+
+/**
+ * What the receipt's own two timestamps say about ordering, beside the standing
+ * declaration that neither is proof.
+ *
+ * The 06:08Z receipt derived `preTradeSignedAt` from the signer-set `checkedAt`
+ * and claimed FAITHFUL; the repaired receipt binds it to the real signing time,
+ * which turns out to be 30 seconds AFTER the block. Reading the field is
+ * therefore worth doing even though it settles nothing: it distinguishes a
+ * receipt whose own numbers are consistent with precedence from one whose
+ * numbers refute it, and the second must never be graded FAITHFUL. Neither
+ * reading is an anchor, and the line says so on every result including VALID.
+ */
+function precedenceAnnotations(receipt: Attestation): Ann {
+  const d = receipt.data;
+  const pts = num(d["preTradeSignedAt"]);
+  const ex = num(d["executedAt"]);
+  if (pts === null || ex === null) return { precedence: PRECEDENCE_LINE };
+  const statusField = "priceExecutionStatus" in d ? "priceExecutionStatus" : "executionStatus" in d ? "executionStatus" : null;
+  const signedStatus = statusField === null ? null : str(d[statusField]);
+  if (pts < ex) {
+    return {
+      precedence:
+        `signed_before_block (asserted by signer, unanchored) — preTradeSignedAt ${pts} is ${ex - pts}s before executedAt ${ex}. ` +
+        `Ordering itself is not_checked: ${PRECEDENCE_PROOF}`,
+    };
+  }
+  const ann: Ann = {
+    precedence:
+      `after_block — preTradeSignedAt ${pts} is ${pts - ex}s AFTER executedAt ${ex}, so the gate did not precede the trade ` +
+      `and the verdict must not be FAITHFUL. Ordering itself is not_checked: ${PRECEDENCE_PROOF}`,
+  };
+  if (signedStatus !== null) {
+    ann["precedence_status_agrees"] =
+      signedStatus === "FAITHFUL"
+        ? `NO: the receipt signs ${statusField!} ${signedStatus} while its own timestamps place the gate after the block`
+        : `yes: the receipt signs ${statusField!} ${signedStatus}, which does not claim precedence`;
+  }
+  return ann;
+}
 
 const OBSERVATIONS_LINE =
   "not_checked — participantCount, sourceGroupCount, independenceSatisfied, the consensus price's provenance " +
@@ -1230,7 +1756,7 @@ export const insightAdapter: Adapter = {
     // A single attestation has no gates, no logs and no chain to check against;
     // it stops here, and the coverage block says which checks that leaves out.
     if (pkg === null) {
-      ann["precedence"] = PRECEDENCE_LINE;
+      Object.assign(ann, precedenceAnnotations(target));
       ann["observations"] = OBSERVATIONS_LINE;
       return valid(FORMAT, `EIP-712 digest, signature and schema checks passed for a single ${target.primaryType} attestation`, stage.key, ann);
     }
@@ -1243,27 +1769,77 @@ export const insightAdapter: Adapter = {
       if (gate === null) continue;
       const g = verifyOne(gate, ctx, label);
       if (!g.ok) {
-        // The source gate is what the receipt binds to, so its failure is the
-        // package's failure. The destination gate is not referenced by the
-        // receipt, so its state is reported and does not move the verdict.
-        if (label === "source_gate") return g.result;
-        ann["destination_gate_state"] = `${g.result.verdict}/${g.result.reason}: ${g.result.detail}`;
+        // A gate the receipt NAMES is part of the receipt's own claim, so its
+        // failure is the package's failure. A gate that is merely shipped
+        // alongside is reported and does not move the verdict.
+        const uid = gate.uid?.toLowerCase() ?? "";
+        const named =
+          sameAddress(str(pkg.receipt.data["preTradeUid"]) ?? "", uid) ||
+          sameAddress(str(pkg.receipt.data["destinationPreTradeUid"]) ?? "", uid) ||
+          label === "source_gate";
+        if (named) return g.result;
+        ann[`${label}_state`] = `${g.result.verdict}/${g.result.reason}: ${g.result.detail}`;
         continue;
       }
       Object.assign(ann, g.ann);
     }
 
-    // ---- 7. binding ------------------------------------------------------
+    // ---- 7. binding, both gates -----------------------------------------
+    //
+    // v3 names two gates: `preTradeUid` for the source asset and
+    // `destinationPreTradeUid` for the destination asset. v2 named one, and the
+    // second was shipped unbound. Each field is checked against the gate that
+    // fills that role, and a gate neither field names is reported as unbound --
+    // which is now a statement about scope the issuer has closed, not a defect
+    // this tool found.
+    const srcUid = str(pkg.receipt.data["preTradeUid"]);
+    const dstUid = str(pkg.receipt.data["destinationPreTradeUid"]);
     if (pkg.sourceGate === null) {
       ann["binding"] = "not_checked (package carries no sourceGate)";
     } else {
-      const b = checkBinding(pkg.receipt, pkg.sourceGate);
+      const b = checkBinding(pkg.receipt, pkg.sourceGate, "source");
       if (!b.ok) {
         return invalid(FORMAT, "content_commitment_mismatch", `receipt does not bind to the source gate it names: ${b.detail}`, stage.key, "binding");
       }
       Object.assign(ann, b.ann);
     }
-    const referenced = new Set([str(pkg.receipt.data["preTradeUid"])?.toLowerCase()]);
+    if (dstUid !== null && pkg.destinationGate !== null) {
+      const b = checkBinding(pkg.receipt, pkg.destinationGate, "destination");
+      if (!b.ok) {
+        return invalid(FORMAT, "content_commitment_mismatch", `receipt does not bind to the destination gate it names: ${b.detail}`, stage.key, "binding");
+      }
+      Object.assign(ann, b.ann);
+    } else if (dstUid !== null) {
+      ann["destination_gate_binding"] = `not_checked (the receipt names destinationPreTradeUid ${dstUid} and the package ships no destination gate)`;
+    }
+
+    // `preTradeUidsHash` over the two uids. Four constructions are computed and
+    // the matching one is named, so a mismatch reports which encoding WOULD
+    // have produced the signed value rather than only that it is unexplained.
+    const uidsHash = str(pkg.receipt.data["preTradeUidsHash"]);
+    if (uidsHash !== null && srcUid !== null && dstUid !== null) {
+      const candidates = uidsHashCandidates(srcUid, dstUid);
+      const hit = Object.entries(candidates).find(([, v]) => sameAddress(v, uidsHash));
+      if (hit === undefined) {
+        return invalid(
+          FORMAT,
+          "content_commitment_mismatch",
+          `the receipt signs preTradeUidsHash ${uidsHash}, which is not the keccak of its two gate uids under any construction tried: ` +
+            Object.entries(candidates)
+              .map(([k, v]) => `${k} = ${v}`)
+              .join("; "),
+          stage.key,
+          "binding",
+        );
+      }
+      ann["pre_trade_uids_hash"] = `${hit[0]} — reproduced from preTradeUid and destinationPreTradeUid`;
+      ann["pre_trade_uids_hash_other_constructions"] = Object.entries(candidates)
+        .filter(([k]) => k !== hit[0])
+        .map(([k, v]) => `${k} = ${v}`)
+        .join("; ");
+    }
+
+    const referenced = new Set([srcUid?.toLowerCase(), dstUid?.toLowerCase()].filter((v) => v !== undefined));
     const unbound = [
       ["source", pkg.sourceGate],
       ["destination", pkg.destinationGate],
@@ -1275,25 +1851,31 @@ export const insightAdapter: Adapter = {
     }
 
     // ---- 8. swap ---------------------------------------------------------
-    let recipient: string | null = null;
-    let poolOut: bigint | null = null;
+    let facts: SwapFacts | null = null;
     if (pkg.onchain === null) {
       ann["swap"] = "not_checked (package carries no onchain block)";
       ann["attribution"] = "not_checked (package carries no onchain block)";
     } else {
-      const s = checkSwap(pkg.receipt, pkg.onchain, opts);
-      if (s.ok === false) {
-        return invalid(FORMAT, "content_commitment_mismatch", `the receipt's signed price does not agree with the pool event it ships: ${s.detail}`, stage.key, "swap");
+      const sw = checkSwap(pkg.receipt, pkg.onchain, opts);
+      if (sw.ok === false) {
+        return invalid(FORMAT, "content_commitment_mismatch", `the receipt's signed price does not agree with the pool event it ships: ${sw.detail}`, stage.key, "swap");
       }
-      Object.assign(ann, s.ann);
-      if (s.ok === true) {
-        recipient = s.recipient;
-        poolOut = s.boughtAbs;
-      }
+      Object.assign(ann, sw.ann);
+      if (sw.ok === true) facts = sw.facts;
 
       // ---- 9. attribution ------------------------------------------------
-      Object.assign(ann, checkAttribution(pkg.receipt, pkg.onchain, recipient, poolOut, opts));
+      Object.assign(ann, checkAttribution(pkg.receipt, pkg.onchain, facts, opts));
     }
+
+    // ---- 9b. prices at the signed scale ----------------------------------
+    const pr = checkPrices(pkg.receipt, pkg.sourceGate, pkg.destinationGate, facts);
+    if (!pr.ok) {
+      return invalid(FORMAT, "content_commitment_mismatch", `the receipt's quote does not come out of the gates it binds to: ${pr.detail}`, stage.key, "binding");
+    }
+    Object.assign(ann, pr.ann);
+
+    // ---- 9c. measuredFieldsHash -----------------------------------------
+    Object.assign(ann, checkMeasuredFields(pkg.receipt, pkg.raw));
 
     // ---- 10. chain -------------------------------------------------------
     if (opts.rpc === undefined) {
@@ -1301,7 +1883,7 @@ export const insightAdapter: Adapter = {
     } else if (pkg.onchain === null) {
       ann["chain"] = "not_checked (package carries no onchain block)";
     } else {
-      const c = await checkChain(pkg.receipt, pkg.onchain, opts.rpc, recipient);
+      const c = await checkChain(pkg.receipt, pkg.onchain, opts.rpc, facts?.recipient ?? null);
       if (c.ok === "io") {
         // --rpc was asked for and could not be completed. Fail closed rather
         // than quietly downgrade a requested check to "not checked".
@@ -1313,8 +1895,8 @@ export const insightAdapter: Adapter = {
       Object.assign(ann, c.ann);
     }
 
-    // ---- 11, 12: declared, never evaluated -------------------------------
-    ann["precedence"] = PRECEDENCE_LINE;
+    // ---- 11, 12: observed where the bytes allow it, declared where they do not
+    Object.assign(ann, precedenceAnnotations(pkg.receipt));
     ann["observations"] = OBSERVATIONS_LINE;
 
     return valid(
