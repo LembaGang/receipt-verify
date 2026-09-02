@@ -373,3 +373,49 @@ Only the files this rerun reads were copied; the other 199 entries of the vector
 here: every file above is LF-only and each one's staged blob was verified to hash to the sha256 in the
 table. It remains unfixed, and it remains the flaw that would corrupt a snapshot legitimately
 containing CRLF.
+
+## Appended 2026-09-02 — the two Asqav SDK states either side of `#416`, pinned for M6
+
+`FINDINGS-rerun-2026-09-02.md` M6 identifies the published
+`counterparty_binding.envelope_hash` `0d6c88a1…` as the three-key digest of the peer envelope as it
+stood before SDK commit `ee8a3e7` (PR #416, 2026-08-04 21:03:12 +0200). That identification was made
+against a clone in a session scratchpad. A clone is not evidence this repository holds — it can be
+rewritten upstream, and this machine keeps no history for `asqav-sdk`, only the `05c1c49` snapshot,
+which by construction cannot show the change that caused M6. The two states either side of `#416` are
+therefore pinned here, and `test/acta.test.ts` re-derives the identification from them.
+
+Taken with `git cat-file blob <commit>:conformance/vectors.json` from a clone of
+`https://github.com/jagmarques/asqav-sdk`, never from a worktree: `core.autocrlf` is `true` on this
+machine and a checkout would rewrite the bytes these digests pin.
+
+| fixture path | commit | date | upstream blob | bytes | sha256 |
+|---|---|---|---|---|---|
+| `fixtures/asqav/history/4cbdfc0/conformance/vectors.json` | `4cbdfc01a69017e39e060bc1f0d63e6c55027aa6` | 2026-07-28 12:53:24 +0200 | `01d9512e6f288db1702bd2a16ef0a21ceba08968` | 31633 | `68610d93ea1dda19176b6a68a5293d07bbc38118e5c4fc725b8b9a639839fa3a` |
+| `fixtures/asqav/history/ee8a3e7/conformance/vectors.json` | `ee8a3e761cf7dc525a43111e04c19c4878ac6db9` | 2026-08-04 21:03:12 +0200 | `4dfde9819fc3c197dd38d3e51c78d8e2f6dd723e` | 31790 | `2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a` |
+
+`4cbdfc0` is *"feat(sdk): authoritative code-authorship path with advisory client digest (#394)"*, the
+last state of the file before `#416`; `ee8a3e7` is `#416` itself, the first state after it. The
+`upstream blob` column is the blob id the SDK repository holds for that path at that commit, so a
+third party can check the pin with one `git rev-parse <commit>:conformance/vectors.json` and no
+digesting.
+
+**`ee8a3e7` and `05c1c49` are the same upstream blob** — `4dfde98…`, byte-identical to
+`fixtures/asqav/05c1c49/conformance/vectors.json` pinned in the section above — because `ee8a3e7` is
+the last commit to touch `conformance/vectors.json` before `05c1c49`. It is stored again under its own
+commit rather than aliased: what the M6 test asserts is the state at each commit, and a reader
+checking `ee8a3e7` should not have to know that `05c1c49` happens to stand in for it. The duplication
+is 31790 bytes and is deliberate.
+
+**Same `.gitattributes` flaw as the entries above, same harmlessness, recorded again.**
+`git check-attr text eol` reports `text: set, eol: lf` for both files, because `*.json text eol=lf`
+still sorts after `fixtures/** -text` and the last matching line wins. Harmless here: both files are
+LF-only — `grep -c $'\r'` returns 0 for each — and each staged blob was verified to hash to the sha256
+in the table above and to carry the upstream blob id. It remains unfixed, and it remains the flaw that
+would corrupt a snapshot legitimately containing CRLF.
+
+**What would turn the pin red.** `test/acta.test.ts` asserts both sha256 values before it digests
+anything, and a control in the same block mutates one byte of the `4cbdfc0` bytes in the test's own
+copy and requires the digest to stop reaching `0d6c88a1…`. Both were exercised the other way round
+before the commit: one byte of the `4cbdfc0` fixture was changed on disk, five of the block's six
+tests failed, and the file was restored from the blob. The sixth reads only the post-`#416` fixtures,
+which is why it stayed green.

@@ -32,7 +32,7 @@ import { actaAdapter, detect, FORMAT } from "../src/adapters/acta.js";
 import { detectFormat } from "../src/detect.js";
 import { coverageFor } from "../src/coverage.js";
 import type { VerifyOptions, VerifyResult } from "../src/types.js";
-import { ACTA_JWKS, ACTA_NOW, ACTA_PUB, ACTA_SYNTH, ASQAV_05C1C49, REFS, read, sha256Hex } from "./helpers.js";
+import { ACTA_JWKS, ACTA_NOW, ACTA_PUB, ACTA_SYNTH, ASQAV_05C1C49, FIX, REFS, read, sha256Hex } from "./helpers.js";
 
 const synth = (rel: string) => join(ACTA_SYNTH, ...rel.split("/"));
 const pub = (rel: string) => join(ACTA_PUB, ...rel.split("/"));
@@ -395,5 +395,164 @@ describe("acta — chain-digest contradiction (farley §5.7 vs marques §5.3)", 
     expect(r.verdict).toBe("VALID");
     expect(r.annotations?.["chain_link"]).toBe("present but not checked (no --prev)");
     expect(r.annotations?.["chain_digest_scope"]).toBeUndefined();
+  });
+});
+
+// --------------------------------------------------------------------------
+// M6, pinned so the identification reproduces from this repository alone.
+//
+// FINDINGS-rerun-2026-09-02.md M6 records that the published
+// `counterparty_binding.envelope_hash` `0d6c88a1…` is the three-key digest of
+// the peer envelope as it stood BEFORE asqav-sdk `ee8a3e7` (PR #416,
+// 2026-08-04), which moved `payload.previousReceiptHash` off the `sha256:`
+// genesis seed and recomputed each vector's own `canonical` and `sha256` but
+// not that derived literal. That was established against a clone. A clone is
+// not evidence this repository holds: it can be rewritten, and this machine
+// keeps no history for it. So the two states either side of #416 are pinned as
+// fixtures, taken with `git cat-file blob` and never from a worktree, and the
+// identification is re-derived here from those bytes.
+//
+// What this block does NOT assert: that `0d6c88a1…` is correct for the
+// envelope the vectors publish today. It is not — that is the finding. These
+// assertions pin WHICH bytes produce it, which is what turns M6 from a negative
+// into a defect with a named cause.
+// --------------------------------------------------------------------------
+
+describe("acta — M6: the published envelope_hash is the pre-#416 three-key digest", () => {
+  const ENVELOPE = "counterparty_binding_envelope_byte_equality";
+  const BINDING = "counterparty_binding_happy_path";
+
+  // The three-key digest {payload, signature, anchors}: scope (a), what -08
+  // §5.7 states, and the scope the SDK's own compute_envelope_hash implements.
+  const PRE_416 = "0d6c88a16e96fd3429be13e44dc957062f77d417dc0c3ea28e4fa496230de2a9";
+  const POST_416 = "e89bf2fe64bd7dab3a606ea265ca14f88f4d161ec0485062a7facee4902c655f";
+  const SEED = "sha256:" + "0".repeat(64);
+
+  type Vector = { name: string; input: Record<string, unknown> };
+
+  // Last state before #416, and first state after it. `ee8a3e7` is also the
+  // last commit to touch conformance/vectors.json before `05c1c49`, so its blob
+  // and the 05c1c49 fixture's are one upstream object — pinned separately
+  // anyway, because what this block is about is the commit each state belongs
+  // to, not the number of distinct blobs.
+  const corpus = {
+    "4cbdfc0": read(join(FIX, "asqav", "history", "4cbdfc0", "conformance", "vectors.json")),
+    ee8a3e7: read(join(FIX, "asqav", "history", "ee8a3e7", "conformance", "vectors.json")),
+    "05c1c49": read(join(ASQAV_05C1C49, "conformance", "vectors.json")),
+  };
+
+  const vectorsOf = (bytes: Buffer): Vector[] => (JSON.parse(bytes.toString("utf8")) as { vectors: Vector[] }).vectors;
+
+  const vectorNamed = (bytes: Buffer, name: string): Vector => {
+    const v = vectorsOf(bytes).find((x) => x.name === name);
+    if (!v) throw new Error(`vector not found: ${name}`);
+    return v;
+  };
+
+  // The three-key object the envelope vector's `input` is. Member order here is
+  // irrelevant — JCS sorts it — but the presence check is not: digesting a
+  // two-key object would report a mismatch instead of a missing member.
+  const envelopeOf = (bytes: Buffer): Record<string, unknown> => {
+    const input = vectorNamed(bytes, ENVELOPE).input;
+    for (const k of ["payload", "signature", "anchors"]) {
+      if (!(k in input)) throw new Error(`envelope vector lacks member ${k}`);
+    }
+    return { payload: input["payload"], signature: input["signature"], anchors: input["anchors"] };
+  };
+
+  const threeKeyDigest = (bytes: Buffer): string => sha256Hex(Buffer.from(jcs(envelopeOf(bytes)), "utf8"));
+
+  // The value B actually publishes, base64 in the vector, decoded to hex here.
+  const publishedEnvelopeHash = (bytes: Buffer): string => {
+    const cb = vectorNamed(bytes, BINDING).input["counterparty_binding"] as Record<string, string>;
+    return Buffer.from(cb["envelope_hash"]!, "base64").toString("hex");
+  };
+
+  // Every member path at which two JSON values differ, for the one-member claim.
+  const differingMembers = (a: unknown, b: unknown, path = ""): string[] => {
+    const isObj = (v: unknown): v is Record<string, unknown> =>
+      typeof v === "object" && v !== null && !Array.isArray(v);
+    if (isObj(a) && isObj(b)) {
+      return [...new Set([...Object.keys(a), ...Object.keys(b)])]
+        .sort()
+        .flatMap((k) => differingMembers(a[k], b[k], path ? `${path}.${k}` : k));
+    }
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return [path];
+      return a.flatMap((x, i) => differingMembers(x, b[i], `${path}[${i}]`));
+    }
+    return a === b ? [] : [path];
+  };
+
+  it("pins the bytes this block reads: upstream blob bytes, not a checkout", () => {
+    // core.autocrlf is true on this machine, so a working-tree copy of these
+    // files would digest differently. These came out of `git cat-file blob`.
+    expect(sha256Hex(corpus["4cbdfc0"])).toBe("68610d93ea1dda19176b6a68a5293d07bbc38118e5c4fc725b8b9a639839fa3a");
+    expect(sha256Hex(corpus["ee8a3e7"])).toBe("2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a");
+    expect(sha256Hex(corpus["05c1c49"])).toBe("2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a");
+  });
+
+  it("digests to the published envelope_hash at 4cbdfc0, the last state before #416", () => {
+    expect(threeKeyDigest(corpus["4cbdfc0"])).toBe(PRE_416);
+  });
+
+  it("digests to something else at ee8a3e7 and at 05c1c49, every state after #416", () => {
+    expect(threeKeyDigest(corpus["ee8a3e7"])).toBe(POST_416);
+    expect(threeKeyDigest(corpus["05c1c49"])).toBe(POST_416);
+  });
+
+  it("publishes the same envelope_hash at all three commits, including the two it no longer matches", () => {
+    // The defect in one assertion: the derived literal did not move when its
+    // input did. At 4cbdfc0 the published value equals the digest of the
+    // envelope beside it; at ee8a3e7 and 05c1c49 it equals the digest of an
+    // envelope that is no longer there.
+    for (const commit of ["4cbdfc0", "ee8a3e7", "05c1c49"] as const) {
+      expect(publishedEnvelopeHash(corpus[commit])).toBe(PRE_416);
+    }
+    expect(publishedEnvelopeHash(corpus["4cbdfc0"])).toBe(threeKeyDigest(corpus["4cbdfc0"]));
+    expect(publishedEnvelopeHash(corpus["05c1c49"])).not.toBe(threeKeyDigest(corpus["05c1c49"]));
+  });
+
+  it("changed exactly one member across #416: payload.previousReceiptHash", () => {
+    // The cause stated as a measurement rather than as a reading of the commit
+    // message. Had #416 touched anything else in the envelope, the digest
+    // change could not be attributed to the genesis-seed edit alone.
+    expect(differingMembers(envelopeOf(corpus["4cbdfc0"]), envelopeOf(corpus["ee8a3e7"]))).toEqual([
+      "payload.previousReceiptHash",
+    ]);
+    const before = envelopeOf(corpus["4cbdfc0"])["payload"] as Record<string, string>;
+    const after = envelopeOf(corpus["ee8a3e7"])["payload"] as Record<string, string>;
+    expect(before["previousReceiptHash"]).toBe(SEED);
+    expect(after["previousReceiptHash"]).toBe("0".repeat(64));
+    // And nothing at all changed between ee8a3e7 and the commit -08 pins.
+    expect(differingMembers(envelopeOf(corpus["ee8a3e7"]), envelopeOf(corpus["05c1c49"]))).toEqual([]);
+  });
+
+  it("CONTROL: one byte changed in the 4cbdfc0 bytes and the digest no longer reaches PRE_416", () => {
+    // Without this the block above proves only that two constants were typed in
+    // correctly. Mutate one byte of the fixture in this test's own copy — the
+    // last digit of the genesis seed inside the envelope vector, 0 -> 1, chosen
+    // because it keeps the JSON parseable so the failure is the digest and not
+    // a throw — and PRE_416 must no longer be reachable from these bytes.
+    const bytes = Buffer.from(corpus["4cbdfc0"]);
+    const vectorAt = bytes.indexOf(`"name": "${ENVELOPE}"`);
+    expect(vectorAt).toBeGreaterThan(-1);
+    const seedAt = bytes.indexOf(`"${SEED}"`, vectorAt);
+    expect(seedAt).toBeGreaterThan(-1);
+    const lastZero = seedAt + 1 + SEED.length - 1;
+    expect(bytes[lastZero]).toBe(0x30); // '0'
+    bytes[lastZero] = 0x31; // '1'
+
+    // One byte, and only one: a wider edit would make the failure below
+    // unattributable to the single-byte change this control claims to make.
+    expect(bytes.length).toBe(corpus["4cbdfc0"].length);
+    let differingBytes = 0;
+    for (let i = 0; i < bytes.length; i++) if (bytes[i] !== corpus["4cbdfc0"][i]) differingBytes++;
+    expect(differingBytes).toBe(1);
+
+    expect(threeKeyDigest(bytes)).not.toBe(PRE_416);
+    expect(threeKeyDigest(bytes)).not.toBe(POST_416);
+    // The unmutated copy is untouched, so the assertions above still hold.
+    expect(threeKeyDigest(corpus["4cbdfc0"])).toBe(PRE_416);
   });
 });
