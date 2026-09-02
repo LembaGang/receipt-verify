@@ -108,6 +108,7 @@ regression stays named rather than merely gone.
 
 Provenance: CC insight-adapter report, 2026-09-02, T1.2; CC insight-adapter-v3
 report, 2026-09-03, T1.
+(report dated for its scheduled day; the run and the commits are 2026-09-02 — see fixtures/provenance.md, correction of 2026-09-02)
 
 ### 10. Non-standard EIP-712 domain members, and how the tool reads three schema versions
 
@@ -132,3 +133,4 @@ adapter cannot enumerate every encoding a non-standard domain might use, and it
 does not pretend to.
 
 Provenance: CC insight-adapter-v3 report, 2026-09-03, T2.2.
+(report dated for its scheduled day; the run and the commits are 2026-09-02 — see fixtures/provenance.md, correction of 2026-09-02)

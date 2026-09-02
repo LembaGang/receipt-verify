@@ -290,3 +290,5 @@ orders `*.json text eol=lf` AFTER `fixtures/** -text` and `refs/** -text`, and t
 wins. It is harmless for these four files: all are LF-only, and each one's git blob was verified here
 to hash to the same sha256 as the bytes on disk. It would not be harmless for a snapshot that
 legitimately contained CRLF, which is exactly what those two lines were written to protect.
+
+**Correction 2026-09-02.** This section was appended on 2026-09-02 (commits 7506c18 12:17:39Z and ff1639e 12:20:23Z), not 2026-09-03. The handoff and report files (`CC_HANDOFF_2026-09-03_insight-adapter-v3-addendum.md`, `CC_REPORT_2026-09-03_insight-adapter-v3.md`) carry the date the work was scheduled for, not the date it ran.
