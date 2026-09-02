@@ -525,3 +525,45 @@ step `inferred`. Second, the genesis construction hardcoded `v: "evidence.action
 declares `evidence.action/1`, which produced four false mismatches; the construction now uses the
 record's own `v` token, which is what `SPEC.md` §6 means by the format version, and all four match. The
 digest scopes themselves were never changed to make a result go away.
+
+## Appended 2026-09-02 — Insight's domain-repaired package (schema v4), the 15:45Z registry pin, and the production sample
+
+Round 3 of the Insight execution-receipt review (`VERIFICATION_NOTE_2026-09-02_insight-execution-receipt-v4-round3.md`).
+v4 moves `environment` out of the EIP-712 domain, where v3 declared it without signing it, and into the
+signed message as the 44th field. The domain is back to the three standard members, so the standard
+EIP-712 path verifies the receipt and no custom encoder is involved.
+
+All four files were pinned from bytes already on disk; nothing was re-fetched by this session. The
+three inputs were checked against the digests the handoff states **before** anything was copied, and
+they matched exactly.
+
+| path | source | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/insight/execution-receipt-bytes-2026-09-02-v4.json` | attached to Yu's 15:34Z mail, uploaded by the founder 15:50Z | 44472 | `fb403a85d6bd9af3ce7243cdae0b753a53a4a5cad816efde3a3ffc247bd98781` |
+| `refs/insight-oracle-keys-2026-09-02T1545Z.json` | registry, pinned as bytes 15:45:42Z | 17019 | `76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2` |
+| `fixtures/insight/execution-sample-2026-09-02T1546Z.json` | production sample endpoint, pinned as bytes 15:45:58Z | 4675 | `a3698a472f72578170266f6be42ae4c46ad6c7bd4e1f9f58309be5bfd9c6263a` |
+| `fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json` | `data.attestation` extracted from the row above | 6471 | `da6cdb0b71b7864d870614be661dfc1abda497ef78bd477c95785aadee3deb21` |
+
+The fourth file is **derived, not fetched**, and is marked as such here because it is the only file in
+this table that no endpoint ever served. The adapter reads a single attestation object, and the sample
+endpoint wraps its attestation in a envelope carrying `isSample`, a `note` and verification URLs. The
+extraction is `data.attestation` re-serialised with two-space indent; `test/insight.test.ts` asserts
+that the pinned copy deep-equals the wrapper's own `attestation` member, so the derived file cannot
+drift from the fetched bytes it came from.
+
+**The wrapper is pinned as well as the attestation, deliberately.** It would have been smaller to keep
+only the attestation. The wrapper is the evidence for H8: the word SYNTHETIC appears in
+`data.note` and nowhere in the 44 signed fields, and that gap is only visible if both halves are here.
+
+**Same `.gitattributes` flaw as the earlier Insight and Asqav entries, same harmlessness, recorded
+again.** `git check-attr text eol` reports `text: set, eol: lf` for these paths because `*.json text
+eol=lf` sorts after `fixtures/** -text` and the last matching line wins. Harmless here: all four files
+are LF-only (`grep -c $'\r'` returns 0 for each) and each staged blob was verified to hash to the
+sha256 in the table above.
+
+**Registry state at this pin.** `ExecutionReceipt` is published at `schemaVersion` 4;
+`ExecutionReceiptV3` carries `retiredForSigning: true`; V2 and V1 are retained and retired. Two
+production keys are listed: `insight-oracle-safety-v2` with `validUntil` 2026-09-02T17:35:36Z, and
+`insight-oracle-safety-v2-202609` (`0x6506F789Edd43338A416f59822A63F309f97E8ce`, open-ended), which is
+the key the production sample signs with. The rotation completes after 17:36Z, so **this pin is
+pre-rotation** and a later pin will be needed for the post-rotation entry (the Lead's B3).
