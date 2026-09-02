@@ -307,3 +307,69 @@ to hash to the same sha256 as the bytes on disk. It would not be harmless for a 
 legitimately contained CRLF, which is exactly what those two lines were written to protect.
 
 **Correction 2026-09-02.** This section was appended on 2026-09-02 (commits 7506c18 12:17:39Z and ff1639e 12:20:23Z), not 2026-09-03. The handoff and report files (`CC_HANDOFF_2026-09-03_insight-adapter-v3-addendum.md`, `CC_REPORT_2026-09-03_insight-adapter-v3.md`) carry the date the work was scheduled for, not the date it ran.
+
+## Appended 2026-09-02 — the Asqav SDK conformance vectors at the commit -08 pins
+
+For the `-08` rerun (`FINDINGS-rerun-2026-09-02.md`). `draft-marques-asqav-compliance-receipts-08`
+names its own vector corpus in the reference section at lines 6109-6111 of the pinned text:
+
+> [ASQAV-SDK]  Asqav, "asqav-sdk: Verifier Conformance Vectors", 2026,
+>              <https://github.com/jagmarques/asqav-sdk/tree/05c1c49>.
+
+**Provenance note, stated because it is a deviation.** The rerun handoff instructed that the SDK
+repository URL be taken from `cc-output/errata-farley-marques/marques-evidence.md`. That file names
+only the two IETF archive URLs and `github.com/ScopeBlind/agent-governance-testvectors`; it carries no
+Asqav SDK URL. The URL above was read from the `-08` bytes pinned in `refs/` (sha256
+`ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0`), which is a byte-pinned source and
+not a guess, on the founder's instruction of 2026-09-02. It was not taken from a rendered GitHub page.
+
+Cloned by `git clone` (the one third-party endpoint this rerun was permitted) and checked out at:
+
+| field | value |
+|---|---|
+| commit | `05c1c49402dc933ea7ada039ce5c87213b89de89` |
+| author date | 2026-08-30T23:09:05+02:00 |
+| commit date | 2026-08-30T23:09:05+02:00 |
+| subject | `feat(vectors): publish the selective-omission conformance vectors (#428)` |
+
+That commit is the one that added the three selective-omission vectors (`asqav-14-omitted-action-chain`,
+`asqav-15-unsigned-gap`, `asqav-16-chain-emission-blocked`), which is what it was described as.
+
+`ls-tree-verifier-conformance-vectors.txt` is `git ls-tree -r HEAD verifier/conformance-vectors/` at
+that commit: 211 entries with mode, type and blob id, sha256
+`eb040de0f8ce9af8ffad85bc07d3a155f6f9d8609be5fecd57ed99f7b625789f`.
+
+**How these bytes were extracted, and why it matters.** `core.autocrlf` is `true` on this machine, so
+the working tree of the clone is CRLF-rewritten and every file in it digests to a value no one else
+would reproduce. Each file below was therefore extracted with `git cat-file blob <id>`, and each
+`sha256` was verified equal to `git cat-file blob <id> | sha256sum` before being written here. A copy
+taken from the checkout instead would have pinned the mangled bytes; the first attempt in this session
+did exactly that and was discarded.
+
+| path (under `fixtures/asqav/05c1c49/`) | blob id at 05c1c49 | bytes | sha256 |
+|---|---|---|---|
+| `conformance/vectors.json` | `4dfde9819fc3c197dd38d3e51c78d8e2f6dd723e` | 31790 | `2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a` |
+| `verifier/conformance-vectors/asqav-01-genesis-permit/receipt.json` | `5909477673b2ffe8a970626d3e3328007e603b3d` | 832 | `c02fd4fc8cc26d4784b99515f84d2c61faec8f8d18c1ce6ae72f7406ac3cf084` |
+| `verifier/conformance-vectors/asqav-01-genesis-permit/expected.json` | `e49c143f485c38335565f395933ae1b9a9bfde9e` | 199 | `72257a48afe336d13b589dccbcdf83743d80437dee729954d0a9494e915e9fbf` |
+| `verifier/conformance-vectors/asqav-01-genesis-permit/jwks.json` | `a97b747dd4258c523b822209dd8279c6b5ed45dd` | 217 | `233a208e9564acea9f24faa2ffaa8bebce04d752bee685e581eef16c2b9c51a4` |
+| `verifier/conformance-vectors/asqav-03-chain-link/receipt.json` | `46dbac464ae40cc3005d934198276ed203172ab0` | 834 | `f9f29b753d19c4cb5d518ac6d73c436685279aeab92a085c699c2de8a4598085` |
+| `verifier/conformance-vectors/asqav-03-chain-link/predecessor.json` | `5909477673b2ffe8a970626d3e3328007e603b3d` | 832 | `c02fd4fc8cc26d4784b99515f84d2c61faec8f8d18c1ce6ae72f7406ac3cf084` |
+| `verifier/conformance-vectors/asqav-03-chain-link/expected.json` | `604b27af19bf5b03e8679e1fdaa7af3d65a10a85` | 203 | `59cf35472dcc75f090840ba3b126bc963f41783d27192f21ffdb93aae905446d` |
+| `verifier/conformance-vectors/asqav-03-chain-link/jwks.json` | `a97b747dd4258c523b822209dd8279c6b5ed45dd` | 217 | `233a208e9564acea9f24faa2ffaa8bebce04d752bee685e581eef16c2b9c51a4` |
+| `verifier/conformance-vectors/acta-02-chain-link/receipt.json` | `17bfb6b25b07ce9e2d63934ce0f32088d3e03d44` | 626 | `50a6937e41bb7b82f9bb5f78548cd7681ff107faff839c644ad962c438d706bd` |
+| `verifier/conformance-vectors/acta-02-chain-link/predecessor.json` | `b9f032a6a3e5d66195f92aa00a0c1a4fd08708e9` | 531 | `3dc3b36962eb8b27efc56d53b2b87fe75b88781c00111b660aad4808d8f4706d` |
+| `verifier/conformance-vectors/acta-02-chain-link/expected.json` | `a98411ee912e8b5051bdfffe334fcbee68bd3a91` | 160 | `038c708ecb2ccbda46730be02d62ae287c74964b4a348fe3f6716c27fb25aa62` |
+| `verifier/conformance-vectors/acta-02-chain-link/acta-keys.json` | `d3cb11e4a829d22ec715303d5b6f5b056cd32ed7` | 179 | `4f3dafaf1e2db10e23a389c7d85035b1e09a4308509e2314b464228b258445b6` |
+
+`asqav-01-genesis-permit/receipt.json` and `asqav-03-chain-link/predecessor.json` are the same blob —
+the genesis receipt is the chain link's predecessor — and so carry one digest between them.
+
+Only the files this rerun reads were copied; the other 199 entries of the vectors directory stay in
+`ls-tree-verifier-conformance-vectors.txt` by blob id and were not snapshotted.
+
+**Same `.gitattributes` flaw as the 2026-09-02 Insight entries, same harmlessness, recorded again.**
+`git check-attr text eol` reports `text: set, eol: lf` for the `.json` files above, because
+`*.json text eol=lf` still sorts after `fixtures/** -text` and the last matching line wins. Harmless
+here: every file above is LF-only and each one's staged blob was verified to hash to the sha256 in the
+table. It remains unfixed, and it remains the flaw that would corrupt a snapshot legitimately
+containing CRLF.
