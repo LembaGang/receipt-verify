@@ -43,6 +43,15 @@ export const INSIGHT_NOW = 1788327600;
  */
 export const INSIGHT_V3_NOW = 1788342810;
 
+/**
+ * The Asqav SDK conformance vectors at commit 05c1c49, the commit
+ * draft-marques-asqav-compliance-receipts-08 pins in its [ASQAV-SDK] reference.
+ * Extracted with `git cat-file blob`, not copied from a checkout: core.autocrlf
+ * is true on this machine and a checkout rewrites the bytes the digests pin.
+ * Provenance and per-file digests are in fixtures/provenance.md.
+ */
+export const ASQAV_05C1C49 = join(FIX, "asqav", "05c1c49");
+
 export const ACTA = join(FIX, "acta");
 export const ACTA_SYNTH = join(ACTA, "synthetic");
 export const ACTA_PUB = join(ACTA, "published");

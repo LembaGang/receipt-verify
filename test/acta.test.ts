@@ -30,8 +30,9 @@ import { createPublicKey, verify as cryptoVerify } from "node:crypto";
 import { jcs } from "@headlessoracle/chirindo/dist/vendor/recorder/index.js";
 import { actaAdapter, detect, FORMAT } from "../src/adapters/acta.js";
 import { detectFormat } from "../src/detect.js";
+import { coverageFor } from "../src/coverage.js";
 import type { VerifyOptions, VerifyResult } from "../src/types.js";
-import { ACTA_JWKS, ACTA_NOW, ACTA_PUB, ACTA_SYNTH, REFS, read, sha256Hex } from "./helpers.js";
+import { ACTA_JWKS, ACTA_NOW, ACTA_PUB, ACTA_SYNTH, ASQAV_05C1C49, REFS, read, sha256Hex } from "./helpers.js";
 
 const synth = (rel: string) => join(ACTA_SYNTH, ...rel.split("/"));
 const pub = (rel: string) => join(ACTA_PUB, ...rel.split("/"));
@@ -81,6 +82,57 @@ describe("acta — detection", () => {
     const d = detectFormat(read(synth("cleartext.receipt.json")));
     expect(d.ok).toBe(true);
     if (d.ok) expect(d.adapter.format).toBe(FORMAT);
+  });
+});
+
+// --------------------------------------------------------------------------
+// The -08 Compliance Receipt envelope, against the author's own published
+// vectors (asqav-sdk @ 05c1c49, pinned under fixtures/asqav/05c1c49/).
+//
+// -08 §5.3's interoperability note (line 1037) and §11.2 (line 3774) both make
+// the top-level `anchors` key the discriminator between the two wire formats,
+// and §11.2 forbids retrying the other scope once one fails. That makes the
+// refusal below load-bearing: if this adapter claimed a Compliance Receipt, the
+// draft's own rule would forbid the recovery that might have caught it.
+// --------------------------------------------------------------------------
+
+describe("acta — declines the draft-marques -08 Compliance Receipt envelope", () => {
+  const asqavVec = join(ASQAV_05C1C49, "verifier", "conformance-vectors");
+  const complianceReceipt = read(join(asqavVec, "asqav-03-chain-link", "receipt.json"));
+
+  it("pins the vector bytes this block reads", () => {
+    // The upstream blob bytes, not a working-tree checkout: core.autocrlf is on
+    // for this machine, so a checked-out copy would digest differently.
+    expect(sha256Hex(complianceReceipt)).toBe("f9f29b753d19c4cb5d518ac6d73c436685279aeab92a085c699c2de8a4598085");
+  });
+
+  it("does not claim a -08 envelope, so it cannot mis-grade one as ACTA", () => {
+    expect(detect(complianceReceipt)).toBe(false);
+  });
+
+  it("leaves the format unrecognized rather than naming a wrong one", () => {
+    // The tool does not positively identify Asqav — it has no Asqav adapter.
+    // It refuses and tells the caller to name the format, which is the
+    // fail-closed half of §11.2's "MUST NOT retry under a different scope".
+    const d = detectFormat(complianceReceipt);
+    expect(d.ok).toBe(false);
+    if (!d.ok) {
+      expect(d.reason).toBe("none");
+      expect(d.candidates).toEqual([]);
+    }
+  });
+
+  it("declines on the anchors key itself, not on some incidental malformation", () => {
+    // Control: strip `anchors` and the same bytes ARE claimed. Without this,
+    // the refusal above would pass even if it fired for an unrelated reason.
+    const withoutAnchors = JSON.parse(complianceReceipt.toString("utf8")) as Record<string, unknown>;
+    delete withoutAnchors["anchors"];
+    expect(detect(Buffer.from(JSON.stringify(withoutAnchors), "utf8"))).toBe(true);
+  });
+
+  it("names the -08 pin by digest in the coverage sources", () => {
+    const sources = coverageFor(FORMAT)?.sources ?? [];
+    expect(sources.some((s) => s.includes("ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0"))).toBe(true);
   });
 });
 
