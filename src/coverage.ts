@@ -364,12 +364,117 @@ const evidenceAction: FormatCoverage = {
   ],
 };
 
+const insight: FormatCoverage = {
+  format: "insight.attestation/eip712",
+  sources: [
+    "EIP-712 (the EIP text; encodeType / encodeData / hashStruct / domainSeparator and the 0x1901 construction are implemented from it here, not taken from a library)",
+    "refs/insight-oracle-keys-2026-09-02.json (the published registry, the only specification Insight publishes)",
+  ],
+  orderNote:
+    "Insight publishes no step model and no specification prose, so there is no external numbering to carry. `order` is THIS TOOL'S evaluation order and nothing more; no `specStep` is claimed for any check because no source assigns one.",
+  checks: [
+    {
+      id: "parse",
+      order: 1,
+      title: "JSON parses and no object repeats a member name",
+      source: "RFC 8785 §3.1, RFC 7493 §2.3",
+      status: "implemented",
+      note: "Ordered first deliberately. JSON.parse silently keeps the last of a repeated member, so a document signed over one value can display another; the scan runs on the raw text, before parsing, and no value from a duplicated object reaches any later check.",
+    },
+    {
+      id: "schema",
+      order: 2,
+      title: "Every field the artefact's own type declares is present in `data`, with no undeclared extras",
+      source: "the artefact's `eip712.types[primaryType]`",
+      status: "implemented",
+    },
+    {
+      id: "digest",
+      order: 3,
+      title: "EIP-712 digest recomputes, and equals `uid` where one is carried",
+      source: "EIP-712; uid-as-digest is the package's own construction",
+      status: "implemented",
+    },
+    {
+      id: "signature",
+      order: 4,
+      title: "secp256k1 recovery over that digest returns the stated `attester`",
+      source: "EIP-712 + the artefact's `attester` member",
+      status: "implemented",
+    },
+    {
+      id: "identity",
+      order: 5,
+      title: "The recovered signer is a key published in the registry, and the registry's type for this primaryType agrees with the artefact's",
+      source: "refs/insight-oracle-keys-2026-09-02.json",
+      status: "implemented",
+      note: "An unpublished signer is UNVERIFIABLE/key_unresolvable, never INVALID: a signature that verifies under a key nobody published is not a forgery, it is an unestablished identity. --allow-unregistered-signer continues past it and asserts nothing about identity. The registry type comparison is REPORTED (`registry_schema`) and never moves the verdict.",
+    },
+    {
+      id: "freshness",
+      order: 6,
+      title: "validUntil equals its anchor plus validForSeconds, and has not closed at the evaluation time",
+      source: "the artefact's own validUntil / checkedAt / executedAt / validForSeconds",
+      status: "implemented",
+    },
+    {
+      id: "binding",
+      order: 7,
+      title: "The receipt binds to the gate whose bytes it names, and requestHash is the digest of the canonical request",
+      source: "the receipt's preTradeUid/requestHash and the gate's canonicalRequest* types",
+      status: "conditional",
+      note: "Runs when a package supplies gates. A gate that is signed but not referenced by the receipt is reported in `unbound_gates` and does not move the verdict — it is not a fault, it is unfinished scope.",
+    },
+    {
+      id: "swap",
+      order: 8,
+      title: "The pool Swap event decodes to the signed executedPrice, and the delta against quotedPrice is recomputed",
+      source: "the Uniswap V3 Swap event ABI, derived from its signature string here",
+      status: "conditional",
+      note: "Runs when the package ships rawSwapEvent and names its legs. Token decimals come from --tokens where given and otherwise from a two-entry built-in table; which one was used is reported in `token_decimals_source`, and an unknown token skips the check rather than assuming 18.",
+    },
+    {
+      id: "attribution",
+      order: 9,
+      title: "Net flow per address over every Transfer log, and the price actually realised by the final beneficiary",
+      source: "the ERC-20 Transfer event ABI, derived from its signature string here",
+      status: "reported_only",
+      note: "Never moves the verdict in either direction. The receipt does not claim what the beneficiary realised, so a divergence is not a false statement by the issuer — it is a different measurement, and printing it beside the signed one is the whole value.",
+    },
+    {
+      id: "chain",
+      order: 10,
+      title: "Transaction status, block number, block timestamp and shipped logs corroborated against a JSON-RPC endpoint",
+      source: "eth_getTransactionReceipt / eth_getBlockByNumber",
+      status: "conditional",
+      note: "Runs only with --rpc, and reports the sha256 of each RPC response so the answer is quotable. Without it the result says `chain: not_checked (no rpc)`. If --rpc is given and the endpoint fails, the result is UNVERIFIABLE/io_error rather than a silent downgrade.",
+    },
+    {
+      id: "precedence",
+      order: 11,
+      title: "That a pre-trade gate existed BEFORE the trade it gates",
+      source: "the claim the package's structure invites; no source establishes it",
+      status: "not_implemented",
+      note: "Not implementable from these bytes and declared so on every result, including VALID. The gate's signature timestamp is package metadata outside the signed struct, and `checkedAt` is a signed field whose value the signer chooses. Binding the receipt to the gate's bytes is proved here; ordering in time is not, and closes only by anchoring the gate uid before the trade transaction.",
+    },
+    {
+      id: "observations",
+      order: 12,
+      title: "participantCount, sourceGroupCount, independence, consensus-price provenance and mevRiskBps",
+      source: "the receipt's own signed fields",
+      status: "not_implemented",
+      note: "Issuer claims. The signature proves the issuer committed to these numbers; nothing in the package tests whether they describe anything. The package labels its own pre-trade observations synthetic.",
+    },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 
 export const COVERAGE: Readonly<Record<string, FormatCoverage>> = Object.freeze({
   [verification.format]: verification,
   [acta.format]: acta,
   [evidenceAction.format]: evidenceAction,
+  [insight.format]: insight,
 });
 
 export function coverageFor(format: string): FormatCoverage | undefined {

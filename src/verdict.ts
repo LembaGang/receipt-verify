@@ -17,9 +17,20 @@ export function valid(
 }
 
 /**
- * INVALID — key-binding. Reached only when a published key WAS resolved and the
- * receipt provably fails to bind to it. The resolved key is mandatory: naming
- * it is what makes the statement falsifiable by the reader.
+ * INVALID — a determinate negative under a named key. The resolved key is
+ * mandatory: naming it is what makes the statement falsifiable by the reader.
+ *
+ * The first four reasons are key-binding failures: a key resolved and the
+ * receipt provably fails to bind to it. `expired` and `malformed_member` are
+ * NOT key-binding — they are determinate negatives of a different kind, added
+ * for insight.attestation/eip712, where a validity window that has closed and a
+ * `uid` that is not the digest of its own bytes are both facts the checker
+ * establishes rather than fails to complete. `formatResult` labels each kind,
+ * so "INVALID — key-binding" keeps meaning exactly what it did.
+ *
+ * NOTE for anyone branching on `reason`: both of those two tokens are ALSO
+ * emitted by other adapters under UNVERIFIABLE, where they mean "could not
+ * complete". Branch on `verdict` first, then `reason`.
  */
 export function invalid(
   format: string,
@@ -29,6 +40,8 @@ export function invalid(
     | "key_binding_mismatch"
     | "content_commitment_mismatch"
     | "chain_linkage_broken"
+    | "expired"
+    | "malformed_member"
   >,
   detail: string,
   resolvedKey: ResolvedKey,
@@ -129,6 +142,18 @@ export function exitCodeFor(r: VerifyResult, opts: OutputOptions = {}): 0 | 1 {
 }
 
 /**
+ * Which kind of determinate negative an INVALID is. The four original reasons
+ * are key-binding failures and keep that label verbatim; the two added for
+ * insight.attestation/eip712 are not, and saying so is cheaper than letting the
+ * header make a claim the reason does not support.
+ */
+function invalidKind(reason: ReasonCode): string {
+  if (reason === "expired") return "validity window";
+  if (reason === "malformed_member") return "self-inconsistent";
+  return "key-binding";
+}
+
+/**
  * VALID asserts something under a key; INVALID asserts the opposite under the
  * same key. Only the first is a "verified under" statement, so the verb differs
  * — and UNVERIFIABLE reaches neither, because it has no ResolvedKey to print.
@@ -145,10 +170,7 @@ function keyLine(k: ResolvedKey, verdict: VerifyResult["verdict"]): string {
  * point of separating INVALID from UNVERIFIABLE.
  */
 export function formatResult(r: VerifyResult, opts: OutputOptions = {}): string {
-  const head =
-    r.verdict === "INVALID"
-      ? `INVALID — key-binding: ${r.detail}`
-      : `${r.verdict} — ${r.detail}`;
+  const head = r.verdict === "INVALID" ? `INVALID — ${invalidKind(r.reason)}: ${r.detail}` : `${r.verdict} — ${r.detail}`;
   const lines = [head, `format: ${r.format}`, `reason: ${r.reason}`];
   if (r.resolvedKey) lines.push(keyLine(r.resolvedKey, r.verdict));
   const gate = deliveryGate(r, opts);

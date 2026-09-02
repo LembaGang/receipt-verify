@@ -119,6 +119,25 @@ export interface VerifyOptions {
   now?: number;
   /** Path the bytes came from, for error text only. */
   sourcePath?: string;
+  /**
+   * A published key registry, as bytes, for formats that resolve a signer from
+   * one rather than from a JWK Set. Supplied as bytes for the same reason
+   * `previousReceipt` is: the digest is taken over exactly what was on the wire.
+   */
+  registry?: Uint8Array;
+  /** Where `registry` came from, for the ResolvedKey `origin` line. */
+  registryOrigin?: string;
+  /**
+   * Continue past a signer that resolves to no published key. This asserts
+   * NOTHING about identity: it lets the structural checks run over an artefact
+   * signed with a labelled test key, and the result says so in an annotation.
+   * Without it, an unresolvable signer is UNVERIFIABLE, which is the default.
+   */
+  allowUnregisteredSigner?: boolean;
+  /** JSON-RPC endpoint, for formats that can corroborate against a chain. */
+  rpc?: string;
+  /** Token decimals by lowercase contract address, for on-chain amount decoding. */
+  tokens?: Record<string, number>;
 }
 
 export interface Adapter {

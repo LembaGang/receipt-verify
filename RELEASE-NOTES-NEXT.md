@@ -56,3 +56,45 @@ armed, and the fix is the identical one-line change. Do it when the file is
 next touched; do not ship a release for it alone.
 
 Provenance: CC 0.1.1 build report, 2026-08-12.
+
+### 7. `expired` and `malformed_member` now appear under two different verdicts
+
+`insight.attestation/eip712` returns INVALID for a closed validity window and
+for a `uid` that is not the digest of its own bytes; the other three adapters
+return UNVERIFIABLE with those same two reason tokens, meaning "could not
+complete". The tokens are the agent-facing field, so the same token now carries
+two meanings across formats and a consumer must branch on `verdict` before
+`reason`. `formatResult` labels the two INVALID kinds distinctly and the
+`invalid()` docstring says so, but the vocabulary itself is still overloaded.
+Either split the tokens (`window_closed`, `identifier_mismatch`) or state the
+verdict-first branching rule in the README's contract section.
+
+Provenance: CC insight-adapter report, 2026-09-02, T2.
+
+### 8. `fixtures/** -text` and `refs/** -text` do not take effect
+
+`.gitattributes` sets `-text` on both paths with a comment saying these
+snapshots are "never normalized", then sets `* text=auto eol=lf` and
+`*.json/*.md/*.ts text eol=lf` below. The last matching line wins, so every
+`.json` and `.md` fixture is normalized after all: `git check-attr text` on a
+fixture answers `set`, not `unset`. Nothing is broken today — the two files
+pinned on 2026-09-02 round-trip byte-identically through the index, and the
+suite is green in a clone — but the protection the comment claims is not in
+force, and a fixture that ever needs CRLF preserved would have its pinned
+digest rewritten on checkout. Move the two `-text` lines below the catch-alls.
+
+Provenance: CC insight-adapter report, 2026-09-02, T1.4.
+
+### 9. The pinned Insight registry contradicts the verification note it serves
+
+`refs/insight-oracle-keys-2026-09-02.json` publishes `ExecutionReceipt` as 43
+fields under `schemaVersion` 1; `VERIFICATION_NOTE_2026-09-02` A8/B6 record it
+as the same 32 fields the package receipt declares. Either the document changed
+within the ~1h45m between the two fetches without its version moving, or A8
+compared the package against itself. `OracleSafetyCheck` matches the note
+exactly in the same bytes, so the note's method was capable of being faithful.
+Resolve by re-fetching and diffing against this pin before the next package is
+verified; `test/insight.test.ts` asserts the pinned bytes, so a re-pin that
+removes the divergence turns that test red on purpose.
+
+Provenance: CC insight-adapter report, 2026-09-02, T1.2.

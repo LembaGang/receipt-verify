@@ -206,3 +206,42 @@ computed on the device at the time stated.
 Flagged, not changed: fourteen entries above cite `ScopeBlind/agent-governance-testvectors/HEAD/`,
 a moving ref. `tools/snapshot.mjs` pins the TKCollective source by commit and not this one. Those
 entries remain true of the bytes they describe; they cannot be re-fetched to the same bytes.
+
+## Appended 2026-09-02 — the Insight execution-receipt package and the live key registry
+
+Two files pinned for `src/adapters/insight.ts`. The package arrived as an email attachment and was
+copied from `cc-output` unchanged; the registry was fetched **once**, from the URL the package itself
+names, and the bytes below are the bytes that arrived. It is deliberately not re-fetched: the pin is
+the point, and the divergence recorded underneath is only visible because it is pinned.
+
+| path | source | retrieved (UTC) | bytes | sha256 |
+|---|---|---|---|---|
+| `fixtures/insight/execution-receipt-bytes-2026-09-02.json` | attachment to YuTao Peng's email of 2026-09-02T06:08:45Z, via `cc-output/insight-2026-09-02/execution-receipt-bytes-2026-09-02-headless.json` | 2026-09-02T05:41:12.092Z (the package's own `meta.generatedAt`) | 25151 | `b96ff0b3ec923b77a38553a00f44b9e6949683b6503cfcc13589071b806854ba` |
+| `refs/insight-oracle-keys-2026-09-02.json` | https://www.oracleinsight.xyz/.well-known/oracle-keys.json | 2026-09-02T09:09:25Z–09:09:34Z (HTTP 200, `application/json`) | 9482 | `9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006` |
+
+**What the registry pin confirms.** Its `public_keys` array is byte-equal to the package's
+`publishedKeys.publicKeys` (two keys, identical values), reproducing the Lead's ~07:25Z observation at
+09:09Z. `OracleSafetyCheck` is `schemaVersion` 2, domain version "2", 26 fields — and its field list is
+identical to the Lead's 07:25Z rendering.
+
+**What the registry pin contradicts, recorded not resolved.** `ExecutionReceipt` in these bytes is
+`schemaVersion` **1 with 43 fields**. The Lead's `VERIFICATION_NOTE_2026-09-02` A8 records the
+registry's published `ExecutionReceipt` as identical in name and order to the package receipt's 32
+fields, and B6 as "same 32 fields". The 43-field type adds `claimRole`, `subject`, `taker`,
+`destinationPreTradeUid`, `preTradeUidsHash`, `priceScale`, `quoteBasis`, `quoteBlockNumber`,
+`quoteVenueIndependent`, `measuredFieldsHash`, `priceExecutionStatus`, `attestationAgeAtExecSeconds`
+and `priceStateAgeAtExecSeconds`, and does not carry the package's `executionStatus` or
+`oracleDataAgeAtExecSeconds`.
+
+Two readings fit, and this device cannot separate them:
+
+1. the live document changed between 07:25Z and 09:09Z **without the `schemaVersion` moving off 1** —
+   a silent breaking change to a published type; or
+2. the Lead's rendering of the `ExecutionReceipt` entry was taken from the package rather than from the
+   registry, which would make A8 a comparison of the package against itself.
+
+The control that makes this worth writing down: the Lead's rendering of `OracleSafetyCheck` **does**
+match the live bytes exactly, so the rendering method was capable of being faithful. Whichever reading
+holds, `test/insight.test.ts` asserts the field list in the pinned bytes and the adapter reports
+`registry_schema: mismatch` for the receipt against this registry — never a match asserted against a
+document that does not say so.

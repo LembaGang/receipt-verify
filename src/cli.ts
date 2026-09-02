@@ -23,6 +23,11 @@ Options:
   --payload-jcs       canonicalize --payload with RFC 8785 JCS before verifying
   --prev <file>       predecessor receipt, for formats carrying a chain link
   --disclose <file>   disclosed {name, value, salt, proof} tuples, for committed fields
+  --registry <path>   published key registry, for formats that resolve a signer from one
+  --rpc <url>         JSON-RPC endpoint, for optional on-chain corroboration
+  --allow-unregistered-signer
+                      continue past a signer absent from the registry. Asserts NOTHING
+                      about identity; the result says so in an annotation
   --clock-tolerance <s>  seconds of clock tolerance for exp/nbf (default 60)
   --now <epoch>       evaluate time-based checks at this instant, for reproducible runs
   --require-delivery  exit 1 unless the receipt PROVES x402 delivery (see below)
@@ -50,6 +55,9 @@ interface Args {
   payloadJcs: boolean;
   prev?: string;
   disclose?: string;
+  registry?: string;
+  rpc?: string;
+  allowUnregisteredSigner: boolean;
   clockTolerance?: number;
   now?: number;
   requireDelivery: boolean;
@@ -58,7 +66,7 @@ interface Args {
 }
 
 export function parseArgs(argv: string[]): Args | string {
-  const a: Args = { payloadJcs: false, requireDelivery: false, json: false, help: false };
+  const a: Args = { payloadJcs: false, requireDelivery: false, allowUnregisteredSigner: false, json: false, help: false };
   for (let i = 0; i < argv.length; i++) {
     const t = argv[i]!;
     const next = (): string | null => {
@@ -79,6 +87,21 @@ export function parseArgs(argv: string[]): Args | string {
       case "--require-delivery":
         a.requireDelivery = true;
         break;
+      case "--allow-unregistered-signer":
+        a.allowUnregisteredSigner = true;
+        break;
+      case "--registry": {
+        const v = next();
+        if (v === null) return "--registry needs a value";
+        a.registry = v;
+        break;
+      }
+      case "--rpc": {
+        const v = next();
+        if (v === null) return "--rpc needs a value";
+        a.rpc = v;
+        break;
+      }
       case "--format": {
         const v = next();
         if (v === null) return "--format needs a value";
@@ -183,12 +206,16 @@ export async function run(argv: string[]): Promise<{ result: VerifyResult | null
   if (parsed.mappingDir !== undefined) opts.mappingDir = parsed.mappingDir;
   if (parsed.clockTolerance !== undefined) opts.clockToleranceSec = parsed.clockTolerance;
   if (parsed.now !== undefined) opts.now = parsed.now;
+  if (parsed.rpc !== undefined) opts.rpc = parsed.rpc;
+  if (parsed.allowUnregisteredSigner) opts.allowUnregisteredSigner = true;
+  if (parsed.registry !== undefined) opts.registryOrigin = parsed.registry;
   // The three optional byte inputs fail the same way: an unreadable companion
   // file is an io_error, never a quietly-skipped check.
   for (const [flag, path, field] of [
     ["--payload", parsed.payload, "detachedPayload"],
     ["--prev", parsed.prev, "previousReceipt"],
     ["--disclose", parsed.disclose, "disclosures"],
+    ["--registry", parsed.registry, "registry"],
   ] as const) {
     if (path === undefined) continue;
     try {

@@ -1,0 +1,753 @@
+{
+  "meta": {
+    "generatedAt": "2026-09-02T05:41:12.092Z",
+    "purpose": "self-contained execution-receipt bytes for independent verification",
+    "honestyLabels": [
+      "signing key is a TEST key (anvil default), NOT the production attester key; structural verification is unaffected, identity verification is NOT claimed",
+      "receipt is NOT anchored; anchoring remains the stated next step",
+      "rawSwapEvent + rawTransferLogs are the original on-chain logs for pkg.onchain.txHash (fetched from the same public RPC); verifier can recompute Transfer attribution -> executedPrice from them",
+      "pre-trade gate provider observations are SYNTHETIC demo inputs (hard-coded in the exporter), as already disclosed on the VERITAS thread; the independence of those observations is NOT independently verifiable from this package, only the EIP-712 signatures and binding are"
+    ],
+    "rawEventsAddedAt": "2026-09-02T05:50:18.966Z"
+  },
+  "onchain": {
+    "chainId": 1,
+    "rpc": "https://ethereum-rpc.publicnode.com",
+    "pool": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
+    "txHash": "0x9080c3441c7421ee97b789f401bffb6655a32ba5684a623fb72ed315fa9ec4fd",
+    "blockNumber": 25887574,
+    "executedAt": 1788327599,
+    "taker": "0x8feab81d36e7576107d5de0758c1b839be31b4f6",
+    "legs": {
+      "soldToken": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "boughtToken": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+    },
+    "poolSwapAmounts": {
+      "soldHuman": 8.69,
+      "boughtHuman": 21017.175576
+    },
+    "preSwapMidWethPerUsdc": 0.0004132245748278597,
+    "independentExpectedDeltaBps": -5.9684217778156095,
+    "independentExpectedStatus": "FAITHFUL",
+    "rawSwapEvent": {
+      "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+      "topics": [
+        "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67",
+        "0x00000000000000000000000068b3465833fb72a70ecdf485e0e4c7bd8665fc45",
+        "0x0000000000000000000000008feab81d36e7576107d5de0758c1b839be31b4f6"
+      ],
+      "data": "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffb1b4759e8000000000000000000000000000000000000000000000000789914f55a2500000000000000000000000000000000000000004f69e55090b94c452f6d74adc4cb0000000000000000000000000000000000000000000000003d318f2ef0c9ae230000000000000000000000000000000000000000000000000000000000030706",
+      "blockNumber": "0x18b0356",
+      "transactionHash": "0x9080c3441c7421ee97b789f401bffb6655a32ba5684a623fb72ed315fa9ec4fd",
+      "logIndex": "0x46"
+    },
+    "rawTransferLogs": [
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000008feab81d36e7576107d5de0758c1b839be31b4f6",
+          "0x00000000000000000000000069a52a0570636ca391175ce619bbb9d348040bbc"
+        ],
+        "data": "0x000000000000000000000000000000000000000000000000789914f55a250000",
+        "logIndex": "0x3f"
+      },
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x00000000000000000000000069a52a0570636ca391175ce619bbb9d348040bbc",
+          "0x0000000000000000000000009c2e6af596a352aac58711339f79bf9fe3d1c48c"
+        ],
+        "data": "0x000000000000000000000000000000000000000000000000789914f55a250000",
+        "logIndex": "0x40"
+      },
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000009c2e6af596a352aac58711339f79bf9fe3d1c48c",
+          "0x0000000000000000000000004ddf368080cd7946db5b459ad591c350158175e1"
+        ],
+        "data": "0x000000000000000000000000000000000000000000000000789914f55a250000",
+        "logIndex": "0x42"
+      },
+      {
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x00000000000000000000000088e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+          "0x0000000000000000000000008feab81d36e7576107d5de0758c1b839be31b4f6"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000004e4b8a618",
+        "logIndex": "0x44"
+      },
+      {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000004ddf368080cd7946db5b459ad591c350158175e1",
+          "0x00000000000000000000000088e6a0c2ddd26feeb64f039a2c41296fcb3f5640"
+        ],
+        "data": "0x000000000000000000000000000000000000000000000000789914f55a250000",
+        "logIndex": "0x45"
+      },
+      {
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000008feab81d36e7576107d5de0758c1b839be31b4f6",
+          "0x0000000000000000000000002cffed5d56eb6a17662756ca0fdf350e732c9818"
+        ],
+        "data": "0x000000000000000000000000000000000000000000000000000000000aa5ebe8",
+        "logIndex": "0x4b"
+      },
+      {
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000008feab81d36e7576107d5de0758c1b839be31b4f6",
+          "0x00000000000000000000000070d06bcb8f43109f5c4c466e1241a79c420c8f67"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000004da12ba30",
+        "logIndex": "0x4d"
+      }
+    ],
+    "swapDecodedFromRaw": {
+      "amount0": "-21017175576",
+      "amount1": "8690000000000000000"
+    },
+    "swapDecodedMatchesDerivedAmounts": true
+  },
+  "preTrade": {
+    "sourceGate": {
+      "uid": "0xdfe67172a95cd4f4bbe864ce64859ce4b44e4bddba8f3e700d1aca169b88eccc",
+      "schemaVersion": 3,
+      "attester": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "attesterLabel": "Insight Oracle Safety Attestation",
+      "signedAt": "2026-09-02T05:41:09.553Z",
+      "validForSeconds": 600,
+      "validUntil": 1788328169,
+      "signature": "0x01483957bdf2180b48d58c345539c026864ef2a0b925aaebf5ca17d52f9f0f3b68a2943f5c1b033933eec18815af2f92b330957ccdb4eb42ad9f8a75cd59fd181c",
+      "verifyUrl": "http://localhost:3000/api/v1/safety/attestation/verify",
+      "data": {
+        "verdict": "PASS",
+        "sourceAssetId": "eip155:1/erc20:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "destinationAssetId": "eip155:1/erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "subjectChainId": 1,
+        "action": "swap",
+        "tradeAmountUsd": 50000000000,
+        "consensusPrice": 241999160001,
+        "maxDeviationBps": 20,
+        "manipulationRiskBps": 100,
+        "participantCount": 4,
+        "requiredParticipantCount": 3,
+        "coverageStatus": "SUFFICIENT",
+        "independenceStatus": "ASSESSED",
+        "sourceGroupCount": 3,
+        "crossProviderAgreementBps": 9900,
+        "maxStablecoinDepegBps": 1,
+        "maxDataAgeSeconds": 12,
+        "recommendedMaxPositionUsd": 100000000000,
+        "reasonCodesHash": "0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd",
+        "requestHash": "0x7abfc1bbdbbf303c0dcb13e44565477801702c5c991fa18fe32cb1176daabe24",
+        "evaluationScope": "SOURCE_ASSET_ONLY",
+        "evaluatedAssetIdsHash": "0x6662db66a43b0d383ae380656403daab1b30b6a69bf7d932edc8425517c096b0",
+        "providerObservationsHash": "0x308550c1e44322a7a546483b65a151c88882c2957a5fb2492a391bba4e5b13d1",
+        "validUntil": 1788328169,
+        "checkedAt": 1788327569,
+        "schemaVersion": 3,
+        "requiredSourceGroupCount": 2
+      },
+      "eip712": {
+        "domain": {
+          "name": "Insight Oracle Safety",
+          "version": "3",
+          "chainId": 1
+        },
+        "types": {
+          "OracleSafetyCheck": [
+            {
+              "name": "verdict",
+              "type": "string"
+            },
+            {
+              "name": "sourceAssetId",
+              "type": "string"
+            },
+            {
+              "name": "destinationAssetId",
+              "type": "string"
+            },
+            {
+              "name": "subjectChainId",
+              "type": "uint256"
+            },
+            {
+              "name": "action",
+              "type": "string"
+            },
+            {
+              "name": "tradeAmountUsd",
+              "type": "uint256"
+            },
+            {
+              "name": "consensusPrice",
+              "type": "uint256"
+            },
+            {
+              "name": "maxDeviationBps",
+              "type": "uint256"
+            },
+            {
+              "name": "manipulationRiskBps",
+              "type": "uint256"
+            },
+            {
+              "name": "participantCount",
+              "type": "uint256"
+            },
+            {
+              "name": "requiredParticipantCount",
+              "type": "uint256"
+            },
+            {
+              "name": "coverageStatus",
+              "type": "string"
+            },
+            {
+              "name": "independenceStatus",
+              "type": "string"
+            },
+            {
+              "name": "sourceGroupCount",
+              "type": "uint256"
+            },
+            {
+              "name": "crossProviderAgreementBps",
+              "type": "uint256"
+            },
+            {
+              "name": "maxStablecoinDepegBps",
+              "type": "uint256"
+            },
+            {
+              "name": "maxDataAgeSeconds",
+              "type": "uint256"
+            },
+            {
+              "name": "recommendedMaxPositionUsd",
+              "type": "uint256"
+            },
+            {
+              "name": "reasonCodesHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "requestHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "evaluationScope",
+              "type": "string"
+            },
+            {
+              "name": "evaluatedAssetIdsHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "providerObservationsHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "validUntil",
+              "type": "uint256"
+            },
+            {
+              "name": "checkedAt",
+              "type": "uint256"
+            },
+            {
+              "name": "schemaVersion",
+              "type": "uint256"
+            },
+            {
+              "name": "requiredSourceGroupCount",
+              "type": "uint256"
+            }
+          ]
+        },
+        "primaryType": "OracleSafetyCheck",
+        "canonicalRequestDomain": {
+          "name": "Insight Canonical Pre-Trade Request",
+          "version": "1",
+          "chainId": 1
+        },
+        "canonicalRequestTypes": {
+          "CanonicalPreTradeRequest": [
+            {
+              "name": "subjectChainId",
+              "type": "uint256"
+            },
+            {
+              "name": "sourceAssetId",
+              "type": "string"
+            },
+            {
+              "name": "destinationAssetId",
+              "type": "string"
+            },
+            {
+              "name": "action",
+              "type": "string"
+            },
+            {
+              "name": "tradeAmountUsd",
+              "type": "uint256"
+            }
+          ]
+        },
+        "canonicalRequestPrimaryType": "CanonicalPreTradeRequest"
+      }
+    },
+    "destinationGate": {
+      "uid": "0xb373b1c29680914ad73e408a04b99ecff6db7ce7c85ecbf7d73f29d535dbd0bf",
+      "schemaVersion": 3,
+      "attester": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "attesterLabel": "Insight Oracle Safety Attestation",
+      "signedAt": "2026-09-02T05:41:09.555Z",
+      "validForSeconds": 600,
+      "validUntil": 1788328169,
+      "signature": "0xcd0371f18ed3f0fd59e82a5f3bb37ffde08244dbeb0de4f49b2f99b6b5fc40ef3db9e6c779235821f763f11d6b0afe09e41f47b323d95addde2942bfce9d15851b",
+      "verifyUrl": "http://localhost:3000/api/v1/safety/attestation/verify",
+      "data": {
+        "verdict": "PASS",
+        "sourceAssetId": "eip155:1/erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "destinationAssetId": "eip155:1/erc20:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "subjectChainId": 1,
+        "action": "swap",
+        "tradeAmountUsd": 50000000000,
+        "consensusPrice": 100000000,
+        "maxDeviationBps": 20,
+        "manipulationRiskBps": 100,
+        "participantCount": 4,
+        "requiredParticipantCount": 3,
+        "coverageStatus": "SUFFICIENT",
+        "independenceStatus": "ASSESSED",
+        "sourceGroupCount": 3,
+        "crossProviderAgreementBps": 9900,
+        "maxStablecoinDepegBps": 1,
+        "maxDataAgeSeconds": 12,
+        "recommendedMaxPositionUsd": 100000000000,
+        "reasonCodesHash": "0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd",
+        "requestHash": "0x78375333cb8d59e8714d6cd067f0f9d4d401973899aa144f6a73afd471975c17",
+        "evaluationScope": "SOURCE_ASSET_ONLY",
+        "evaluatedAssetIdsHash": "0xebea6b70a0bd7f35448891e93b8ee5c14175b032a0b1e7bad36e16178432d0be",
+        "providerObservationsHash": "0x308550c1e44322a7a546483b65a151c88882c2957a5fb2492a391bba4e5b13d1",
+        "validUntil": 1788328169,
+        "checkedAt": 1788327569,
+        "schemaVersion": 3,
+        "requiredSourceGroupCount": 2
+      },
+      "eip712": {
+        "domain": {
+          "name": "Insight Oracle Safety",
+          "version": "3",
+          "chainId": 1
+        },
+        "types": {
+          "OracleSafetyCheck": [
+            {
+              "name": "verdict",
+              "type": "string"
+            },
+            {
+              "name": "sourceAssetId",
+              "type": "string"
+            },
+            {
+              "name": "destinationAssetId",
+              "type": "string"
+            },
+            {
+              "name": "subjectChainId",
+              "type": "uint256"
+            },
+            {
+              "name": "action",
+              "type": "string"
+            },
+            {
+              "name": "tradeAmountUsd",
+              "type": "uint256"
+            },
+            {
+              "name": "consensusPrice",
+              "type": "uint256"
+            },
+            {
+              "name": "maxDeviationBps",
+              "type": "uint256"
+            },
+            {
+              "name": "manipulationRiskBps",
+              "type": "uint256"
+            },
+            {
+              "name": "participantCount",
+              "type": "uint256"
+            },
+            {
+              "name": "requiredParticipantCount",
+              "type": "uint256"
+            },
+            {
+              "name": "coverageStatus",
+              "type": "string"
+            },
+            {
+              "name": "independenceStatus",
+              "type": "string"
+            },
+            {
+              "name": "sourceGroupCount",
+              "type": "uint256"
+            },
+            {
+              "name": "crossProviderAgreementBps",
+              "type": "uint256"
+            },
+            {
+              "name": "maxStablecoinDepegBps",
+              "type": "uint256"
+            },
+            {
+              "name": "maxDataAgeSeconds",
+              "type": "uint256"
+            },
+            {
+              "name": "recommendedMaxPositionUsd",
+              "type": "uint256"
+            },
+            {
+              "name": "reasonCodesHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "requestHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "evaluationScope",
+              "type": "string"
+            },
+            {
+              "name": "evaluatedAssetIdsHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "providerObservationsHash",
+              "type": "bytes32"
+            },
+            {
+              "name": "validUntil",
+              "type": "uint256"
+            },
+            {
+              "name": "checkedAt",
+              "type": "uint256"
+            },
+            {
+              "name": "schemaVersion",
+              "type": "uint256"
+            },
+            {
+              "name": "requiredSourceGroupCount",
+              "type": "uint256"
+            }
+          ]
+        },
+        "primaryType": "OracleSafetyCheck",
+        "canonicalRequestDomain": {
+          "name": "Insight Canonical Pre-Trade Request",
+          "version": "1",
+          "chainId": 1
+        },
+        "canonicalRequestTypes": {
+          "CanonicalPreTradeRequest": [
+            {
+              "name": "subjectChainId",
+              "type": "uint256"
+            },
+            {
+              "name": "sourceAssetId",
+              "type": "string"
+            },
+            {
+              "name": "destinationAssetId",
+              "type": "string"
+            },
+            {
+              "name": "action",
+              "type": "string"
+            },
+            {
+              "name": "tradeAmountUsd",
+              "type": "uint256"
+            }
+          ]
+        },
+        "canonicalRequestPrimaryType": "CanonicalPreTradeRequest"
+      }
+    },
+    "note": "quotedPrice in the receipt is DERIVED from these gates (VERIFIED binding), not caller-supplied"
+  },
+  "receipt": {
+    "uid": "0x99b65afda1a94186b9bcceb7b0e700ff8c8be7312e50abe4c529d7e7bad14cc6",
+    "schemaVersion": 2,
+    "attester": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "attesterLabel": "Insight Execution Receipt",
+    "signedAt": "2026-09-02T05:41:12.071Z",
+    "validForSeconds": 600,
+    "validUntil": 1788328199,
+    "signature": "0x74412dcf689e73b31bd8e5aa9d6345be071d77eb3864a7da0f3588b449bfceaa0aab36b9a9e9d8dfa5d59b58b174886369777b62e35c708ee4bc0655e84a0fec1c",
+    "verifyUrl": "http://localhost:3000/api/v1/execution/attestation/verify",
+    "data": {
+      "bindingMode": "VERIFIED",
+      "preTradeUid": "0xdfe67172a95cd4f4bbe864ce64859ce4b44e4bddba8f3e700d1aca169b88eccc",
+      "requestHash": "0x7abfc1bbdbbf303c0dcb13e44565477801702c5c991fa18fe32cb1176daabe24",
+      "sourceAssetId": "eip155:1/erc20:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "destinationAssetId": "eip155:1/erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      "subjectChainId": 1,
+      "settlementChainId": 1,
+      "action": "SWAP",
+      "quotedPrice": 241999160001,
+      "executedPrice": 241854724695,
+      "priceDeltaBps": -6,
+      "maxSlippageBps": 100,
+      "slippageSatisfied": true,
+      "quotedAmountUsd": 0,
+      "executedAmountUsd": 0,
+      "actualFeeUsd": 0,
+      "fillStatus": "FULL",
+      "executionStatus": "FAITHFUL",
+      "txHash": "0x9080c3441c7421ee97b789f401bffb6655a32ba5684a623fb72ed315fa9ec4fd",
+      "blockNumber": 25887574,
+      "executedAt": 1788327599,
+      "preTradeSignedAt": 1788327569,
+      "oracleDataAgeAtExecSeconds": 30,
+      "participantCount": 4,
+      "requiredParticipantCount": 3,
+      "sourceGroupCount": 3,
+      "requiredSourceGroupCount": 2,
+      "independenceSatisfied": true,
+      "mevRiskBps": 0,
+      "reasonCodesHash": "0x569e75fc77c1a856f6daaf9e69d8a9566ca34aa47f9133711ce065a571af0cfd",
+      "validUntil": 1788328199,
+      "schemaVersion": 2
+    },
+    "eip712": {
+      "domain": {
+        "name": "Insight Execution",
+        "version": "1",
+        "chainId": 1
+      },
+      "types": {
+        "ExecutionReceipt": [
+          {
+            "name": "bindingMode",
+            "type": "string"
+          },
+          {
+            "name": "preTradeUid",
+            "type": "bytes32"
+          },
+          {
+            "name": "requestHash",
+            "type": "bytes32"
+          },
+          {
+            "name": "sourceAssetId",
+            "type": "string"
+          },
+          {
+            "name": "destinationAssetId",
+            "type": "string"
+          },
+          {
+            "name": "subjectChainId",
+            "type": "uint256"
+          },
+          {
+            "name": "settlementChainId",
+            "type": "uint256"
+          },
+          {
+            "name": "action",
+            "type": "string"
+          },
+          {
+            "name": "quotedPrice",
+            "type": "uint256"
+          },
+          {
+            "name": "executedPrice",
+            "type": "uint256"
+          },
+          {
+            "name": "priceDeltaBps",
+            "type": "int256"
+          },
+          {
+            "name": "maxSlippageBps",
+            "type": "uint256"
+          },
+          {
+            "name": "slippageSatisfied",
+            "type": "bool"
+          },
+          {
+            "name": "quotedAmountUsd",
+            "type": "uint256"
+          },
+          {
+            "name": "executedAmountUsd",
+            "type": "uint256"
+          },
+          {
+            "name": "actualFeeUsd",
+            "type": "uint256"
+          },
+          {
+            "name": "fillStatus",
+            "type": "string"
+          },
+          {
+            "name": "executionStatus",
+            "type": "string"
+          },
+          {
+            "name": "txHash",
+            "type": "bytes32"
+          },
+          {
+            "name": "blockNumber",
+            "type": "uint256"
+          },
+          {
+            "name": "executedAt",
+            "type": "uint256"
+          },
+          {
+            "name": "preTradeSignedAt",
+            "type": "uint256"
+          },
+          {
+            "name": "oracleDataAgeAtExecSeconds",
+            "type": "uint256"
+          },
+          {
+            "name": "participantCount",
+            "type": "uint256"
+          },
+          {
+            "name": "requiredParticipantCount",
+            "type": "uint256"
+          },
+          {
+            "name": "sourceGroupCount",
+            "type": "uint256"
+          },
+          {
+            "name": "requiredSourceGroupCount",
+            "type": "uint256"
+          },
+          {
+            "name": "independenceSatisfied",
+            "type": "bool"
+          },
+          {
+            "name": "mevRiskBps",
+            "type": "uint256"
+          },
+          {
+            "name": "reasonCodesHash",
+            "type": "bytes32"
+          },
+          {
+            "name": "validUntil",
+            "type": "uint256"
+          },
+          {
+            "name": "schemaVersion",
+            "type": "uint256"
+          }
+        ]
+      },
+      "primaryType": "ExecutionReceipt"
+    }
+  },
+  "facts": {
+    "executedPrice": 2418.547246950518,
+    "binding": {
+      "bindingMode": "VERIFIED",
+      "quotedPrice": 2419.99160001,
+      "preTradeSignedAt": 1788327569,
+      "preTradeExpired": false
+    }
+  },
+  "selfVerification": {
+    "verifyExecutionReceipt": {
+      "valid": true,
+      "attester": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "uid": "0x99b65afda1a94186b9bcceb7b0e700ff8c8be7312e50abe4c529d7e7bad14cc6",
+      "executedAt": 1788327599,
+      "validUntil": 1788328199,
+      "expired": false,
+      "executionStatus": "FAITHFUL",
+      "bindingMode": "VERIFIED",
+      "schemaVersion": 2,
+      "reason": "verified"
+    },
+    "verifyExecutionPair": {
+      "closedLoopStatus": "CLOSED_FAITHFUL",
+      "pairedValid": true,
+      "binding": {
+        "preTradeUidMatch": true,
+        "requestHashMatch": true,
+        "chainMatch": true,
+        "assetMatch": true
+      }
+    },
+    "assertionsHeld": [
+      "collector Transfer-attributed executedPrice reproduces the pool Swap event to <1e-6 relative",
+      "receipt executionStatus == FAITHFUL matches independent recompute FAITHFUL",
+      "maxSlippageBps (100) is a SIGNED field (v2 struct field 12 of 32), and verdict uses the same signed value"
+    ]
+  },
+  "publishedKeys": {
+    "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
+    "fetchedAt": "2026-09-02T05:50:18.966Z",
+    "publicKeys": [
+      {
+        "key_id": "insight-oracle-safety-v2",
+        "public_key": "0xa268676C85b927D64a4e2384636874f76D69e419",
+        "algorithm": "EIP-712/secp256k1",
+        "validFrom": "2026-08-05",
+        "validUntil": "2026-09-02T17:35:36.000Z",
+        "revoked": false
+      },
+      {
+        "key_id": "insight-oracle-safety-v2-202609",
+        "public_key": "0x6506F789Edd43338A416f59822A63F309f97E8ce",
+        "algorithm": "EIP-712/secp256k1",
+        "validFrom": "2026-08-26T17:35:36.000Z",
+        "validUntil": null,
+        "revoked": false
+      }
+    ],
+    "receiptSigner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "receiptSignerInPublishedRegistry": false,
+    "note": "receipt is signed with an anvil TEST key; it is intentionally absent from the published production registry (identity verification is NOT claimed)"
+  }
+}

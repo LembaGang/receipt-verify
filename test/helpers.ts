@@ -14,6 +14,18 @@ export const MAPPINGS = join(VSTATE, "mappings");
 export const THROWAWAY_JWKS = join(FIX, "keys", "test-throwaway-ed25519.jwks.json");
 export const DELIVERY = join(FIX, "delivery");
 
+export const INSIGHT = join(FIX, "insight");
+export const INSIGHT_PKG = join(INSIGHT, "execution-receipt-bytes-2026-09-02.json");
+export const INSIGHT_REGISTRY = join(dirname(FIX), "refs", "insight-oracle-keys-2026-09-02.json");
+
+/**
+ * One second after the package's `executedAt`, so it sits inside the validity
+ * window of all three artefacts (the gates close at 1788328169, the receipt at
+ * 1788328199). Pinned, because every one of them had already expired by the time
+ * the package was read — which is itself asserted, at `validUntil + 1`.
+ */
+export const INSIGHT_NOW = 1788327600;
+
 export const ACTA = join(FIX, "acta");
 export const ACTA_SYNTH = join(ACTA, "synthetic");
 export const ACTA_PUB = join(ACTA, "published");
