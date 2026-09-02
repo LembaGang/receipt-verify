@@ -473,7 +473,7 @@ const insight: FormatCoverage = {
       title: "Transaction status, block number, block timestamp and shipped logs corroborated against a JSON-RPC endpoint",
       source: "eth_getTransactionReceipt / eth_getBlockByNumber",
       status: "conditional",
-      note: "Runs only with --rpc, and reports the sha256 of each RPC response so the answer is quotable. Without it the result says `chain: not_checked (no rpc)`. If --rpc is given and the endpoint fails, the result is UNVERIFIABLE/io_error rather than a silent downgrade.",
+      note: "Runs only with --rpc, and reports the sha256 of each RPC response so the answer is quotable. Without it the result says `chain: not_checked (no rpc)`. If --rpc is given and the endpoint fails, the result is UNVERIFIABLE/io_error rather than a silent downgrade. Chain facts are added BESIDE the findings of the earlier checks and never written over them: a check that corroborates must not be able to degrade what it confirms.",
     },
     {
       id: "precedence",

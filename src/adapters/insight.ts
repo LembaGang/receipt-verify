@@ -1642,6 +1642,13 @@ async function checkChain(
   // Whether the swap's recipient is a contract is a CHAIN fact, so it is only
   // asserted when the chain was actually asked. Without --rpc the attribution
   // annotation says what the logs alone support and no more.
+  //
+  // It is recorded BESIDE `attribution` and never over it. An earlier version
+  // overwrote that key here with a sentence ending "beneficiary differs", which
+  // was true of the 06:08Z transaction and false of the 09:53Z one: adding
+  // --rpc to a clean single-pool fill replaced a correct finding with an
+  // incorrect one, and only because the chain agreed with everything asked of
+  // it. A check that corroborates must not be able to degrade what it confirms.
   if (recipient !== null) {
     try {
       const code = await call("eth_getCode", [recipient, "latest"]);
@@ -1649,7 +1656,9 @@ async function checkChain(
       ann["chain_getcode_response_sha256"] = code.digest;
       ann["recipient_is_contract"] = isContract;
       if (isContract) {
-        ann["attribution"] = `recipient ${recipient} is a contract (eth_getCode returns bytecode); beneficiary differs`;
+        ann["recipient_is_contract_detail"] =
+          `${recipient} is a contract (eth_getCode returns bytecode); the EOA that sent the transaction is a different address, ` +
+          `so a consumer reading "subject" gets the executing contract, not the account behind it`;
       }
     } catch {
       ann["recipient_is_contract"] = "not_checked (eth_getCode failed)";

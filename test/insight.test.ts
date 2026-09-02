@@ -840,3 +840,82 @@ describe("insight — a domain extra field that IS in the signed bytes", () => {
     );
   });
 });
+
+// --------------------------------------------------------------------------
+// --rpc must corroborate the other checks and must never overwrite them.
+//
+// This is here because it happened: the chain check wrote its own sentence into
+// `attribution`, ending "beneficiary differs". That was true of the 06:08Z
+// transaction and false of the 09:53Z one, so adding --rpc to a clean
+// single-pool fill replaced a correct finding with an incorrect one -- and only
+// in the run where the chain AGREED with everything asked of it. A corroborating
+// check that can degrade what it confirms is worse than one that is skipped.
+//
+// The endpoint is stubbed from the package's own logs so the assertion is about
+// this tool's behaviour and not about a public node's availability.
+// --------------------------------------------------------------------------
+
+describe("insight v3 — --rpc corroborates without overwriting", () => {
+  const stubFetch = (): (() => void) => {
+    const oc = v3["onchain"];
+    const real = globalThis.fetch;
+    globalThis.fetch = (async (_url: string, init: { body: string }) => {
+      const { method, params } = JSON.parse(init.body) as { method: string; params: unknown[] };
+      const result =
+        method === "eth_getTransactionReceipt"
+          ? { status: "0x1", blockNumber: oc.rawSwapEvent.blockNumber, logs: [oc.rawSwapEvent, ...oc.rawTransferLogs] }
+          : method === "eth_getBlockByNumber"
+            ? { timestamp: `0x${(oc.executedAt as number).toString(16)}` }
+            : method === "eth_getCode"
+              ? "0x60806040"
+              : null;
+      const body = JSON.stringify({ jsonrpc: "2.0", id: 1, result });
+      return { ok: true, status: 200, text: async () => body } as unknown as Response;
+    }) as unknown as typeof fetch;
+    return () => {
+      globalThis.fetch = real;
+    };
+  };
+
+  it("keeps the clean_single_pool_fill attribution and adds the contract fact beside it", async () => {
+    const restore = stubFetch();
+    try {
+      const r = await verifyV3(v3, { rpc: "https://stub.invalid" });
+      expect(r.verdict).toBe("VALID");
+      expect(r.annotations?.["chain_status"]).toBe("ok (0x1)");
+      expect(r.annotations?.["chain_executed_at_equals_block_timestamp"]).toBe(true);
+      expect(r.annotations?.["chain_logs_matched"]).toBe("3 of 3 shipped logs found on chain by index, address and data");
+      expect(r.annotations?.["recipient_is_contract"]).toBe(true);
+      // The finding the chain corroborates must survive the corroboration.
+      expect(String(r.annotations?.["attribution"])).toContain("clean_single_pool_fill");
+      expect(String(r.annotations?.["attribution"])).not.toContain("beneficiary differs");
+      expect(r.annotations?.["counterparty_realised_price"]).toBe("0.000421045809337782");
+    } finally {
+      restore();
+    }
+  });
+
+  it("and the same run on the 06:08Z package still reports its beneficiary split", async () => {
+    const oc = pkg["onchain"];
+    const real = globalThis.fetch;
+    globalThis.fetch = (async (_url: string, init: { body: string }) => {
+      const { method } = JSON.parse(init.body) as { method: string };
+      const result =
+        method === "eth_getTransactionReceipt"
+          ? { status: "0x1", blockNumber: oc.rawSwapEvent.blockNumber, logs: [oc.rawSwapEvent, ...oc.rawTransferLogs] }
+          : method === "eth_getBlockByNumber"
+            ? { timestamp: `0x${(oc.executedAt as number).toString(16)}` }
+            : "0x60806040";
+      return { ok: true, status: 200, text: async () => JSON.stringify({ jsonrpc: "2.0", id: 1, result }) } as unknown as Response;
+    }) as unknown as typeof fetch;
+    try {
+      const r = await verify(pkg, { rpc: "https://stub.invalid" });
+      expect(r.verdict).toBe("VALID");
+      expect(String(r.annotations?.["attribution"])).toContain("not_clean");
+      expect(r.annotations?.["beneficiary"]).toBe("0x70d06bcb8f43109f5c4c466e1241a79c420c8f67");
+      expect(r.annotations?.["recipient_is_contract"]).toBe(true);
+    } finally {
+      globalThis.fetch = real;
+    }
+  });
+});
