@@ -1,0 +1,46 @@
+name: verify
+
+# Typecheck, test, and verify that every commit in the pushed range carries a
+# good SSH signature from a key in SIGNING_KEYS. The signature step is the point:
+# until SIGNING_KEYS was committed, the history could only be verified on the
+# laptop that signed it.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The signature step walks a commit range, so the full history has to
+          # be here; the default shallow clone would break it.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Verify commit signatures (push)
+        if: github.event_name == 'push'
+        run: |
+          before='${{ github.event.before }}'
+          # A new branch or the first push reports the zero SHA as `before`, and
+          # there is no range to walk from it -- verify the whole history instead
+          # of skipping, because skipping is how an unsigned commit gets in.
+          if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+            echo "no usable before-SHA; verifying the full history"
+            sh tools/verify-history.sh
+          else
+            sh tools/verify-history.sh --range "$before..${{ github.sha }}"
+          fi
+
+      - name: Verify commit signatures (pull request)
+        if: github.event_name == 'pull_request'
+        run: sh tools/verify-history.sh --range "origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}"
