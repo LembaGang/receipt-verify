@@ -191,3 +191,5 @@ the pinned corpora under the scope its own document names (`walker/scopes.json`,
 cross-checking two independent JCS serialisers before any comparison. It finds
 M6 unaided and exits 1 — the check that would have caught the stale literal on
 the day the corpus was pinned rather than 29 days later.
+
+Every findings document carries a standing `## Interests` section from 2026-09-03, one wording across all three, disclosing that the author of the gradings authors and builds on the same ground as the formats graded (B-30).

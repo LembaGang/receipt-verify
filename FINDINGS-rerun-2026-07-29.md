@@ -563,3 +563,14 @@ timeline — the Disclosure state table at the top of this file.
 Line 426, "No published artifact exercises the production detached wire format", is scoped by its own
 body (lines 442-443) to `TKCollective/agentoracle-receipt-spec @ 196df22`, `examples/README.md`, and
 the body says "nothing here asserts the claim is untrue." Read the title with the body's scope.
+
+
+## Interests
+
+Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`
+that morning, which are canonical from that send. The same section goes into every rerun, every
+top-level findings file and every registry entry, unchanged, so a reader meets the same text
+wherever they enter. It is held on one unwrapped line below because the sent bytes are the bytes
+here; re-wrapping it would make three copies that only look identical.
+
+Interests. The author of this grading authors draft-msebenzi-evidence-action, builds Chirindo, an operator-run gate that signs receipts of MCP calls, and maintains receipt-verify, the tool that produced this document. Those occupy the same ground as the formats graded here. Independence is not claimed. What is claimed is that every value in this document recomputes from pinned bytes by anyone with the tool or without it, that every scope is cited to the document that names it, and that text and implementation are scored separately, a rule that came from the author of one of the formats graded. Where a judgment call was made, it is marked as one.

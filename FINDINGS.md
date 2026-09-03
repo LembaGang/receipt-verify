@@ -806,3 +806,14 @@ Commit `1fb91c9` corrected six line citations (E1 twice, E2 twice, E7, E10). Its
 claim, quotation or measured value changed; the corrected citations were re-verified 2026-09-01. The
 companion document says entries are "never edited in place"; this file carried no erratum for those
 six edits. Recorded now so the git history and the prose agree.
+
+
+## Interests
+
+Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`
+that morning, which are canonical from that send. The same section goes into every rerun, every
+top-level findings file and every registry entry, unchanged, so a reader meets the same text
+wherever they enter. It is held on one unwrapped line below because the sent bytes are the bytes
+here; re-wrapping it would make three copies that only look identical.
+
+Interests. The author of this grading authors draft-msebenzi-evidence-action, builds Chirindo, an operator-run gate that signs receipts of MCP calls, and maintains receipt-verify, the tool that produced this document. Those occupy the same ground as the formats graded here. Independence is not claimed. What is claimed is that every value in this document recomputes from pinned bytes by anyone with the tool or without it, that every scope is cited to the document that names it, and that text and implementation are scored separately, a rule that came from the author of one of the formats graded. Where a judgment call was made, it is marked as one.

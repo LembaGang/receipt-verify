@@ -568,5 +568,10 @@ in the rerun document and cross-referenced — `FINDINGS.md` is a dated record, 
 a live status page. Entries currently superseded in whole or in part: `B2`, `B3`,
 `B4`, `B7`, and `B1` (see `R2`).
 
+Every findings document carries a standing `## Interests` section, in one
+wording, appended 2026-09-03: the author of these gradings also authors
+`draft-msebenzi-evidence-action` and builds Chirindo, which is the same ground
+as the formats graded. Independence is not claimed; recomputability is.
+
 Status: `0.1.0`. No conformance claim is made beyond what the test suite
 demonstrates against the fixtures in this repository.
