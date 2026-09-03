@@ -200,20 +200,38 @@ describe.runIf(AVAILABLE)("the 2026-08-31 corrections", () => {
     expect(seen.size).toBe(38);
   });
 
-  it("TYPED-REFS — five vectors exercise §5, and all five reproduce the pinned identifier", () => {
+  it("TYPED-REFS — SEVEN vectors exercise §5, and all seven reproduce the pinned identifier", () => {
+    // The 31 August letter said five. It is seven: fail/04 and fail/05 pin the
+    // same identifier under `correct_verification.recomputed_digest` and a
+    // top-level `correct_recomputed_digest`, two member names that search did
+    // not cover. Same scoping mistake as the one being corrected, one level in.
     const rows = runTypedRefs(dir);
-    expect(rows.length).toBe(5);
+    expect(rows.length).toBe(7);
     for (const r of rows) {
       expect(r.verdict, r.vector).toBe("AGREE");
       expect(r.ours).toBe("0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb");
     }
+    // Named, so a widening of the predicate that swept in a vector pinning
+    // something else would fail here rather than inflate the count.
     expect(rows.map((r) => r.vector.split(" ")[0]).sort()).toEqual([
       "typed-ref-cpb01-01",
       "typed-ref-cpb01-02",
       "typed-ref-fail-01",
       "typed-ref-fail-03",
+      "typed-ref-fail-04",
+      "typed-ref-fail-05",
       "typed-ref-pass-01",
     ]);
+  });
+
+  it("TYPED-REFS — fail/02 is the one file legitimately outside the set", () => {
+    // Eight files, seven in the set. The eighth is excluded because it pins no
+    // single derived identifier for a cited artifact, not because the predicate
+    // failed to look — which is exactly the distinction the 30 August and
+    // 31 August counts both got wrong.
+    const rows = runTypedRefs(dir);
+    expect(rows.some((r) => r.vector.includes("fail/02"))).toBe(false);
+    expect(rows.length + 1).toBe(8);
   });
 
   it("TYPED-REFS — fail/01 is the vector that discriminates deletion from nulling", () => {
@@ -235,7 +253,7 @@ describe.runIf(AVAILABLE)("the 2026-08-31 corrections", () => {
     const prose = rows.filter((r) => r.check.includes("READ FROM PROSE"));
     expect(prose.length).toBe(1);
     expect(prose[0]!.vector).toContain("fail/03");
-    expect(rows.filter((r) => r.check.includes("declared as an exclusion_set array")).length).toBe(4);
+    expect(rows.filter((r) => r.check.includes("declared as an exclusion_set array")).length).toBe(6);
   });
 });
 

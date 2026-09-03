@@ -366,18 +366,23 @@ export function bucketJcsNKats(rows: Row[]): KatBuckets {
  * TYPED-REFS — vectors/typed-refs/, §5's derived-identifier construction.
  *
  * CORRECTED 2026-09-03. The 30 Aug package reported that the three
- * jcs-n/derived-id vectors are the only ones anywhere exercising §5. Seven do.
- * Alongside kats 20 and 21, five vectors under typed-refs/ each carry a payload,
- * an exclusion set of `doc_id` and a pinned derived identifier, and all five
- * reproduce under this construction.
+ * jcs-n/derived-id vectors are the only ones anywhere exercising §5. They are
+ * not, and the corrected figure sent on 31 Aug was itself an under-report by
+ * the same method that produced the original one.
  *
- * The set is FIVE of the eight files under typed-refs/, and which five is a
- * fact about the files rather than a choice: the other three pin a different
- * identifier or a different shape (fail/02 compares two artifacts against one
- * digest, fail/04 pins a deliberately wrong digest, fail/05 varies the digest
- * algorithm and pins none). The exclusion set and the pinned identifier are
- * read from wherever each vector puts them — three different paths across the
- * five — rather than from one assumed layout.
+ * SEVEN of the eight files under typed-refs/ carry a payload, an exclusion set
+ * of `doc_id` and a pinned derived identifier, and all seven reproduce. The
+ * 31 Aug letter named five. It missed fail/04 and fail/05, which pin the same
+ * identifier as `correct_verification.recomputed_digest` and as a top-level
+ * `correct_recomputed_digest` — two member names the search did not cover. That
+ * is the fourth instance of one scoping mistake: looking for a value under the
+ * names it was expected to have rather than for the value itself.
+ *
+ * Only fail/02 is genuinely outside the set: it compares two artifacts against
+ * one digest and pins no single derived identifier for a cited artifact. The
+ * exclusion set and the pinned identifier are read from wherever each vector
+ * puts them — five member names across three objects — rather than from one
+ * assumed layout, and every row names the source it used.
  *
  * fail/01 is the one worth naming: its excluded member holds the non-null
  * string "secret-id-123", which discriminates DELETION of an excluded member
@@ -405,13 +410,24 @@ export function runTypedRefs(vectorsDir: string): Row[] {
           artifact_type_registry_entry?: { exclusion_set?: string[]; digest_context?: string };
         };
         artifact_type_registry_entry?: { exclusion_set?: string[]; digest_context?: string };
+        correct_recomputed_digest?: string;
+        correct_verification?: { recomputed_digest?: string };
+        verification?: { recomputed_digest?: string };
       };
       const cited = v.cited_artifact;
       const payload = cited?.payload;
-      // Three different member names carry the pinned identifier across these
-      // five files. Read all three rather than assuming one layout: assuming
-      // `derived_id` alone is what dropped fail/01 from the 30 Aug run.
-      const pinned = cited?.derived_id ?? cited?.correct_derived_id ?? cited?.correct_derived_id_bare_hex;
+      // FIVE different member names carry the pinned identifier across these
+      // seven files, in three different objects. Read all of them rather than
+      // assuming a layout — assuming `derived_id` alone is what dropped fail/01
+      // from the 30 August run, and reading only the first three is what would
+      // have dropped fail/04 and fail/05 from the corrected set.
+      const pinned =
+        cited?.derived_id ??
+        cited?.correct_derived_id ??
+        cited?.correct_derived_id_bare_hex ??
+        v.correct_recomputed_digest ??
+        v.correct_verification?.recomputed_digest ??
+        v.verification?.recomputed_digest;
       const entry = cited?.artifact_type_registry_entry ?? cited?.registry_entry ?? v.artifact_type_registry_entry;
       if (payload === undefined || pinned === undefined || entry === undefined) continue;
 
@@ -790,7 +806,7 @@ function main(): void {
   console.log();
 
   const typedRefs = runTypedRefs(vectorsDir);
-  console.log("TYPED-REFS - vectors/typed-refs/, section 5's construction. Five vectors, externally pinned.");
+  console.log("TYPED-REFS - vectors/typed-refs/, section 5's construction. Seven vectors, externally pinned.");
   console.log(table(typedRefs));
   const typedBad = typedRefs.filter((r) => r.verdict === "DISAGREE");
   console.log(`
