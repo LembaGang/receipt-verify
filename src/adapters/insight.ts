@@ -509,10 +509,24 @@ export function detect(bytes: Uint8Array): boolean {
 // the published registry (refs/insight-oracle-keys-*.json)
 // ---------------------------------------------------------------------------
 
-interface RegistryKey {
+export interface RegistryKey {
   keyId: string;
   publicKey: string;
   revoked: boolean;
+  /**
+   * The key's own validity window, in epoch seconds. `null` is open ended —
+   * either the member is absent or the registry publishes `null`, which is what
+   * the current signing key carries.
+   */
+  validFrom: number | null;
+  validUntil: number | null;
+  /**
+   * Window members that are PRESENT but do not parse as an instant. Kept
+   * separately rather than collapsed into `null`, because "unreadable" and
+   * "open ended" must not resolve to the same answer: one of them is a reason
+   * to refuse.
+   */
+  malformedWindow: string[];
 }
 /**
  * One published type. `entryName` is the registry's own key
@@ -533,14 +547,33 @@ interface RegistrySchema {
   /** The count, whether it came from the field list or from a bare `fields: n`. */
   fieldCount?: number;
 }
-interface Registry {
+export interface Registry {
   keys: RegistryKey[];
   schemas: RegistrySchema[];
   gates: Record<string, unknown>;
   origin: string;
 }
 
-function parseRegistry(bytes: Uint8Array, origin: string): Registry | { error: string } {
+/**
+ * The registry writes key windows as ISO-8601 text in two shapes: a bare date
+ * (`2026-08-05`) and a full instant (`2026-09-02T17:35:36.000Z`). Both are UTC
+ * under `Date.parse`'s rules for those two forms, so no local timezone is ever
+ * consulted here — a window that meant a different instant on a machine in a
+ * different zone would make the same bytes resolve two ways.
+ *
+ * Returns `null` when the member is absent or explicitly `null` (open ended),
+ * and the raw string when it is present and unreadable, which the caller must
+ * fail closed on rather than treat as open ended.
+ */
+function windowInstant(v: unknown): { at: number | null } | { bad: string } {
+  if (v === undefined || v === null) return { at: null };
+  const s = str(v);
+  if (s === null) return { bad: JSON.stringify(v) };
+  const ms = Date.parse(s);
+  return Number.isFinite(ms) ? { at: Math.floor(ms / 1000) } : { bad: s };
+}
+
+export function parseRegistry(bytes: Uint8Array, origin: string): Registry | { error: string } {
   const p = parseStrict(bytes);
   if (!p.ok) return { error: `registry at ${origin}: ${p.detail}` };
   const o = p.value;
@@ -551,7 +584,19 @@ function parseRegistry(bytes: Uint8Array, origin: string): Registry | { error: s
     const e = obj(k);
     const pub = e === null ? null : str(e["public_key"]);
     if (e === null || pub === null) return { error: `registry at ${origin}: a public_keys entry has no \`public_key\`` };
-    keys.push({ keyId: str(e["key_id"]) ?? pub, publicKey: pub, revoked: e["revoked"] === true });
+    const from = windowInstant(e["validFrom"]);
+    const until = windowInstant(e["validUntil"]);
+    const malformed: string[] = [];
+    if ("bad" in from) malformed.push(`validFrom ${from.bad}`);
+    if ("bad" in until) malformed.push(`validUntil ${until.bad}`);
+    keys.push({
+      keyId: str(e["key_id"]) ?? pub,
+      publicKey: pub,
+      revoked: e["revoked"] === true,
+      validFrom: "at" in from ? from.at : null,
+      validUntil: "at" in until ? until.at : null,
+      malformedWindow: malformed,
+    });
   }
   const schemas: RegistrySchema[] = [];
   const rawSchemas = obj(o["schemas"]);
@@ -588,6 +633,55 @@ function parseRegistry(bytes: Uint8Array, origin: string): Registry | { error: s
   }
   const er = obj(rawSchemas?.["ExecutionReceipt"]);
   return { keys, schemas, gates: (er === null ? null : obj(er["gates"])) ?? {}, origin };
+}
+
+/**
+ * The outcome of looking one signer up in the registry AT AN INSTANT.
+ *
+ * `not_found` and `valid` are the only two states the resolver used to have.
+ * The other three exist because being listed is not the same as being vouched
+ * for: this registry retains a rotated-out key in `public_keys` with
+ * `revoked: false` and a `validUntil` in the past — its own
+ * `key_rotation_policy` calls that "retaining prior key with validUntil for
+ * overlap" — so an address match alone would report a published identity for a
+ * key the issuer has stopped standing behind.
+ */
+export type KeyResolution =
+  | { status: "not_found" }
+  | { status: "valid"; key: RegistryKey }
+  | { status: "expired"; key: RegistryKey; validUntil: number }
+  | { status: "not_yet_valid"; key: RegistryKey; validFrom: number }
+  | { status: "window_malformed"; key: RegistryKey; members: string[] };
+
+/**
+ * Resolve a signer address against the registry's published keys at `now`
+ * (epoch seconds). Pure: no I/O, no clock read — the instant is always the
+ * caller's `--now`, which is what makes verifying a historical receipt a matter
+ * of naming the instant it was signed at rather than of a flag that waives the
+ * check.
+ *
+ * The window is closed-open against `now` the same way the artefact's own
+ * freshness check is: `now > validUntil` is expired, `now < validFrom` is not
+ * yet valid, and the boundary instant itself is inside the window.
+ *
+ * `revoked` is deliberately NOT consulted here. It is reported by the caller as
+ * an annotation and does not move the verdict today; changing that is a
+ * separate decision from this one and is recorded in fixtures/provenance.md.
+ */
+export function resolveRegistryKey(registry: Registry, address: string, now: number): KeyResolution {
+  const key = registry.keys.find((k) => sameAddress(k.publicKey, address));
+  if (key === undefined) return { status: "not_found" };
+  // Fail closed before either comparison: a window that cannot be read is not
+  // an absent window.
+  if (key.malformedWindow.length > 0) return { status: "window_malformed", key, members: key.malformedWindow };
+  if (key.validUntil !== null && now > key.validUntil) return { status: "expired", key, validUntil: key.validUntil };
+  if (key.validFrom !== null && now < key.validFrom) return { status: "not_yet_valid", key, validFrom: key.validFrom };
+  return { status: "valid", key };
+}
+
+/** For a detail line: the instant as the registry wrote it, beside the number. */
+function instantLine(sec: number): string {
+  return `${sec} (${new Date(sec * 1000).toISOString()})`;
 }
 
 /**
@@ -875,11 +969,11 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
       );
     }
   } else {
-    const hit = ctx.registry.keys.find((k) => sameAddress(k.publicKey, art.attester));
+    const res = resolveRegistryKey(ctx.registry, art.attester, ctx.now);
     const cmp = compareRegistrySchema(art, ctx.registry);
     ann[p("registry_schema")] = cmp.line;
     if (cmp.domainLine !== null) ann[p("registry_domain_version")] = cmp.domainLine;
-    if (hit === undefined) {
+    if (res.status === "not_found") {
       ann[p("identity")] = "signer_not_in_registry";
       if (!ctx.allowUnregistered) {
         return fail(
@@ -894,10 +988,60 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
           ),
         );
       }
+    } else if (res.status === "window_malformed") {
+      // Fail closed. An unreadable window is an unknown state, and the safe
+      // reading of an unknown state is not "open ended".
+      ann[p("identity")] = `key_window_unreadable (${res.key.keyId})`;
+      return fail(
+        unverifiable(
+          FORMAT,
+          "malformed_member",
+          `the registry entry for signer ${art.attester} (${res.key.keyId}) in ${ctx.registry.origin} publishes a validity window that is not an ISO-8601 instant: ` +
+            `${res.members.join("; ")}. The window is not readable, so it is not treated as open ended and no identity is established`,
+          ann,
+          "identity",
+        ),
+      );
+    } else if (res.status === "expired") {
+      // The B-29 case. The key is listed and unrevoked; its window has shut.
+      // UNVERIFIABLE, not INVALID: nothing here says the signature is bad, only
+      // that the registry no longer vouches for the key at this instant. The
+      // way to verify a receipt signed before the rotation is to pass the
+      // instant it was signed at as --now, not to waive the check.
+      ann[p("identity")] = `key_expired (${res.key.keyId})`;
+      ann[p("identity_key_window")] = `validUntil ${instantLine(res.validUntil)}, evaluated at ${instantLine(ctx.now)}`;
+      if (res.key.revoked) ann[p("identity_revoked")] = true;
+      return fail(
+        unverifiable(
+          FORMAT,
+          "expired",
+          `signer ${art.attester} resolves to published key ${res.key.keyId} in ${ctx.registry.origin}, but that key's ` +
+            `validUntil is ${instantLine(res.validUntil)} and the evaluation instant is ${instantLine(ctx.now)}, ` +
+            `${ctx.now - res.validUntil}s past it. The key is still listed and is not marked revoked — this registry retains a rotated-out ` +
+            `key for overlap — so being listed does not establish identity here. Re-run with --now inside the window to verify the artefact ` +
+            `as of when it was signed`,
+          ann,
+          "identity",
+        ),
+      );
+    } else if (res.status === "not_yet_valid") {
+      ann[p("identity")] = `key_not_yet_valid (${res.key.keyId})`;
+      ann[p("identity_key_window")] = `validFrom ${instantLine(res.validFrom)}, evaluated at ${instantLine(ctx.now)}`;
+      return fail(
+        unverifiable(
+          FORMAT,
+          "not_yet_valid",
+          `signer ${art.attester} resolves to published key ${res.key.keyId} in ${ctx.registry.origin}, but that key's ` +
+            `validFrom is ${instantLine(res.validFrom)} and the evaluation instant is ${instantLine(ctx.now)}, ` +
+            `${res.validFrom - ctx.now}s before it`,
+          ann,
+          "identity",
+        ),
+      );
     } else {
-      ann[p("identity")] = `signer_in_registry (${hit.keyId})`;
-      if (hit.revoked) ann[p("identity_revoked")] = true;
-      key = { kid: hit.keyId, alg: "EIP-712/secp256k1", origin: ctx.registry.origin };
+      ann[p("identity")] = `signer_in_registry (${res.key.keyId})`;
+      if (res.key.revoked) ann[p("identity_revoked")] = true;
+      key = { kid: res.key.keyId, alg: "EIP-712/secp256k1", origin: ctx.registry.origin };
     }
   }
 

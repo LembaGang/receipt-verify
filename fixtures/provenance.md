@@ -567,3 +567,73 @@ production keys are listed: `insight-oracle-safety-v2` with `validUntil` 2026-09
 `insight-oracle-safety-v2-202609` (`0x6506F789Edd43338A416f59822A63F309f97E8ce`, open-ended), which is
 the key the production sample signs with. The rotation completes after 17:36Z, so **this pin is
 pre-rotation** and a later pin will be needed for the post-rotation entry (the Lead's B3).
+
+## Appended 2026-09-03 — the post-rotation Insight pins (17:41Z), and why the same registry is pinned twice
+
+`insight-oracle-safety-v2` published `validUntil` 2026-09-02T17:35:36.000Z. The Lead fetched the
+registry again at 17:42:02Z, six minutes after that instant, and a fresh production sample at
+17:42:04Z. Both were pinned as bytes to `C:\Users\User\cc-output\pins\` and copied here from those
+files; nothing was re-fetched by the session that committed them, and each input was hashed against
+the digest the handoff states **before** it was copied.
+
+| path | source | bytes | sha256 |
+|---|---|---|---|
+| `refs/insight-oracle-keys-2026-09-02T1741Z.json` | registry, pinned as bytes 17:42:02Z | 17019 | `76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2` |
+| `fixtures/insight/execution-sample-2026-09-02T1741Z.json` | production sample endpoint, pinned as bytes 17:42:04Z | 4675 | `d4bad431e7c330f30dc4fc8a4edb14fd3fa3a0d748903c2516b056a9a9754716` |
+
+**The registry file is byte-identical to `refs/insight-oracle-keys-2026-09-02T1545Z.json`** — same
+sha256, same 17,019 bytes — and it is kept anyway, because the HOUR is the evidence. One pin taken
+before a rotation cannot say what the registry did at the rotation; two pins with the same digest
+either side of 17:35:36Z can, and what they say is that **the registry does not change on expiry**.
+`insight-oracle-safety-v2` is still in `public_keys` at 17:42Z with its `validUntil` in the past and
+`revoked: false`, which is what the registry's own `key_rotation_policy` means by "retaining prior key
+with validUntil for overlap". `test/insight.test.ts` asserts the byte-equality directly, so if the
+registry ever does drop or rewrite a retired key, that assertion is what goes red.
+
+The sample is **not** a duplicate: it is a fresh fetch, `signedAt` 2026-09-02T17:42:03.934Z, signed by
+`0x6506F789Edd43338A416f59822A63F309f97E8ce` (`insight-oracle-safety-v2-202609`) — the key that took
+over at the rotation. Its digest differs from the 15:46Z sample's, and the suite asserts that too.
+
+**Same `.gitattributes` ordering flaw as every earlier Insight entry, same harmlessness, recorded
+again.** `git check-attr text eol` reports `text: set, eol: lf` for both paths because `*.json text
+eol=lf` sorts after `fixtures/** -text` and the last matching line wins. Harmless here: both files are
+LF-only (`grep -c $'\r'` returns 0 for each) and each staged blob was verified to hash to the sha256 in
+the table above.
+
+### B-29: an expired key was resolving as a published identity, and now does not
+
+Reading the resolver to write the pin's tests turned up a defect in **this tool**, not in the registry.
+`parseRegistry` read `key_id`, `public_key` and `revoked` off each `public_keys` entry and dropped
+`validFrom` and `validUntil` on the floor; check 5 (identity) then matched on address alone. The
+`validUntil` the adapter did apply against `--now` was the *artefact's* own (check 7, freshness), which
+is a different member of a different document.
+
+The consequence, as a control on the unmodified code at `444b676`: the pinned 06:08Z package, run
+against a registry that lists its signer with `validUntil` forty minutes before `--now`, returned
+**VALID** with `identity: signer_in_registry`. Three assertions were red before the fix and green
+after; the two cases that pass either way (an open window, and `validUntil: null`) are there as
+controls, and on the old code they passed for the wrong reason — no window was being read at all.
+
+The fix adds `validFrom`/`validUntil` to the parsed key and a pure, exported
+`resolveRegistryKey(registry, address, now)` that returns `not_found | valid | expired |
+not_yet_valid | window_malformed`. A closed window is `UNVERIFIABLE/expired` at check `identity` and
+prints no key line; before `validFrom` it is `UNVERIFIABLE/not_yet_valid`; a window member that is
+present but is not an ISO-8601 instant is `UNVERIFIABLE/malformed_member` rather than being read as
+open-ended. UNVERIFIABLE and not INVALID, because nothing here says the signature is bad — only that
+the registry no longer vouches for the key **at the instant asked about**. `--allow-unregistered-signer`
+does not waive it: the key is registered and its window is shut, which is a different fact from an
+unpublished signer. The way to verify a receipt signed before a rotation is to pass the instant it was
+signed at as `--now`, which the resolver already honours because it reads no clock of its own.
+
+Cases (a)–(c) of the handoff are asserted against the pinned 17:41Z registry bytes through
+`resolveRegistryKey`, which is resolution only and needs no Insight key material: at 1788370900
+(17:41:40Z) `0xa268676C85b927D64a4e2384636874f76D69e419` is `expired`; at 1788363000 (15:30Z) the same
+key is `valid`; `0x6506F789Ed…`, whose `validUntil` is `null`, is `valid` at both. The verdict path is
+exercised end to end with the throwaway signer the corpus already carries, over a registry built in the
+test from the pinned 09:09Z bytes with `public_keys` replaced — nothing is re-signed and no Insight key
+material is used.
+
+**What this still does not do, recorded rather than fixed here.** `revoked: true` is reported as the
+annotation `identity_revoked` and does **not** move the verdict — a revoked key still resolves as a
+published identity and can still reach VALID. That is the same class of defect B-29 was, it is out of
+this handoff's scope, and it is left as a finding rather than fixed quietly.

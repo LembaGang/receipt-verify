@@ -25,7 +25,7 @@
 import { describe, expect, it } from "vitest";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { insightAdapter, detect, eip712Digest, extraDomainKeys, findDuplicateKey, recoverAddress, FORMAT } from "../src/adapters/insight.js";
+import { insightAdapter, detect, eip712Digest, extraDomainKeys, findDuplicateKey, parseRegistry, recoverAddress, resolveRegistryKey, FORMAT } from "../src/adapters/insight.js";
 import { evidenceActionAdapter } from "../src/adapters/evidence-action.js";
 import { verificationStateAdapter } from "../src/adapters/verification-state.js";
 import { actaAdapter } from "../src/adapters/acta.js";
@@ -37,10 +37,16 @@ import {
   INSIGHT_PKG,
   INSIGHT_PKG_V3,
   INSIGHT_PKG_V4,
+  INSIGHT_KEY_202609,
+  INSIGHT_KEY_V2,
+  INSIGHT_NOW_1530,
+  INSIGHT_NOW_1741,
   INSIGHT_REGISTRY,
   INSIGHT_REGISTRY_1154,
   INSIGHT_REGISTRY_1545,
+  INSIGHT_REGISTRY_1741,
   INSIGHT_SAMPLE_1546,
+  INSIGHT_SAMPLE_1741,
   INSIGHT_SAMPLE_ATTESTATION_1546,
   INSIGHT_V3_NOW,
   INSIGHT_V4_NOW,
@@ -466,8 +472,9 @@ describe("insight — detection", () => {
     // added under fixtures/insight/, so a new fixture cannot quietly widen what
     // "claims ZERO of the other fixtures" above is measured against. Was 2 (the
     // found and repaired packages); round 3 added the v4 package, the production
-    // sample as the endpoint returned it, and the attestation extracted from it.
-    expect(insightFixtures.length).toBe(5);
+    // sample as the endpoint returned it, and the attestation extracted from it;
+    // B-29 added the post-rotation sample pinned at 17:41Z.
+    expect(insightFixtures.length).toBe(6);
   });
 });
 
@@ -1163,5 +1170,163 @@ describe("insight v4 — the production sample", () => {
       now: INSIGHT_V4_NOW,
     });
     expect(r.verdict).not.toBe("VALID");
+  });
+});
+
+// --------------------------------------------------------------------------
+
+describe("insight — the 17:41Z post-rotation pins", () => {
+  it("the registry pinned six minutes AFTER the rotation is byte-identical to the 15:45Z pin", () => {
+    const REG_1741_BYTES = read(INSIGHT_REGISTRY_1741);
+    expect(REG_1741_BYTES.length).toBe(17019);
+    expect(sha256Hex(REG_1741_BYTES)).toBe("76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2");
+    // The claim the second pin exists to make. If the registry ever DID drop or
+    // rewrite the retired key on expiry, this equality is what would go red.
+    expect(REG_1741_BYTES.equals(read(INSIGHT_REGISTRY_1545))).toBe(true);
+  });
+
+  it("the retired key is still listed, unrevoked, with its window closed", () => {
+    const reg = JSON.parse(read(INSIGHT_REGISTRY_1741).toString("utf8")) as Record<string, any>;
+    const v2 = reg["public_keys"].find((k: any) => k["public_key"] === INSIGHT_KEY_V2);
+    expect(v2["key_id"]).toBe("insight-oracle-safety-v2");
+    expect(v2["revoked"]).toBe(false);
+    expect(v2["validUntil"]).toBe("2026-09-02T17:35:36.000Z");
+    expect(Math.floor(Date.parse(v2["validUntil"]) / 1000)).toBeLessThan(INSIGHT_NOW_1741);
+  });
+
+  it("the 17:41Z production sample is a fresh fetch, not a copy of the 15:46Z one", () => {
+    const SAMPLE_1741 = read(INSIGHT_SAMPLE_1741);
+    expect(SAMPLE_1741.length).toBe(4675);
+    expect(sha256Hex(SAMPLE_1741)).toBe("d4bad431e7c330f30dc4fc8a4edb14fd3fa3a0d748903c2516b056a9a9754716");
+    expect(SAMPLE_1741.equals(read(INSIGHT_SAMPLE_1546))).toBe(false);
+    const w = JSON.parse(SAMPLE_1741.toString("utf8")) as Record<string, any>;
+    expect(w.data.attestation.attester).toBe(INSIGHT_KEY_202609);
+    // Signed 17:42:03.934Z, a minute and a half AFTER the 17:35:36Z rotation
+    // instant: this sample is the current key's work, not the retired key's.
+    expect(w.data.attestation.signedAt).toBe("2026-09-02T17:42:03.934Z");
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * B-29: a key the registry still LISTS is not the same as a key the registry
+ * still vouches for. `insight-oracle-safety-v2` stays in `public_keys` with
+ * `revoked: false` after its `validUntil` passes, so a resolver that matches on
+ * address alone reports a published identity for a key whose window has closed.
+ *
+ * These cases exercise RESOLUTION ONLY, against the pinned registry bytes — no
+ * Insight key material and no signature is involved. The behavioural
+ * red-then-green control for the verdict path is the throwaway-key block below.
+ *
+ * What would turn these red: dropping the `validUntil` comparison (a and b),
+ * comparing against the wrong instant, or applying a window to a key that
+ * publishes `validUntil: null` (c).
+ */
+describe("insight — a registry key is resolved against its own validity window", () => {
+  const parsed = parseRegistry(read(INSIGHT_REGISTRY_1741), "refs/insight-oracle-keys-2026-09-02T1741Z.json");
+  if ("error" in parsed) throw new Error(parsed.error);
+  const registry = parsed;
+
+  it("(a) at 17:41:40Z the retired v2 key resolves as expired, never as plainly valid", () => {
+    const r = resolveRegistryKey(registry, INSIGHT_KEY_V2, INSIGHT_NOW_1741);
+    expect(r.status).toBe("expired");
+    if (r.status !== "expired") throw new Error("unreachable");
+    expect(r.key.keyId).toBe("insight-oracle-safety-v2");
+    expect(r.validUntil).toBe(1788370536);
+    // Listed and unrevoked at the same instant: the two facts the old resolver
+    // saw, and the reason it said the identity was established.
+    expect(r.key.revoked).toBe(false);
+  });
+
+  it("(b) at 15:30:00Z the same key resolves as valid", () => {
+    const r = resolveRegistryKey(registry, INSIGHT_KEY_V2, INSIGHT_NOW_1530);
+    expect(r.status).toBe("valid");
+    if (r.status !== "valid") throw new Error("unreachable");
+    expect(r.key.keyId).toBe("insight-oracle-safety-v2");
+  });
+
+  it("(c) the 202609 key, whose validUntil is null, resolves valid at both instants", () => {
+    for (const now of [INSIGHT_NOW_1530, INSIGHT_NOW_1741]) {
+      const r = resolveRegistryKey(registry, INSIGHT_KEY_202609, now);
+      expect(r.status).toBe("valid");
+      if (r.status !== "valid") throw new Error("unreachable");
+      expect(r.key.keyId).toBe("insight-oracle-safety-v2-202609");
+      expect(r.key.validUntil).toBeNull();
+    }
+  });
+
+  it("a key not in the registry is not_found, and an address is matched case-insensitively", () => {
+    expect(resolveRegistryKey(registry, ATTESTER, INSIGHT_NOW_1530).status).toBe("not_found");
+    expect(resolveRegistryKey(registry, INSIGHT_KEY_V2.toLowerCase(), INSIGHT_NOW_1530).status).toBe("valid");
+  });
+
+  it("before its validFrom the same key is not_yet_valid, not merely absent", () => {
+    // 2026-08-05 is the v2 key's validFrom; one second before it is 1785887999.
+    const r = resolveRegistryKey(registry, INSIGHT_KEY_V2, 1785887999);
+    expect(r.status).toBe("not_yet_valid");
+    if (r.status !== "not_yet_valid") throw new Error("unreachable");
+    expect(r.validFrom).toBe(1785888000);
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * The verdict path, end to end, on the public adapter API. This is the
+ * red-then-green control for B-29: on 444b676 the first case below returns
+ * VALID under a key whose window closed forty minutes before `--now`.
+ *
+ * The registries here are built in the test from the pinned 09:09Z bytes with
+ * `public_keys` replaced, so the throwaway signer the package already carries is
+ * a "published" key. No Insight key material is used and nothing is re-signed.
+ */
+describe("insight — an expired registry key does not establish identity", () => {
+  const withKey = (validUntil: string | null): Buffer => {
+    const reg = JSON.parse(REG_BYTES.toString("utf8")) as Record<string, any>;
+    reg["public_keys"] = [
+      { key_id: "throwaway-under-test", public_key: ATTESTER, algorithm: "EIP-712/secp256k1", validFrom: "2026-08-05", validUntil, revoked: false },
+    ];
+    return Buffer.from(JSON.stringify(reg), "utf8");
+  };
+  // INSIGHT_NOW is 1788327600 = 2026-09-02T05:40:00Z.
+  const CLOSED = "2026-09-02T05:00:00.000Z";
+  const OPEN = "2026-09-02T06:00:00.000Z";
+
+  it("is UNVERIFIABLE/expired at identity when the signer's key window has closed", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: withKey(CLOSED) });
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("expired");
+    expect(r.stoppedAt).toBe("identity");
+    // Fail closed: no key line may be printed for an identity that is not
+    // established at the evaluation instant.
+    expect(r.resolvedKey).toBeUndefined();
+    expect(r.detail).toContain("throwaway-under-test");
+    expect(String(r.annotations?.["identity"])).toContain("key_expired");
+  });
+
+  it("--allow-unregistered-signer does not open it: the key IS registered, its window is shut", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: withKey(CLOSED), allowUnregisteredSigner: true });
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("expired");
+  });
+
+  it("the control: the same package, the same key, a window still open at --now is VALID", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: withKey(OPEN) });
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["identity"]).toBe("signer_in_registry (throwaway-under-test)");
+    expect(r.resolvedKey?.kid).toBe("throwaway-under-test");
+  });
+
+  it("and an open-ended key (validUntil null) is VALID, so the check is the window and not the member's presence", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: withKey(null) });
+    expect(r.verdict).toBe("VALID");
+  });
+
+  it("a validUntil that is not an instant fails closed rather than reading as open-ended", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: withKey("whenever") });
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("malformed_member");
+    expect(r.stoppedAt).toBe("identity");
   });
 });

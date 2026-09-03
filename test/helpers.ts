@@ -110,3 +110,32 @@ export function replaceInBytes(bytes: Uint8Array, needle: string, replacement: s
 
 /** Pinned evaluation instant so exp/nbf assertions never depend on the wall clock. */
 export const FIXED_NOW = 1780000000; // 2026-05-29T09:46:40Z
+
+/**
+ * The post-rotation pins, taken at 17:41Z — six minutes after
+ * `insight-oracle-safety-v2`'s `validUntil` (2026-09-02T17:35:36Z).
+ *
+ * The registry file is BYTE-IDENTICAL to the 15:45Z pin (same sha256, same
+ * 17,019 bytes): the registry does not change on expiry, it keeps the retired
+ * key listed with a past `validUntil` and `revoked: false`, which its own
+ * `key_rotation_policy` calls retaining the prior key for overlap. Both copies
+ * are kept because the HOUR is the evidence — one pin cannot say that the bytes
+ * were the same before and after the rotation instant, two can.
+ *
+ * The sample is a genuinely fresh fetch (signed 17:42:03.934Z) and differs from
+ * the 15:46Z one.
+ */
+export const INSIGHT_REGISTRY_1741 = join(dirname(FIX), "refs", "insight-oracle-keys-2026-09-02T1741Z.json");
+export const INSIGHT_SAMPLE_1741 = join(INSIGHT, "execution-sample-2026-09-02T1741Z.json");
+
+/** The two production keys the 15:45Z / 17:41Z registry lists, by address. */
+export const INSIGHT_KEY_V2 = "0xa268676C85b927D64a4e2384636874f76D69e419";
+export const INSIGHT_KEY_202609 = "0x6506F789Edd43338A416f59822A63F309f97E8ce";
+
+/**
+ * Two evaluation instants that straddle the v2 key's `validUntil`
+ * (1788370536 = 2026-09-02T17:35:36Z): 17:41:40Z, when the pin was taken and the
+ * window had closed 364 seconds earlier, and 15:30:00Z, when it was open.
+ */
+export const INSIGHT_NOW_1741 = 1788370900;
+export const INSIGHT_NOW_1530 = 1788363000;
