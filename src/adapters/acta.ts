@@ -38,6 +38,10 @@ import { jcs } from "@headlessoracle/chirindo/dist/vendor/recorder/index.js";
 import type { Adapter, ResolvedKey, VerifyOptions, VerifyResult } from "../types.js";
 import { invalid, unverifiable, valid } from "../verdict.js";
 import { loadJwksSources, resolveKid, type JwksSource } from "../jwks.js";
+// The duplicate-member scanner, reused rather than reimplemented: it is the
+// same rule from the same two RFCs, and a second copy could drift from the
+// first without any test noticing.
+import { findDuplicateKey } from "./insight.js";
 
 export const FORMAT = "acta.receipt/0";
 
@@ -78,9 +82,29 @@ interface ActaEnvelope {
 type ParseOutcome = { ok: true; env: ActaEnvelope } | { ok: false; detail: string };
 
 function parseEnvelope(bytes: Uint8Array): ParseOutcome {
+  const text = Buffer.from(bytes).toString("utf8");
+  // Ordered before JSON.parse, and before any member is read, for the reason
+  // the insight adapter states at its own parse boundary: JSON.parse keeps the
+  // LAST of a repeated member and drops the earlier one silently, so an
+  // envelope whose signature covers `{"a":1}` and whose bytes say
+  // `{"a":1,"a":2}` verifies while a reader is shown 2. RFC 7493 section 2.3
+  // makes member names unique in I-JSON and RFC 8785 section 3.1 excludes such
+  // input from canonicalization — and this format's own signing input is JCS,
+  // so the exclusion is this format's rule and not a borrowed one. After
+  // JSON.parse the evidence is gone, which is why the scan is on the text.
+  const dup = findDuplicateKey(text);
+  if (dup !== null) {
+    return {
+      ok: false,
+      detail:
+        `duplicate member name ${JSON.stringify(dup)}: RFC 7493 section 2.3 makes member names unique and RFC 8785 ` +
+        `section 3.1 excludes such input from canonicalization, which is this format's signing input. JSON.parse ` +
+        `would silently keep the last occurrence, so no value from this receipt is read at all`,
+    };
+  }
   let doc: unknown;
   try {
-    doc = JSON.parse(Buffer.from(bytes).toString("utf8"));
+    doc = JSON.parse(text);
   } catch (e) {
     return { ok: false, detail: `not valid JSON: ${(e as Error).message}` };
   }

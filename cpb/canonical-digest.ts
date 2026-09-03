@@ -110,9 +110,15 @@ export function assertJsonValue(v: unknown, path = "$"): CpbResult<JsonValue> {
  * `P` is a parsed JSON value, not octets. §4.1 step 1 says "the octets supplied
  * to the algorithm" while §3 defines A(v) over a value v and §5 composes the
  * algorithm with a member-removal step that only a parsed value admits. That
- * mismatch is AMBIGUITY_LOG A1; the octets-to-value step is the caller's, and
- * this implementation states no rule for duplicate keys in a JSON text because
- * -02 states none in §4.1, §5, §5.1, §7 or §7.1.
+ * mismatch is AMBIGUITY_LOG A1; the octets-to-value step is the caller's.
+ *
+ * CORRECTED. An earlier revision of this comment said "this implementation
+ * states no rule for duplicate keys in a JSON text because -02 states none in
+ * §4.1, §5, §5.1, §7 or §7.1". The search was accurate and the conclusion was
+ * wrong: the rule is reached by delegation, through the jcs registry entry's
+ * Reference to RFC 8785 Section 3. `parseJsonStrict` and
+ * `canonicalDigestJcsFromText` at the foot of this file apply it, and a caller
+ * holding octets should use those rather than this function.
  */
 export function jcsPreImage(payload: JsonValue): CpbResult<Uint8Array> {
   const checked = assertJsonValue(payload);
@@ -136,4 +142,166 @@ export function canonicalDigestJcs(payload: JsonValue): CpbResult<CanonicalDiges
     digest: new Uint8Array(digest),
     hex: digest.toString("hex"),
   });
+}
+
+// ---------------------------------------------------------------------------
+// The octet boundary — RFC 8785 §3.1 / RFC 7493 §2.3, reached from §4.1 by
+// delegation through the `jcs` registry entry's Reference.
+// ---------------------------------------------------------------------------
+
+/**
+ * WHY THIS EXISTS, and why it did not before.
+ *
+ * `jcsPreImage` above takes a parsed JSON *value*. §4.1 step 1 says "the octets
+ * supplied to the algorithm". Between those two sentences sits a step this
+ * implementation originally left to the caller and stated no rule for, on the
+ * grounds that -02 states none in §4.1, §5, §5.1, §7 or §7.1. That reading was
+ * wrong, and the error is instructive rather than incidental: the rule is not in
+ * those sections because it is one normative reference away from them. The `jcs`
+ * registry entry gives its Reference as RFC 8785 Section 3. RFC 8785 §3.1
+ * requires the data to be adapted for I-JSON formatting and states that JSON
+ * objects MUST NOT exhibit duplicate property names. RFC 7493 §2.3 states it
+ * again. The authors' own kat-37 states it a third time, in its description.
+ *
+ * `JSON.parse` keeps the LAST of a repeated member and discards the earlier one
+ * silently, so a text saying `{"a":1,"a":2}` becomes the value `{"a":2}` and a
+ * digest computed over it is a digest of something the text does not say. The
+ * scan therefore runs over the RAW TEXT, before parsing, because after parsing
+ * the evidence is gone.
+ *
+ * Two implementers reached this independently and from opposite directions —
+ * both parsed before walking the text, and both produced a value where RFC 8785
+ * requires a refusal. That is evidence about the delegation chain, not about
+ * either implementation.
+ */
+type Tok = { t: "{" | "}" | "[" | "]" | ":" | "," | "str" | "lit"; v?: string };
+
+function tokenize(text: string): Tok[] | null {
+  const toks: Tok[] = [];
+  const punct = "{}[]:,";
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i]!;
+    if (c === " " || c === "\t" || c === "\n" || c === "\r") {
+      i++;
+      continue;
+    }
+    if (punct.includes(c)) {
+      toks.push({ t: c as Tok["t"] });
+      i++;
+      continue;
+    }
+    if (c === '"') {
+      const start = i;
+      i++;
+      while (i < text.length) {
+        const d = text[i]!;
+        if (d === "\\") {
+          i += 2;
+          continue;
+        }
+        if (d === '"') break;
+        i++;
+      }
+      if (i >= text.length) return null;
+      i++;
+      let decoded: string;
+      try {
+        decoded = JSON.parse(text.slice(start, i)) as string;
+      } catch {
+        return null;
+      }
+      toks.push({ t: "str", v: decoded });
+      continue;
+    }
+    // Numbers and the three literals. Only their extent matters here, so the
+    // walker below stays aligned with the structure without validating them.
+    const start = i;
+    while (i < text.length && !punct.includes(text[i]!) && !' \t\n\r"'.includes(text[i]!)) i++;
+    if (i === start) return null;
+    toks.push({ t: "lit", v: text.slice(start, i) });
+  }
+  return toks;
+}
+
+/**
+ * A JSON-pointer-ish path to the first duplicate member name in `text`, or null
+ * when there is none. `null` is also returned for text that does not tokenize:
+ * malformed JSON is `JSON.parse`'s to report, and this function refuses to be
+ * the thing that reports it, because a scanner that returned a duplicate for
+ * unparseable input would make the refusal below untraceable to a real cause.
+ *
+ * The path uses `$` for the document root, `.name` for a member and `[]` for an
+ * array element, so `$.input.a` names a duplicate `a` inside the `input` member
+ * of the root object.
+ */
+export function findDuplicateMemberName(text: string): string | null {
+  const toks = tokenize(text);
+  if (toks === null) return null;
+  const frames: { obj: boolean; keys: Set<string>; path: string }[] = [];
+  let lastKey = "";
+  for (let k = 0; k < toks.length; k++) {
+    const t = toks[k]!;
+    if (t.t === "{" || t.t === "[") {
+      const parent = frames[frames.length - 1];
+      const path = parent === undefined ? "$" : parent.obj ? `${parent.path}.${lastKey}` : `${parent.path}[]`;
+      frames.push({ obj: t.t === "{", keys: new Set(), path });
+      continue;
+    }
+    if (t.t === "}" || t.t === "]") {
+      frames.pop();
+      continue;
+    }
+    const top = frames[frames.length - 1];
+    if (t.t === "str" && top !== undefined && top.obj && toks[k + 1]?.t === ":") {
+      const key = t.v!;
+      lastKey = key;
+      if (top.keys.has(key)) return `${top.path}.${key}`;
+      top.keys.add(key);
+    }
+  }
+  return null;
+}
+
+/**
+ * Parse a JSON text into a value, refusing before any object exists when the
+ * text carries a duplicate member name.
+ *
+ * "Before an object exists" is the operative phrase and it is not decoration:
+ * the refusal has to precede `JSON.parse`, because `JSON.parse` is where the
+ * duplicate stops being observable.
+ */
+export function parseJsonStrict(text: string): CpbResult<JsonValue> {
+  const dup = findDuplicateMemberName(text);
+  if (dup !== null) {
+    return fail(
+      "payload_duplicate_member_name",
+      "§4.1 → RFC 8785 §3.1 → RFC 7493 §2.3",
+      `duplicate member name at ${dup}: RFC 7493 section 2.3 makes member names unique in I-JSON and RFC 8785 ` +
+        `section 3.1 excludes such input from canonicalization, which the jcs registry entry incorporates by ` +
+        `naming RFC 8785 section 3 as its Reference. JSON.parse would silently keep the last occurrence, so no ` +
+        `value from this text is read at all`,
+    );
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (e) {
+    return fail("payload_not_json", "§4.1", `not valid JSON: ${(e as Error).message}`);
+  }
+  return assertJsonValue(parsed);
+}
+
+/**
+ * CANONICAL-DIGEST(jcs, P) where P arrives as OCTETS rather than as a value —
+ * §4.1 step 1's own phrasing, and the entry point a conforming implementation
+ * needs, because the duplicate-name rule is only checkable at this layer.
+ *
+ * `canonicalDigestJcs` below remains the value-level entry point for callers who
+ * already hold a parsed value and have satisfied this rule themselves.
+ */
+export function canonicalDigestJcsFromText(text: string): CpbResult<CanonicalDigest> {
+  const parsed = parseJsonStrict(text);
+  if (!parsed.ok) return parsed;
+  return canonicalDigestJcs(parsed.value);
 }

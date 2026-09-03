@@ -17,7 +17,15 @@
 //   §6   envelope conventions, §10 discovery mirror — COSE-layer obligations,
 //        outside the three sections.
 
-export { assertJsonValue, canonicalDigestJcs, jcsPreImage, type CanonicalDigest } from "./canonical-digest.js";
+export {
+  assertJsonValue,
+  canonicalDigestJcs,
+  canonicalDigestJcsFromText,
+  findDuplicateMemberName,
+  jcsPreImage,
+  parseJsonStrict,
+  type CanonicalDigest,
+} from "./canonical-digest.js";
 export {
   ALGORITHM_TOKENS,
   CANONICALIZATION_ALGORITHM_REGISTRY,

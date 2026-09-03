@@ -21,7 +21,9 @@ import {
   admitAlgorithm,
   applyExclusionSet,
   canonicalDigestJcs,
+  canonicalDigestJcsFromText,
   deriveIdentifier,
+  findDuplicateMemberName,
   identifiersEqual,
   incorrectLeafInputFromHexText,
   leafInput,
@@ -345,5 +347,81 @@ describe("§4.2 / §4.3 / §14.1 withdrawn and unimplemented algorithms", () => 
     if (!r.ok) return;
     expect(r.value.entry.digest).toBe("SHA-256");
     expect(r.value.entry.encoding).toBe("lowercase-hex-64");
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * The duplicate-member rule, which -02 reaches by delegation and which this
+ * implementation originally concluded did not exist.
+ *
+ * The conclusion was wrong and the search that produced it was not: §4.1, §5,
+ * §5.1, §7 and §7.1 really do state no such rule. The jcs registry entry gives
+ * its Reference as RFC 8785 Section 3; §3.1 there excludes duplicate property
+ * names from canonicalization; RFC 7493 §2.3 states it again. An implementer who
+ * must traverse three documents to learn that duplicate names are refused is an
+ * implementer who will not traverse it — which is the finding, and it is better
+ * evidenced by having been made twice, independently, than by being argued.
+ */
+describe("§4.1 → RFC 8785 §3.1 → RFC 7493 §2.3 — duplicate member names", () => {
+  it("refuses before an object exists, and names the path", () => {
+    const r = canonicalDigestJcsFromText('{"a": 1, "a": 2}');
+    expect(r.ok).toBe(false);
+    if (r.ok) throw new Error("unreachable");
+    expect(r.reason).toBe("payload_duplicate_member_name");
+    expect(r.detail).toContain("$.a");
+    expect(r.section).toContain("RFC 8785");
+  });
+
+  it("CONTROL: the same text without the duplicate digests normally", () => {
+    // Without this the refusal above is consistent with a function that refuses
+    // everything. It also pins WHAT the 30 Aug run produced for kat-37 —
+    // JSON.parse keeps the LAST member, so it digested {"a":2}.
+    const ok = canonicalDigestJcsFromText('{"a": 2}');
+    expect(ok.ok).toBe(true);
+    if (!ok.ok) throw new Error("unreachable");
+    expect(ok.value.hex).toBe("7e8059f495589fcd981232cc11d00b00da3802c01d688fa1cf1f6bed6e5bb33c");
+  });
+
+  it("the value-level entry point still cannot see it, which is why the text-level one exists", () => {
+    // Not a defect in canonicalDigestJcs: by the time a caller holds a value the
+    // duplicate is already gone. This asserts the boundary is real — the two
+    // entry points genuinely differ — rather than that one of them is broken.
+    const parsed = JSON.parse('{"a": 1, "a": 2}') as { a: number };
+    expect(parsed.a).toBe(2);
+    const viaValue = canonicalDigestJcs(parsed);
+    expect(viaValue.ok).toBe(true);
+  });
+
+  it("finds duplicates nested at depth and reports where, not merely that", () => {
+    expect(findDuplicateMemberName('{"outer": {"inner": {"k": 1, "k": 2}}}')).toBe("$.outer.inner.k");
+    expect(findDuplicateMemberName('{"list": [{"k": 1, "k": 2}]}')).toBe("$.list[].k");
+    expect(findDuplicateMemberName('{"input": {"a": 1, "a": 2}}')).toBe("$.input.a");
+  });
+
+  it("does not fire on repeats in sibling objects, or on a repeated VALUE", () => {
+    // The rule is about member names within one object. A scanner that flagged
+    // these would refuse ordinary documents and its refusals would mean nothing.
+    expect(findDuplicateMemberName('{"x": {"k": 1}, "y": {"k": 2}}')).toBeNull();
+    expect(findDuplicateMemberName('[{"k": 1}, {"k": 2}]')).toBeNull();
+    expect(findDuplicateMemberName('{"a": "a"}')).toBeNull();
+    expect(findDuplicateMemberName('{"a": 1, "b": 2}')).toBeNull();
+  });
+
+  it("a key whose text differs but whose VALUE is the same string is a duplicate", () => {
+    // "a" and "a" are the same member name after unescaping. A scanner
+    // comparing raw slices instead of decoded strings would miss this.
+    expect(findDuplicateMemberName('{"a": 1, "\\u0061": 2}')).toBe("$.a");
+  });
+
+  it("leaves malformed JSON to JSON.parse rather than reporting a duplicate", () => {
+    // A scanner that returned a duplicate for unparseable input would make the
+    // refusal untraceable to a real cause.
+    expect(findDuplicateMemberName('{"a": 1, "a"')).toBeNull();
+    const r = canonicalDigestJcsFromText('{"a": 1,');
+    expect(r.ok).toBe(false);
+    if (r.ok) throw new Error("unreachable");
+    expect(r.reason).toBe("payload_not_json");
   });
 });

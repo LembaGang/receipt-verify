@@ -30,6 +30,7 @@ import {
   applyExclusionSet,
   canonicalDigestJcs,
   deriveIdentifier,
+  findDuplicateMemberName,
   hexIdentifierOctets,
   verifyCarriedIdentifier,
   type JsonValue,
@@ -44,7 +45,7 @@ import { MUTANTS, type DigestFn } from "./mutants.js";
 export type Verdict = "AGREE" | "DISAGREE" | "N/A";
 
 export interface Row {
-  readonly set: "PRIMARY" | "OBSERVED" | "SUPPLEMENTARY" | "T3B-STRUCTURAL" | "T3B-DIGEST";
+  readonly set: "PRIMARY" | "OBSERVED" | "SUPPLEMENTARY" | "TYPED-REFS" | "T3B-STRUCTURAL" | "T3B-DIGEST";
   readonly vector: string;
   readonly check: string;
   readonly expected: string;
@@ -153,6 +154,28 @@ interface KatVector {
   digest?: string;
   must_fail?: boolean;
   failure_reason?: string;
+  /**
+   * Four of the eleven MUST-FAIL vectors also pin the digest a CONFORMING
+   * implementation produces for the same input. The 30 Aug run read them,
+   * printed them and did not compare them, because the interface it read
+   * vectors through did not declare this key. Declaring it is the whole fix:
+   * kats 13, 27, 28 and 29 are the NFC boundary, the lowercase escape form, the
+   * named short escape and the UTF-16 key-sort cases — RFC 8785 conformance
+   * anchors, and the comparable base is 29 rather than 25 because of them.
+   */
+  jcs_n_correct_digest?: string;
+  /**
+   * kats 20 and 21. The 30 Aug run bucketed these as "no canonicalization
+   * input" on the strength of a missing top-level `input` member. They carry an
+   * input; it sits here, with an exclusion set, a declared representation and a
+   * pinned identifier. The scope of that negative was the KEY NAME; the
+   * conclusion drawn was about the FILE.
+   */
+  cited_artifact?: {
+    payload?: JsonValue;
+    registry_entry?: { exclusion_set?: string[]; representation?: string };
+    correct_derived_id_bare_hex?: string;
+  };
 }
 
 /**
@@ -171,37 +194,75 @@ export function runJcsNKats(vectorsDir: string): Row[] {
   const rows: Row[] = [];
 
   for (const file of files) {
-    const v = JSON.parse(readFileSync(join(dir, file), "utf8")) as KatVector;
+    const text = readFileSync(join(dir, file), "utf8");
+    const v = JSON.parse(text) as KatVector;
 
-    // Two of the 38 (enumerated: all 38 read, 36 carry an `input` member and 2
-    // do not) carry no TOP-LEVEL `input` member. 20- and 21- pin an
-    // identifier-grammar failure and carry `cited_artifact` plus
-    // `typed_reference_with_wrong_representation` instead.
+    // ---- the octet boundary, BEFORE any value from this vector is used ------
     //
-    // CORRECTED 2026-09-01 (letter to A. Sokolov, 2026-08-31). An earlier
-    // version of this comment said these vectors "carry no canonicalization
-    // input at all" and that "there is nothing to canonicalize". That is FALSE.
-    // Both carry `cited_artifact.payload` — {"action":"read","resource":
-    // "sensor-7"} — with an exclusion set, a declared representation, and a
-    // pinned `correct_derived_id_bare_hex`. Recomputed under this
-    // implementation both yield
-    // 2f9bba43e30273e2e87c7ef659a0f36f1e11f8e0c10489afe4d267c996505c37,
-    // matching the vectors' pinned value.
+    // CORRECTED 2026-09-03. kat-37 pins {"a": 1, "a": 2} and requires a
+    // refusal. The 30 Aug run digested it and produced a value, because
+    // JSON.parse had already discarded the first `a` before the digest was
+    // reached, and because this implementation had concluded that -02 states no
+    // duplicate-key rule. It does state one, by delegation: the jcs registry
+    // entry's Reference is RFC 8785 Section 3, whose §3.1 excludes duplicate
+    // property names from canonicalization, and RFC 7493 §2.3 says it again.
     //
-    // The scope of the original negative was the KEY NAME `input`; the
-    // conclusion drawn was about the FILE. This harness still does not reach
-    // `cited_artifact.payload`, so these rows remain unevaluated HERE — but
-    // they are unevaluated by this harness, not uncanonicalizable in the
-    // vector. Re-deriving them is scheduled for the corrected package.
-    if (v.input === undefined) {
+    // The scan is over the vector file's raw text, which is the only layer at
+    // which the duplicate is still observable, and the path it returns says
+    // WHERE — a duplicate somewhere else in the file is not a duplicate in the
+    // payload and must not be reported as one.
+    const dup = findDuplicateMemberName(text);
+    const dupInInput = dup !== null && (dup === "$.input" || dup.startsWith("$.input."));
+    if (dupInInput) {
+      const expected = v.must_fail === true ? `MUST-FAIL: ${v.failure_reason ?? "unstated"}` : (v.digest ?? "");
+      const ours = `REFUSED: duplicate member name at ${dup} (RFC 8785 §3.1 via the jcs registry entry; RFC 7493 §2.3)`;
       rows.push({
         set: "OBSERVED",
         vector: `${v.id} (${file})`,
         check: "jcs-n pinned digest vs our jcs digest",
-        expected: `MUST-FAIL: ${v.failure_reason ?? "unstated"}`,
-        ours: "NOT RUN BY THIS HARNESS: no top-level `input`; a canonicalizable payload IS present at cited_artifact.payload",
-        verdict: "N/A",
+        expected,
+        ours,
+        // A MUST-FAIL vector is satisfied by a refusal. The comparison is
+        // "did we refuse", not string equality, because the vector pins a
+        // reason token and we name a rule.
+        verdict: v.must_fail === true ? "AGREE" : "DISAGREE",
       });
+      continue;
+    }
+
+    // ---- kats 20 and 21: the input inside cited_artifact -------------------
+    if (v.input === undefined) {
+      const cited = v.cited_artifact;
+      const payload = cited?.payload;
+      const pinnedId = cited?.correct_derived_id_bare_hex;
+      if (payload === undefined || pinnedId === undefined) {
+        rows.push({
+          set: "OBSERVED",
+          vector: `${v.id} (${file})`,
+          check: "jcs-n pinned digest vs our jcs digest",
+          expected: `MUST-FAIL: ${v.failure_reason ?? "unstated"}`,
+          ours: "NOT RUN: no top-level `input` and no cited_artifact payload with a pinned identifier",
+          verdict: "N/A",
+        });
+        continue;
+      }
+      const exclusions = cited?.registry_entry?.exclusion_set ?? [];
+      let subject = payload;
+      if (exclusions.length > 0 && typeof subject === "object" && subject !== null && !Array.isArray(subject)) {
+        const reduced: { [k: string]: JsonValue } = {};
+        for (const [k, val] of Object.entries(subject)) if (!exclusions.includes(k)) reduced[k] = val;
+        subject = reduced;
+      }
+      const computed = canonicalDigestJcs(subject);
+      rows.push(
+        row(
+          "OBSERVED",
+          `${v.id} (${file})`,
+          `derived identifier from cited_artifact.payload, exclusion set ${JSON.stringify(exclusions)}`,
+          pinnedId,
+          computed.ok ? computed.value.hex : `REFUSED: ${computed.reason}`,
+        ),
+      );
       continue;
     }
 
@@ -218,8 +279,24 @@ export function runJcsNKats(vectorsDir: string): Row[] {
     }
 
     const computed = canonicalDigestJcs(subject);
-    const expected = v.must_fail === true ? `MUST-FAIL: ${v.failure_reason ?? "unstated"}` : (v.digest ?? "");
     const ours = computed.ok ? computed.value.hex : `REFUSED: ${computed.reason}`;
+
+    // A MUST-FAIL vector that ALSO pins the digest a conforming implementation
+    // produces is two facts, and the second one is comparable. Compare it.
+    const conforming = v.jcs_n_correct_digest;
+    if (v.must_fail === true && conforming !== undefined) {
+      rows.push({
+        set: "OBSERVED",
+        vector: `${v.id} (${file})`,
+        check: "jcs-n pinned digest vs our jcs digest",
+        expected: conforming,
+        ours,
+        verdict: conforming === ours ? "AGREE" : "DISAGREE",
+      });
+      continue;
+    }
+
+    const expected = v.must_fail === true ? `MUST-FAIL: ${v.failure_reason ?? "unstated"}` : (v.digest ?? "");
     rows.push({
       set: "OBSERVED",
       vector: `${v.id} (${file})`,
@@ -228,6 +305,156 @@ export function runJcsNKats(vectorsDir: string): Row[] {
       ours,
       verdict: expected === ours ? "AGREE" : "DISAGREE",
     });
+  }
+  return rows;
+}
+
+
+/**
+ * The four disjoint buckets the 38 kat rows fall into, as ONE definition.
+ *
+ * Exported and shared by the printed summary and the test that asserts it. When
+ * these were two filters written separately, the test could go green while the
+ * printed line said something else — and the printed line is what a reader
+ * re-derives. The count that goes into a document has to come from the same
+ * function the suite checks.
+ *
+ *   comparable    — rows making the "jcs-n pinned digest vs our jcs digest"
+ *                   comparison against a pinned conforming digest. 29 of them:
+ *                   the 25 with a top-level `digest`, plus kats 13, 27, 28 and
+ *                   29, which are MUST-FAIL and ALSO pin `jcs_n_correct_digest`.
+ *   refused       — refused at the octet boundary before any value was digested.
+ *   reasonOnly    — MUST-FAIL pinning a failure reason and no conforming digest.
+ *   citedArtifact — kats 20 and 21, whose input is inside `cited_artifact`.
+ *                   Deliberately NOT in `comparable`: what reproduces for them
+ *                   is a derived identifier, not the same comparison.
+ */
+export interface KatBuckets {
+  readonly comparable: Row[];
+  readonly refused: Row[];
+  readonly reasonOnly: Row[];
+  readonly citedArtifact: Row[];
+  readonly notEvaluated: Row[];
+  readonly agreeing: Row[];
+}
+
+export function bucketJcsNKats(rows: Row[]): KatBuckets {
+  const notEvaluated = rows.filter((r) => r.verdict === "N/A");
+  const refused = rows.filter((r) => r.ours.startsWith("REFUSED"));
+  const citedArtifact = rows.filter((r) => r.check.startsWith("derived identifier from cited_artifact"));
+  const reasonOnly = rows.filter(
+    (r) => r.verdict !== "N/A" && !r.ours.startsWith("REFUSED") && r.expected.startsWith("MUST-FAIL:"),
+  );
+  const comparable = rows.filter(
+    (r) =>
+      r.verdict !== "N/A" &&
+      !r.ours.startsWith("REFUSED") &&
+      !r.expected.startsWith("MUST-FAIL:") &&
+      r.check === "jcs-n pinned digest vs our jcs digest",
+  );
+  return {
+    comparable,
+    refused,
+    reasonOnly,
+    citedArtifact,
+    notEvaluated,
+    agreeing: comparable.filter((r) => r.verdict === "AGREE"),
+  };
+}
+
+/**
+ * TYPED-REFS — vectors/typed-refs/, §5's derived-identifier construction.
+ *
+ * CORRECTED 2026-09-03. The 30 Aug package reported that the three
+ * jcs-n/derived-id vectors are the only ones anywhere exercising §5. Seven do.
+ * Alongside kats 20 and 21, five vectors under typed-refs/ each carry a payload,
+ * an exclusion set of `doc_id` and a pinned derived identifier, and all five
+ * reproduce under this construction.
+ *
+ * The set is FIVE of the eight files under typed-refs/, and which five is a
+ * fact about the files rather than a choice: the other three pin a different
+ * identifier or a different shape (fail/02 compares two artifacts against one
+ * digest, fail/04 pins a deliberately wrong digest, fail/05 varies the digest
+ * algorithm and pins none). The exclusion set and the pinned identifier are
+ * read from wherever each vector puts them — three different paths across the
+ * five — rather than from one assumed layout.
+ *
+ * fail/01 is the one worth naming: its excluded member holds the non-null
+ * string "secret-id-123", which discriminates DELETION of an excluded member
+ * from NULLING it. The three derived-id vectors all carry `record_id: null`, so
+ * none of them can tell those two apart, and the 30 Aug run had no vector that
+ * could.
+ */
+export function runTypedRefs(vectorsDir: string): Row[] {
+  const base = join(vectorsDir, "typed-refs");
+  const rows: Row[] = [];
+
+  for (const sub of ["pass", "fail"]) {
+    const dir = join(base, sub);
+    for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
+      const text = readFileSync(join(dir, file), "utf8");
+      if (findDuplicateMemberName(text) !== null) continue; // none today; the boundary applies anyway
+      const v = JSON.parse(text) as {
+        id?: string;
+        cited_artifact?: {
+          payload?: JsonValue;
+          derived_id?: string;
+          correct_derived_id?: string;
+          correct_derived_id_bare_hex?: string;
+          registry_entry?: { exclusion_set?: string[]; digest_context?: string };
+          artifact_type_registry_entry?: { exclusion_set?: string[]; digest_context?: string };
+        };
+        artifact_type_registry_entry?: { exclusion_set?: string[]; digest_context?: string };
+      };
+      const cited = v.cited_artifact;
+      const payload = cited?.payload;
+      // Three different member names carry the pinned identifier across these
+      // five files. Read all three rather than assuming one layout: assuming
+      // `derived_id` alone is what dropped fail/01 from the 30 Aug run.
+      const pinned = cited?.derived_id ?? cited?.correct_derived_id ?? cited?.correct_derived_id_bare_hex;
+      const entry = cited?.artifact_type_registry_entry ?? cited?.registry_entry ?? v.artifact_type_registry_entry;
+      if (payload === undefined || pinned === undefined || entry === undefined) continue;
+
+      // WHERE THE EXCLUSION SET COMES FROM, per vector, and said out loud.
+      //
+      // Four of the five declare it as a JSON array. fail/03 does NOT: it
+      // declares the digest context only in PROSE, inside `digest_context`
+      // ("jcs-n; exclusion set {doc_id}; 64-char lowercase hex"), and carries no
+      // exclusion_set array anywhere in the file. Reading it out of that string
+      // is a judgment call, so the row says which source it used and the
+      // delivered results repeat it. Recomputing that vector at all requires
+      // this step; skipping it would have been the safer-looking choice and
+      // would have hidden a fact the authors should have.
+      let exclusions = entry.exclusion_set;
+      let source = "declared as an exclusion_set array";
+      if (exclusions === undefined) {
+        const ctx = entry.digest_context;
+        const m = ctx === undefined ? null : /exclusion set \{([^}]*)\}/.exec(ctx);
+        if (m === null) continue;
+        exclusions = m[1]!.split(",").map((x) => x.trim()).filter((x) => x.length > 0);
+        source = `READ FROM PROSE: the digest_context string, which is the only place this vector states it`;
+      }
+
+      let subject = payload;
+      let held = "n/a (payload is not an object)";
+      if (typeof subject === "object" && subject !== null && !Array.isArray(subject)) {
+        const src = subject as { [k: string]: JsonValue };
+        held = exclusions.map((k) => `${k}=${JSON.stringify(src[k] ?? null)}`).join(", ");
+        const reduced: { [k: string]: JsonValue } = {};
+        for (const [k, val] of Object.entries(src)) if (!exclusions.includes(k)) reduced[k] = val;
+        subject = reduced;
+      }
+      const computed = canonicalDigestJcs(subject);
+      rows.push(
+        row(
+          "TYPED-REFS",
+          `${v.id ?? file} (${sub}/${file})`,
+          `derived id, exclusion set ${JSON.stringify(exclusions)} [${source}], excluded member held ${held}`,
+          pinned,
+          computed.ok ? computed.value.hex : `REFUSED: ${computed.reason}`,
+        ),
+      );
+    }
   }
   return rows;
 }
@@ -537,31 +764,41 @@ function main(): void {
 
   console.log("OBSERVED — vectors/jcs-n/kats/ under our jcs. NOT a conformance result.");
   console.log(table(observed));
-  // Counted in four disjoint buckets, never as one ratio. A single
-  // "N of 38 agree" line would fold the N/A rows and the jcs-n MUST-FAIL rows
-  // into the numerator and report an agreement this run did not establish.
-  const na = observed.filter((r) => r.verdict === "N/A");
-  const evaluated = observed.filter((r) => r.verdict !== "N/A");
-  const mustFail = evaluated.filter((r) => r.expected.startsWith("MUST-FAIL:"));
-  const pinned = evaluated.filter((r) => !r.expected.startsWith("MUST-FAIL:"));
-  const same = pinned.filter((r) => r.verdict === "AGREE");
+  // Counted in disjoint buckets, never as one ratio. A single "N of 38 agree"
+  // line would fold the refusals and the reason-only rows into the numerator and
+  // report an agreement this run did not establish. The buckets come from
+  // bucketJcsNKats so the printed numbers and the suite's assertions cannot
+  // drift apart.
+  const b = bucketJcsNKats(observed);
+  const { comparable, refused, reasonOnly, citedArtifact, notEvaluated: na } = b;
+  const same = b.agreeing;
   console.log(
-    `\n  ${observed.length} vectors = ${na.length} NOT EVALUATED HERE (no top-level input member; a payload is present at cited_artifact.payload)` +
-      ` + ${mustFail.length} pinned MUST-FAIL under jcs-n` +
-      ` + ${pinned.length} pinned with a digest.`,
+    `\n  ${observed.length} vectors = ${comparable.length} carrying a comparable pinned digest` +
+      ` + ${refused.length} refused at the octet boundary before any value was digested` +
+      ` + ${reasonOnly.length} pinning a failure reason and no conforming digest` +
+      ` + ${citedArtifact.length} evaluated from cited_artifact.payload` +
+      ` + ${na.length} not evaluated.`,
   );
   console.log(
-    `  Of the ${pinned.length} carrying a pinned digest, ${same.length} produce the same bytes under our jcs` +
-      ` and ${pinned.length - same.length} do not.`,
+    `  Of the ${comparable.length} comparable, ${same.length} produce the same bytes under our jcs` +
+      ` and ${comparable.length - same.length} do not:  ${same.length} of ${comparable.length}.`,
   );
-  console.log(
-    `  Of the ${mustFail.length} pinned MUST-FAIL, our jcs produced a digest for` +
-      ` ${mustFail.filter((r) => !r.ours.startsWith("REFUSED")).length}` +
-      ` and refused ${mustFail.filter((r) => r.ours.startsWith("REFUSED")).length}.\n`,
-  );
+  for (const r of refused) console.log(`  refused: ${r.vector} - ${r.ours}`);
+  for (const r of citedArtifact) {
+    console.log(`  cited_artifact: ${r.vector} - ${r.verdict} (${r.ours})`);
+  }
+  console.log();
+
+  const typedRefs = runTypedRefs(vectorsDir);
+  console.log("TYPED-REFS - vectors/typed-refs/, section 5's construction. Five vectors, externally pinned.");
+  console.log(table(typedRefs));
+  const typedBad = typedRefs.filter((r) => r.verdict === "DISAGREE");
+  console.log(`
+  ${typedRefs.length - typedBad.length}/${typedRefs.length} AGREE
+`);
 
   const supplementary = runIdentifierGrammar(vectorsDir);
-  console.log("SUPPLEMENTARY — §5.1 identifier grammar, on the two vectors OBSERVED marks N/A.");
+  console.log("SUPPLEMENTARY - section 5.1 identifier grammar, on the two malformed identifier strings kats 20 and 21 pin.");
   console.log(table(supplementary));
   const supplementaryBad = supplementary.filter((r) => r.verdict === "DISAGREE");
   console.log(`
@@ -608,7 +845,7 @@ function main(): void {
   }
   console.log();
 
-  process.exit(primaryBad.length + undetectedButRequired.length + (m1Collapsed ? 0 : 1));
+  process.exit(primaryBad.length + typedBad.length + undetectedButRequired.length + (m1Collapsed ? 0 : 1));
 }
 
 // Run only when invoked directly, so the exported functions stay importable.

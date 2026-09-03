@@ -48,6 +48,15 @@ export type CpbReason =
   // §4.1 / §12.1 — the value boundary
   | "payload_not_json"
   | "payload_non_finite_number"
+  /**
+   * §4.1 reaches this rule by delegation, which is the whole reason it was
+   * missed once: the `jcs` registry entry gives its Reference as RFC 8785
+   * Section 3, whose §3.1 requires the data to be adapted for I-JSON and says
+   * objects MUST NOT exhibit duplicate property names; RFC 7493 §2.3 says it
+   * again. So a JSON text carrying a duplicate member name is excluded from
+   * canonicalization altogether and no value from it may be digested.
+   */
+  | "payload_duplicate_member_name"
   // §5 — the derived identifier
   | "payload_not_object"
   | "carried_identifier_not_excluded"

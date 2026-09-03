@@ -608,3 +608,44 @@ describe("acta — M6: the published envelope_hash is the pre-#416 three-key dig
     });
   }
 });
+
+// --------------------------------------------------------------------------
+
+describe("acta — duplicate member names are refused at the envelope boundary", () => {
+  // The same rule the insight adapter applies at its own parse boundary, and
+  // the same reason: this format's signing input is JCS (§2.1), RFC 8785 §3.1
+  // excludes duplicate property names from canonicalization, and RFC 7493 §2.3
+  // makes member names unique. JSON.parse keeps the LAST occurrence, so an
+  // envelope whose signature covers {"a":1} and whose bytes say {"a":1,"a":2}
+  // would verify while a reader is shown 2.
+  //
+  // Red before this landed: the receipt below parsed cleanly and reached key
+  // resolution, failing only for want of a JWKS.
+  const dup = Buffer.from(
+    '{"payload":{"a":1,"a":2},"signature":{"alg":"EdDSA","kid":"k","sig":"00"}}',
+    "utf8",
+  );
+
+  it("refuses, names the duplicate, and cites both RFCs", async () => {
+    const r = await actaAdapter.verify(dup, {});
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.detail).toContain("duplicate member name");
+    expect(r.detail).toContain("RFC 7493 section 2.3");
+    expect(r.detail).toContain("RFC 8785");
+    expect(r.resolvedKey).toBeUndefined();
+  });
+
+  it("and detect() declines it, so it is never claimed as this format", () => {
+    expect(detect(dup)).toBe(false);
+  });
+
+  it("CONTROL: the same envelope without the duplicate is recognised and gets past parsing", async () => {
+    const clean = Buffer.from(
+      '{"payload":{"a":2},"signature":{"alg":"EdDSA","kid":"k","sig":"00"}}',
+      "utf8",
+    );
+    expect(detect(clean)).toBe(true);
+    const r = await actaAdapter.verify(clean, {});
+    expect(r.detail).not.toContain("duplicate member name");
+  });
+});
