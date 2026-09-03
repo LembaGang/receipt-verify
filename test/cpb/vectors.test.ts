@@ -20,6 +20,8 @@
 import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 
+import { discoverSection5, section5Files } from "../../cpb/discover-section5.js";
+import { canonicalDigestJcs } from "../../cpb/index.js";
 import {
   bucketJcsNKats,
   runDerivedId,
@@ -292,6 +294,99 @@ describe.runIf(AVAILABLE)("the 2026-08-31 corrections", () => {
     expect(checks.filter((c) => c.includes("PROSE:")).length).toBe(3);
     expect(checks.filter((c) => c.includes("INFERRED ACROSS FILES")).length).toBe(1);
     for (const c of checks) expect(c).toMatch(/exclusion \[.*\] \[/);
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * The search that names nothing, and the number it settles on.
+ *
+ * Every object in every vector, under every exclusion set declared in the same
+ * file, matched against any 64-hex string in that file. No payload member name,
+ * no identifier member name, no value.
+ *
+ * It exists because the search before it named five identifier members read off
+ * the corpus, and three vectors carry theirs under a sixth name, `digest`. The
+ * count of vectors exercising §5 has been 3, 10, 12, 14, 15 and now 18, and
+ * every one of the first five was produced by a search scoped by something.
+ */
+describe.runIf(AVAILABLE)("§5 discovery — the search that names nothing", () => {
+  const dir = DIR as string;
+
+  it("eighteen files exercise §5: sixteen with an observable removal, two more that name the result", () => {
+    const split = section5Files(discoverSection5(dir));
+    expect(split.removalObservable.length).toBe(16);
+    expect(split.identifierNamedNoop.length).toBe(2);
+    expect(split.all.length).toBe(18);
+  });
+
+  it("the three the previous search could not see, and why it could not", () => {
+    // kats 08, 09 and 22 each carry a payload, a NON-EMPTY exclusion set and the
+    // derived identifier of the reduced payload — under the member name
+    // `digest`, which was not among the five names the previous search knew.
+    // kat-22 is the top-level-only matching rule, and it is a falsification
+    // test the draft's own author proposed; it had been counted as a §4.1
+    // vector and never as a §5 one.
+    const split = section5Files(discoverSection5(dir));
+    for (const f of [
+      "jcs-n/kats/08-exclusion-set.json",
+      "jcs-n/kats/09-exclusion-before-normalization.json",
+      "jcs-n/kats/22-exclusion-depth-top-level-only.json",
+    ]) {
+      expect(split.removalObservable, f).toContain(f);
+    }
+    // And the reason: none of them pins under a name containing derived_id.
+    const hits = discoverSection5(dir).filter((h) => h.file.includes("kats/22-"));
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits.every((h) => h.pinnedAt.every((x) => !x.includes("derived_id")))).toBe(true);
+  });
+
+  it("twenty-eight §4.1 vectors are found, classified and NOT counted", () => {
+    // The trap this search has to avoid: on an EMPTY exclusion set, §5 and §4.1
+    // are the same operation, and most kats declare an empty exclusion set. A
+    // search that counted every match would report 46 files and the number
+    // would mean nothing. These are found and excluded, and the exclusion is
+    // asserted rather than assumed.
+    const split = section5Files(discoverSection5(dir));
+    expect(split.notSection5.length).toBe(28);
+    for (const f of split.notSection5) expect(split.all).not.toContain(f);
+    expect(split.all.length + split.notSection5.length).toBe(46);
+  });
+
+  it("it is a superset of the search before it, which is the only reason it replaces it", () => {
+    // Fifteen files were reported before this search existed. All fifteen are
+    // still here; a search that found three more while losing one would not be
+    // an improvement, it would be a different answer.
+    const all = new Set(section5Files(discoverSection5(dir)).all);
+    for (const f of runSection5Reproducers(dir).map((r) => r.vector.split(" ")[0])) {
+      expect(all, f).toContain(f);
+    }
+    expect(all.size).toBe(18);
+  });
+
+  it("the one cross-file inference is still exactly one, and still marked", () => {
+    const inferred = discoverSection5(dir).filter((h) => h.exclusionSource.startsWith("INFERRED"));
+    expect(new Set(inferred.map((h) => h.file)).size).toBe(1);
+    expect(inferred[0]!.file).toContain("profile-independence/fail/01");
+    expect(inferred[0]!.exclusionSource).toContain("authorization-doc");
+  });
+
+  it("CONTROL: every reported identifier is one this run recomputed, not one read out of the file", () => {
+    // The search matches a computed digest against strings in the file. If it
+    // ever reported a hit it had not computed, the whole method would be a text
+    // search wearing a digest's clothes. Recompute one independently.
+    const hit = discoverSection5(dir).find((h) => h.file.includes("kats/08-exclusion-set"));
+    expect(hit).toBeDefined();
+    expect(hit!.identifier).toBe("7951deff61d4304af5863a13c2ef570ffc96f1d8df5fb3214743dc9953b8aeea");
+    expect(hit!.exclusionSet).toEqual(["id"]);
+    // kat-08's note says this digest equals kat-01's: the excluded field does
+    // not affect the canonical form. That is the vector's own claim, and it
+    // holds here, which is a check on the removal step rather than on the hash.
+    const basic = canonicalDigestJcs({ b: "x", a: "y" });
+    expect(basic.ok).toBe(true);
+    if (!basic.ok) throw new Error("unreachable");
+    expect(basic.value.hex).toBe(hit!.identifier);
   });
 });
 

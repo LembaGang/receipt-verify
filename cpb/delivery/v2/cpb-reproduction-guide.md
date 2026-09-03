@@ -239,19 +239,25 @@ e0ad1c7:vectors/typed-refs/pass/02-arp-conformance-baseline.json
 directory produced an earlier count that was short by two: the two `profile-independence/` files are the
 difference, and both reproduce the same identifier.
 
-**Search 2, by structure, naming no value.** This is where the count of fifteen comes from, and it is
-the only one of the two that can find a vector pinning a *different* identifier. For every object
-anywhere in every JSON blob under `vectors/` carrying a 64-hex member named `derived_id`,
-`recomputed_digest`, `correct_recomputed_digest`, `correct_derived_id_bare_hex` or
-`correct_derived_id` (those five names being the ones the corpus actually uses), take every candidate
-payload object beside it, and one level inside those, and try each against every exclusion set declared
-anywhere in the same file. Recompute §5 and compare.
+**Search 2, by structure, naming no member and no value.** This is where the count of eighteen comes
+from, and it is the only one of the two that can find a vector pinning a *different* identifier, or
+carrying it under a member name nobody has listed. For every object anywhere in every JSON blob under
+`vectors/`, under every exclusion set declared anywhere in the same file, recompute §5 and ask whether
+the result equals any 64-hex string anywhere in that file.
 
-**Expected: fifteen files, sixteen payload objects, five distinct identifiers, all agreeing.** The file
-search 2 finds that search 1 cannot is `typed-refs/fail/02-textual-equality-trap.json`, which pins
-`28211009e28c3c09d8b52088b9a4b9ad26473bf2244b3d0ab469ca217b758558`. That is a different value, so no
-grep for `0c837d01…` reaches it at any scope. Two of its artifacts reproduce it, under two different
-exclusion sets, which is what the vector exists to demonstrate.
+**Expected: eighteen files**, of which 16 remove a member the payload actually has and 2 more have an
+empty exclusion set and still name the result a derived identifier.
+
+The files search 2 finds that search 1 cannot include
+`typed-refs/fail/02-textual-equality-trap.json`, which pins
+`28211009e28c3c09d8b52088b9a4b9ad26473bf2244b3d0ab469ca217b758558`, a different value that no grep for
+`0c837d01…` reaches at any scope; and `jcs-n/kats/08`, `09` and `22`, which carry a payload, a non-empty
+exclusion set and the digest of the reduced payload under the plain member name `digest`.
+
+**One thing this search finds and deliberately does not count.** Twenty-eight further files reproduce
+under an *empty* exclusion set and pin the result as a plain `digest`. On an empty exclusion set §5 and
+§4.1 are the same operation, so those are §4.1 vectors; counting them would put the number at 46 and
+make it mean nothing.
 
 **Neither search contains the other.** `profile-independence/fail/01-cross-profile-field-access.json`
 declares no exclusion set anywhere in its own file, so search 2 can only recompute it by taking the set
@@ -266,8 +272,8 @@ git cat-file blob e0ad1c7:vectors/typed-refs/fail/03-representation-mismatch.jso
 ```
 
 **Expected: 0.** Recomputing that vector requires reading `{doc_id}` out of the `digest_context`
-sentence. Three of the sixteen rows are in that state, and one further row is a cross-file inference;
-every one of them says so where it is reported.
+sentence. Three rows are in that state, and one further row is a cross-file inference; every one of
+them says so where it is reported.
 
 **And the two corrected statements about `02-carried-id-mismatch.json`:**
 

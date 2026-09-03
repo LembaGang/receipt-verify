@@ -167,17 +167,22 @@ which is §5's actual requirement, and exercises no SD hashing — which is cons
 none.
 
 **One row of that table shrank since 30 August**, and it is worth saying by how much and how the
-number was reached. §5's construction is now checked against **fifteen** vectors rather than three:
-these three, kats 20 and 21, seven under `typed-refs/` and two under `profile-independence/`, in
-sixteen payload objects carrying five distinct identifiers. The full table and both search methods are
-in the vector results document.
+number was reached. §5's construction is now checked against **eighteen** vectors rather than three:
+these three, kats 08, 09, 20, 21 and 22, eight under `typed-refs/` and two under
+`profile-independence/`. Sixteen of the eighteen remove a member the payload actually has; the other
+two have an empty exclusion set and still name the result a derived identifier. The full table and both
+search methods are in the vector results document.
 
-That figure has been wrong four times, and each wrong figure came from a search scoped by an
-assumption: one directory, then one member name, then one identifier value searched for in one
-directory, then the same value searched for over the whole tree. The re-derivation on Linux on
-3 September found twelve to be short by widening the search from one directory to the whole `vectors/`
-tree. Widening it again, to a structural search that names no value at all, found one more that no
-value search can reach: `typed-refs/fail/02` pins a different identifier entirely.
+That figure has been wrong five times, and every wrong figure came from a search scoped by an
+assumption: one directory, then one identifier value, then that value in one directory, then that value
+over the whole tree, then a list of five identifier member names read off the corpus. **Three vectors
+carry theirs under a sixth name, `digest`**: kats 08, 09 and 22, each with a payload, a non-empty
+exclusion set and the digest of the reduced payload. All three had been counted here as §4.1 vectors.
+`kat-22` is the top-level-only matching rule and a falsification test the draft's authors proposed
+themselves. It is the strongest external check on A2 in the corpus and it was not being reported as
+one.
+
+The search that settles the number names nothing: no directory, no member name, no value.
 
 **Both searches, so either can be rerun.** Search 1, by value, over the whole tree:
 
@@ -186,14 +191,14 @@ git grep -l 0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb e0a
 ```
 
 which returns nine files. Note `-- vectors` and not `-- vectors/typed-refs/`; scoping it to one
-directory is what produced the count of twelve. Search 2, by structure, naming no value: for every
-object anywhere in every JSON blob under `vectors/` carrying a 64-hex member named `derived_id`,
-`recomputed_digest`, `correct_recomputed_digest`, `correct_derived_id_bare_hex` or
-`correct_derived_id`, take every candidate payload object beside it, and one level inside those, and
-try each against every exclusion set declared anywhere in the same file; recompute §5 and compare. That
-returns fifteen files and sixteen payload objects. Neither search contains the other: search 1 finds
-`profile-independence/fail/01`, which declares no exclusion set for search 2 to use, and search 2 finds
-six files that pin one of the four other identifiers.
+directory is what produced the count of twelve. Search 2, by structure, naming no member and no value:
+for every object anywhere in every JSON blob under `vectors/`, under every exclusion set declared
+anywhere in the same file, recompute §5 and ask whether the result equals any 64-hex string anywhere in
+that file. That returns eighteen files, sixteen of them removing a member the payload has and two more
+naming the result a derived identifier under an empty exclusion set. It also finds 28 files that
+reproduce under an empty exclusion set and pin the result as a plain `digest`: on an empty exclusion
+set §5 and §4.1 are the same operation, so those are §4.1 vectors and are excluded rather than counted.
+Neither search contains the other.
 
 `typed-refs/fail/01` and `fail/04` are the two that close the deletion-versus-nulling question, each
 excluding a member that holds the non-null string `"secret-id-123"`.
@@ -213,11 +218,11 @@ the six structural rows, decided by reading which member each row compares again
 `pre_image_bytes_hex`, `derived_id`, `correct_derived_id` and `failure_reason` — these are yours, read
 from your vectors, and this document compares against them rather than deriving them.
 
-**Not established here:** that fifteen is final. It is what two searches find, one by value over the
-whole tree and one by structure naming no value, and the second is the first search used here that is
-scoped by neither a directory, a member name nor a value. A vector that reproduces §5 under a payload
-member name nested deeper than one level, or under an identifier member name outside the five the
-corpus uses, would still be invisible to it. That the Appendix A anchor is checkable by you today — the commit proving
+**Not established here:** that eighteen is final. It is what a search scoped by no directory, no member
+name and no value finds. One assumption remains, stated here rather than left to be discovered later:
+the search asks whether the recomputed identifier appears **somewhere in the same file**. A vector that
+carries a payload and an exclusion set but pins its identifier in a sibling file, or does not pin it at
+all, is invisible to this search and to every search before it. That the Appendix A anchor is checkable by you today — the commit proving
 the ordering is local and unpublished, and that is stated above rather than glossed. That the `jcs`
 step conforms to RFC 8785. That §7.1 has any external check at all; it has none. That the three
 non-external structural rows establish anything about your requirements — they establish only that

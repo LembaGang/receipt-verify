@@ -198,7 +198,7 @@ the refusal.
 
 ---
 
-## FIFTEEN VECTORS EXERCISE §5, AND HOW THAT NUMBER WAS ARRIVED AT
+## EIGHTEEN VECTORS EXERCISE §5, AND HOW THAT NUMBER WAS ARRIVED AT
 
 **This count has been wrong four times, each time by a search that was scoped by an assumption. The
 history matters more than the number, so it is given in full.**
@@ -207,17 +207,25 @@ history matters more than the number, so it is given in full.**
 |---|---:|---|
 | 30 August | 3 | one directory, `jcs-n/derived-id/` |
 | 31 August | 10 | the identifier `0c837d01…`, under the member names it was expected to carry |
-| 3 September, first pass | 12 | the same identifier, searched for as a value, but only under `typed-refs/` |
-| 3 September, re-derivation on Linux | 14 | the same identifier, searched for over the whole `vectors/` tree |
-| **3 September, this document** | **15** | **nothing: neither a directory, nor a member name, nor a value** |
+| 3 September, first pass | 12 | the same identifier as a value, but only under `typed-refs/` |
+| 3 September, re-derivation | 14 | the same identifier, over the whole `vectors/` tree |
+| 3 September, fourth pass | 15 | five identifier member names and three payload member names, read off the corpus |
+| **3 September, this document** | **18** | **nothing: no directory, no member name, no value** |
 
-Each step found what the step before it could not see. The 3 September re-derivation on Linux found the
-twelve to be short by running the identifier search over the whole tree rather than over one directory,
-which added the two `profile-independence/` vectors. This document goes one further, because a search
-for a known identifier cannot find a vector that pins a different one, and one does.
+Each step found what the step before it could not see, and every one of the first five was scoped by
+something. The fifth named five identifier members, taken from reading the corpus. **Three vectors carry
+theirs under a sixth name, `digest`**, and a search that names members cannot find a name nobody has
+named. So the search was rewritten to name nothing at all: for every object anywhere in every vector,
+under every exclusion set declared in the same file, compute §5 and ask whether the result equals any
+64-hex string anywhere in that file.
 
-**Fifteen files, sixteen payload objects, five distinct identifiers, all reproducing.** The two searches
-are given below so both can be rerun.
+**Eighteen files.** The three it added are `jcs-n/kats/08-exclusion-set`,
+`09-exclusion-before-normalization` and `22-exclusion-depth-top-level-only`. Each carries a payload, a
+non-empty exclusion set, an `after_exclusion` object and the digest of the reduced payload, which is
+§5's construction exactly, and each was counted in these documents as a §4.1 vector and never as a §5
+one. **`kat-22` is the top-level-only matching rule**, the reading recorded in the ambiguity log as A2,
+and it is a falsification test your own review proposed. It is the strongest external check on that
+reading in the corpus and it was not being reported as one.
 
 ### The two searches, either of which you can rerun
 
@@ -229,24 +237,36 @@ git grep -l 0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb e0a
 
 **Nine files.** Seven under `typed-refs/` and two under `profile-independence/`. This is the search
 that found the twelve to be short. What it cannot do is find a vector pinning a different identifier,
-and six of the fifteen pin one of four other values.
+and nine of the eighteen pin one of four other values.
 
-**Search 2, by structure, mentioning no value.** For every object anywhere in every JSON blob under
-`vectors/` that carries a 64-hex member named `derived_id`, `recomputed_digest`,
-`correct_recomputed_digest`, `correct_derived_id_bare_hex` or `correct_derived_id` (those five names
-being the ones the corpus actually uses), try every candidate payload object beside it, and one level
-inside those, against every exclusion set declared anywhere in the same file. Recompute §5 and compare.
+**Search 2, by structure, naming no member and no value.** For every object anywhere in every JSON blob
+under `vectors/`, under every exclusion set declared anywhere in the same file, recompute §5 and ask
+whether the result equals any 64-hex string anywhere in that file.
 
-**Fifteen files, sixteen payload objects, five distinct identifiers, sixteen of sixteen agreeing.**
+**Eighteen files**, split two ways and never summed without saying so:
 
-**Neither search contains the other**, and that is the useful fact. Search 1 finds
-`profile-independence/fail/01`, which Search 2 skips because that file declares no exclusion set
-anywhere. Search 2 finds six files Search 1 cannot reach, because they pin a different value.
+- **16** where the removal step removes a member the payload actually has. This is §5 doing something
+  §4.1 does not, and it is the strong form of the claim.
+- **2** where removal is a no-op and the vector still names the result a derived identifier: kats 20
+  and 21, whose exclusion set is empty and whose pinned value is `correct_derived_id_bare_hex`. They
+  exercise §5's interface, not its removal step.
 
-### The fifteen
+**And 28 files that this search finds and does not count.** On an *empty* exclusion set, §5 and §4.1
+are the same operation, and most of the 38 kats declare an empty exclusion set and pin the resulting
+§4.1 digest. Counting those would put the number at 46 and make it meaningless. They are found,
+classified and excluded, and a test asserts the exclusion so it cannot quietly change.
+
+**Neither search contains the other**, and that is the useful fact. Search 1 finds a file by a value
+Search 2 would need an exclusion set to reach. Search 2 finds nine files Search 1 cannot reach at all,
+because they pin one of four other identifiers.
+
+### The eighteen
 
 | file | payload member | excluded member holds | where the exclusion set comes from | identifier |
 |---|---|---|---|---|
+| `jcs-n/kats/08-exclusion-set` | `input` | **`id = "abc123"`** | array on the object | `7951deff…` |
+| `jcs-n/kats/09-exclusion-before-normalization` | `input` | **`id = null`** | array on the object | `7951deff…` |
+| `jcs-n/kats/22-exclusion-depth-top-level-only` | `input` | **`id = "x"`, nested `sub.id` survives** | array on the object | `1fa18622…` |
 | `jcs-n/derived-id/01-basic-derived-id` | `full_payload` | `record_id = null` | array on the object | `1009a072…` |
 | `jcs-n/derived-id/02-carried-id-mismatch` | `full_payload` | `record_id` = 64 zeroes | array on the object | `1009a072…` |
 | `jcs-n/derived-id/03-sd-encoded-form` | `sd_encoded_payload` | `record_id = null` | array on the object | `033e6406…` |
@@ -264,7 +284,7 @@ anywhere. Search 2 finds six files Search 1 cannot reach, because they pin a dif
 | `typed-refs/fail/05-digest-algorithm-inconsistent-with-context` | `cited_artifact.payload` | `doc_id = null` | array in `registry_entry` | `0c837d01…` |
 | `typed-refs/fail/06-arp-digest-alg-inconsistent-with-registered-context` | `payload` | `doc_id = null` | array in `artifact_type_registry_entry` | `0c837d01…` |
 
-Sixteen rows across fifteen files: `fail/02` contributes two, and that is the point of it. Its two
+Nineteen rows across eighteen files: `fail/02` contributes two, and that is the point of it. Its two
 artifacts carry **different payloads under different exclusion sets and reduce to the same
 identifier**: `{a_id, color, size}` excluding `a_id`, and `{b_id, color, size, weight}` excluding
 `b_id` and `weight`. It was previously described here as pinning no derived identifier for a cited artifact. It
@@ -280,10 +300,13 @@ which is an inference across files. It is marked as one in the run output, and i
 sixteen that is marked that way. A reader who rejects that inference is left with fourteen files, and
 the row says so plainly rather than burying it in a total.
 
-**Three member names carry the payload** (`payload`, `full_payload`, `sd_encoded_payload`) and **five
-carry the identifier**, across four kinds of exclusion-set declaration: an array on the object, an array
-in a registry entry, a prose `digest_context` sentence, and the one cross-file inference. Counting by
-any single one of those names is what produced every earlier figure.
+**Four member names carry the payload** (`payload`, `full_payload`, `sd_encoded_payload`, `input`) and
+**six carry the identifier** (`derived_id`, `correct_derived_id`, `correct_derived_id_bare_hex`,
+`recomputed_digest`, `correct_recomputed_digest`, and plain `digest`), across four kinds of
+exclusion-set declaration: an array on the object, an array in a registry entry, a prose
+`digest_context` sentence, and one cross-file inference. **Counting by any list of those names is what
+produced every earlier figure, including the one before this.** The search that settles it names none of
+them.
 
 **`fail/01` is the one most worth having, and it was discarded.** Its excluded member holds the
 non-null string `"secret-id-123"`, which discriminates **deleting** an excluded member from **nulling**
@@ -326,9 +349,9 @@ grammar. This says only that our §5.1 decoder refuses these two strings.
 bucket counts and their disjointness; the six mutant results including M6's non-detection and M1's
 collapse onto your pinned `jcs_n` value; the per-vector table; the four `jcs_n_correct_digest` values;
 the kat-37 refusal and the digest the 30 August run produced instead; both searches over the whole `vectors/` tree,
-run from blobs: the identifier grep (nine files) and the structural search (fifteen files, sixteen
-payload objects, five identifiers, all agreeing), with the member names and exclusion-set sources
-listed rather than assumed; the equality of all 77 working-tree vector
+run from blobs: the identifier grep (nine files) and the structural search naming nothing (eighteen
+files counted, 16 with an observable removal and 2 more naming the result, plus 28 §4.1 vectors found
+and excluded), with the member names and exclusion-set sources listed rather than assumed; the equality of all 77 working-tree vector
 files with their blobs.
 
 **Taken from you, as your figures:** every `expected` column — the pinned digests, pre-images,

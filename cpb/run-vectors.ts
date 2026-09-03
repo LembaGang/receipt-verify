@@ -37,6 +37,7 @@ import {
   type PayloadClass,
 } from "./index.js";
 import { MUTANTS, type DigestFn } from "./mutants.js";
+import { discoverSection5, section5Files } from "./discover-section5.js";
 
 /**
  * "N/A" is not a soft pass. It marks a vector this run did not evaluate at all,
@@ -925,6 +926,28 @@ function main(): void {
   console.log(`
   ${section5.length - typedBad.length}/${section5.length} AGREE
 `);
+
+  const disc = discoverSection5(vectorsDir);
+  const split = section5Files(disc);
+  console.log(
+    `SECTION-5 DISCOVERY - every object, every declared exclusion set, matched against any 64-hex` +
+      ` string in the same file. Names no member and no value.`,
+  );
+  console.log(
+    `  SECTION 5 IS EXERCISED BY ${split.all.length} FILES: ${split.removalObservable.length} where the` +
+      ` removal step removes something, plus ${split.identifierNamedNoop.length} where it removes nothing` +
+      ` and the vector still names the result a derived identifier.`,
+  );
+  console.log(
+    `  NOT counted: ${split.notSection5.length} files reproduce under an empty exclusion set and pin the` +
+      ` result as a plain digest. On an empty exclusion set section 5 and section 4.1 are the same` +
+      ` operation, so these are section 4.1 vectors and counting them would inflate the number.`,
+  );
+  for (const f of split.removalObservable) console.log(`    removal observable          : ${f}`);
+  for (const f of split.identifierNamedNoop) console.log(`    named an identifier, no-op  : ${f}`);
+  const inferred = disc.filter((h) => h.exclusionSource.startsWith("INFERRED"));
+  for (const h of inferred) console.log(`    ${h.exclusionSource} -- ${h.file}`);
+  console.log();
 
   const supplementary = runIdentifierGrammar(vectorsDir);
   console.log("SUPPLEMENTARY - section 5.1 identifier grammar, on the two malformed identifier strings kats 20 and 21 pin.");
