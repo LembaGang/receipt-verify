@@ -18,7 +18,7 @@ its `gitHead`. That commit does not contain the code 0.1.1 ships. A reader who c
 builds it does not get the published artefact, so the tag cannot be cited as the source of what is on
 npm today.
 
-**The one file that differs, and why it was changed.** Building `cbe4d38` and comparing every file
+**The code that differs, and why it was changed.** Building `cbe4d38` and comparing every file
 against the published tarball, the only JavaScript that differs is `dist/cli.js`, and the difference is
 one statement: the built `cbe4d38` ends the process with `process.exit(exitCode)` and the published
 0.1.1 sets `process.exitCode` and lets the event loop drain. The reason is a Windows teardown race.
@@ -26,9 +26,16 @@ one statement: the built `cbe4d38` ends the process with `process.exit(exitCode)
 libuv aborted the process with status 0xC0000409, and the abort replaced the real exit status. A VALID
 receipt could exit non-zero, and all three verdicts became indistinguishable to a caller reading the
 exit code, while the `--json` payload in the same run still reported `exit_code: 0`. Every other JavaScript file under
-dist/ is byte-identical to the build; dist/cli.js.map differs only as a consequence of cli.js. Files
-outside dist/ (package.json, README.md, LICENSE, NOTICE) were not compared; the claim here is about
-the code.
+dist/ is byte-identical to the build; dist/cli.js.map differs only as a consequence of cli.js. The four
+files outside dist/ were compared too, on 2026-09-03, and two of them differ. LICENSE (11,346 bytes)
+and NOTICE (3,391 bytes) are byte-identical. package.json differs in one member and one byte of
+whitespace: the tarball says `"version": "0.1.1"` where the commit says `"version": "0.1.0"`, and the
+tarball has no trailing newline. That version string appears in no commit in this repository, so the
+bump that produced 0.1.1 was never committed either. README.md differs by 58 added lines and 3
+changed ones: the published README carries the "Try it in 30 seconds" section and states the suite at
+260 tests, and the commit carries neither. Both of those reached the repository in `17172e4`, the same
+commit that carried the `dist/cli.js` fix, so the documentation drifted from the artefact by the same
+three weeks and in the same commit as the code.
 
 **When the source reached the repository.** Commit `17172e4` on 2026-09-02 at 09:08Z, which is three
 weeks after 0.1.1 was published. So the fix existed in the artefact before it existed in the
