@@ -122,3 +122,65 @@ export const MUTANTS: readonly Mutant[] = [
     digest: viaStrip(true, true, 1),
   },
 ];
+
+// ---------------------------------------------------------------------------
+// EXCLUSION-SET MUTANTS — the falsification for §4.1's top-level-only rule.
+// ---------------------------------------------------------------------------
+
+/**
+ * The mutants above all replace the DIGEST. This one replaces the REMOVAL step,
+ * because the rule it falsifies is a rule about removal: §4.1 lines 590-592,
+ * "The exclusion set is matched against the top-level member names of P only".
+ *
+ * Ambiguity-log A2 recorded that rule as taken from the text with no
+ * behavioural consequence and no external check. Both halves of that were
+ * wrong. `jcs-n/kats/22-exclusion-depth-top-level-only` is the external check:
+ * its payload nests the excluded member name below the top level, so the two
+ * readings produce different identifiers, and its own description records it as
+ * a falsification vector proposed in review precisely to fork a
+ * recursive-stripping implementation.
+ *
+ * kats 08 and 09 declare the same exclusion set over payloads whose excluded
+ * member occurs ONLY at the top level, so this mutant leaves them untouched.
+ * That is what makes kat-22 the discriminator rather than one of three: a
+ * mutant that changed all three would not tell you which vector was carrying
+ * the weight.
+ */
+export type ExclusionFn = (exclusionSet: readonly string[], payload: JsonValue) => JsonValue;
+
+export interface ExclusionMutant {
+  readonly id: string;
+  readonly what: string;
+  readonly apply: ExclusionFn;
+}
+
+/** §4.1's rule, as the shipped implementation applies it: top level only. */
+export const exclusionTopLevelOnly: ExclusionFn = (exclusionSet, payload) => {
+  if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return payload;
+  const out: { [k: string]: JsonValue } = {};
+  for (const [k, v] of Object.entries(payload)) if (!exclusionSet.includes(k)) out[k] = v;
+  return out;
+};
+
+/** The wrong reading: strip the excluded names wherever they occur. */
+const exclusionAtEveryDepth: ExclusionFn = (exclusionSet, payload) => {
+  if (Array.isArray(payload)) return payload.map((v) => exclusionAtEveryDepth(exclusionSet, v));
+  if (typeof payload !== "object" || payload === null) return payload;
+  const out: { [k: string]: JsonValue } = {};
+  for (const [k, v] of Object.entries(payload)) {
+    if (exclusionSet.includes(k)) continue;
+    out[k] = exclusionAtEveryDepth(exclusionSet, v);
+  }
+  return out;
+};
+
+export const EXCLUSION_MUTANTS: readonly ExclusionMutant[] = [
+  {
+    id: "X1-strip-excluded-at-every-depth",
+    what:
+      "matches the exclusion set against member names at every depth instead of the top level only. " +
+      "§4.1 lines 590-592 restrict the match to the top-level member names of P. Forked by " +
+      "jcs-n/kats/22-exclusion-depth-top-level-only, and by no other vector in the corpus.",
+    apply: exclusionAtEveryDepth,
+  },
+];

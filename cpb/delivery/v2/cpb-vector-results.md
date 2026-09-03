@@ -173,13 +173,13 @@ two constructions agree by construction.
 |---:|---|:-:|---:|---|:-:|
 | 01 | basic | AGREE | 20 | must-fail-identifier-trailing-newline | AGREE |
 | 02 | null-removed | DISAGREE | 21 | must-fail-identifier-surrounding-whitespace | AGREE |
-| 03 | empty-array-removed | DISAGREE | 22 | exclusion-depth-top-level-only | AGREE |
+| 03 | empty-array-removed | DISAGREE | 22 | exclusion-depth-top-level-only **(also §5)** | AGREE |
 | 04 | empty-object-removed | DISAGREE | 23 | esc-control-char-value | AGREE |
 | 05 | absent-field | AGREE | 24 | tab-control-char-value | AGREE |
 | 06 | nested-null-bottom-up | DISAGREE | 25 | control-char-taxonomy | AGREE |
 | 07 | nested-empty-array-bottom-up | DISAGREE | 26 | control-key-code-unit-sort | AGREE |
-| 08 | exclusion-set | AGREE | 27 | esc-uppercase-contrast | AGREE |
-| 09 | exclusion-before-normalization | AGREE | 28 | tab-long-form-contrast | AGREE |
+| 08 | exclusion-set **(also §5)** | AGREE | 27 | esc-uppercase-contrast | AGREE |
+| 09 | exclusion-before-normalization **(also §5)** | AGREE | 28 | tab-long-form-contrast | AGREE |
 | 10 | must-fail-float | reason only | 29 | control-key-escaped-sort-contrast | AGREE |
 | 11 | exact-decimal-string | AGREE | 30 | deep-nesting | AGREE |
 | 12 | nfc-boundary-pass | AGREE | 31 | nested-tool-schema | AGREE |
@@ -190,6 +190,13 @@ two constructions agree by construction.
 | 17 | must-fail-large-int-in-array | reason only | 36 | pass-zero | AGREE |
 | 18 | utf16-key-order | AGREE | 37 | must-fail-duplicate-key | **REFUSED** |
 | 19 | rfc8785-sorting-example | AGREE | 38 | escaping-control-chars | AGREE |
+
+**(also §5)** marks the three vectors that appear in this table as §4.1 comparisons and are also §5
+reproducers: kats 08, 09 and 22 each carry a non-empty exclusion set, so their pinned digest is the
+identifier of a reduced payload. They are counted once here and once in the §5 table below, and the
+two counts measure different things. **kat-22 is the external check on §4.1's top-level-only matching
+rule**, and the only vector in the corpus that discriminates it: a recursive-stripping reading of the
+same exclusion set forks its identifier, and forks no other vector's.
 
 "reason only" means the vector pins a failure reason and no conforming digest, so there is nothing to
 compare a digest against; our `jcs` produces a value for those inputs, which is correct behaviour for

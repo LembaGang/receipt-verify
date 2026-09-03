@@ -107,6 +107,31 @@ operation. **Taken:** the operation is implemented in §5's code path (`applyExc
 honours §4.1's scope rule. No behavioural consequence; recorded because a reader implementing §5
 from §5 alone would not find the rule.
 
+**External check, found 2026-09-03.** `jcs-n/kats/22-exclusion-depth-top-level-only` pins the
+identifier of a payload whose excluded member also occurs below the top level; its description
+records it as a falsification vector proposed in review to fork a recursive-stripping
+implementation. This implementation reproduces its identifier; a recursive-stripping mutant does not
+(the mutant is named `X1-strip-excluded-at-every-depth` and the test that runs it is named
+"kat-22 is reproduced by the shipped rule and NOT by the recursive mutant"). A2 therefore has an
+external check and the earlier sentence that it had none is withdrawn.
+
+Two further things that check confirmed, both worth having. The rule **does** have a behavioural
+consequence, and the sentence above saying it has none is withdrawn with the other: the two readings
+of the same exclusion set produce different identifiers on this payload. And kat-22 is the **only**
+vector in the corpus that can tell them apart. Kats 08 and 09 declare the same `{id}` exclusion set
+over payloads whose excluded member occurs only at the top level, so both readings give identical
+bytes there; a test asserts that, so if another discriminating vector is ever added the claim that
+kat-22 stands alone will go red rather than quietly stay in the text.
+
+**One observation for the authors, on kat-22's own note.** That note predicts a recursive
+implementation would produce `44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a`,
+which is SHA-256 of `{}`. That is correct under `jcs-n`, where the normalization pass then removes
+the emptied `sub` object. Under the live `jcs` construction there is no normalization pass, so `sub`
+survives as an empty object, the pre-image is `{"sub":{}}` and the wrong reading forks to
+`f68308d4e5bde0822675e52d656d5c46af2ba15adadad2abee2fc33709ccccb1` instead. The vector still
+discriminates, which is what it was built to do, and it discriminates under both constructions. Only
+the specific value in its note is `jcs-n`-specific.
+
 ### A3. Non-finite numbers and non-JSON host values.
 **No sentence in §4.1, §5, §5.1, §7 or §7.1 states a rule for `Infinity`, `-Infinity`, `NaN`, or for
 a host value that is not a JSON value** (searched: those five sections). §4.1 line 594 says jcs

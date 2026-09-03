@@ -18,9 +18,11 @@
 // those vectors declare the withdrawn construction.
 
 import { describe, expect, it } from "vitest";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { discoverSection5, section5Files } from "../../cpb/discover-section5.js";
+import { EXCLUSION_MUTANTS, exclusionTopLevelOnly } from "../../cpb/mutants.js";
 import { canonicalDigestJcs } from "../../cpb/index.js";
 import {
   bucketJcsNKats,
@@ -387,6 +389,100 @@ describe.runIf(AVAILABLE)("§5 discovery — the search that names nothing", () 
     expect(basic.ok).toBe(true);
     if (!basic.ok) throw new Error("unreachable");
     expect(basic.value.hex).toBe(hit!.identifier);
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * A2 — §4.1's top-level-only rule, and the external check it turns out to have.
+ *
+ * The ambiguity log recorded A2 as taken from the draft text with "no
+ * behavioural consequence", recorded only because a reader implementing §5 from
+ * §5 alone would not find the rule. Both halves were wrong.
+ * `jcs-n/kats/22-exclusion-depth-top-level-only` nests the excluded member name
+ * below the top level, so the two readings fork, and the vector's own
+ * description says it was proposed in review to fork exactly a
+ * recursive-stripping implementation. It is Anton Sokolov's vector, aimed at
+ * this rule, and the package had been reporting A2 as unchecked.
+ *
+ * The control is a mutation, not a claim: `X1-strip-excluded-at-every-depth`
+ * applies the wrong reading. The shipped rule must reproduce kat-22's pinned
+ * identifier and the mutant must not, AND the mutant must leave kats 08 and 09
+ * alone, because a mutant that moved all three would not identify which vector
+ * carries the rule.
+ */
+describe.runIf(AVAILABLE)("A2 — the top-level-only rule has an external check", () => {
+  const dir = DIR as string;
+  const kat = (name: string) =>
+    JSON.parse(readFileSync(join(dir, "jcs-n", "kats", `${name}.json`), "utf8")) as {
+      input: Record<string, unknown>;
+      exclusion_set: string[];
+      digest: string;
+    };
+  const mutant = EXCLUSION_MUTANTS.find((m) => m.id === "X1-strip-excluded-at-every-depth")!;
+  const digestUnder = (fn: typeof exclusionTopLevelOnly, v: ReturnType<typeof kat>) => {
+    const r = canonicalDigestJcs(fn(v.exclusion_set, v.input as never));
+    if (!r.ok) throw new Error(r.reason);
+    return r.value.hex;
+  };
+
+  it("kat-22 is reproduced by the shipped rule and NOT by the recursive mutant", () => {
+    const v = kat("22-exclusion-depth-top-level-only");
+    // The vector's shape is what makes it discriminating: the excluded name
+    // occurs at the top level AND again inside a nested object.
+    expect(v.exclusion_set).toEqual(["id"]);
+    expect(v.input["id"]).toBe("x");
+    expect(v.input["sub"]).toEqual({ id: "y" });
+
+    expect(digestUnder(exclusionTopLevelOnly, v)).toBe(v.digest);
+    expect(v.digest).toBe("1fa18622ca9a754310d22ba32ce52e5e9d4f77c2226567727aeb9dedd66e9fa7");
+    // Red on the wrong reading. This is the assertion that makes A2's external
+    // check a check rather than a coincidence.
+    expect(digestUnder(mutant.apply, v)).not.toBe(v.digest);
+  });
+
+  it("kats 08 and 09 cannot tell the two readings apart, which is why kat-22 is the discriminator", () => {
+    // Their excluded member occurs only at the top level, so recursive and
+    // top-level-only stripping produce identical bytes. If this ever went red,
+    // kat-22 would have stopped being the sole discriminating vector and the
+    // sentence in the ambiguity log naming it would need changing.
+    for (const name of ["08-exclusion-set", "09-exclusion-before-normalization"]) {
+      const v = kat(name);
+      expect(digestUnder(exclusionTopLevelOnly, v), name).toBe(v.digest);
+      expect(digestUnder(mutant.apply, v), name).toBe(v.digest);
+    }
+  });
+
+  it("and no other vector in the corpus forks under the mutant either", () => {
+    // The claim in the mutant's own `what` string, asserted rather than
+    // asserted-in-prose: across every §5 reproducer found by discovery, kat-22
+    // is the only file whose identifier moves when the reading changes.
+    const forked: string[] = [];
+    for (const h of discoverSection5(dir)) {
+      if (h.exclusionSet.length === 0) continue;
+      const obj = JSON.parse(readFileSync(join(dir, h.file), "utf8")) as unknown;
+      // Walk to the object the hit named, then compare the two readings on it.
+      let node: unknown = obj;
+      for (const step of h.objectPath.replace(/^\$\.?/, "").split(".").filter((x) => x.length > 0)) {
+        node = (node as Record<string, unknown>)?.[step];
+      }
+      if (node === null || typeof node !== "object" || Array.isArray(node)) continue;
+      for (const [, member] of Object.entries(node as Record<string, unknown>)) {
+        if (member === null || typeof member !== "object" || Array.isArray(member)) continue;
+        const a = canonicalDigestJcs(exclusionTopLevelOnly(h.exclusionSet, member as never));
+        const b = canonicalDigestJcs(mutant.apply(h.exclusionSet, member as never));
+        if (a.ok && b.ok && a.value.hex !== b.value.hex && a.value.hex === h.identifier) {
+          if (!forked.includes(h.file)) forked.push(h.file);
+        }
+      }
+      const a = canonicalDigestJcs(exclusionTopLevelOnly(h.exclusionSet, node as never));
+      const b = canonicalDigestJcs(mutant.apply(h.exclusionSet, node as never));
+      if (a.ok && b.ok && a.value.hex !== b.value.hex && a.value.hex === h.identifier) {
+        if (!forked.includes(h.file)) forked.push(h.file);
+      }
+    }
+    expect(forked).toEqual(["jcs-n/kats/22-exclusion-depth-top-level-only.json"]);
   });
 });
 
