@@ -10,6 +10,16 @@ corrections:
     corrected_on: "2026-09-02"
     corrected_in: "2e63fb6 (appended paragraph 'Correction 2026-09-02.' under the section) and this entry"
     original_text_edited: false
+  - id: C-2026-09-03-1
+    section: "Appended 2026-09-03 — the post-rotation Insight pins (17:41Z), and why the same registry is pinned twice"
+    field: "the closing paragraph, 'What this still does not do'"
+    stated: "revoked: true is reported as the annotation identity_revoked and does not move the verdict — a revoked key still resolves as a published identity and can still reach VALID"
+    actual: "true when written and no longer true: a revoked key is UNVERIFIABLE/key_revoked at check identity, on both the public_keys `revoked` member and the top-level revoked_keys array, and reaches no verdict under a key"
+    evidence: "commit 5cf2e1a; the section 'Appended 2026-09-03 — the revoked-key gap, closed the same way, on both channels'; eight cases in test/insight.test.ts, five of which were red against f495e13"
+    cause: "not an error — the gap was recorded as open, deliberately, rather than fixed inside a handoff that did not name it; it was closed the same day by the follow-up commit. Recorded here so a machine reading `corrections:` does not carry a closed gap forward as an open one"
+    corrected_on: "2026-09-03"
+    corrected_in: "5cf2e1a (the fix, and the section that now holds), plus this entry and the appended paragraph under the corrected section"
+    original_text_edited: false
 ---
 # Fixture provenance
 
@@ -637,6 +647,12 @@ material is used.
 annotation `identity_revoked` and does **not** move the verdict — a revoked key still resolves as a
 published identity and can still reach VALID. That is the same class of defect B-29 was, it is out of
 this handoff's scope, and it is left as a finding rather than fixed quietly.
+
+**Correction 2026-09-03 (C-2026-09-03-1).** The paragraph above says `revoked: true` does not move the
+verdict. That was true when it was written and is no longer true: commit `5cf2e1a` makes a revoked key
+`UNVERIFIABLE/key_revoked` at check `identity`, on both channels the registry publishes revocation on.
+The original text is not edited; the next section is what now holds.
+
 
 ## Appended 2026-09-03 — the revoked-key gap, closed the same way, on both channels
 
