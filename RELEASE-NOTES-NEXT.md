@@ -25,8 +25,10 @@ one statement: the built `cbe4d38` ends the process with `process.exit(exitCode)
 `process.exit()` tore down the loop while the socket that fetched a `--jwks` URL was still closing,
 libuv aborted the process with status 0xC0000409, and the abort replaced the real exit status. A VALID
 receipt could exit non-zero, and all three verdicts became indistinguishable to a caller reading the
-exit code, while the `--json` payload in the same run still reported `exit_code: 0`. Every other file
-in the tarball is byte-identical to the build.
+exit code, while the `--json` payload in the same run still reported `exit_code: 0`. Every other JavaScript file under
+dist/ is byte-identical to the build; dist/cli.js.map differs only as a consequence of cli.js. Files
+outside dist/ (package.json, README.md, LICENSE, NOTICE) were not compared; the claim here is about
+the code.
 
 **When the source reached the repository.** Commit `17172e4` on 2026-09-02 at 09:08Z, which is three
 weeks after 0.1.1 was published. So the fix existed in the artefact before it existed in the
@@ -66,6 +68,8 @@ first. The 0.1.0 release did this by procedure (the runbook), not by
 structure. A `prepublishOnly` script running `typecheck && build && test`
 makes the gate part of the artifact path — a publish from a stale `dist/` or
 a red suite fails closed instead of shipping.
+
+Done 2026-09-03 in 4822d01: `prepublishOnly` runs `tools/release-guard.mjs`, then typecheck, build and test. Kept here until 0.1.2 ships, per this file's convention.
 
 Provenance: RELEASE-NOTES 0.1.0 review, 2026-08-10.
 
