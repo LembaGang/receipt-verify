@@ -76,6 +76,15 @@ export type ReasonCode =
   | "malformed_receipt"
   | "malformed_member"
   | "key_unresolvable"
+  /**
+   * The signer resolved to a published key the issuer has WITHDRAWN. Distinct
+   * from `key_unresolvable` on purpose: "no such key" and "this key must not be
+   * trusted" call for different actions, and a consumer that cannot tell them
+   * apart cannot act on either. Additive to this union — a consumer branching on
+   * the older members falls through to its default, which is the fail-closed
+   * side of an UNVERIFIABLE.
+   */
+  | "key_revoked"
   | "mapping_unresolvable"
   | "mapping_hash_mismatch"
   | "recompute_mismatch"

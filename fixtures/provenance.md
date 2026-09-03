@@ -637,3 +637,53 @@ material is used.
 annotation `identity_revoked` and does **not** move the verdict — a revoked key still resolves as a
 published identity and can still reach VALID. That is the same class of defect B-29 was, it is out of
 this handoff's scope, and it is left as a finding rather than fixed quietly.
+
+## Appended 2026-09-03 — the revoked-key gap, closed the same way, on both channels
+
+The section above recorded a gap and left it open: `revoked: true` was reported as the annotation
+`identity_revoked` and did not move the verdict, so a key the issuer had withdrawn still resolved as a
+published identity and could reach VALID. That is now fixed, and the same red-then-green discipline was
+used: five assertions failing against `f495e13`'s own source through the public adapter API, green after.
+
+**There were two revocation channels, and the tool read neither.** The registry publishes revocation as
+`revoked` on each `public_keys` entry **and** as a top-level `revoked_keys` array, which `parseRegistry`
+did not read at all. Honouring one of two channels is the same as honouring neither for whichever key the
+issuer happened to withdraw on the other, so both are read now and either one revokes.
+
+`resolveRegistryKey` gains `revoked` and `revocation_list_unreadable`, both checked **before** the window:
+
+- either channel → `UNVERIFIABLE` / **`key_revoked`**, at check `identity`, no key line printed.
+- `key_revoked` is a new member of the published `ReasonCode` union rather than a reuse of
+  `key_unresolvable`. "No such key" and "this key must not be trusted" call for different actions, and a
+  consumer that cannot tell them apart cannot act on either. The addition is additive: a consumer
+  branching on the older members falls through to its default, which is the fail-closed side of an
+  UNVERIFIABLE. Nothing in this repository enumerated the union exhaustively, so no assertion had to be
+  widened to accept it — which is itself worth saying, because it means the vocabulary had no guard.
+- **Revocation outranks a closed window**, and the order is deliberate: a withdrawn key is withdrawn at
+  every instant, so reporting `expired` for a key that is also revoked would name the weaker fact and
+  leave a caller thinking a different `--now` would fix it. The detail on `key_revoked` says explicitly
+  that no `--now` recovers it, where the `expired` detail invites exactly that re-run.
+
+**The assumption in reading `revoked_keys`, stated rather than hidden.** `revoked_keys` is `[]` in all
+four registry pins in `refs/`, and every `public_keys` entry in all four carries `revoked: false` — both
+asserted in `test/insight.test.ts`, so the reason these cases are synthetic is in the suite and not only
+here. No document we hold says what a populated entry looks like. Two shapes are read: a bare string
+(matched against both the address and the `key_id`) and an object carrying `public_key` and/or `key_id`.
+An entry in any other shape — or a `revoked_keys` member that is not an array at all — is **not skipped**:
+it blocks every key in that registry with `UNVERIFIABLE/malformed_member`, because an entry that cannot be
+read cannot be shown *not* to name the signer being checked. An absent `revoked_keys` is not an unreadable
+one, and resolves normally. Guessing further shapes would have been worse than saying the list was not
+understood; if Insight ever populates it, these bytes are what the shape should be checked against.
+
+**One conditional was deleted rather than left in place.** `if (res.key.revoked) ann["identity_revoked"] =
+true` survived in the `valid` and `expired` branches after revocation moved ahead of both. Neither can
+fire any more, and a conditional that cannot fire reads as a check while covering nothing, so both are
+gone. `identity_revoked` is now set only on the `key_revoked` path, beside `identity_revoked_via`, which
+names which of the two channels carried the revocation.
+
+**What this still does not do.** Revocation here has no time dimension: a `revoked_at` on a
+`revoked_keys` entry is read for the refs it carries and its timestamp is ignored, so a receipt signed
+long before a key was revoked resolves the same as one signed after. That is the fail-closed reading and
+it is the right default, but it is not the same as being able to say "valid as of the signing instant,
+revoked since", which is what a caller re-verifying an archived receipt actually wants. Closing it needs a
+revocation instant the registry does not currently publish in any bytes we hold.

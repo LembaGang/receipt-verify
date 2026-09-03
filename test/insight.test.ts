@@ -1330,3 +1330,180 @@ describe("insight — an expired registry key does not establish identity", () =
     expect(r.stoppedAt).toBe("identity");
   });
 });
+
+// --------------------------------------------------------------------------
+
+/**
+ * The revoked-key gap, closed the same way the expired-key one was. Until
+ * `f495e13` a key the registry marked `revoked: true` still resolved as a
+ * published identity and could reach VALID: `identity_revoked` was an
+ * annotation and annotations never move a verdict. The red control, run on that
+ * commit's source, returned VALID for all five cases below.
+ *
+ * Two channels, not one. This registry publishes revocation both as `revoked`
+ * on each `public_keys` entry AND as a top-level `revoked_keys` array, which
+ * `parseRegistry` did not read at all. Honouring one of two channels is the same
+ * as honouring neither for whichever key the issuer withdrew on the other.
+ *
+ * `revoked_keys` is `[]` in all four registry pins here, so nothing tells us
+ * what a populated entry looks like. Two shapes are read and everything else
+ * fails closed; that assumption is stated in fixtures/provenance.md rather than
+ * hidden in the resolver.
+ */
+describe("insight — a revoked registry key establishes no identity", () => {
+  const reg = (revoked: boolean, revokedKeys: unknown[] = []): Buffer => {
+    const r = JSON.parse(REG_BYTES.toString("utf8")) as Record<string, any>;
+    r["public_keys"] = [
+      { key_id: "throwaway-under-test", public_key: ATTESTER, algorithm: "EIP-712/secp256k1", validFrom: "2026-08-05", validUntil: "2026-09-02T06:00:00.000Z", revoked },
+    ];
+    r["revoked_keys"] = revokedKeys;
+    return Buffer.from(JSON.stringify(r), "utf8");
+  };
+
+  it("`revoked: true` is UNVERIFIABLE/key_revoked at identity, and names no key", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: reg(true) });
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("key_revoked");
+    expect(r.stoppedAt).toBe("identity");
+    expect(r.resolvedKey).toBeUndefined();
+    expect(r.annotations?.["identity"]).toBe("key_revoked (throwaway-under-test)");
+    expect(r.annotations?.["identity_revoked"]).toBe(true);
+    // The detail must not suggest a different --now recovers it. Revocation is
+    // not a window, and telling a caller to re-time the check would be wrong.
+    expect(r.detail).toContain("not recoverable by re-running with a different --now");
+  });
+
+  it("`key_revoked` is its own reason, not `key_unresolvable`: no-such-key and do-not-trust differ", async () => {
+    const revokedR = await insightAdapter.verify(PKG_BYTES, { ...base, registry: reg(true) });
+    const absentR = await insightAdapter.verify(PKG_BYTES, { ...base, allowUnregisteredSigner: false });
+    expect(revokedR.reason).toBe("key_revoked");
+    expect(absentR.reason).toBe("key_unresolvable");
+    expect(revokedR.reason).not.toBe(absentR.reason);
+  });
+
+  it("--allow-unregistered-signer does not open it: the key IS published, and withdrawn", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: reg(true), allowUnregisteredSigner: true });
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("key_revoked");
+  });
+
+  it("the second channel: an address in the top-level `revoked_keys` array revokes the key", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: reg(false, [ATTESTER]) });
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("key_revoked");
+    expect(String(r.annotations?.["identity_revoked_via"])).toContain("revoked_keys");
+  });
+
+  it("a `revoked_keys` entry naming the key_id, or an object carrying either ref, revokes it too", async () => {
+    for (const entry of [
+      "throwaway-under-test",
+      { key_id: "throwaway-under-test", revoked_at: "2026-09-01T00:00:00.000Z" },
+      { public_key: ATTESTER.toLowerCase(), reason: "compromise" },
+    ]) {
+      const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: reg(false, [entry]) });
+      expect(r.reason, JSON.stringify(entry)).toBe("key_revoked");
+    }
+  });
+
+  it("a `revoked_keys` entry in no shape this tool reads fails closed, and says which shapes it reads", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: reg(false, [42]) });
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("malformed_member");
+    expect(r.stoppedAt).toBe("identity");
+    expect(r.detail).toContain("cannot be read cannot be shown NOT to name signer");
+    expect(r.detail).toContain("public_key");
+  });
+
+  it("revocation outranks a closed window: a key that is both says revoked, which no --now recovers", async () => {
+    const r = JSON.parse(REG_BYTES.toString("utf8")) as Record<string, any>;
+    r["public_keys"] = [
+      { key_id: "throwaway-both", public_key: ATTESTER, algorithm: "EIP-712/secp256k1", validFrom: "2026-08-05", validUntil: "2026-09-02T05:00:00.000Z", revoked: true },
+    ];
+    const out = await insightAdapter.verify(PKG_BYTES, { ...base, registry: Buffer.from(JSON.stringify(r), "utf8") });
+    expect(out.reason).toBe("key_revoked");
+    expect(out.reason).not.toBe("expired");
+  });
+
+  it("CONTROL: the same package, the same key, not revoked on either channel, is VALID", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: reg(false) });
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["identity"]).toBe("signer_in_registry (throwaway-under-test)");
+    // And the annotation that used to be the whole of the revocation handling
+    // is gone from the VALID path, because a key reaching it is not revoked.
+    expect(r.annotations?.["identity_revoked"]).toBeUndefined();
+  });
+});
+
+// --------------------------------------------------------------------------
+
+describe("insight — the resolver reads both revocation channels", () => {
+  const parse = (mutate: (r: Record<string, any>) => void) => {
+    const r = JSON.parse(read(INSIGHT_REGISTRY_1741).toString("utf8")) as Record<string, any>;
+    mutate(r);
+    const p = parseRegistry(Buffer.from(JSON.stringify(r), "utf8"), "synthetic");
+    if ("error" in p) throw new Error(p.error);
+    return p;
+  };
+
+  it("the four pinned registries all publish an EMPTY revoked_keys, which is why no pin covers this", () => {
+    // Stated as a test so the reason these cases are synthetic is in the suite
+    // and not only in prose: there is no revoked key in any bytes we hold.
+    for (const f of [INSIGHT_REGISTRY, INSIGHT_REGISTRY_1154, INSIGHT_REGISTRY_1545, INSIGHT_REGISTRY_1741]) {
+      const doc = JSON.parse(read(f).toString("utf8")) as Record<string, any>;
+      expect(doc["revoked_keys"]).toEqual([]);
+      for (const k of doc["public_keys"] as Record<string, unknown>[]) expect(k["revoked"]).toBe(false);
+    }
+    const live = parse(() => {});
+    expect(live.revokedRefs).toEqual([]);
+    expect(live.revocationListUnreadable).toEqual([]);
+    expect(resolveRegistryKey(live, INSIGHT_KEY_202609, INSIGHT_NOW_1741).status).toBe("valid");
+  });
+
+  it("revocation on either channel resolves as revoked, and names which one", () => {
+    const viaEntry = parse((r) => {
+      (r["public_keys"] as Record<string, unknown>[])[1]!["revoked"] = true;
+    });
+    const a = resolveRegistryKey(viaEntry, INSIGHT_KEY_202609, INSIGHT_NOW_1741);
+    expect(a.status).toBe("revoked");
+    if (a.status !== "revoked") throw new Error("unreachable");
+    expect(a.via).toContain("public_keys");
+
+    const viaList = parse((r) => {
+      r["revoked_keys"] = [{ key_id: "insight-oracle-safety-v2-202609" }];
+    });
+    const b = resolveRegistryKey(viaList, INSIGHT_KEY_202609, INSIGHT_NOW_1741);
+    expect(b.status).toBe("revoked");
+    if (b.status !== "revoked") throw new Error("unreachable");
+    expect(b.via).toContain("revoked_keys");
+  });
+
+  it("an unreadable revoked_keys blocks EVERY key in that registry, not only the entry's subject", () => {
+    // The point of failing closed: the entry might have named this key.
+    const bad = parse((r) => {
+      r["revoked_keys"] = [42];
+    });
+    for (const addr of [INSIGHT_KEY_V2, INSIGHT_KEY_202609]) {
+      expect(resolveRegistryKey(bad, addr, INSIGHT_NOW_1530).status).toBe("revocation_list_unreadable");
+    }
+    // A member present but not even an array is unreadable in the same way.
+    const notArray = parse((r) => {
+      r["revoked_keys"] = "none";
+    });
+    expect(resolveRegistryKey(notArray, INSIGHT_KEY_202609, INSIGHT_NOW_1530).status).toBe("revocation_list_unreadable");
+  });
+
+  it("an ABSENT revoked_keys is not an unreadable one", () => {
+    const gone = parse((r) => {
+      delete r["revoked_keys"];
+    });
+    expect(gone.revocationListUnreadable).toEqual([]);
+    expect(resolveRegistryKey(gone, INSIGHT_KEY_202609, INSIGHT_NOW_1741).status).toBe("valid");
+  });
+
+  it("a key the registry does not list is still not_found, revoked or not", () => {
+    const withList = parse((r) => {
+      r["revoked_keys"] = [ATTESTER];
+    });
+    expect(resolveRegistryKey(withList, ATTESTER, INSIGHT_NOW_1741).status).toBe("not_found");
+  });
+});

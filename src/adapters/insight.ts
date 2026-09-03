@@ -552,6 +552,25 @@ export interface Registry {
   schemas: RegistrySchema[];
   gates: Record<string, unknown>;
   origin: string;
+  /**
+   * The registry publishes revocation on TWO channels: `revoked` on each
+   * `public_keys` entry, and a top-level `revoked_keys` array. Both are honoured,
+   * because honouring one of two channels is the same as honouring neither for
+   * whichever key the issuer happened to withdraw on the other.
+   *
+   * Lowercased addresses and key_ids named by `revoked_keys`.
+   */
+  revokedRefs: string[];
+  /**
+   * `revoked_keys` entries in a shape this tool cannot read. `revoked_keys` is
+   * empty in every registry pinned here, so no document tells us what a
+   * populated entry looks like; two shapes are read (a bare string, and an
+   * object carrying `public_key` and/or `key_id`) and anything else lands here.
+   * An unreadable entry cannot be shown NOT to name a given signer, so it fails
+   * closed rather than being skipped — guessing further shapes would be worse
+   * than saying the list was not understood.
+   */
+  revocationListUnreadable: string[];
 }
 
 /**
@@ -631,8 +650,34 @@ export function parseRegistry(bytes: Uint8Array, origin: string): Registry | { e
       schemas.push(entry);
     }
   }
+  // The second revocation channel. Absent is not the same as empty, but both
+  // mean "nothing withdrawn here"; a member present and not an array is a shape
+  // we cannot read at all, which fails closed like an unreadable entry.
+  const revokedRefs: string[] = [];
+  const revocationListUnreadable: string[] = [];
+  const rawRevoked = o["revoked_keys"];
+  if (rawRevoked !== undefined && rawRevoked !== null) {
+    if (!Array.isArray(rawRevoked)) {
+      revocationListUnreadable.push(`revoked_keys is ${typeof rawRevoked}, not an array`);
+    } else {
+      for (const entry of rawRevoked) {
+        const s = str(entry);
+        if (s !== null) {
+          revokedRefs.push(s.toLowerCase());
+          continue;
+        }
+        const e = obj(entry);
+        const refs = e === null ? [] : [str(e["public_key"]), str(e["key_id"])].filter((v): v is string => v !== null);
+        if (refs.length === 0) {
+          revocationListUnreadable.push(JSON.stringify(entry));
+          continue;
+        }
+        for (const r of refs) revokedRefs.push(r.toLowerCase());
+      }
+    }
+  }
   const er = obj(rawSchemas?.["ExecutionReceipt"]);
-  return { keys, schemas, gates: (er === null ? null : obj(er["gates"])) ?? {}, origin };
+  return { keys, schemas, gates: (er === null ? null : obj(er["gates"])) ?? {}, origin, revokedRefs, revocationListUnreadable };
 }
 
 /**
@@ -649,6 +694,8 @@ export function parseRegistry(bytes: Uint8Array, origin: string): Registry | { e
 export type KeyResolution =
   | { status: "not_found" }
   | { status: "valid"; key: RegistryKey }
+  | { status: "revoked"; key: RegistryKey; via: string }
+  | { status: "revocation_list_unreadable"; key: RegistryKey; entries: string[] }
   | { status: "expired"; key: RegistryKey; validUntil: number }
   | { status: "not_yet_valid"; key: RegistryKey; validFrom: number }
   | { status: "window_malformed"; key: RegistryKey; members: string[] };
@@ -664,15 +711,24 @@ export type KeyResolution =
  * freshness check is: `now > validUntil` is expired, `now < validFrom` is not
  * yet valid, and the boundary instant itself is inside the window.
  *
- * `revoked` is deliberately NOT consulted here. It is reported by the caller as
- * an annotation and does not move the verdict today; changing that is a
- * separate decision from this one and is recorded in fixtures/provenance.md.
+ * ORDER, and why it is this one. Revocation is checked before the window
+ * because it is the stronger statement and it is not time-bounded: a withdrawn
+ * key is withdrawn at every instant, so reporting "expired" for a key that was
+ * revoked would name the weaker fact and let a caller think a different `--now`
+ * would fix it. An unreadable revocation list is checked before the window for
+ * the same reason — until it is read, no key in this registry can be cleared.
  */
 export function resolveRegistryKey(registry: Registry, address: string, now: number): KeyResolution {
   const key = registry.keys.find((k) => sameAddress(k.publicKey, address));
   if (key === undefined) return { status: "not_found" };
-  // Fail closed before either comparison: a window that cannot be read is not
-  // an absent window.
+  if (key.revoked) return { status: "revoked", key, via: "`revoked: true` on its `public_keys` entry" };
+  const named = [key.publicKey.toLowerCase(), key.keyId.toLowerCase()].find((r) => registry.revokedRefs.includes(r));
+  if (named !== undefined) return { status: "revoked", key, via: `the top-level \`revoked_keys\` array, which names ${named}` };
+  if (registry.revocationListUnreadable.length > 0) {
+    return { status: "revocation_list_unreadable", key, entries: registry.revocationListUnreadable };
+  }
+  // Fail closed before either window comparison: a window that cannot be read
+  // is not an absent window.
   if (key.malformedWindow.length > 0) return { status: "window_malformed", key, members: key.malformedWindow };
   if (key.validUntil !== null && now > key.validUntil) return { status: "expired", key, validUntil: key.validUntil };
   if (key.validFrom !== null && now < key.validFrom) return { status: "not_yet_valid", key, validFrom: key.validFrom };
@@ -988,6 +1044,40 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
           ),
         );
       }
+    } else if (res.status === "revoked") {
+      // The issuer has withdrawn this key. UNVERIFIABLE and not INVALID for the
+      // same reason an expired key is: nothing here says the signature is bad.
+      // But unlike an expired key, no `--now` recovers it — revocation is not a
+      // window — so the detail says that rather than suggesting a re-run.
+      ann[p("identity")] = `key_revoked (${res.key.keyId})`;
+      ann[p("identity_revoked")] = true;
+      ann[p("identity_revoked_via")] = res.via;
+      return fail(
+        unverifiable(
+          FORMAT,
+          "key_revoked",
+          `signer ${art.attester} resolves to published key ${res.key.keyId} in ${ctx.registry.origin}, and that key is revoked: ` +
+            `${res.via}. A revoked key establishes no identity at any instant, so unlike a closed validity window this is not ` +
+            `recoverable by re-running with a different --now`,
+          ann,
+          "identity",
+        ),
+      );
+    } else if (res.status === "revocation_list_unreadable") {
+      ann[p("identity")] = `revocation_list_unreadable (${res.key.keyId})`;
+      return fail(
+        unverifiable(
+          FORMAT,
+          "malformed_member",
+          `the registry at ${ctx.registry.origin} publishes a \`revoked_keys\` list carrying ${res.entries.length} ` +
+            `entr${res.entries.length === 1 ? "y" : "ies"} in no shape this tool reads (${res.entries.join("; ")}). ` +
+            `An entry that cannot be read cannot be shown NOT to name signer ${art.attester}, so no key from this registry is ` +
+            `cleared until the list is understood. Readable shapes: a bare address or key_id string, or an object with ` +
+            `\`public_key\` and/or \`key_id\``,
+          ann,
+          "identity",
+        ),
+      );
     } else if (res.status === "window_malformed") {
       // Fail closed. An unreadable window is an unknown state, and the safe
       // reading of an unknown state is not "open ended".
@@ -1010,7 +1100,6 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
       // instant it was signed at as --now, not to waive the check.
       ann[p("identity")] = `key_expired (${res.key.keyId})`;
       ann[p("identity_key_window")] = `validUntil ${instantLine(res.validUntil)}, evaluated at ${instantLine(ctx.now)}`;
-      if (res.key.revoked) ann[p("identity_revoked")] = true;
       return fail(
         unverifiable(
           FORMAT,
@@ -1039,8 +1128,10 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
         ),
       );
     } else {
+      // No `identity_revoked` annotation here any more: revocation is caught
+      // above, so a key reaching this branch is not revoked and a conditional
+      // that can never fire would only look like a check.
       ann[p("identity")] = `signer_in_registry (${res.key.keyId})`;
-      if (res.key.revoked) ann[p("identity_revoked")] = true;
       key = { kid: res.key.keyId, alg: "EIP-712/secp256k1", origin: ctx.registry.origin };
     }
   }
