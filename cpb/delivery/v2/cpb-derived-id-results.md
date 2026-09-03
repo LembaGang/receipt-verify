@@ -166,14 +166,37 @@ Those are labels, not digests. The vector exercises **that the SD-encoded form i
 which is §5's actual requirement, and exercises no SD hashing — which is consistent, since -02 defines
 none.
 
-**One row of that table shrank since 30 August**, and it is worth saying by how much. §5's
-construction is now checked against **twelve** vectors rather than three: these three, kats 20 and 21,
-and **seven** under `typed-refs/`, all detailed in the vector results document. The 31 August
-correction said five under `typed-refs/`; it is seven, and the two it missed were missed for the same
-reason as the original three under-reports — the pinned value was searched for under the member names
-it was expected to carry rather than searched for as a value. `typed-refs/fail/01` and `fail/04` are
-the two that close the deletion-versus-nulling question, each excluding a member that holds the
-non-null string `"secret-id-123"`.
+**One row of that table shrank since 30 August**, and it is worth saying by how much and how the
+number was reached. §5's construction is now checked against **fifteen** vectors rather than three:
+these three, kats 20 and 21, seven under `typed-refs/` and two under `profile-independence/`, in
+sixteen payload objects carrying five distinct identifiers. The full table and both search methods are
+in the vector results document.
+
+That figure has been wrong four times, and each wrong figure came from a search scoped by an
+assumption: one directory, then one member name, then one identifier value searched for in one
+directory, then the same value searched for over the whole tree. The re-derivation on Linux on
+3 September found twelve to be short by widening the search from one directory to the whole `vectors/`
+tree. Widening it again, to a structural search that names no value at all, found one more that no
+value search can reach: `typed-refs/fail/02` pins a different identifier entirely.
+
+**Both searches, so either can be rerun.** Search 1, by value, over the whole tree:
+
+```
+git grep -l 0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb e0ad1c7 -- vectors
+```
+
+which returns nine files. Note `-- vectors` and not `-- vectors/typed-refs/`; scoping it to one
+directory is what produced the count of twelve. Search 2, by structure, naming no value: for every
+object anywhere in every JSON blob under `vectors/` carrying a 64-hex member named `derived_id`,
+`recomputed_digest`, `correct_recomputed_digest`, `correct_derived_id_bare_hex` or
+`correct_derived_id`, take every candidate payload object beside it, and one level inside those, and
+try each against every exclusion set declared anywhere in the same file; recompute §5 and compare. That
+returns fifteen files and sixteen payload objects. Neither search contains the other: search 1 finds
+`profile-independence/fail/01`, which declares no exclusion set for search 2 to use, and search 2 finds
+six files that pin one of the four other identifiers.
+
+`typed-refs/fail/01` and `fail/04` are the two that close the deletion-versus-nulling question, each
+excluding a member that holds the non-null string `"secret-id-123"`.
 
 ---
 
@@ -190,7 +213,11 @@ the six structural rows, decided by reading which member each row compares again
 `pre_image_bytes_hex`, `derived_id`, `correct_derived_id` and `failure_reason` — these are yours, read
 from your vectors, and this document compares against them rather than deriving them.
 
-**Not established here:** that the Appendix A anchor is checkable by you today — the commit proving
+**Not established here:** that fifteen is final. It is what two searches find, one by value over the
+whole tree and one by structure naming no value, and the second is the first search used here that is
+scoped by neither a directory, a member name nor a value. A vector that reproduces §5 under a payload
+member name nested deeper than one level, or under an identifier member name outside the five the
+corpus uses, would still be invisible to it. That the Appendix A anchor is checkable by you today — the commit proving
 the ordering is local and unpublished, and that is stated above rather than glossed. That the `jcs`
 step conforms to RFC 8785. That §7.1 has any external check at all; it has none. That the three
 non-external structural rows establish anything about your requirements — they establish only that

@@ -198,48 +198,92 @@ the refusal.
 
 ---
 
-## TWELVE VECTORS EXERCISE §5, NOT THREE — AND NOT TEN
+## FIFTEEN VECTORS EXERCISE §5, AND HOW THAT NUMBER WAS ARRIVED AT
 
-**CORRECTED 2026-08-31, AND CORRECTED AGAIN HERE.** The 30 August package reported that the three
-`jcs-n/derived-id` vectors are the only vectors anywhere exercising §5's derived-identifier
-construction. The correction sent on 31 August named seven others: kats 20 and 21, and five under
-`typed-refs/`.
+**This count has been wrong four times, each time by a search that was scoped by an assumption. The
+history matters more than the number, so it is given in full.**
 
-**That corrected figure was itself an under-report, by the same method that produced the original
-one.** Seven of the eight files under `typed-refs/` carry a payload, a `{doc_id}` exclusion set and a
-pinned derived identifier — not five. `fail/04` and `fail/05` were missed because the search looked for
-the value under the member names it was expected to have. They carry it under
-`correct_verification.recomputed_digest` and under a top-level `correct_recomputed_digest`.
+| stated | count | what the search was scoped to |
+|---|---:|---|
+| 30 August | 3 | one directory, `jcs-n/derived-id/` |
+| 31 August | 10 | the identifier `0c837d01…`, under the member names it was expected to carry |
+| 3 September, first pass | 12 | the same identifier, searched for as a value, but only under `typed-refs/` |
+| 3 September, re-derivation on Linux | 14 | the same identifier, searched for over the whole `vectors/` tree |
+| **3 September, this document** | **15** | **nothing: neither a directory, nor a member name, nor a value** |
 
-**All seven reproduce**, and so do kats 20 and 21:
+Each step found what the step before it could not see. The 3 September re-derivation on Linux found the
+twelve to be short by running the identifier search over the whole tree rather than over one directory,
+which added the two `profile-independence/` vectors. This document goes one further, because a search
+for a known identifier cannot find a vector that pins a different one, and one does.
+
+**Fifteen files, sixteen payload objects, five distinct identifiers, all reproducing.** The two searches
+are given below so both can be rerun.
+
+### The two searches, either of which you can rerun
+
+**Search 1, by value.** The identifier grep, over the whole tree rather than one directory:
 
 ```
-0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb
+git grep -l 0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb e0ad1c7 -- vectors
 ```
 
-| vector | excluded member holds | where the exclusion set is declared | where the identifier is pinned |
-|---|---|---|---|
-| `typed-refs/pass/01-matching-digest` | `doc_id = null` | `exclusion_set` array | `cited_artifact.derived_id` |
-| `typed-refs/pass/02-arp-conformance-baseline` | `doc_id = null` | `exclusion_set` array | `cited_artifact.derived_id` |
-| `typed-refs/fail/01-digest-context-mismatch` | **`doc_id = "secret-id-123"`** | `exclusion_set` array | `cited_artifact.correct_derived_id` |
-| `typed-refs/fail/03-representation-mismatch` | `doc_id = null` | **prose only — see below** | `cited_artifact.correct_derived_id_bare_hex` |
-| `typed-refs/fail/04-identifier-inconsistent-with-context` | **`doc_id = "secret-id-123"`** | `exclusion_set` array | **`correct_verification.recomputed_digest`** |
-| `typed-refs/fail/05-digest-algorithm-inconsistent-with-context` | `doc_id = null` | `exclusion_set` array | **`correct_recomputed_digest`, top level** |
-| `typed-refs/fail/06-arp-digest-alg-inconsistent-with-registered-context` | `doc_id = null` | `exclusion_set` array | `cited_artifact.derived_id` |
+**Nine files.** Seven under `typed-refs/` and two under `profile-independence/`. This is the search
+that found the twelve to be short. What it cannot do is find a vector pinning a different identifier,
+and six of the fifteen pin one of four other values.
 
-**So the count of vectors from which §5's construction is reproducible is twelve**: three under
-`jcs-n/derived-id/`, two kats, and seven under `typed-refs/`. Five member names across three objects
-carry the pinned identifier, which is why counting them by name kept producing a number that was too
-small. The one file under `typed-refs/` genuinely outside the set is `fail/02`, which compares two
-artifacts against a single digest and pins no derived identifier for a cited artifact; a test asserts
-that it is the only exclusion, so a widening of the predicate that swept in a vector pinning something
-else would fail rather than inflate the count.
+**Search 2, by structure, mentioning no value.** For every object anywhere in every JSON blob under
+`vectors/` that carries a 64-hex member named `derived_id`, `recomputed_digest`,
+`correct_recomputed_digest`, `correct_derived_id_bare_hex` or `correct_derived_id` (those five names
+being the ones the corpus actually uses), try every candidate payload object beside it, and one level
+inside those, against every exclusion set declared anywhere in the same file. Recompute §5 and compare.
 
-**This is a fourth instance of one mistake, and it is reported here rather than quietly folded in.**
-The 31 August letter said the coverage manifest had to be re-derived rather than patched, because the
-same scoping error had produced three under-reports and it was not yet known whether it had produced a
-fourth. It had. The method that finds these is searching for the *value* and then asking what each hit
-is, rather than searching for the names the value was expected to carry.
+**Fifteen files, sixteen payload objects, five distinct identifiers, sixteen of sixteen agreeing.**
+
+**Neither search contains the other**, and that is the useful fact. Search 1 finds
+`profile-independence/fail/01`, which Search 2 skips because that file declares no exclusion set
+anywhere. Search 2 finds six files Search 1 cannot reach, because they pin a different value.
+
+### The fifteen
+
+| file | payload member | excluded member holds | where the exclusion set comes from | identifier |
+|---|---|---|---|---|
+| `jcs-n/derived-id/01-basic-derived-id` | `full_payload` | `record_id = null` | array on the object | `1009a072…` |
+| `jcs-n/derived-id/02-carried-id-mismatch` | `full_payload` | `record_id` = 64 zeroes | array on the object | `1009a072…` |
+| `jcs-n/derived-id/03-sd-encoded-form` | `sd_encoded_payload` | `record_id = null` | array on the object | `033e6406…` |
+| `jcs-n/kats/20-must-fail-identifier-trailing-newline` | `payload` | empty exclusion set | array in `registry_entry` | `2f9bba43…` |
+| `jcs-n/kats/21-must-fail-identifier-surrounding-whitespace` | `payload` | empty exclusion set | array in `registry_entry` | `2f9bba43…` |
+| `profile-independence/pass/01-conforming-typed-ref` | `payload` | `doc_id = null` | array on the object | `0c837d01…` |
+| `profile-independence/fail/01-cross-profile-field-access` | `payload` | `doc_id = null` | **inferred across files, see below** | `0c837d01…` |
+| `typed-refs/pass/01-matching-digest` | `payload` | `doc_id = null` | array in `artifact_type_registry_entry` | `0c837d01…` |
+| `typed-refs/pass/02-arp-conformance-baseline` | `payload` | `doc_id = null` | array in `artifact_type_registry_entry` | `0c837d01…` |
+| `typed-refs/fail/01-digest-context-mismatch` | `payload` | **`doc_id = "secret-id-123"`** | array in `artifact_type_registry_entry` | `0c837d01…` |
+| `typed-refs/fail/02-textual-equality-trap` | `artifact_a.payload` | `a_id = null` | **prose** `digest_context` | **`28211009…`** |
+| `typed-refs/fail/02-textual-equality-trap` | `artifact_b.payload` | `b_id = null`, `weight = null` | **prose** `digest_context` | **`28211009…`** |
+| `typed-refs/fail/03-representation-mismatch` | `payload` | `doc_id = null` | **prose** `digest_context` | `0c837d01…` |
+| `typed-refs/fail/04-identifier-inconsistent-with-context` | `cited_artifact.payload` | **`doc_id = "secret-id-123"`** | array in `registry_entry` | `0c837d01…` |
+| `typed-refs/fail/05-digest-algorithm-inconsistent-with-context` | `cited_artifact.payload` | `doc_id = null` | array in `registry_entry` | `0c837d01…` |
+| `typed-refs/fail/06-arp-digest-alg-inconsistent-with-registered-context` | `payload` | `doc_id = null` | array in `artifact_type_registry_entry` | `0c837d01…` |
+
+Sixteen rows across fifteen files: `fail/02` contributes two, and that is the point of it. Its two
+artifacts carry **different payloads under different exclusion sets and reduce to the same
+identifier**: `{a_id, color, size}` excluding `a_id`, and `{b_id, color, size, weight}` excluding
+`b_id` and `weight`. It was previously described here as pinning no derived identifier for a cited artifact. It
+pins two, and both reproduce.
+
+**`typed-refs/fail/02` is why a search by value can never be sufficient.** It pins `28211009…`, so no
+grep for `0c837d01…` reaches it, however widely that grep is scoped.
+
+**`profile-independence/fail/01` is why a search by structure is not sufficient either.** It carries a
+payload and a pinned `derived_id` and declares **no exclusion set anywhere in the file**. Recomputing it
+requires taking the `{doc_id}` set that other vectors declare for the artifact type `authorization-doc`,
+which is an inference across files. It is marked as one in the run output, and it is the only row in the
+sixteen that is marked that way. A reader who rejects that inference is left with fourteen files, and
+the row says so plainly rather than burying it in a total.
+
+**Three member names carry the payload** (`payload`, `full_payload`, `sd_encoded_payload`) and **five
+carry the identifier**, across four kinds of exclusion-set declaration: an array on the object, an array
+in a registry entry, a prose `digest_context` sentence, and the one cross-file inference. Counting by
+any single one of those names is what produced every earlier figure.
 
 **`fail/01` is the one most worth having, and it was discarded.** Its excluded member holds the
 non-null string `"secret-id-123"`, which discriminates **deleting** an excluded member from **nulling**
@@ -248,18 +292,19 @@ it far more sharply than any vector used on 30 August: all three `derived-id` ve
 the ambiguity log as A5 and was resolved from the text alone; `fail/01` is the external check on it,
 and it agrees.
 
-**One judgment call, surfaced rather than buried.** `fail/03` declares its digest context only in
-prose — the `digest_context` string "jcs-n; exclusion set {doc_id}; 64-char lowercase hex" — and
-carries **no `exclusion_set` array anywhere in the file.** Recomputing it at all requires reading the
-exclusion set out of that sentence. That is what was done, the row says so in the run output, and a
-test pins that `fail/03` is the only one of the seven where it was necessary. Skipping the vector would
+**Three rows read their exclusion set out of prose**, and every one says so in the run output:
+`typed-refs/fail/03` and both `fail/02` artifacts declare their digest context only in a
+`digest_context` sentence and carry no `exclusion_set` array. Recomputing them at all requires reading
+the set out of that sentence. A test pins that exactly three rows are in that state and exactly one is
+the cross-file inference, so a widening of the method that quietly increased either would go red. Skipping the vector would
 have looked safer and would have hidden a fact worth having: a machine-readable context is available
 for four of these five and not for the fifth.
 
-`fail/04` does also pin a deliberately wrong carried digest (`24880099…`) and `fail/05` does vary the
-digest algorithm — that is what each vector is *for*. Neither fact stops the vector from also pinning
-the correct recomputation of its cited artifact, which is the thing being reproduced here, and reading
-one as excluding the other is how both came to be dropped.
+`fail/04` does also pin a deliberately wrong carried digest (`24880099…`), `fail/05` does vary the
+digest algorithm, and `fail/02` is built around two artifacts colliding on one digest. That is what
+each vector is *for*. None of those facts stops the vector from also pinning the correct recomputation
+of its own payload, which is the thing being reproduced here, and reading one as excluding the other is
+how all three came to be dropped.
 
 ---
 
@@ -280,8 +325,10 @@ grammar. This says only that our §5.1 decoder refuses these two strings.
 **Recomputed in this run, from the bytes named:** every digest, pre-image and identifier above; the
 bucket counts and their disjointness; the six mutant results including M6's non-detection and M1's
 collapse onto your pinned `jcs_n` value; the per-vector table; the four `jcs_n_correct_digest` values;
-the kat-37 refusal and the digest the 30 August run produced instead; the seven typed-refs identifiers,
-the five member names that carry them and the two places their exclusion sets are declared; the equality of all 77 working-tree vector
+the kat-37 refusal and the digest the 30 August run produced instead; both searches over the whole `vectors/` tree,
+run from blobs: the identifier grep (nine files) and the structural search (fifteen files, sixteen
+payload objects, five identifiers, all agreeing), with the member names and exclusion-set sources
+listed rather than assumed; the equality of all 77 working-tree vector
 files with their blobs.
 
 **Taken from you, as your figures:** every `expected` column — the pinned digests, pre-images,

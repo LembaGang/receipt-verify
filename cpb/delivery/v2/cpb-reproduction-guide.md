@@ -215,16 +215,17 @@ done
 **Expected:** `0b985be8…`, `f5d570fa…`, `7ac9c6bd…`, `64e35d3d…`. Those four are why the comparable
 base is 29 rather than 25.
 
-**The seven typed-refs vectors that exercise §5:**
+**The vectors that exercise §5. Search 1, by value, over the WHOLE tree:**
 
 ```
-git grep -l 0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb e0ad1c7 -- vectors/typed-refs/
+git grep -l 0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb e0ad1c7 -- vectors
 ```
 
-**Expected: seven files** — everything under `vectors/typed-refs/` except
-`fail/02-textual-equality-trap.json`:
+**Expected: nine files.**
 
 ```
+e0ad1c7:vectors/profile-independence/fail/01-cross-profile-field-access.json
+e0ad1c7:vectors/profile-independence/pass/01-conforming-typed-ref.json
 e0ad1c7:vectors/typed-refs/fail/01-digest-context-mismatch.json
 e0ad1c7:vectors/typed-refs/fail/03-representation-mismatch.json
 e0ad1c7:vectors/typed-refs/fail/04-identifier-inconsistent-with-context.json
@@ -234,10 +235,28 @@ e0ad1c7:vectors/typed-refs/pass/01-matching-digest.json
 e0ad1c7:vectors/typed-refs/pass/02-arp-conformance-baseline.json
 ```
 
-This command is the reason the count in the results is seven rather than the five named in the
-31 August letter: it searches for the **value**, so it cannot be defeated by the value being stored
-under a member name nobody thought to look for. `fail/04` and `fail/05` carry it as
-`correct_verification.recomputed_digest` and as a top-level `correct_recomputed_digest`.
+**Note the path argument is `-- vectors`, not `-- vectors/typed-refs/`.** Scoping this grep to one
+directory produced an earlier count that was short by two: the two `profile-independence/` files are the
+difference, and both reproduce the same identifier.
+
+**Search 2, by structure, naming no value.** This is where the count of fifteen comes from, and it is
+the only one of the two that can find a vector pinning a *different* identifier. For every object
+anywhere in every JSON blob under `vectors/` carrying a 64-hex member named `derived_id`,
+`recomputed_digest`, `correct_recomputed_digest`, `correct_derived_id_bare_hex` or
+`correct_derived_id` (those five names being the ones the corpus actually uses), take every candidate
+payload object beside it, and one level inside those, and try each against every exclusion set declared
+anywhere in the same file. Recompute §5 and compare.
+
+**Expected: fifteen files, sixteen payload objects, five distinct identifiers, all agreeing.** The file
+search 2 finds that search 1 cannot is `typed-refs/fail/02-textual-equality-trap.json`, which pins
+`28211009e28c3c09d8b52088b9a4b9ad26473bf2244b3d0ab469ca217b758558`. That is a different value, so no
+grep for `0c837d01…` reaches it at any scope. Two of its artifacts reproduce it, under two different
+exclusion sets, which is what the vector exists to demonstrate.
+
+**Neither search contains the other.** `profile-independence/fail/01-cross-profile-field-access.json`
+declares no exclusion set anywhere in its own file, so search 2 can only recompute it by taking the set
+another vector declares for the artifact type it names, and that row is marked as an inference wherever
+it is reported. A reader who rejects that inference has fourteen files.
 
 Note that `fail/03` states its exclusion set only in prose, inside its `digest_context` string, and
 carries no `exclusion_set` array:
@@ -247,8 +266,8 @@ git cat-file blob e0ad1c7:vectors/typed-refs/fail/03-representation-mismatch.jso
 ```
 
 **Expected: 0.** Recomputing that vector requires reading `{doc_id}` out of the `digest_context`
-sentence, which is the one judgment call in that set and is marked as such in the results. The other
-six declare it as an array.
+sentence. Three of the sixteen rows are in that state, and one further row is a cross-file inference;
+every one of them says so where it is reported.
 
 **And the two corrected statements about `02-carried-id-mismatch.json`:**
 
@@ -330,9 +349,11 @@ fresh clone at `e0ad1c7` before it was written down, and the "Expected" blocks a
 not a transcription of what the commands ought to print. That is stated because the 30 August
 reproduction recipe was written without being run and would have failed on its first command.
 
-Two commands were corrected as a result of running them. The `git grep` for the derived identifier
-returns **seven** files under `typed-refs/`, not the five the 31 August letter named — which is how
-that under-report was found. And two `grep` patterns were tightened (`'"digest"'` rather than
+Three commands were corrected as a result of running them. The `git grep` for the derived identifier
+returned **seven** files under `typed-refs/`, not the five the 31 August letter named, which is how
+that under-report was found; then the same grep, rescoped from `-- vectors/typed-refs/` to the whole
+`-- vectors` tree, returned **nine**, which is how the next one was found. And two `grep` patterns were
+tightened (`'"digest"'` rather than
 `'sha256:'`, `'"jcs_n_correct_digest"'` rather than the bare token) because the loose forms also match
 prose in the same files, so their stated output would not have been what a reader saw.
 

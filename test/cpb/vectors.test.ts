@@ -27,7 +27,7 @@ import {
   runJcsNKats,
   runMutants,
   runSubjectBindingDiff,
-  runTypedRefs,
+  runSection5Reproducers,
 } from "../../cpb/run-vectors.js";
 
 const DIR = process.env["CPB_VECTORS_DIR"];
@@ -200,60 +200,98 @@ describe.runIf(AVAILABLE)("the 2026-08-31 corrections", () => {
     expect(seen.size).toBe(38);
   });
 
-  it("TYPED-REFS — SEVEN vectors exercise §5, and all seven reproduce the pinned identifier", () => {
-    // The 31 August letter said five. It is seven: fail/04 and fail/05 pin the
-    // same identifier under `correct_verification.recomputed_digest` and a
-    // top-level `correct_recomputed_digest`, two member names that search did
-    // not cover. Same scoping mistake as the one being corrected, one level in.
-    const rows = runTypedRefs(dir);
-    expect(rows.length).toBe(7);
-    for (const r of rows) {
-      expect(r.verdict, r.vector).toBe("AGREE");
-      expect(r.ours).toBe("0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb");
+  it("SECTION-5 — fifteen vectors reproduce, in sixteen payload objects, across five identifiers", () => {
+    // The count, and the history of the count, is the finding. 30 Aug: three.
+    // 31 Aug: ten. 3 Sep morning: twelve. 3 Sep ratification, running the
+    // identifier grep over the whole tree instead of one directory: fourteen.
+    // This search: FIFTEEN, and the fifteenth is invisible to that grep.
+    //
+    // Each earlier search was scoped by an assumption — one directory, then one
+    // member name, then one identifier value. This one is scoped by none of the
+    // three, which is why it is the one the delivered documents describe.
+    const rows = runSection5Reproducers(dir);
+    const files = new Set(rows.map((r) => r.vector.split(" ")[0]));
+    expect(files.size).toBe(15);
+    expect(rows.length).toBe(16);
+    for (const r of rows) expect(r.verdict, r.vector).toBe("AGREE");
+
+    // FIVE distinct identifiers. This is the assertion that would have caught
+    // every earlier under-count: a search keyed to one value cannot see four of
+    // these, and this number going to 1 would mean the search had narrowed back
+    // to the method that kept being wrong.
+    expect(new Set(rows.map((r) => r.expected)).size).toBe(5);
+  });
+
+  it("SECTION-5 — the two vectors neither the value search nor a naive structural search finds", () => {
+    const rows = runSection5Reproducers(dir);
+    const byFile = (frag: string) => rows.filter((r) => r.vector.includes(frag));
+
+    // typed-refs/fail/02 pins 28211009…, not 0c837d01…, so no grep for the
+    // known identifier could ever have reached it. Two payload objects, two
+    // different exclusion sets, one identifier — that collision is the vector.
+    const trap = byFile("fail/02-textual-equality-trap");
+    expect(trap.length).toBe(2);
+    for (const r of trap) {
+      expect(r.expected).toBe("28211009e28c3c09d8b52088b9a4b9ad26473bf2244b3d0ab469ca217b758558");
+      expect(r.verdict).toBe("AGREE");
     }
-    // Named, so a widening of the predicate that swept in a vector pinning
-    // something else would fail here rather than inflate the count.
-    expect(rows.map((r) => r.vector.split(" ")[0]).sort()).toEqual([
-      "typed-ref-cpb01-01",
-      "typed-ref-cpb01-02",
-      "typed-ref-fail-01",
-      "typed-ref-fail-03",
-      "typed-ref-fail-04",
-      "typed-ref-fail-05",
-      "typed-ref-pass-01",
-    ]);
+    expect(trap.map((r) => r.check).join(" ")).toContain('["a_id"]');
+    expect(trap.map((r) => r.check).join(" ")).toContain('["b_id","weight"]');
+
+    // profile-independence/fail/01 declares NO exclusion set anywhere in its
+    // own file, so a structural search that requires one skips it. It is
+    // recomputable only by taking the set another vector declares for the
+    // artifact type it names, and the row says so in those words.
+    const cross = byFile("fail/01-cross-profile-field-access");
+    expect(cross.length).toBe(1);
+    expect(cross[0]!.verdict).toBe("AGREE");
+    expect(cross[0]!.check).toContain("INFERRED ACROSS FILES");
   });
 
-  it("TYPED-REFS — fail/02 is the one file legitimately outside the set", () => {
-    // Eight files, seven in the set. The eighth is excluded because it pins no
-    // single derived identifier for a cited artifact, not because the predicate
-    // failed to look — which is exactly the distinction the 30 August and
-    // 31 August counts both got wrong.
-    const rows = runTypedRefs(dir);
-    expect(rows.some((r) => r.vector.includes("fail/02"))).toBe(false);
-    expect(rows.length + 1).toBe(8);
+  it("SECTION-5 — the two profile-independence vectors reproduce 0c837d01…", () => {
+    // The pair the 3 September ratification found, by running the identifier
+    // grep over the whole vectors tree rather than over typed-refs/ alone.
+    const rows = runSection5Reproducers(dir).filter((r) => r.vector.startsWith("profile-independence/"));
+    expect(rows.length).toBe(2);
+    for (const r of rows) {
+      expect(r.ours, r.vector).toBe("0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb");
+      expect(r.verdict).toBe("AGREE");
+    }
   });
 
-  it("TYPED-REFS — fail/01 is the vector that discriminates deletion from nulling", () => {
+  it("SECTION-5 — the payload member name is discovered, not assumed", () => {
+    // Assuming `payload` is what made the first version of this search miss all
+    // three jcs-n/derived-id vectors, which call it full_payload and
+    // sd_encoded_payload. Three names appear; if this ever drops to one, the
+    // search has narrowed back to the assumption that kept being wrong.
+    const checks = runSection5Reproducers(dir).map((r) => r.check).join(" | ");
+    for (const name of ["payload member full_payload", "payload member sd_encoded_payload", "payload member payload"]) {
+      expect(checks, name).toContain(name);
+    }
+  });
+
+  it("SECTION-5 — fail/01 and fail/04 are the vectors that discriminate deletion from nulling", () => {
     // The three derived-id vectors all carry record_id: null, so none of them
-    // can tell an excluded member being DELETED from its being set to null.
-    // fail/01's excluded member holds a non-null string, so it can.
-    const r = runTypedRefs(dir).find((x) => x.vector.startsWith("typed-ref-fail-01"));
-    expect(r).toBeDefined();
-    expect(r!.check).toContain('doc_id="secret-id-123"');
-    expect(r!.verdict).toBe("AGREE");
+    // can tell a DELETED excluded member from a NULLED one. These two exclude a
+    // member holding a non-null string, so they can.
+    const rows = runSection5Reproducers(dir);
+    for (const frag of ["typed-refs/fail/01-", "typed-refs/fail/04-"]) {
+      const r = rows.find((x) => x.vector.includes(frag));
+      expect(r, frag).toBeDefined();
+      expect(r!.verdict).toBe("AGREE");
+    }
   });
 
-  it("TYPED-REFS — fail/03's exclusion set is read from prose, and the row says so", () => {
-    // The one judgment call in this set, surfaced rather than buried: fail/03
-    // declares its digest context only in the `digest_context` STRING and
-    // carries no exclusion_set array anywhere. If that ever becomes an array,
-    // this assertion goes red and the delivered wording needs changing with it.
-    const rows = runTypedRefs(dir);
-    const prose = rows.filter((r) => r.check.includes("READ FROM PROSE"));
-    expect(prose.length).toBe(1);
-    expect(prose[0]!.vector).toContain("fail/03");
-    expect(rows.filter((r) => r.check.includes("declared as an exclusion_set array")).length).toBe(6);
+  it("SECTION-5 — exclusion sets come from four places, and every row names which", () => {
+    // An array on the object, an array in a registry entry, a prose
+    // digest_context sentence, and one cross-file inference. Each is a
+    // different amount of confidence and the row has to carry which.
+    const checks = runSection5Reproducers(dir).map((r) => r.check);
+    expect(checks.filter((c) => c.includes("[exclusion_set array]")).length).toBeGreaterThan(0);
+    expect(checks.filter((c) => c.includes("exclusion_set array in")).length).toBeGreaterThan(0);
+    expect(checks.filter((c) => c.includes("PROSE:")).length).toBe(3);
+    expect(checks.filter((c) => c.includes("INFERRED ACROSS FILES")).length).toBe(1);
+    for (const c of checks) expect(c).toMatch(/exclusion \[.*\] \[/);
   });
 });
 

@@ -45,7 +45,7 @@ import { MUTANTS, type DigestFn } from "./mutants.js";
 export type Verdict = "AGREE" | "DISAGREE" | "N/A";
 
 export interface Row {
-  readonly set: "PRIMARY" | "OBSERVED" | "SUPPLEMENTARY" | "TYPED-REFS" | "T3B-STRUCTURAL" | "T3B-DIGEST";
+  readonly set: "PRIMARY" | "OBSERVED" | "SUPPLEMENTARY" | "SECTION-5" | "T3B-STRUCTURAL" | "T3B-DIGEST";
   readonly vector: string;
   readonly check: string;
   readonly expected: string;
@@ -363,113 +363,221 @@ export function bucketJcsNKats(rows: Row[]): KatBuckets {
 }
 
 /**
- * TYPED-REFS — vectors/typed-refs/, §5's derived-identifier construction.
+ * SECTION-5 REPRODUCERS — every vector under `vectors/` from which §5's
+ * construction can be recomputed, found by structure rather than by value.
  *
- * CORRECTED 2026-09-03. The 30 Aug package reported that the three
- * jcs-n/derived-id vectors are the only ones anywhere exercising §5. They are
- * not, and the corrected figure sent on 31 Aug was itself an under-report by
- * the same method that produced the original one.
+ * THE HISTORY OF THIS COUNT, because the method is the finding.
  *
- * SEVEN of the eight files under typed-refs/ carry a payload, an exclusion set
- * of `doc_id` and a pinned derived identifier, and all seven reproduce. The
- * 31 Aug letter named five. It missed fail/04 and fail/05, which pin the same
- * identifier as `correct_verification.recomputed_digest` and as a top-level
- * `correct_recomputed_digest` — two member names the search did not cover. That
- * is the fourth instance of one scoping mistake: looking for a value under the
- * names it was expected to have rather than for the value itself.
+ *   30 Aug: three. Only `jcs-n/derived-id/` was looked at.
+ *   31 Aug: ten. Kats 20 and 21 plus five typed-refs files, found by looking
+ *           for the identifier `0c837d01…` under the member names it was
+ *           expected to carry.
+ *   3 Sep, morning: twelve. Two more typed-refs files carry the same value
+ *           under two further member names.
+ *   3 Sep, ratification: fourteen. The identifier grep, run over the WHOLE
+ *           vectors tree instead of one directory, adds two
+ *           `profile-independence/` files.
+ *   3 Sep, this pass: FIFTEEN, and the last one is invisible to that grep.
  *
- * Only fail/02 is genuinely outside the set: it compares two artifacts against
- * one digest and pins no single derived identifier for a cited artifact. The
- * exclusion set and the pinned identifier are read from wherever each vector
- * puts them — five member names across three objects — rather than from one
- * assumed layout, and every row names the source it used.
+ * Every one of those steps found what the previous step's search could not see,
+ * and each search was scoped by an assumption: one directory, then one member
+ * name, then one identifier value. So this function is written to depend on
+ * none of the three. It walks every object in every vector, takes any 64-hex
+ * member from the five identifier names the corpus actually uses, and tries the
+ * exclusion sets declared anywhere in that file against every candidate payload
+ * object — the payload's member name is discovered, not assumed, because
+ * `jcs-n/derived-id/` calls it `full_payload` and `sd_encoded_payload`.
  *
- * fail/01 is the one worth naming: its excluded member holds the non-null
- * string "secret-id-123", which discriminates DELETION of an excluded member
- * from NULLING it. The three derived-id vectors all carry `record_id: null`, so
- * none of them can tell those two apart, and the 30 Aug run had no vector that
- * could.
+ * What that costs: a 32-byte digest match is the only thing separating a real
+ * hit from a coincidence, which is a bound worth stating rather than a proof.
+ * What it buys: `typed-refs/fail/02` reproduces a DIFFERENT identifier
+ * (`28211009…`), so no search keyed to `0c837d01…` could ever have found it.
  */
-export function runTypedRefs(vectorsDir: string): Row[] {
-  const base = join(vectorsDir, "typed-refs");
+interface Section5Row {
+  file: string;
+  path: string;
+  idMember: string;
+  payloadMember: string;
+  exclusionSet: string[];
+  exclusionSource: string;
+  pinned: string;
+  ours: string;
+}
+
+const ID_MEMBERS = [
+  "derived_id",
+  "recomputed_digest",
+  "correct_recomputed_digest",
+  "correct_derived_id_bare_hex",
+  "correct_derived_id",
+] as const;
+
+const HEX64_RE = /^[0-9a-f]{64}$/;
+
+/** Every object in a JSON document, with its path. */
+function everyObject(node: JsonValue, path: string, out: { path: string; obj: { [k: string]: JsonValue } }[]): void {
+  if (Array.isArray(node)) {
+    node.forEach((v, i) => everyObject(v, `${path}[${i}]`, out));
+    return;
+  }
+  if (typeof node !== "object" || node === null) return;
+  const o = node as { [k: string]: JsonValue };
+  out.push({ path, obj: o });
+  for (const [k, v] of Object.entries(o)) everyObject(v, `${path}.${k}`, out);
+}
+
+/** `exclusion set {doc_id}` inside a prose digest_context string. */
+function exclusionFromProse(o: { [k: string]: JsonValue }): string[] | null {
+  const ctx = o["digest_context"];
+  if (typeof ctx !== "string") return null;
+  const m = /exclusion set \{([^}]*)\}/.exec(ctx);
+  if (m === null) return null;
+  return m[1]!.split(",").map((x) => x.trim()).filter((x) => x.length > 0);
+}
+
+/**
+ * Every exclusion set declared anywhere in one document, with where it came
+ * from. Document-wide rather than ancestors-only: `typed-refs/fail/04` and
+ * `fail/05` declare theirs in a DESCENDANT of the object carrying the
+ * identifier, and an ancestors-only scope silently missed both.
+ */
+function exclusionSetsIn(objs: { path: string; obj: { [k: string]: JsonValue } }[]): { set: string[]; source: string }[] {
+  const out: { set: string[]; source: string }[] = [];
+  const push = (set: string[], source: string): void => {
+    if (!out.some((e) => e.source === source && JSON.stringify(e.set) === JSON.stringify(set))) out.push({ set, source });
+  };
+  for (const { obj } of objs) {
+    const own = obj["exclusion_set"];
+    if (Array.isArray(own) && own.every((x) => typeof x === "string")) push(own as string[], "exclusion_set array");
+    for (const key of ["registry_entry", "artifact_type_registry_entry"]) {
+      const e = obj[key];
+      if (e === null || typeof e !== "object" || Array.isArray(e)) continue;
+      const entry = e as { [k: string]: JsonValue };
+      const set = entry["exclusion_set"];
+      if (Array.isArray(set) && set.every((x) => typeof x === "string")) push(set as string[], `exclusion_set array in ${key}`);
+      const p = exclusionFromProse(entry);
+      if (p !== null) push(p, `PROSE: the digest_context string in ${key}`);
+    }
+    const p = exclusionFromProse(obj);
+    if (p !== null) push(p, "PROSE: a digest_context string");
+  }
+  return out;
+}
+
+/**
+ * Every §5 reproducer under `vectorsDir`, walked from the vector JSON alone.
+ *
+ * `crossFileExclusions` is the one inference this function makes and it is
+ * always marked in the row: `profile-independence/fail/01` declares no
+ * exclusion set ANYWHERE in its own file, so the only way to recompute it is to
+ * take the set that other vectors declare for the artifact type it names. That
+ * is a judgment call, it is the sort of judgment call the Interests section
+ * commits to marking, and a reader can discount the row on sight.
+ */
+export function runSection5Reproducers(vectorsDir: string): Row[] {
+  const files: string[] = [];
+  const collect = (dir: string, prefix: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      if (e.isDirectory()) collect(join(dir, e.name), `${prefix}${e.name}/`);
+      else if (e.name.endsWith(".json")) files.push(`${prefix}${e.name}`);
+    }
+  };
+  collect(vectorsDir, "");
+
+  // Pass 1: what exclusion set does each named artifact type get, where a
+  // vector says so? Used only for the marked cross-file inference below.
+  const byType = new Map<string, { set: string[]; file: string }>();
+  const parsed: { file: string; objs: { path: string; obj: { [k: string]: JsonValue } }[] }[] = [];
+  for (const rel of files) {
+    const text = readFileSync(join(vectorsDir, rel), "utf8");
+    if (findDuplicateMemberName(text) !== null) continue;
+    const objs: { path: string; obj: { [k: string]: JsonValue } }[] = [];
+    everyObject(JSON.parse(text) as JsonValue, "$", objs);
+    parsed.push({ file: rel, objs });
+    for (const { obj } of objs) {
+      const name = obj["name"] ?? obj["payload_class"] ?? obj["type"];
+      const set = obj["exclusion_set"];
+      if (typeof name === "string" && Array.isArray(set) && set.every((x) => typeof x === "string")) {
+        if (!byType.has(name)) byType.set(name, { set: set as string[], file: rel });
+      }
+    }
+  }
+
   const rows: Row[] = [];
+  const seen = new Set<string>();
+  for (const { file, objs } of parsed) {
+    const declared = exclusionSetsIn(objs);
+    for (const { path, obj } of objs) {
+      for (const idMember of ID_MEMBERS) {
+        const pinned = obj[idMember];
+        if (typeof pinned !== "string" || !HEX64_RE.test(pinned)) continue;
 
-  for (const sub of ["pass", "fail"]) {
-    const dir = join(base, sub);
-    for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
-      const text = readFileSync(join(dir, file), "utf8");
-      if (findDuplicateMemberName(text) !== null) continue; // none today; the boundary applies anyway
-      const v = JSON.parse(text) as {
-        id?: string;
-        cited_artifact?: {
-          payload?: JsonValue;
-          derived_id?: string;
-          correct_derived_id?: string;
-          correct_derived_id_bare_hex?: string;
-          registry_entry?: { exclusion_set?: string[]; digest_context?: string };
-          artifact_type_registry_entry?: { exclusion_set?: string[]; digest_context?: string };
-        };
-        artifact_type_registry_entry?: { exclusion_set?: string[]; digest_context?: string };
-        correct_recomputed_digest?: string;
-        correct_verification?: { recomputed_digest?: string };
-        verification?: { recomputed_digest?: string };
-      };
-      const cited = v.cited_artifact;
-      const payload = cited?.payload;
-      // FIVE different member names carry the pinned identifier across these
-      // seven files, in three different objects. Read all of them rather than
-      // assuming a layout — assuming `derived_id` alone is what dropped fail/01
-      // from the 30 August run, and reading only the first three is what would
-      // have dropped fail/04 and fail/05 from the corrected set.
-      const pinned =
-        cited?.derived_id ??
-        cited?.correct_derived_id ??
-        cited?.correct_derived_id_bare_hex ??
-        v.correct_recomputed_digest ??
-        v.correct_verification?.recomputed_digest ??
-        v.verification?.recomputed_digest;
-      const entry = cited?.artifact_type_registry_entry ?? cited?.registry_entry ?? v.artifact_type_registry_entry;
-      if (payload === undefined || pinned === undefined || entry === undefined) continue;
+        // Candidate payloads: every object member, and every object one level
+        // inside those. The name is discovered rather than assumed.
+        const cands: { name: string; value: { [k: string]: JsonValue } }[] = [];
+        for (const [k, v] of Object.entries(obj)) {
+          if (v === null || typeof v !== "object" || Array.isArray(v)) continue;
+          cands.push({ name: k, value: v as { [k: string]: JsonValue } });
+          for (const [k2, v2] of Object.entries(v as { [k: string]: JsonValue })) {
+            if (v2 === null || typeof v2 !== "object" || Array.isArray(v2)) continue;
+            cands.push({ name: `${k}.${k2}`, value: v2 as { [k: string]: JsonValue } });
+          }
+        }
 
-      // WHERE THE EXCLUSION SET COMES FROM, per vector, and said out loud.
-      //
-      // Four of the five declare it as a JSON array. fail/03 does NOT: it
-      // declares the digest context only in PROSE, inside `digest_context`
-      // ("jcs-n; exclusion set {doc_id}; 64-char lowercase hex"), and carries no
-      // exclusion_set array anywhere in the file. Reading it out of that string
-      // is a judgment call, so the row says which source it used and the
-      // delivered results repeat it. Recomputing that vector at all requires
-      // this step; skipping it would have been the safer-looking choice and
-      // would have hidden a fact the authors should have.
-      let exclusions = entry.exclusion_set;
-      let source = "declared as an exclusion_set array";
-      if (exclusions === undefined) {
-        const ctx = entry.digest_context;
-        const m = ctx === undefined ? null : /exclusion set \{([^}]*)\}/.exec(ctx);
-        if (m === null) continue;
-        exclusions = m[1]!.split(",").map((x) => x.trim()).filter((x) => x.length > 0);
-        source = `READ FROM PROSE: the digest_context string, which is the only place this vector states it`;
+        const sets = [...declared];
+        if (sets.length === 0) {
+          const typeName = obj["payload_class"] ?? obj["type"] ?? obj["name"];
+          const hit = typeof typeName === "string" ? byType.get(typeName) : undefined;
+          if (hit !== undefined) {
+            sets.push({
+              set: hit.set,
+              source: `INFERRED ACROSS FILES: this file declares no exclusion set at all; taken from artifact type ${JSON.stringify(typeName)} as ${hit.file} declares it`,
+            });
+          }
+        }
+
+        let matched: Section5Row | null = null;
+        for (const c of cands) {
+          for (const e of sets) {
+            const reduced: { [k: string]: JsonValue } = {};
+            for (const [k, v] of Object.entries(c.value)) if (!e.set.includes(k)) reduced[k] = v;
+            const d = canonicalDigestJcs(reduced);
+            if (d.ok && d.value.hex === pinned) {
+              matched = {
+                file,
+                path,
+                idMember,
+                payloadMember: c.name,
+                exclusionSet: e.set,
+                exclusionSource: e.source,
+                pinned,
+                ours: d.value.hex,
+              };
+              break;
+            }
+          }
+          if (matched !== null) break;
+        }
+        if (matched === null) continue;
+        // One row per (file, PATH, payload object) — a document that restates
+        // the same identifier in a narrative block is not a second reproducer,
+        // but two genuinely different payload objects in one file are two.
+        // Keying without the path collapsed `typed-refs/fail/02`'s artifact_a
+        // and artifact_b, which are two different payloads under two different
+        // exclusion sets yielding one identifier: that collision IS the vector.
+        const key = `${matched.file}::${matched.path}::${matched.payloadMember}::${matched.pinned}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push(
+          row(
+            "SECTION-5",
+            `${matched.file} ${matched.path}`,
+            `id member ${matched.idMember}, payload member ${matched.payloadMember}, exclusion ${JSON.stringify(matched.exclusionSet)} [${matched.exclusionSource}]`,
+            matched.pinned,
+            matched.ours,
+          ),
+        );
       }
-
-      let subject = payload;
-      let held = "n/a (payload is not an object)";
-      if (typeof subject === "object" && subject !== null && !Array.isArray(subject)) {
-        const src = subject as { [k: string]: JsonValue };
-        held = exclusions.map((k) => `${k}=${JSON.stringify(src[k] ?? null)}`).join(", ");
-        const reduced: { [k: string]: JsonValue } = {};
-        for (const [k, val] of Object.entries(src)) if (!exclusions.includes(k)) reduced[k] = val;
-        subject = reduced;
-      }
-      const computed = canonicalDigestJcs(subject);
-      rows.push(
-        row(
-          "TYPED-REFS",
-          `${v.id ?? file} (${sub}/${file})`,
-          `derived id, exclusion set ${JSON.stringify(exclusions)} [${source}], excluded member held ${held}`,
-          pinned,
-          computed.ok ? computed.value.hex : `REFUSED: ${computed.reason}`,
-        ),
-      );
     }
   }
   return rows;
@@ -805,12 +913,17 @@ function main(): void {
   }
   console.log();
 
-  const typedRefs = runTypedRefs(vectorsDir);
-  console.log("TYPED-REFS - vectors/typed-refs/, section 5's construction. Seven vectors, externally pinned.");
-  console.log(table(typedRefs));
-  const typedBad = typedRefs.filter((r) => r.verdict === "DISAGREE");
+  const section5 = runSection5Reproducers(vectorsDir);
+  const s5files = new Set(section5.map((r) => r.vector.split(" ")[0]));
+  const s5ids = new Set(section5.map((r) => r.expected));
+  console.log(
+    `SECTION-5 REPRODUCERS - every vector under vectors/ from which section 5 recomputes, found by` +
+      ` structure and not by value. ${s5files.size} files, ${section5.length} rows, ${s5ids.size} distinct identifiers.`,
+  );
+  console.log(table(section5));
+  const typedBad = section5.filter((r) => r.verdict === "DISAGREE");
   console.log(`
-  ${typedRefs.length - typedBad.length}/${typedRefs.length} AGREE
+  ${section5.length - typedBad.length}/${section5.length} AGREE
 `);
 
   const supplementary = runIdentifierGrammar(vectorsDir);
