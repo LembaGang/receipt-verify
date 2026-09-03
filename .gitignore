@@ -3,3 +3,4 @@ dist/
 *.tsbuildinfo
 *.tgz
 walker/report.json
+__pycache__/

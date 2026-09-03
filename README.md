@@ -573,5 +573,9 @@ wording, appended 2026-09-03: the author of these gradings also authors
 `draft-msebenzi-evidence-action` and builds Chirindo, which is the same ground
 as the formats graded. Independence is not claimed; recomputability is.
 
+## Citing a release
+
+To cite what ships today, name the npm artifact by version and integrity: `@headlessoracle/receipt-verify@0.1.1`, `sha512-hrAkVQIp+VW3/UexLArSSFkaC7qOxmB83DJh76rCjGuNLZ7BIKOOraVqVaQIxWe0e9dqscLvE/nnovW8dEiZ2A==`, because the `v0.1.1` tag points at a commit that does not contain the code that package runs (recorded in `RELEASE-NOTES-NEXT.md` under 0.1.1). Once this repository is published, cite a commit or a tag, never `HEAD`, which moves.
+
 Status: `0.1.0`. No conformance claim is made beyond what the test suite
 demonstrates against the fixtures in this repository.

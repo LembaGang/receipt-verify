@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/LembaGang/receipt-verify#readme",
   "scripts": {
+    "prepublishOnly": "node tools/release-guard.mjs && npm run typecheck && npm run build && npm test",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",

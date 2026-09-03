@@ -5,6 +5,48 @@ when shipped and folded into the version's release notes. Numbers are stable
 IDs, not an ordering — gaps mean an item shipped or moved, never that it was
 renumbered.
 
+## 0.1.1 — correction to the record (written 2026-09-03)
+
+**What was published.** `@headlessoracle/receipt-verify@0.1.1` went to npm on 2026-08-13 at 09:11Z,
+with integrity
+`sha512-hrAkVQIp+VW3/UexLArSSFkaC7qOxmB83DJh76rCjGuNLZ7BIKOOraVqVaQIxWe0e9dqscLvE/nnovW8dEiZ2A==`.
+Version 0.1.0 went out on 2026-08-10 at 11:09Z.
+
+**What the tag points at, and what it lacks.** Tags `v0.1.0` and `v0.1.1` both resolve to commit
+`cbe4d3895b2ec853fd03f3b42178994d103b2666`, and the npm metadata for 0.1.1 records the same commit as
+its `gitHead`. That commit does not contain the code 0.1.1 ships. A reader who checks out `v0.1.1` and
+builds it does not get the published artefact, so the tag cannot be cited as the source of what is on
+npm today.
+
+**The one file that differs, and why it was changed.** Building `cbe4d38` and comparing every file
+against the published tarball, the only JavaScript that differs is `dist/cli.js`, and the difference is
+one statement: the built `cbe4d38` ends the process with `process.exit(exitCode)` and the published
+0.1.1 sets `process.exitCode` and lets the event loop drain. The reason is a Windows teardown race.
+`process.exit()` tore down the loop while the socket that fetched a `--jwks` URL was still closing,
+libuv aborted the process with status 0xC0000409, and the abort replaced the real exit status. A VALID
+receipt could exit non-zero, and all three verdicts became indistinguishable to a caller reading the
+exit code, while the `--json` payload in the same run still reported `exit_code: 0`. Every other file
+in the tarball is byte-identical to the build.
+
+**When the source reached the repository.** Commit `17172e4` on 2026-09-02 at 09:08Z, which is three
+weeks after 0.1.1 was published. So the fix existed in the artefact before it existed in the
+repository, and that ordering is the defect being recorded here.
+
+**The tag is not moved.** Moving `v0.1.1` would change what an existing citation resolves to, which is
+worse than leaving a wrong pointer beside a correction that explains it. This note is the correction.
+Cite the npm artefact by version and integrity for what ships today; cite a commit once the repository
+is published.
+
+**Who found it and when.** Joe Krausz, 2026-09-02, while trying to cite the verifier in a draft. The
+citation question is what surfaced it: he could not name a commit that contains what the package runs.
+
+**The rule going forward (R71).** Publish only from a committed, tagged tree. The tag goes on the
+commit the artefact was built from. From 0.1.2 onward every version records in its release notes that
+`gitHead` equals the tag commit, and `tools/release-guard.mjs` runs in `prepublishOnly` so a publish
+from an uncommitted or untagged or mistagged tree fails closed rather than shipping.
+
+Provenance: Joe Krausz, 2026-09-02; verified against npm and the git objects 2026-09-03.
+
 ## 0.1.2
 
 ### 1. The verdict does not identify the verifier that produced it
@@ -42,8 +84,11 @@ path and fails with a misleading `ENOENT`. Accepting `https://` receipt
 input makes the try-it block one command instead of three and is the shape
 the probe design assumes. **Ordering constraint (binding): this lands only
 after the exit-code fix (item 3), or the fetch it introduces spreads the
-teardown race to the receipt path on every verdict.** The fix is in 0.1.1;
-the constraint is satisfied — implement against 0.1.1 or later only.
+teardown race to the receipt path on every verdict.** The fix is in the
+published 0.1.1 and in the repository from `17172e4` (2026-09-02); it is not in
+the commit the `v0.1.1` tag points at, which is the defect recorded in the
+0.1.1 section above. The constraint is satisfied against the published 0.1.1
+or against `17172e4` or later.
 
 Provenance: CC zero-friction report, 2026-08-12, Job 1 + Job 4.
 
