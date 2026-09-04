@@ -575,7 +575,7 @@ as the formats graded. Independence is not claimed; recomputability is.
 
 ## Citing a release
 
-To cite what ships today, name the npm artifact by version and integrity: `@headlessoracle/receipt-verify@0.1.1`, `sha512-hrAkVQIp+VW3/UexLArSSFkaC7qOxmB83DJh76rCjGuNLZ7BIKOOraVqVaQIxWe0e9dqscLvE/nnovW8dEiZ2A==`, because the `v0.1.1` tag points at a commit that does not contain the code that package runs (recorded in `RELEASE-NOTES-NEXT.md` under 0.1.1). Once this repository is published, cite a commit or a tag, never `HEAD`, which moves.
+To cite what ships today, name the npm artifact by version and integrity: `@headlessoracle/receipt-verify@0.1.1`, `sha512-hrAkVQIp+VW3/UexLArSSFkaC7qOxmB83DJh76rCjGuNLZ7BIKOOraVqVaQIxWe0e9dqscLvE/nnovW8dEiZ2A==`, because the `v0.1.1` tag points at a commit that does not contain the code that package runs (recorded in `RELEASE-NOTES-NEXT.md` under 0.1.1). Once this repository is published, cite a commit or a tag, never `HEAD`, which moves. 0.1.2 is tagged on the commit it was built from; the release notes carry its npm gitHead and integrity.
 
 Status: this README describes the tree it sits in, whose version is the one in
 `package.json`; published versions and the commit each was built from are
