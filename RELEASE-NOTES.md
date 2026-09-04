@@ -278,6 +278,8 @@ Verification after publish: the npm `gitHead` and `dist.integrity` for 0.1.2 are
 
 Verified after publish, 2026-09-04. npm records `gitHead` `1c3452fe9a8109616481dad75dacb312517bf47f`, which is the commit the `v0.1.2` tag points at, `dist.integrity` `sha512-M8I9mgXCsOoi1i9egEOapAp1mp8xdImkAg56BtqQZ3R9tlA7bQk5E6QllvFcDPIMZH8ty6lR3enOVZDa5mIDlQ==` and `dist.shasum` `43da16a9c9687cb636c3d40eb22c03dffc0374e2`, published 2026-09-04T20:18:21Z. On the same day, on a machine that has never held the signing key, a fresh clone at `v0.1.2` was built with `npm ci` and `npm run build` and packed; the resulting tarball has the same sha1 as the published one and every one of its 40 files is byte-identical to the published file. The release notes for 0.1.2 therefore rest on a comparison that was run, not on the intention recorded above it.
 
+Correction, 2026-09-05. The adapter paragraph above describes draft-marques-asqav-compliance-receipts-07 as it was read in July 2026, when this tool graded a disagreement between -07 and farley under farley's scope and reported it. -08 §4 resolves that scope contradiction by switching digest scope on receipt format rather than by "farley decides", and `FINDINGS.md` A5 carries the correction on the author's reading of 4 September; the adapter's refusal of Compliance Receipts at detection is unchanged and is consistent with §4.
+
 ## 0.1.1 (2026-08-13), correction to the record
 
 **What was published.** `@headlessoracle/receipt-verify@0.1.1` went to npm on 2026-08-13 at 09:11Z,

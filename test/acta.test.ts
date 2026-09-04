@@ -1,5 +1,6 @@
 // Format 3: acta.receipt/0, per draft-farley-acta-signed-receipts-02, with
-// draft-marques-asqav-compliance-receipts-07 read as a profile layered on it.
+// draft-marques-asqav-compliance-receipts-07 read as a profile layered on it in
+// July 2026; -08 §4 resolves the scope contradiction by format (see FINDINGS.md A5).
 //
 // Two things this file is careful about.
 //

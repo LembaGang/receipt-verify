@@ -795,6 +795,69 @@ identification rather than extended — it searched only byte strings derived fr
 the envelope as published at `05c1c49`, and the pre-`#416` envelope was outside
 that set.
 
+**Appended 2026-09-05 — correction, on the author's reading of 2026-09-04 (Gmail 1a06e2e9563fc74b): -08 §4 does not state "farley decides".**
+Quoted from the pinned bytes rather than retyped: `refs/draft-marques-asqav-compliance-receipts-08.txt`,
+sha256 `ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0`, §4 "Canonicalization Scope"
+(which opens at line 570 and runs to line 668, §5 opening at line 677), lines 651 to 668 whole, so the
+sentence quoted above at :734-738 can be read against the lines it came from. The quoted passage begins
+part way through line 651, at "The digest scopes of this profile".
+
+```
+651    outside the signed content.  The digest scopes of this profile
+652    therefore resolve to the payload member: the chain-link digest of
+653    Section 5.3 and the JSON-framing signature input each cover the JCS-
+654    canonical serialization of a receipt's payload member (the
+655    predecessor's for the chain link, the receipt's own for the
+656    signature), and the only envelope-level scope in this profile is the
+657    envelope-minus-anchors object of Section 5.7, which exists precisely
+658    to bind the peer's signature value.  No digest in this profile covers
+659    the envelope including the signature member.  Receipts outside this
+660    profile are not re-scoped by this section: an ACTA-family receipt
+661    verified under its native format keeps the digest scope its own
+662    format defines - for an upstream [ACTA-RECEIPTS] Commitment Mode
+663    receipt, the whole-receipt scope of its "Chain Hash Scope" section.
+664    An implementation that verifies both Compliance Receipts and upstream
+665    ACTA-family receipts therefore switches digest scope on receipt
+666    format - payload-member scope under this profile, whole-receipt scope
+667    under upstream Commitment Mode - and needs no separate fixture set
+668    per format family.
+```
+
+**The attribution is withdrawn.** The sentence at :738-740, "That is the rule this repository implemented
+on 2026-07-28 (`src/adapters/acta.ts` header: "where the two disagree, farley decides"), now stated by
+-08's author", is withdrawn as an attribution. What §4 states is scope-switching on receipt format: a
+Compliance Receipt keeps the payload-member scope of its own profile, an ACTA-family receipt verified
+under its native format keeps the whole-receipt scope that format defines, and an implementation reading
+both switches between them on the receipt's format. That is not a rule under which farley decides when
+the two texts disagree, and the author endorsed no adapter header of ours. The claim that -08 §4 resolves
+E3 stands and is unchanged; what does not stand is reading §4 as this repository's July rule restated by
+the profile's author.
+
+**What "farley decides" was.** It was this repository's own rule, written into the acta adapter header on
+2026-07-28. -07 was read as a profile layered on farley, and where -07's text disagreed with farley on
+the chain-digest scope (E3) the receipt was graded under farley's scope and the disagreement was reported
+on the verdict. Under that rule a Compliance Receipt is graded under a scope its own profile does not
+use, so it fails and is named as a variant. Under -08 §4 it is not graded that way at all: it verifies
+under the payload-member scope of its own profile. -08 resolves E3 by switching scope on format, not by
+ranking one text above the other, and those two resolutions agree on no receipt this tool would grade
+differently only because they never meet.
+
+**The behaviour is unchanged, and it is consistent with §4.** `detect()` in `src/adapters/acta.ts`
+declines an envelope carrying a top-level `anchors` array with a payload-member signature scope, so
+farley's whole-receipt scope is never applied to a Compliance Receipt and this tool grades no
+Compliance-Receipt content. That is what §4's last sentence asks of an implementation that reads only one
+of the two families. No test, fixture, verdict or reason token changes with this correction; it is a
+correction to what the record says about the profile's text, not to what the code does.
+
+**Where else this was corrected, and what was left.** The same commit corrects the acta adapter header
+(`src/adapters/acta.ts`, the lines that carried "where the two disagree, farley decides" and "§4 states
+that rule itself"), the Format 3 opening in `README.md`, the marques source string in `src/coverage.ts`,
+the file comment at the top of `test/acta.test.ts`, and appends a dated correction paragraph under 0.1.2
+in `RELEASE-NOTES.md`. One place is left alone on purpose: `cc-output/receipt-verify-acta-demo-2026-07-28.md`
+is a dated transcript of a run on 2026-07-28 and is kept as a historical record rather than corrected. It
+describes -07 as a profile layered on farley, which is what this side held that day, and it does not
+carry the withdrawn phrase. The sentence at :738-740 above is likewise not edited, because this file's
+rule is that entries are corrected by appending rather than in place; this block is that correction.
 
 ### A6. A machine path is not a provenance source
 :233-234 cites `C:\Users\User\agent-action-receipt-vectors` as the source of

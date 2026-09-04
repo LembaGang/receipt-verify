@@ -1,16 +1,22 @@
 // Adapter: acta.receipt/0, per draft-farley-acta-signed-receipts-02.
 // A copy of the -02 text is in refs/; section references below are to it.
-// draft-marques-asqav-compliance-receipts-07 is treated as a PROFILE layered on
-// farley, never as a competing normative source — where the two disagree,
-// farley decides and the disagreement is reported.
+// draft-marques-asqav-compliance-receipts-07 was read as a PROFILE layered on
+// farley. Where -07's text disagreed with farley on the chain-digest scope
+// (FINDINGS.md E3), this adapter graded under farley's scope and reported the
+// disagreement on the verdict. That was this side's rule, written here on
+// 2026-07-28. It was not the profile's rule and no draft states it.
 //
-// 2026-09-01: draft-marques-asqav-compliance-receipts-08 (31 Aug 2026, pinned in
-// refs/) §4 states that rule itself: "an ACTA-family receipt verified under its
-// native format keeps the digest scope its own format defines." The -07
-// contradiction recorded in FINDINGS.md E3 is resolved in -08; this adapter's
-// behaviour was already the -08 rule. A Compliance Receipt under -08 carries a
-// top-level `anchors` array and a payload-member signature scope; it is NOT an
-// ACTA receipt and this adapter declines it at detection (see detect()).
+// -08 (31 Aug 2026, pinned in refs/, sha256
+// ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0) resolves E3
+// a different way. Its §4 switches digest scope on receipt format: payload-member
+// scope for a Compliance Receipt under that profile, whole-receipt scope for an
+// upstream ACTA Commitment Mode receipt under the format that defines it.
+//
+// This adapter implements the ACTA side only. A Compliance Receipt under -08
+// carries a top-level `anchors` array and a payload-member signature scope; it is
+// NOT an ACTA receipt and this adapter declines it at detection (see detect()),
+// so farley's scope is never applied to one. It grades no Compliance-Receipt
+// content. See FINDINGS.md A5, correction of 2026-09-05.
 //
 // Three things about this format make it unlike the other two adapters:
 //

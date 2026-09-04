@@ -419,8 +419,13 @@ silent — see `FINDINGS.md`.
 
 Per **draft-farley-acta-signed-receipts-02** (`refs/`), with
 **draft-marques-asqav-compliance-receipts-07** read as a *profile layered on
-it* — never as a competing normative source. Where the two disagree, farley
-decides and the disagreement is reported on the verdict.
+it*. Where -07 disagreed with farley on the chain-digest scope, this tool graded
+under farley and reported the disagreement on the verdict; that was this tool's
+rule of 2026-07-28, not the profile's. **-08** §4 resolves that disagreement by
+switching digest scope on receipt format, payload-member scope for a Compliance
+Receipt and whole-receipt scope for an upstream ACTA Commitment Mode receipt, and
+this tool declines a -08 Compliance Receipt at detection rather than grading it
+under farley's scope.
 
 Not a JWS. The envelope is `{payload, signature: {alg, kid, sig}}` with a
 lowercase-hex signature over RFC 8785 JCS bytes (§2.1). Keys resolve by `kid`

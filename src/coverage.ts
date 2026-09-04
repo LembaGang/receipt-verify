@@ -205,7 +205,7 @@ const acta: FormatCoverage = {
   format: "acta.receipt/0",
   sources: [
     "draft-farley-acta-signed-receipts-02",
-    "draft-marques-asqav-compliance-receipts-07 (read as a profile layered on farley; its §5.3 scope contradiction is resolved in -08 §4, 31 Aug 2026, pinned in refs/)",
+    "draft-marques-asqav-compliance-receipts-07 (read as a profile layered on farley in July 2026; its §5.3 chain-digest scope contradiction with farley (E3) is resolved by -08 §4, which switches digest scope on receipt format; pinned in refs/)",
     // The detection refusal below is a rule this adapter takes from -08, so the
     // revision it takes it from is pinned here by digest and not only by name.
     "refs/draft-marques-asqav-compliance-receipts-08.txt, sha256 ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0 (the revision whose §4/§5.4 envelope shape {payload, signature, anchors} this adapter declines at detection; it grades no Compliance-Receipt content beyond that refusal)",
