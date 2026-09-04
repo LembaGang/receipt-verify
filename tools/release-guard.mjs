@@ -7,7 +7,7 @@
 // `gitHead`, and the published `dist/cli.js` contains a fix whose source did not
 // reach the repository until `17172e4` on 2026-09-02. So the artefact could not
 // be cited to a commit, which is how it was found: someone tried to cite it.
-// RELEASE-NOTES-NEXT.md carries the full record under "0.1.1 — correction to
+// RELEASE-NOTES.md carries the full record under "0.1.1 (2026-08-13), correction to
 // the record".
 //
 // Procedure did not prevent that and cannot. This runs from `prepublishOnly`,
@@ -39,7 +39,7 @@ function git(...args) {
 function refuse(reason, detail) {
   console.error(`release-guard: REFUSED (${reason})`);
   console.error(`  ${detail}`);
-  console.error("  Nothing was published. See RELEASE-NOTES-NEXT.md, section 0.1.1, for why this gate exists.");
+  console.error("  Nothing was published. See RELEASE-NOTES.md, section 0.1.1, for why this gate exists.");
   process.exitCode = 1;
 }
 
