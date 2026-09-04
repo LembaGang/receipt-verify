@@ -3,7 +3,7 @@
 Shipped versions, newest first. Entries queued against the next release live in
 `RELEASE-NOTES-NEXT.md` and move here when they ship.
 
-## 0.1.2 (unreleased at the time of writing; the tag goes on the commit that carries this file)
+## 0.1.2 (2026-09-04)
 
 What shipped since 0.1.1, grouped. Every hash named below is a commit in this
 repository in the range `cbe4d38..HEAD`, where `cbe4d38` is the single commit
@@ -275,6 +275,8 @@ the day the corpus was pinned rather than 29 days later.
 Every findings document carries a standing `## Interests` section from 2026-09-03, one wording across all three, disclosing that the author of the gradings authors and builds on the same ground as the formats graded (B-30).
 
 Verification after publish: the npm `gitHead` and `dist.integrity` for 0.1.2 are appended below this section as a dated line once `npm view` returns them, so the notes record the artefact and not the intention (R71).
+
+Verified after publish, 2026-09-04. npm records `gitHead` `1c3452fe9a8109616481dad75dacb312517bf47f`, which is the commit the `v0.1.2` tag points at, `dist.integrity` `sha512-M8I9mgXCsOoi1i9egEOapAp1mp8xdImkAg56BtqQZ3R9tlA7bQk5E6QllvFcDPIMZH8ty6lR3enOVZDa5mIDlQ==` and `dist.shasum` `43da16a9c9687cb636c3d40eb22c03dffc0374e2`, published 2026-09-04T20:18:21Z. On the same day, on a machine that has never held the signing key, a fresh clone at `v0.1.2` was built with `npm ci` and `npm run build` and packed; the resulting tarball has the same sha1 as the published one and every one of its 40 files is byte-identical to the published file. The release notes for 0.1.2 therefore rest on a comparison that was run, not on the intention recorded above it.
 
 ## 0.1.1 (2026-08-13), correction to the record
 
