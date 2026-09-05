@@ -517,6 +517,40 @@ the point, and it is why the key proves nothing about anyone. Regenerate with
 
 ---
 
+## Freshness
+
+A pin is a dated snapshot. `fixtures/upstreams.json` records which upstream each
+one came from, and `npm run drift` asks whether that upstream has moved since:
+
+```bash
+npm run drift            # read-only; writes walker/drift.json (gitignored)
+npm run drift -- --record  # also stamps last_observed into upstreams.json
+```
+
+One row per upstream, each a first-class outcome rather than a pass/fail:
+`current` (the tip, body or revision is exactly what was pinned),
+`moved_untouched` (git: the tip moved, every pinned path is byte-unchanged),
+`moved_changed` (git: a pinned path differs — each is listed with its old and
+new blob id), `changed` (http: the body's digest differs, both printed),
+`superseded` (an IETF draft has a higher revision, named), `unreachable` (the
+check could not be made, with the error), and `not_checked` (a `historical` pin,
+kept for a finding rather than as the current corpus — printed, never counted as
+current). Exit 0 only when every `role: current` upstream is `current` or
+`moved_untouched`; `unreachable` is a failure, because a check that could not be
+made has not passed.
+
+Comparisons read the git object store — `git rev-parse HEAD:<path>` and
+`git cat-file blob` — never a worktree, because `core.autocrlf` on a Windows
+checkout would otherwise report every text file as changed on every run.
+
+**The rule this exists to serve: a finding cites the pin it was measured
+against, and the drift report says whether that pin is still the upstream's
+tip.** A finding that silently describes a superseded upstream reads as current
+and cites a commit, which is worse than no finding — and as agents rather than
+people consume these findings, there is no reader who will notice the date.
+
+---
+
 ## Verifying the history
 
 Every commit here is SSH-signed. `SIGNING_KEYS` (repository root) is an

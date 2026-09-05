@@ -42,6 +42,25 @@ walker exits 0 on that corpus with all fourteen published renderings graded as r
 and stays red on `05c1c49` with exactly the same ten pointers; `test/walker.test.ts` asserts both
 outcomes literally, each with the input that would turn it red.
 
+Corpus freshness is now checkable rather than assumed. `fixtures/upstreams.json` records, for each
+of the twenty upstreams behind the pins, the repository, ref and commit or the URL and digest the
+snapshot was taken from, and `npm run drift` (`tools/drift.ts`) reports one first-class outcome per
+upstream — `current`, `moved_untouched`, `moved_changed`, `changed`, `superseded`, `unreachable`,
+`not_checked` — exiting 0 only when every `role: current` entry is `current` or `moved_untouched`.
+Git comparisons read blob ids out of the object store and never worktree bytes, which is what keeps
+a `core.autocrlf` checkout from reporting every text file as changed. The first real run found the
+asqav-sdk tip still at `3b88156`, the two GitHub corpora moved but byte-identical at all 57 pinned
+paths, the four IETF drafts still the highest revisions published, and the Insight key registry
+`changed` since the 2026-09-02T17:41Z pin — the one upstream that has actually moved, found by the
+instrument rather than by someone re-cloning. A weekly `.github/workflows/drift.yml` runs it and
+uploads the report; the existing verify workflow is untouched. Alongside it, `walker/scopes.json`
+rules gained `applies_to` and the walker gained a `rule_idle` row for any rule that applies to a
+corpus and matches nothing there, so the counterparty `envelope_hash` rule could be split into the
+`counterparty_binding` shape (the `05c1c49` and `history/*` corpora) and the `expected` shape
+upstream `66ab579` introduced (`3b88156`) — a registry that answers "which shape should this corpus
+be using?" instead of leaving an agent to try them all. Grading is unchanged: every count at every
+pinned corpus is identical to `a856323`'s, with `rule_idle` purely an added column.
+
 ## 0.1.2 (2026-09-04)
 
 What shipped since 0.1.1, grouped. Every hash named below is a commit in this

@@ -8,7 +8,9 @@
     "status": {
       "declared": "the cited document states this scope for this field",
       "inferred": "the document is silent; the scope is taken from the corpus's own self-description (a header member, a description string, or the fixture generator) and that source is named"
-    }
+    },
+    "applies_to": "A rule may name the corpora it applies to, as a list of corpus ids or globs (`asqav/history/*`). ABSENT means every corpus that carries or inherits this rule set, which is the behaviour this registry had before the member existed. The member exists because a corpus has a version: upstream #473 moved the output-side counterparty_binding renderings to a sibling `expected` object, and one rule covering both shapes could not say which shape belonged to which corpus revision.",
+    "rule_idle": "A rule that APPLIES to a corpus and matched zero pointers there is reported as a `rule_idle` row (pointer null), counted per corpus and in the SUMMARY. It does not fail the run. It exists because the quiet failure mode of a versioned registry is a rule that has stopped matching: an upstream reshapes its corpus, the rule that named the old shape matches nothing, and a zero-row rule looks exactly like a rule with nothing to do. A rule that does NOT apply to a corpus is not evaluated there and is never idle there -- absence of a rule and silence from a rule are different facts. A corpus directory that is not present in the tree at all yields no idle rows either: nothing was skipped, there was nothing to skip."
   },
   "documents": {
     "marques-08": {
@@ -62,8 +64,18 @@
           "id": "asqav.counterparty.envelope_hash",
           "file": "conformance/vectors.json",
           "kind": "asqav_envelope_hash",
-          "field": "/vectors/{i}/counterparty_binding/{envelope_hash,envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url}, the same members under /vectors/{i}/input/counterparty_binding, and the same members under /vectors/{i}/expected",
           "construction": "sha256(jcs({payload,signature,anchors} of this vector's originating envelope))",
+          "encoding": "per field suffix: envelope_hash and envelope_hash_base64 base64, envelope_hash_hex hex, envelope_hash_base64url base64url",
+          "status": "declared",
+          "document": "marques-08",
+          "lines": "1351-1369",
+          "holder": "counterparty_binding",
+          "field": "/vectors/{i}/counterparty_binding/{envelope_hash,envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url}",
+          "applies_to": [
+            "asqav/05c1c49",
+            "asqav/history/*"
+          ],
+          "applies_to_reason": "The output-side shape through 05c1c49: the block sits at the vector's top level and carries the renderings as members of a counterparty_binding object. Upstream #473 (66ab579, 2026-09-04) moved them to a sibling `expected` object, so this shape does not exist at 3b88156 and this rule is not applied there. Before the split, one rule named both shapes and nothing recorded which belonged to which corpus revision.",
           "which_envelope": {
             "1": "the vector named by originating_envelope_ref, when the vector carries one (happy_path, base64url_tolerance)",
             "2": "the vector's own input, when that input is itself the three-key envelope (envelope_byte_equality, whose description reads 'A's full signed envelope ({payload, signature, anchors})')",
@@ -71,10 +83,6 @@
             "4": "otherwise unregistered: no envelope can be resolved, and guessing one would manufacture a result",
             "status_note": "Resolution steps 1 and 2 are read from the corpus's structure; step 3 is read from the corpus's description strings and is therefore inferred, not declared. The DIGEST SCOPE is declared throughout (marques-08 s5.7); only the identity of A's envelope is resolved this way."
           },
-          "encoding": "per field suffix: envelope_hash and envelope_hash_base64 base64, envelope_hash_hex hex, envelope_hash_base64url base64url",
-          "status": "declared",
-          "document": "marques-08",
-          "lines": "1351-1369",
           "quote": "Base64-encoded SHA-256 digest computed over A's entire serialized signed envelope, including A's signature bytes ... the envelope is the three-key object {\"payload\", \"signature\", \"anchors\"} ... B MUST NOT re-canonicalize A's payload or strip the anchors array before computing the digest.",
           "alt_scope": {
             "construction": "sha256(jcs({payload,signature} -- anchors stripped))",
@@ -106,6 +114,38 @@
           }
         },
         {
+          "id": "asqav.counterparty.envelope_hash.input",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_envelope_hash",
+          "construction": "sha256(jcs({payload,signature,anchors} of this vector's originating envelope))",
+          "encoding": "per field suffix: envelope_hash and envelope_hash_base64 base64, envelope_hash_hex hex, envelope_hash_base64url base64url",
+          "status": "declared",
+          "document": "marques-08",
+          "lines": "1351-1369",
+          "holder": "input/counterparty_binding",
+          "field": "/vectors/{i}/input/counterparty_binding/{envelope_hash,envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url}",
+          "scope_documented_in": "asqav.counterparty.envelope_hash",
+          "shape_note": "The INPUT side -- the receipt content B emits -- and the one shape #473 did not move. It carries no applies_to because it is present at every pinned asqav corpus, 3e13a0d through 3b88156, which is what an absent applies_to means. It is registered as its own rule so that the day it DOES move, the row that stops matching is this one and the walker says so by name instead of hiding inside a rule that is still matching the other two shapes."
+        },
+        {
+          "id": "asqav.counterparty.envelope_hash.expected",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_envelope_hash",
+          "construction": "sha256(jcs({payload,signature,anchors} of this vector's originating envelope))",
+          "encoding": "per field suffix: envelope_hash and envelope_hash_base64 base64, envelope_hash_hex hex, envelope_hash_base64url base64url",
+          "status": "declared",
+          "document": "marques-08",
+          "lines": "1351-1369",
+          "holder": "expected",
+          "field": "/vectors/{i}/expected/{envelope_hash,envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url}, with originating_envelope_ref beside them",
+          "applies_to": [
+            "asqav/3b88156"
+          ],
+          "applies_to_reason": "The output-side shape upstream #473 (66ab579, 2026-09-04) introduced: the renderings sit directly on a sibling `expected` object rather than inside a counterparty_binding wrapper. It does not exist at 05c1c49 or at any history/* pin, and applying it there would report a shape those corpora never published.",
+          "scope_documented_in": "asqav.counterparty.envelope_hash",
+          "scope_member_note": "The `expected` block carries the renderings but no scope member of its own. It reaches one through the resolution_order recorded on asqav.counterparty.envelope_hash: the same vector's input.counterparty_binding.scope, then the unanimous scope of the vectors binding to the same originating envelope."
+        },
+        {
           "id": "asqav.chain.asqav.payload",
           "file": "verifier/conformance-vectors/asqav-03-chain-link/receipt.json",
           "kind": "chain_prev_payload",
@@ -115,7 +155,8 @@
           "status": "declared",
           "document": "marques-08",
           "lines": "944-948",
-          "quote": "populated with the lowercase hex encoding of SHA-256(JCS(R)), where R is the payload member of the immediately prior receipt ... the digest covers R, NOT the envelope object"
+          "quote": "populated with the lowercase hex encoding of SHA-256(JCS(R)), where R is the payload member of the immediately prior receipt ... the digest covers R, NOT the envelope object",
+          "applies_to_note": "No applies_to: this rule applies to every corpus in the asqav family, which is what it did before the member existed. The four history/* and 3b88156 corpora inherit it and restrict themselves to conformance/vectors.json via only_files, so it grades nothing there and is reported `rule_idle` at each. That is accurate -- the rule is registered for them and matches nothing -- and it is the kind of silence the rule_idle row exists to make visible."
         },
         {
           "id": "asqav.chain.acta.whole",
@@ -127,7 +168,8 @@
           "status": "declared",
           "document": "farley-02",
           "lines": "930-936",
-          "quote": "The previousReceiptHash field MUST be the lowercase hex encoding of SHA-256(JCS(receipt)), where receipt is the entire signed receipt object including the signature field."
+          "quote": "The previousReceiptHash field MUST be the lowercase hex encoding of SHA-256(JCS(receipt)), where receipt is the entire signed receipt object including the signature field.",
+          "applies_to_note": "No applies_to: this rule applies to every corpus in the asqav family, which is what it did before the member existed. The four history/* and 3b88156 corpora inherit it and restrict themselves to conformance/vectors.json via only_files, so it grades nothing there and is reported `rule_idle` at each. That is accurate -- the rule is registered for them and matches nothing -- and it is the kind of silence the rule_idle row exists to make visible."
         }
       ]
     },

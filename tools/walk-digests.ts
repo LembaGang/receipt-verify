@@ -43,7 +43,6 @@ import { fileURLToPath } from "node:url";
 import { jcs } from "@headlessoracle/chirindo/dist/vendor/recorder/index.js";
 
 const REPO = dirname(dirname(fileURLToPath(import.meta.url)));
-const SCOPES = join(REPO, "walker", "scopes.json");
 
 // --root lets the walker read corpora from somewhere other than this checkout,
 // without a copy of the registry travelling with them. Two uses: the negative
@@ -56,15 +55,21 @@ const argOf = (name: string): string | undefined => {
 };
 const ROOT = resolve(argOf("--root") ?? REPO);
 const REPORT = resolve(argOf("--report") ?? join(REPO, "walker", "report.json"));
+// --scopes walks a registry other than this checkout's. The control for the
+// rule_idle row needs a rule that is deliberately misapplied, and writing one
+// into the committed registry to test it would be the mistake the row exists to
+// catch. Reading only: nothing is written back here.
+const SCOPES = resolve(argOf("--scopes") ?? join(REPO, "walker", "scopes.json"));
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
-type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal";
+type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle";
 
 interface Row {
   corpus: string;
   file: string;
-  pointer: string;
+  /** Null on a rule_idle row: the row is about a rule, not about a field. */
+  pointer: string | null;
   rule: string | null;
   scope: string | null;
   document: string | null;
@@ -304,19 +309,40 @@ interface Rule {
   document: string | null;
   lines: string | null;
   alt_scope?: { construction: string; document: string; lines: string; graded: boolean; note: string };
+  /**
+   * Which corpora this rule applies to: corpus ids or globs. ABSENT means every
+   * corpus that carries or inherits this rule set, which is what the registry did
+   * before the member existed.
+   */
+  applies_to?: string[];
+  /** Which of the three published shapes of a counterparty_binding block this rule grades. */
+  holder?: string;
 }
+
+/** `asqav/history/*` matches `asqav/history/ee8a3e7`. Only `*` is special. */
+function globMatch(pattern: string, id: string): boolean {
+  if (!pattern.includes("*")) return pattern === id;
+  const rx = new RegExp("^" + pattern.split("*").map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[^]*") + "$");
+  return rx.test(id);
+}
+
+const ruleApplies = (r: Rule, corpus: string): boolean =>
+  r.applies_to === undefined || r.applies_to.some((p) => globMatch(p, corpus));
 
 interface Ctx {
   corpus: string;
   dir: string;
   rows: Row[];
   consumed: Set<string>;
+  /** Rule ids that produced at least one row here. Everything else applied is idle. */
+  used: Set<string>;
 }
 
 const key = (file: string, pointer: string): string => `${file}#${pointer}`;
 
 function push(ctx: Ctx, r: Rule, file: string, pointer: string, declared: string | null, recomputed: string | null, outcome: Outcome, note?: string) {
   ctx.consumed.add(key(file, pointer));
+  ctx.used.add(r.id);
   const row: Row = {
     corpus: ctx.corpus,
     file,
@@ -393,7 +419,12 @@ async function ruleAsqavVectors(ctx: Ctx, rules: Rule[], filePath: string) {
 
   const rCanon = rules.find((r) => r.kind === "asqav_vector_canonical");
   const rSha = rules.find((r) => r.kind === "asqav_vector_sha256");
-  const rEnv = rules.find((r) => r.kind === "asqav_envelope_hash");
+  // One rule per published SHAPE, not one rule for all three. The scope is the
+  // same in every one of them -- marques-08 s5.7 states one scope -- but the
+  // shapes belong to different corpus revisions, and a single rule spanning them
+  // cannot say which. See walker/scopes.json, how_to_read.applies_to.
+  const envOf = (holder: string): Rule | undefined =>
+    rules.find((r) => r.kind === "asqav_envelope_hash" && r.holder === holder);
 
   for (let i = 0; i < doc.vectors.length; i++) {
     const v = doc.vectors[i]!;
@@ -417,20 +448,27 @@ async function ruleAsqavVectors(ctx: Ctx, rules: Rule[], filePath: string) {
     // counterparty_binding.envelope_hash and its siblings. The block appears at
     // the vector's top level (the declaration) and under `input` (the receipt
     // content B emits); both carry the value and both are walked.
-    if (!rEnv) continue;
     // The three places a corpus has published these digests. The block sat at the
     // vector's top level and under `input` through 05c1c49; upstream #473 moved the
     // output-side renderings into a sibling `expected` object, where the members sit
     // directly rather than inside a counterparty_binding wrapper. All three shapes
-    // are walked. Registering only the first two would have turned this walker green
-    // at the tip while grading six fewer members than the red it replaced -- which
-    // is the failure this tool exists to catch, committed by the tool itself.
-    const holders: Array<[string, Json | undefined]> = [
-      [`/vectors/${i}/counterparty_binding`, v["counterparty_binding"]],
-      [`/vectors/${i}/input/counterparty_binding`, isObject(v["input"]) ? (v["input"] as Record<string, Json>)["counterparty_binding"] : undefined],
-      [`/vectors/${i}/expected`, v["expected"]],
+    // are walked, each under its own rule, and each rule names the corpora it
+    // applies to. Registering only the first two would have turned this walker
+    // green at the tip while grading six fewer members than the red it replaced --
+    // which is the failure this tool exists to catch, committed by the tool itself.
+    const holders: Array<[string, Json | undefined, Rule | undefined]> = [
+      [`/vectors/${i}/counterparty_binding`, v["counterparty_binding"], envOf("counterparty_binding")],
+      [
+        `/vectors/${i}/input/counterparty_binding`,
+        isObject(v["input"]) ? (v["input"] as Record<string, Json>)["counterparty_binding"] : undefined,
+        envOf("input/counterparty_binding"),
+      ],
+      [`/vectors/${i}/expected`, v["expected"], envOf("expected")],
     ];
-    for (const [prefix, block] of holders) {
+    for (const [prefix, block, rEnv] of holders) {
+      // No rule for this shape at this corpus: the shape is not registered here,
+      // which is a different fact from a registered shape that matched nothing.
+      if (!rEnv) continue;
       if (!isObject(block)) continue;
       const cbo = block;
       const fields = ["envelope_hash", "envelope_hash_hex", "envelope_hash_base64", "envelope_hash_base64url"] as const;
@@ -874,9 +912,12 @@ async function main(): Promise<number> {
 
   for (const c of scopes.corpora) {
     const dir = join(ROOT, ...c.dir.split("/"));
-    const ctx: Ctx = { corpus: c.id, dir, rows: [], consumed: new Set() };
+    const ctx: Ctx = { corpus: c.id, dir, rows: [], consumed: new Set(), used: new Set() };
     if (c.corpus_note) reasons.set(c.id, c.corpus_note);
-    const rules = c.rules ?? rulesById.get(c.inherits_rules_from ?? "") ?? [];
+    const declaredRules = c.rules ?? rulesById.get(c.inherits_rules_from ?? "") ?? [];
+    // A rule with no applies_to applies to every corpus carrying or inheriting
+    // this set -- the behaviour before the member existed.
+    const rules = declaredRules.filter((r) => ruleApplies(r, c.id));
     const files = walkFiles(dir);
 
     const only = c.only_files;
@@ -947,13 +988,48 @@ async function main(): Promise<number> {
 
     census(ctx, files.filter((p) => wanted(rel(p))), reasons);
 
-    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, declared: 0, inferred: 0 };
+    // Every rule that APPLIES here and matched nothing. The quiet failure mode of
+    // a versioned registry is a rule that has stopped matching: upstream reshapes
+    // its corpus, the rule naming the old shape matches zero pointers, and a
+    // zero-row rule is indistinguishable from a rule with nothing to do. This row
+    // is the difference. It never fails the run -- an idle rule is a fact about
+    // coverage, not a wrong digest.
+    //
+    // Guarded on the directory existing: a corpus absent from the tree being
+    // walked (the tests copy one corpus into a throwaway root) skipped nothing,
+    // so there is nothing to report idle.
+    if (existsSync(dir)) {
+      for (const r of rules) {
+        if (ctx.used.has(r.id)) continue;
+        ctx.rows.push({
+          corpus: c.id,
+          file: r.file,
+          pointer: null,
+          rule: r.id,
+          scope: r.construction,
+          document: r.document,
+          lines: r.lines,
+          status: r.status,
+          encoding: r.encoding ?? null,
+          declared: null,
+          recomputed: null,
+          outcome: "rule_idle",
+          note: `this rule applies to ${c.id} and matched no pointer in it`,
+        });
+      }
+    }
+
+    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared: 0, inferred: 0 };
     for (const row of ctx.rows) {
       counts[row.outcome] = (counts[row.outcome] ?? 0) + 1;
+      if (row.outcome === "rule_idle") continue;
       if (row.outcome !== "unregistered" && row.status === "declared") counts["declared"]!++;
       if (row.outcome !== "unregistered" && row.status === "inferred") counts["inferred"]!++;
     }
-    counts["registered"] = ctx.rows.length - counts["unregistered"]!;
+    // `registered` counts graded FIELDS. A rule_idle row grades no field, so it is
+    // excluded here -- which is what keeps every count at every pinned corpus
+    // identical to a856323's, with rule_idle purely an added column.
+    counts["registered"] = ctx.rows.length - counts["unregistered"]! - counts["rule_idle"]!;
     perCorpus[c.id] = counts;
     rows.push(...ctx.rows);
   }
@@ -961,10 +1037,13 @@ async function main(): Promise<number> {
   await py.end();
 
   // Deterministic body: sorted rows, sorted keys, no timestamps inside it.
+  // A rule_idle row has a null pointer; sort it by its rule id instead, so the
+  // ordering stays total and two runs still produce byte-identical bodies.
+  const sortPtr = (r: Row): string => (r.pointer === null ? ` ${r.rule ?? ""}` : r.pointer);
   rows.sort((a, b) =>
     a.corpus < b.corpus ? -1 : a.corpus > b.corpus ? 1
       : a.file < b.file ? -1 : a.file > b.file ? 1
-        : a.pointer < b.pointer ? -1 : a.pointer > b.pointer ? 1 : 0,
+        : sortPtr(a) < sortPtr(b) ? -1 : sortPtr(a) > sortPtr(b) ? 1 : 0,
   );
   const sortKeys = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(sortKeys);
@@ -976,7 +1055,7 @@ async function main(): Promise<number> {
     return v;
   };
 
-  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0 };
+  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0 };
   for (const r of rows) totals[r.outcome]++;
 
   const body = sortKeys({ per_corpus: perCorpus, rows, totals });
@@ -990,11 +1069,17 @@ async function main(): Promise<number> {
       `  ${id.padEnd(24)} registered=${String(c["registered"]).padStart(4)}  match=${String(c["match"]).padStart(4)}` +
         `  mismatch=${String(c["mismatch"]).padStart(3)}  unregistered=${String(c["unregistered"]).padStart(4)}` +
         `  serializer_disagreement=${c["serializer_disagreement"]}  expected_refusal=${c["expected_refusal"]}` +
+        `  rule_idle=${c["rule_idle"]}` +
         `  (declared=${c["declared"]} inferred=${c["inferred"]})`,
     );
   }
   console.log("");
   for (const r of rows) {
+    if (r.outcome === "rule_idle") {
+      console.log(`  RULE_IDLE  ${r.corpus}  ${r.rule}`);
+      console.log(`      applies to this corpus and matched no pointer in it; the rule's file pattern is ${r.file}`);
+      continue;
+    }
     if (r.outcome === "mismatch" || r.outcome === "serializer_disagreement" || r.outcome === "expected_refusal") {
       console.log(`  ${r.outcome.toUpperCase()}  ${r.file}${r.pointer}`);
       console.log(`      declared   : ${r.declared}`);
@@ -1006,7 +1091,8 @@ async function main(): Promise<number> {
   console.log("");
   console.log(
     `SUMMARY match=${totals.match} mismatch=${totals.mismatch} unregistered=${totals.unregistered} ` +
-      `serializer_disagreement=${totals.serializer_disagreement} expected_refusal=${totals.expected_refusal}; report walker/report.json`,
+      `serializer_disagreement=${totals.serializer_disagreement} expected_refusal=${totals.expected_refusal} ` +
+      `rule_idle=${totals.rule_idle}; report walker/report.json`,
   );
   return totals.mismatch > 0 || totals.serializer_disagreement > 0 ? 1 : 0;
 }

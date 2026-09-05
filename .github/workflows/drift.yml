@@ -1,0 +1,52 @@
+name: drift
+
+# Corpus freshness. Every pinned corpus under fixtures/ and every text under
+# refs/ is a dated snapshot; fixtures/upstreams.json records which upstream each
+# one came from, and `npm run drift` asks whether that upstream has moved since.
+#
+# Weekly rather than on push, because the question is about someone ELSE's
+# repository and nothing in a push to this one can change the answer. A red here
+# does not mean this repository is broken: it means a finding that cites a pin
+# may now be describing a superseded upstream, which is the thing that has to be
+# loud rather than discovered by a run that happened to be scheduled.
+#
+# It reads. It does not commit, tag or push, and it never runs with --record:
+# recording an observation into fixtures/upstreams.json is a change to make
+# deliberately in a session, not a side effect of a cron.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run build
+
+      # Exit 1 on any moved_changed, changed, superseded or unreachable among the
+      # role: current upstreams, which fails the job. `unreachable` is deliberately
+      # a failure: a check that could not be made has not passed.
+      - name: Check upstream drift
+        run: npm run drift
+
+      # Uploaded whether the step above passed or failed -- the report is most
+      # useful precisely on the runs that went red.
+      - name: Upload drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: walker/drift.json
+          if-no-files-found: error

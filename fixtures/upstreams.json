@@ -1,0 +1,780 @@
+{
+  "version": 1,
+  "written": "2026-09-05",
+  "purpose": "The upstream each pinned corpus came from, so `npm run drift` (tools/drift.ts) can answer 'has the upstream of this pin moved since it was pinned, and did the pinned bytes move with it?'. Built by hand from every row of fixtures/provenance.md and from the corpus directories walker/scopes.json names; kept by hand. fixtures/provenance.md stays the record of WHAT was pinned and why; this file carries only the liveness relation.",
+  "how_to_read": {
+    "role": {
+      "current": "This pin is what the repository treats as the corpus today. Checked on every run, and its outcome decides the exit code.",
+      "historical": "Kept for a finding rather than as the current corpus. Reported as `not_checked`, never counted as current, and never fetched — a superseded pin cannot drift, because nothing claims it is the tip."
+    },
+    "outcomes": {
+      "current": "git: the ref's tip equals pinned_commit. http: the GET body's sha256 equals the pin. ietf-draft: no higher revision exists at the IETF archive.",
+      "moved_untouched": "git only: the tip moved but every pinned path is byte-unchanged at the tip. The corpus is still an accurate snapshot of those paths.",
+      "moved_changed": "git only: at least one pinned path differs at the tip. Every differing path is listed with its old and new blob id and the new sha256.",
+      "changed": "http only: the body's sha256 differs from the pin. Both digests are printed.",
+      "superseded": "ietf-draft only: a higher revision exists at the archive; the run names it.",
+      "unreachable": "The check could not be made — network, ref or clone failure, with the error text. Never silently a pass.",
+      "not_checked": "role: historical. Printed on its own row, never counted as current."
+    },
+    "blob_ids_not_worktree_bytes": "Every git comparison reads the object store — `git rev-parse HEAD:<path>` for the id, `git cat-file blob <id>` for the bytes — and never a checked-out file. core.autocrlf is true on the machine this repository is developed on, so a worktree comparison would report a change on every text file on every run (fixtures/provenance.md line 398). The tool's clones also set core.autocrlf=false; that is belt and braces, not the mechanism.",
+    "pinned_blob_may_be_null": "Where a provenance row gives a blob id, blob ids compare directly. Where it gives only a sha256, the tool digests `git cat-file blob <id>` and compares that. Both read the object store. A row that gives neither cannot be checked and would be a defect in this file.",
+    "what_this_file_is_not": "It is not a second copy of fixtures/provenance.md and must not become one. It carries no byte counts, no retrieval narrative and no findings. If a digest here disagrees with fixtures/provenance.md, that file is right and this one is the defect."
+  },
+  "unmapped": {
+    "note": "Provenance rows that map to no upstream entry, listed so the absence is a statement rather than an oversight.",
+    "rows": [
+      {
+        "rows": "the 10 `fixtures/evidence-action/*` rows, source `file://C:/Users/User/agent-action-receipt-vectors/...`",
+        "reason": "A local directory, not a network upstream. It is a git repository on this machine (`git rev-parse --is-inside-work-tree` returns true, HEAD 4fac3017d2fe19c46b108b012f03abbb77354da1) but `git remote -v` prints nothing, so there is no remote whose tip could be resolved. None of the three kinds fits."
+      },
+      {
+        "rows": "the 81 rows of the 'Generated here, not snapshotted' table",
+        "reason": "Produced by tools/make-throwaway-fixtures.mjs, tools/make-acta-fixtures.mjs and by hand. That table's own heading says they are not copies of any published artifact, so they have no upstream by construction."
+      },
+      {
+        "rows": "the 4 `fixtures/insight/execution-receipt-bytes-*.json` package rows",
+        "reason": "Email attachments (2026-09-02), copied from cc-output. fixtures/provenance.md records no URL for them and no endpoint served them."
+      },
+      {
+        "rows": "the 2 `fixtures/insight/execution-sample-*.json` rows",
+        "reason": "fixtures/provenance.md names the source only as 'production sample endpoint' and records no URL. The pinned registry bytes name https://www.oracleinsight.xyz/api/v1/execution/attestation/sample, but that endpoint mints a fresh signature per call — the two pins 116 minutes apart are both 4675 bytes with different sha256 — so an http entry against it would report `changed` on every run forever. A check that always fails says no more than one that cannot fail."
+      },
+      {
+        "rows": "`fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json`",
+        "reason": "Derived, not fetched: `data.attestation` re-serialised from the row above. test/insight.test.ts asserts it deep-equals its parent, which is a tighter relation than a drift check would be."
+      },
+      {
+        "rows": "every file under `fixtures/delivery/`",
+        "reason": "NOT A PROVENANCE ROW AT ALL, and recorded here because that is the finding. walker/scopes.json grades this corpus (21 registered fields, all matching) and fixtures/provenance.md carries no row for any file in it: `grep -c 'fixtures/delivery' fixtures/provenance.md` returns 0. Flagged, not fixed — writing provenance for a corpus is not this file's job."
+      },
+      {
+        "rows": "`cpb/`",
+        "reason": "TypeScript sources and Markdown result tables written in this repository. walker/scopes.json registers the directory as a corpus with no rules; there is nothing upstream of it."
+      }
+    ]
+  },
+  "upstreams": [
+    {
+      "id": "asqav-sdk/3b88156",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/jagmarques/asqav-sdk",
+      "ref": "main",
+      "ref_source": "fixtures/provenance.md line 726: `git fetch origin` returned no new refs; `origin/main` = the same commit.",
+      "pinned_commit": "3b88156497d42a360576ecd580dad95ef031926b",
+      "paths": [
+        {
+          "path": "conformance/vectors.json",
+          "pinned_blob": "ef8cf090a18da7a4914b9104681f3ba877db7b31",
+          "sha256": "05fc1d8a2521e5dac3e9fed20358c46278a4174989fd43ee79c555133ffc31e1"
+        },
+        {
+          "path": "conformance/manifest.lock.json",
+          "pinned_blob": "ac5bc95ad58044adf47eec8f324e57b8d8a5fa5f",
+          "sha256": "49378c480f5e9cb5c4e8069bc98e91952cc35ea03937a973eb7a3f4807a6f2b6"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/asqav/3b88156"
+      ],
+      "provenance_section": "Appended 2026-09-05 — the asqav-sdk tip `3b88156`, pinned for the M6 closure run",
+      "last_observed": {
+        "tip": "3b88156497d42a360576ecd580dad95ef031926b",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "asqav-sdk/05c1c49",
+      "kind": "git",
+      "role": "historical",
+      "repo": "https://github.com/jagmarques/asqav-sdk",
+      "ref": "main",
+      "ref_source": "The branch is not recorded for this pin; `main` is carried over from the 3b88156 row of the same repository. Never resolved: role is historical.",
+      "pinned_commit": "05c1c49402dc933ea7ada039ce5c87213b89de89",
+      "paths": [
+        {
+          "path": "conformance/vectors.json",
+          "pinned_blob": "4dfde9819fc3c197dd38d3e51c78d8e2f6dd723e",
+          "sha256": "2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a"
+        },
+        {
+          "path": "verifier/conformance-vectors/asqav-01-genesis-permit/receipt.json",
+          "pinned_blob": "5909477673b2ffe8a970626d3e3328007e603b3d",
+          "sha256": "c02fd4fc8cc26d4784b99515f84d2c61faec8f8d18c1ce6ae72f7406ac3cf084"
+        },
+        {
+          "path": "verifier/conformance-vectors/asqav-01-genesis-permit/expected.json",
+          "pinned_blob": "e49c143f485c38335565f395933ae1b9a9bfde9e",
+          "sha256": "72257a48afe336d13b589dccbcdf83743d80437dee729954d0a9494e915e9fbf"
+        },
+        {
+          "path": "verifier/conformance-vectors/asqav-01-genesis-permit/jwks.json",
+          "pinned_blob": "a97b747dd4258c523b822209dd8279c6b5ed45dd",
+          "sha256": "233a208e9564acea9f24faa2ffaa8bebce04d752bee685e581eef16c2b9c51a4"
+        },
+        {
+          "path": "verifier/conformance-vectors/asqav-03-chain-link/receipt.json",
+          "pinned_blob": "46dbac464ae40cc3005d934198276ed203172ab0",
+          "sha256": "f9f29b753d19c4cb5d518ac6d73c436685279aeab92a085c699c2de8a4598085"
+        },
+        {
+          "path": "verifier/conformance-vectors/asqav-03-chain-link/predecessor.json",
+          "pinned_blob": "5909477673b2ffe8a970626d3e3328007e603b3d",
+          "sha256": "c02fd4fc8cc26d4784b99515f84d2c61faec8f8d18c1ce6ae72f7406ac3cf084"
+        },
+        {
+          "path": "verifier/conformance-vectors/asqav-03-chain-link/expected.json",
+          "pinned_blob": "604b27af19bf5b03e8679e1fdaa7af3d65a10a85",
+          "sha256": "59cf35472dcc75f090840ba3b126bc963f41783d27192f21ffdb93aae905446d"
+        },
+        {
+          "path": "verifier/conformance-vectors/asqav-03-chain-link/jwks.json",
+          "pinned_blob": "a97b747dd4258c523b822209dd8279c6b5ed45dd",
+          "sha256": "233a208e9564acea9f24faa2ffaa8bebce04d752bee685e581eef16c2b9c51a4"
+        },
+        {
+          "path": "verifier/conformance-vectors/acta-02-chain-link/receipt.json",
+          "pinned_blob": "17bfb6b25b07ce9e2d63934ce0f32088d3e03d44",
+          "sha256": "50a6937e41bb7b82f9bb5f78548cd7681ff107faff839c644ad962c438d706bd"
+        },
+        {
+          "path": "verifier/conformance-vectors/acta-02-chain-link/predecessor.json",
+          "pinned_blob": "b9f032a6a3e5d66195f92aa00a0c1a4fd08708e9",
+          "sha256": "3dc3b36962eb8b27efc56d53b2b87fe75b88781c00111b660aad4808d8f4706d"
+        },
+        {
+          "path": "verifier/conformance-vectors/acta-02-chain-link/expected.json",
+          "pinned_blob": "a98411ee912e8b5051bdfffe334fcbee68bd3a91",
+          "sha256": "038c708ecb2ccbda46730be02d62ae287c74964b4a348fe3f6716c27fb25aa62"
+        },
+        {
+          "path": "verifier/conformance-vectors/acta-02-chain-link/acta-keys.json",
+          "pinned_blob": "d3cb11e4a829d22ec715303d5b6f5b056cd32ed7",
+          "sha256": "4f3dafaf1e2db10e23a389c7d85035b1e09a4308509e2314b464228b258445b6"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/asqav/05c1c49"
+      ],
+      "role_reason": "Superseded as the current corpus by 3b88156 on 2026-09-05. Kept because FINDINGS M6 is the finding it carries: the stale envelope_hash is asserted AT this commit by test/acta.test.ts and test/walker.test.ts, and the walker is expected to stay red here.",
+      "provenance_section": "Appended 2026-09-02 — the Asqav SDK conformance vectors at the commit -08 pins"
+    },
+    {
+      "id": "asqav-sdk/history/4cbdfc0",
+      "kind": "git",
+      "role": "historical",
+      "repo": "https://github.com/jagmarques/asqav-sdk",
+      "ref": "main",
+      "ref_source": "Not recorded for this pin and never resolved: role is historical.",
+      "pinned_commit": "4cbdfc01a69017e39e060bc1f0d63e6c55027aa6",
+      "paths": [
+        {
+          "path": "conformance/vectors.json",
+          "pinned_blob": "01d9512e6f288db1702bd2a16ef0a21ceba08968",
+          "sha256": "68610d93ea1dda19176b6a68a5293d07bbc38118e5c4fc725b8b9a639839fa3a"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/asqav/history/4cbdfc0"
+      ],
+      "role_reason": "Pinned to date M6, not as a current corpus: the 2026-07-28 12:53:24 +0200 state of conformance/vectors.json around #416.",
+      "provenance_section": "Appended 2026-09-02 — the two Asqav SDK states either side of `#416`, pinned for M6"
+    },
+    {
+      "id": "asqav-sdk/history/ee8a3e7",
+      "kind": "git",
+      "role": "historical",
+      "repo": "https://github.com/jagmarques/asqav-sdk",
+      "ref": "main",
+      "ref_source": "Not recorded for this pin and never resolved: role is historical.",
+      "pinned_commit": "ee8a3e761cf7dc525a43111e04c19c4878ac6db9",
+      "paths": [
+        {
+          "path": "conformance/vectors.json",
+          "pinned_blob": "4dfde9819fc3c197dd38d3e51c78d8e2f6dd723e",
+          "sha256": "2b260f4efc0f3ada078cf98108d04ea9d3491bf7c684e9d97dac567ec289dd6a"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/asqav/history/ee8a3e7"
+      ],
+      "role_reason": "Pinned to date M6, not as a current corpus: the 2026-08-04 21:03:12 +0200 state of conformance/vectors.json around #416.",
+      "provenance_section": "Appended 2026-09-02 — the two Asqav SDK states either side of `#416`, pinned for M6"
+    },
+    {
+      "id": "asqav-sdk/history/3e13a0d",
+      "kind": "git",
+      "role": "historical",
+      "repo": "https://github.com/jagmarques/asqav-sdk",
+      "ref": "main",
+      "ref_source": "Not recorded for this pin and never resolved: role is historical.",
+      "pinned_commit": "3e13a0d8b18e1543404a4ef9f1bca46b8602ac81",
+      "paths": [
+        {
+          "path": "conformance/vectors.json",
+          "pinned_blob": "abc752f371c6c6abb3e9054730fd102f0a84eaf6",
+          "sha256": "c1f87953fd17143780a07ddade63d715a7dab7a328b2080fafb9c791ef87d68a"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/asqav/history/3e13a0d"
+      ],
+      "role_reason": "Pinned to date M6, not as a current corpus: the 2026-05-18 20:35:36 +0000 state of conformance/vectors.json around #416.",
+      "provenance_section": "Appended 2026-09-02 — `3e13a0d`, the commit that seeded the vector, pinned to date M6"
+    },
+    {
+      "id": "agentoracle-receipt-spec/196df22b",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/TKCollective/agentoracle-receipt-spec",
+      "ref": "HEAD",
+      "ref_source": "UNKNOWN, stated as such: the 43 provenance rows are raw.githubusercontent URLs pinned by commit and name no branch. `HEAD` is used, so the check resolves whatever the repository's default branch is.",
+      "pinned_commit": "196df22b255e7173d4eb6b20e833cc4e8ae6d35d",
+      "paths": [
+        {
+          "path": "examples/README.md",
+          "pinned_blob": null,
+          "sha256": "9c45b91d0913becedb47a65e2ca79f495e792a2c0e7c4023dd41fd84effe6d2d"
+        },
+        {
+          "path": "examples/generate_detached_fixture.py",
+          "pinned_blob": null,
+          "sha256": "c762ef4eaf93eac0c4d6b3d14984ba068254725efa5d68ce06954ab305902de3"
+        },
+        {
+          "path": "examples/jwks-fixture-detached.json",
+          "pinned_blob": null,
+          "sha256": "ff18e1b30a3de9fd9615dc1d3a7afb6f270190afa73263d00436e602a403ef1f"
+        },
+        {
+          "path": "examples/package.json",
+          "pinned_blob": null,
+          "sha256": "8847d6480422cc52e4a1930c8002e6e0d25657da4dda438c679f44bc53cf356b"
+        },
+        {
+          "path": "examples/requirements.txt",
+          "pinned_blob": null,
+          "sha256": "a0f6fefdcb588bc9745fe45fdaa878d94a626aa7a79af4ae92fe8aee6d8f87f3"
+        },
+        {
+          "path": "examples/sample_payload.json",
+          "pinned_blob": null,
+          "sha256": "516eb4a5e716e738b68ba7e997dc93266cfffcb7bd1da94dbc96e5dc0f441c74"
+        },
+        {
+          "path": "examples/sample_receipt_attached_jws.json",
+          "pinned_blob": null,
+          "sha256": "2e2293e3795cb7f46da0d1a5e2ec00cf7815b4efd2e0aa11160a894ef5f41605"
+        },
+        {
+          "path": "examples/sample_receipt_detached_jws.json",
+          "pinned_blob": null,
+          "sha256": "de9f46b5af71d5b32c5925bc822d24f0e2099a4b5da6295d8260d6c6c9e8382d"
+        },
+        {
+          "path": "examples/sample_receipt_detached_payload_canonical.bin",
+          "pinned_blob": null,
+          "sha256": "b1bf26165f251af4c9d756bcae4b512d31f93f092d0c1cec53b7091ad3f4047a"
+        },
+        {
+          "path": "examples/v0.3-composed/README.md",
+          "pinned_blob": null,
+          "sha256": "a67f2841939d9c20b11944c944b41c7506b226b3a00954f84a9b80f656f02bfd"
+        },
+        {
+          "path": "examples/v0.3-composed/build_fixtures.py",
+          "pinned_blob": null,
+          "sha256": "c4f9d48c355090d05166d7a6f3a2faa9b4662a6627052e9acdf517d6980437d7"
+        },
+        {
+          "path": "examples/v0.3-composed/jwks-agentoracle.json",
+          "pinned_blob": null,
+          "sha256": "3dd489890af45432acd1201797fa6674c6d60478bcf32965db3c2b17a9a37038"
+        },
+        {
+          "path": "examples/v0.3-composed/jwks-agenttrust.json",
+          "pinned_blob": null,
+          "sha256": "ce140b26851015be51dd0b49e56012adc1ac857abb38ead04dffd02a897cfab1"
+        },
+        {
+          "path": "examples/v0.3-composed/jwks-presidio.json",
+          "pinned_blob": null,
+          "sha256": "80866bfc309856cef1c4f66039a0d002503fa94a7723413ebfe1539d88a7513c"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-001.json",
+          "pinned_blob": null,
+          "sha256": "bbd5df6fa79102b461adaa0f35b03609ac426046fb2eda1f4dbb698809dd496c"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-002.json",
+          "pinned_blob": null,
+          "sha256": "503de628cfc2981c9071cfd3a27c679f92b4fb37f5f83c10ba66b8090c41776a"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-003.json",
+          "pinned_blob": null,
+          "sha256": "db2f053c91e0400247b3fe4a7c2f7bed4937ed8bfa0d514c59688709a2ae3a21"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-004.json",
+          "pinned_blob": null,
+          "sha256": "4ad437ff4ed9f62296ba89779d64d994d794a6475fad924859cf47ea0fd33e77"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-005.json",
+          "pinned_blob": null,
+          "sha256": "957f095c73779e879e381462aa297dd266616c7624ae72ca8a1dd56d949c817c"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-006.json",
+          "pinned_blob": null,
+          "sha256": "08251b24914b06d3a31789f428e3a7fb9ed9a82a85ddc37a29c18dd0d8b4bd62"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-007.json",
+          "pinned_blob": null,
+          "sha256": "a3b9c09adf5a7b43daca031d5b385fd185b99870e1b7a69fb0e8df76f464f019"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-r01.json",
+          "pinned_blob": null,
+          "sha256": "546e9ba23214ad5c5324c67f5d9eb82100fbd6f18692a3adfe3455dd5023e966"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-r02.json",
+          "pinned_blob": null,
+          "sha256": "3b1c9323fcaf42a84f98dc82b83fc367b9e5f619de9df48e18fc8c827f3ce25f"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-r03.json",
+          "pinned_blob": null,
+          "sha256": "648564cd794d17895d89b43e2fc2d28a61a2f5a87296a90d871d78349c2b5d37"
+        },
+        {
+          "path": "examples/v0.3-composed/jws-r04.json",
+          "pinned_blob": null,
+          "sha256": "0d722239da53be441ae6c739bbe4c49e1914a5c2fc1de4e99fa71083103c7201"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-001.json",
+          "pinned_blob": null,
+          "sha256": "3ca6c00b78a24e001278afe12bffef5621beccdb488936ff0961dd6ff1661964"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-002.json",
+          "pinned_blob": null,
+          "sha256": "41963d56895a0f9caffee8de55227552563463d07633bc43be9c4f4d58b623d3"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-003.json",
+          "pinned_blob": null,
+          "sha256": "1d6cd6fda7af1d545444d47faae25044fe63aefd6d4aea3318e5f136e8d8960c"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-004.json",
+          "pinned_blob": null,
+          "sha256": "1d7b031a7e4a881b0615d63e0038636a35fdffd590d2f3961da2a5d4adf9018e"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-005.json",
+          "pinned_blob": null,
+          "sha256": "c9ce8662b4b745934c86890e0b29ada3e8f6e0fcd26f34b12092d02ca1348b53"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-006.json",
+          "pinned_blob": null,
+          "sha256": "fb95e3bf5415d59fe6cd0267939cdc38fc784a470b554bcfc27e42d0ad9c660b"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-007.json",
+          "pinned_blob": null,
+          "sha256": "46740e0a2e2728f7be9e2f1314a4d3f45fce4a523c19583f66ea564ad4b5a3ef"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-r01.json",
+          "pinned_blob": null,
+          "sha256": "2c788f854952e69487e2dfe762664ef97cfeab84e9d6f49f222cda2f563e7f6f"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-r02.json",
+          "pinned_blob": null,
+          "sha256": "a5a534f1351ef7b360c79cab678e89b2645ccf7faa21b0cb0e1ef6ab7be7dc18"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-r03.json",
+          "pinned_blob": null,
+          "sha256": "dd678ad1d6da827f3191fc08f089d8381b411f7daa0318aff1526d842ef1fc3b"
+        },
+        {
+          "path": "examples/v0.3-composed/payload-r04.json",
+          "pinned_blob": null,
+          "sha256": "e834d83f271619a6c32e4292ed2517010ff86054e5c013db6dd236299fe15705"
+        },
+        {
+          "path": "examples/v0.3-composed/vectors.json",
+          "pinned_blob": null,
+          "sha256": "6304caee9a70d5a0a7820fd235709bd3263b10f56187a479649d01b35807b394"
+        },
+        {
+          "path": "examples/v0.3-composed/verify.mjs",
+          "pinned_blob": null,
+          "sha256": "f71c139008a6794455b7621df7e443b787e28bdf6d768ce02344111267c9eb7a"
+        },
+        {
+          "path": "examples/v0.3-composed/verify.py",
+          "pinned_blob": null,
+          "sha256": "42b5022982a4eb24f7e098da8b3c11857d16ad72ba3ad87beb5e2cc26601beef"
+        },
+        {
+          "path": "examples/verify_detached_node.mjs",
+          "pinned_blob": null,
+          "sha256": "1e4d45d9974c072ec8e78b17ed47a2c3710ae1bcce6e40745c25b92c3563245f"
+        },
+        {
+          "path": "examples/verify_detached_python.py",
+          "pinned_blob": null,
+          "sha256": "4c86ecf27c2fa85d3c2a298e9b46fdeb4a9e497cf57719c8dcb81efdb812db1a"
+        },
+        {
+          "path": "examples/verify_node.mjs",
+          "pinned_blob": null,
+          "sha256": "19f7b596fb45d3108797af0580c49d92eb7653565d8255f1aaff1093016219cd"
+        },
+        {
+          "path": "examples/verify_python.py",
+          "pinned_blob": null,
+          "sha256": "1c86c15f60e1771ac6ba6f656ad6b96fc91fb6517b49527f5d1530843d7860b2"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/verification-state/spec-examples"
+      ],
+      "paths_note": "The provenance rows give sha256 and no blob id, so `pinned_blob` is null and the comparison at a moved tip is sha256(git cat-file blob <id>) against the pin. Still the object store, never a worktree.",
+      "provenance_section": "the main snapshot table, rows 44-86",
+      "last_observed": {
+        "tip": "49b7d039576b17e39dd707c9f223de5670c9be86",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "moved_untouched"
+      }
+    },
+    {
+      "id": "agent-governance-testvectors/HEAD",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/ScopeBlind/agent-governance-testvectors",
+      "ref": "HEAD",
+      "ref_source": "The 14 provenance rows cite `.../HEAD/<path>` literally — a moving ref.",
+      "pinned_commit": null,
+      "pinned_commit_note": "NOT RECORDED. fixtures/provenance.md flags these 14 rows at line 231: they cite a moving ref, tools/snapshot.mjs did not pin a commit for this source, and 'they cannot be re-fetched to the same bytes'. With no commit to compare against, the tip can never be shown equal to the pin, so this entry can never report `current`. It resolves the tip, compares every pinned path's blob content, and reports `moved_untouched` while the bytes hold and `moved_changed` when they do not — which is the question actually worth asking of it.",
+      "paths": [
+        {
+          "path": "README.md",
+          "pinned_blob": null,
+          "sha256": "7914288498b3c3bb1342db81f6982b429e3f53ebd5c3250fc2b9645812d98b41"
+        },
+        {
+          "path": "spec.md",
+          "pinned_blob": null,
+          "sha256": "b053460e8ecabd7fc7d3f0a6fe24afaafdc6606d79995306dad314943d537550"
+        },
+        {
+          "path": "expected/receipt-schema.json",
+          "pinned_blob": null,
+          "sha256": "a1ffe19d87034d61b80dceeb11287a43155daa0613a391ed85b804ace2b0923a"
+        },
+        {
+          "path": "expected/chain.jsonl",
+          "pinned_blob": null,
+          "sha256": "446409d03b77aa066863fef8cea850b73b5893b202f5993285c9aa3b4a77efc0"
+        },
+        {
+          "path": "fixtures/keys/README.md",
+          "pinned_blob": null,
+          "sha256": "1c35a588425ff244b3cc7b75a25247644774d731cc9253c7b2aa220b0d1e9e3f"
+        },
+        {
+          "path": "aps-gateway-enforcement/README.md",
+          "pinned_blob": null,
+          "sha256": "2b278950c875188fc0f7014da319fea9aa16c61171860cc3a5ff049ee9b6b7d4"
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/receipt.json",
+          "pinned_blob": null,
+          "sha256": "efd8accc8d96001a6f5fcbfedec420600804486078baa778d8870625b9d9ea26"
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/jwks.json",
+          "pinned_blob": null,
+          "sha256": "2ce283efe6dfe792a2013c06cabd652db3e15a0785aac3885606f4fbcc6c01a3"
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/canonical.txt",
+          "pinned_blob": null,
+          "sha256": "b7d84a8a164c8aea6d09d27c41ecbf4119dbada80cab4d9b83bfcb51fae119bc"
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/expected-output.json",
+          "pinned_blob": null,
+          "sha256": "dfb67edc90c3c3e9d89475d1a50064e2bad4be2f44e117d2f54d0f3b8269a50b"
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/README.md",
+          "pinned_blob": null,
+          "sha256": "4da8d4289681c808944921035fe7b9c60c5726e06e7c6138199101234cb3a4b5"
+        },
+        {
+          "path": "aps-gateway-enforcement/4-portability/receipt.json",
+          "pinned_blob": null,
+          "sha256": "1aad0e1122ba5a44896631e9e9f38cbdcb80d300362d01f46956f6d79de16719"
+        },
+        {
+          "path": "aps-gateway-enforcement/4-portability/jwks.json",
+          "pinned_blob": null,
+          "sha256": "2ce283efe6dfe792a2013c06cabd652db3e15a0785aac3885606f4fbcc6c01a3"
+        },
+        {
+          "path": "aps-gateway-enforcement/4-portability/expected-output.json",
+          "pinned_blob": null,
+          "sha256": "067303ce9ba9b6f417184490b9cdb6baa60534c0bbd64c50cb4fbeb26e6e847e"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/acta/published"
+      ],
+      "provenance_section": "the main snapshot table rows 100-113, and the flag at line 231",
+      "last_observed": {
+        "tip": "a320f24a9400e2386f04483132bda4556f10c085",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "moved_untouched"
+      }
+    },
+    {
+      "id": "agentoracle-jwks",
+      "kind": "http",
+      "role": "current",
+      "url": "https://agentoracle.co/.well-known/jwks.json",
+      "sha256": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
+      "retrieved": "2026-07-29T10:01:35.192Z",
+      "pinned_file": "fixtures/verification-state/jwks/agentoracle.co.well-known.jwks.json",
+      "corpus_dirs": [
+        "fixtures/verification-state"
+      ],
+      "provenance_section": "the main snapshot table",
+      "last_observed": {
+        "tip": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "agentoracle-mapping-by-digest",
+      "kind": "http",
+      "role": "current",
+      "url": "https://agentoracle.co/mappings/0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0.json",
+      "sha256": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
+      "retrieved": "2026-07-29T10:01:36.841Z",
+      "pinned_file": "fixtures/verification-state/mappings/published/agentoracle-v0.3-2026-05-30.by-digest.json",
+      "corpus_dirs": [
+        "fixtures/verification-state"
+      ],
+      "provenance_section": "the main snapshot table",
+      "role_note": "The URL is the digest, so this body cannot change without the URL changing. What the check can still turn red is disappearance: a 404 or a DNS failure is `unreachable`, and a content-addressed mapping that stops resolving is the thing worth knowing about here.",
+      "last_observed": {
+        "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "agentoracle-mapping-named",
+      "kind": "http",
+      "role": "current",
+      "url": "https://agentoracle.co/mappings/agentoracle-v0.3-2026-05-30.json",
+      "sha256": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
+      "retrieved": "2026-07-29T10:01:38.542Z",
+      "pinned_file": "fixtures/verification-state/mappings/agentoracle-v0.3-2026-05-30.json",
+      "corpus_dirs": [
+        "fixtures/verification-state"
+      ],
+      "provenance_section": "the main snapshot table",
+      "last_observed": {
+        "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "insight-oracle-keys",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
+      "sha256": "76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2",
+      "retrieved": "2026-09-02T17:42:02Z",
+      "pinned_file": "refs/insight-oracle-keys-2026-09-02T1741Z.json",
+      "corpus_dirs": [
+        "fixtures/insight",
+        "refs"
+      ],
+      "provenance_section": "the four Insight registry pins",
+      "role_note": "The newest of the four pins of this URL, and therefore the one a drift check is about.",
+      "last_observed": {
+        "tip": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "changed"
+      }
+    },
+    {
+      "id": "insight-oracle-keys/2026-09-02T0909Z",
+      "kind": "http",
+      "role": "historical",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
+      "sha256": "9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006",
+      "retrieved": "2026-09-02T09:09:25Z",
+      "pinned_file": "refs/insight-oracle-keys-2026-09-02.json",
+      "corpus_dirs": [
+        "fixtures/insight",
+        "refs"
+      ],
+      "provenance_section": "the four Insight registry pins",
+      "role_reason": "Kept for the finding it carries: ExecutionReceipt published at 43 fields under schemaVersion 1, the regression the 11:54Z pin shows corrected."
+    },
+    {
+      "id": "insight-oracle-keys/2026-09-02T1154Z",
+      "kind": "http",
+      "role": "historical",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
+      "sha256": "21675e382e6ead969d3b3fb823b3199327283152ab241be27d9c5b7177de23eb",
+      "retrieved": "2026-09-02T11:54:27Z",
+      "pinned_file": "refs/insight-oracle-keys-2026-09-02T1154Z.json",
+      "corpus_dirs": [
+        "fixtures/insight",
+        "refs"
+      ],
+      "provenance_section": "the four Insight registry pins",
+      "role_reason": "Kept as the second half of that pair — the pin that shows the 09:09Z state corrected."
+    },
+    {
+      "id": "insight-oracle-keys/2026-09-02T1545Z",
+      "kind": "http",
+      "role": "historical",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
+      "sha256": "76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2",
+      "retrieved": "2026-09-02T15:45:42Z",
+      "pinned_file": "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      "corpus_dirs": [
+        "fixtures/insight",
+        "refs"
+      ],
+      "provenance_section": "the four Insight registry pins",
+      "role_reason": "Byte-identical to the 17:41Z pin and kept anyway: the HOUR is the evidence that the registry does not change on expiry (fixtures/provenance.md, 'Appended 2026-09-03 — the post-rotation Insight pins')."
+    },
+    {
+      "id": "draft-marques-asqav-compliance-receipts-08",
+      "kind": "ietf-draft",
+      "role": "current",
+      "name": "draft-marques-asqav-compliance-receipts",
+      "pinned_rev": "08",
+      "url": "https://www.ietf.org/archive/id/draft-marques-asqav-compliance-receipts-08.txt",
+      "sha256": "ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0",
+      "pinned_file": "refs/draft-marques-asqav-compliance-receipts-08.txt",
+      "corpus_dirs": [
+        "refs"
+      ],
+      "last_observed": {
+        "tip": "draft-marques-asqav-compliance-receipts-08",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "current"
+      },
+      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"
+    },
+    {
+      "id": "draft-marques-asqav-compliance-receipts-07",
+      "kind": "ietf-draft",
+      "role": "historical",
+      "name": "draft-marques-asqav-compliance-receipts",
+      "pinned_rev": "07",
+      "url": "https://www.ietf.org/archive/id/draft-marques-asqav-compliance-receipts-07.txt",
+      "sha256": "082615447288fa1e983fa2cfb7aa7356fbb35d05d65ea256f66111487746d52f",
+      "pinned_file": "refs/draft-marques-asqav-compliance-receipts-07.txt",
+      "corpus_dirs": [
+        "refs"
+      ],
+      "role_reason": "Superseded in this repository by draft-marques-asqav-compliance-receipts-08, which is pinned beside it and carries role current. Kept, and still cited by line number in walker/scopes.json and FINDINGS.md, but a revision this repository already knows is superseded is not a freshness question.",
+      "provenance_section": "the main snapshot table (this draft was in the original table)"
+    },
+    {
+      "id": "draft-farley-acta-signed-receipts-03",
+      "kind": "ietf-draft",
+      "role": "current",
+      "name": "draft-farley-acta-signed-receipts",
+      "pinned_rev": "03",
+      "url": "https://www.ietf.org/archive/id/draft-farley-acta-signed-receipts-03.txt",
+      "sha256": "bcde71799a621305254ea8b442fc829ac6d65fcff039f365e8a2349d8e902f19",
+      "pinned_file": "refs/draft-farley-acta-signed-receipts-03.txt",
+      "corpus_dirs": [
+        "refs"
+      ],
+      "last_observed": {
+        "tip": "draft-farley-acta-signed-receipts-03",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "current"
+      },
+      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"
+    },
+    {
+      "id": "draft-farley-acta-signed-receipts-02",
+      "kind": "ietf-draft",
+      "role": "historical",
+      "name": "draft-farley-acta-signed-receipts",
+      "pinned_rev": "02",
+      "url": "https://www.ietf.org/archive/id/draft-farley-acta-signed-receipts-02.txt",
+      "sha256": "14501a68a86e3cc403f56967b19b732316ad3cc2fc011ce3d14aec9c1de68bd2",
+      "pinned_file": "refs/draft-farley-acta-signed-receipts-02.txt",
+      "corpus_dirs": [
+        "refs"
+      ],
+      "role_reason": "Superseded in this repository by draft-farley-acta-signed-receipts-03, which is pinned beside it and carries role current. Kept, and still cited by line number in walker/scopes.json and FINDINGS.md, but a revision this repository already knows is superseded is not a freshness question.",
+      "provenance_section": "the main snapshot table (this draft was in the original table)"
+    },
+    {
+      "id": "draft-krausz-verification-state-01",
+      "kind": "ietf-draft",
+      "role": "current",
+      "name": "draft-krausz-verification-state",
+      "pinned_rev": "01",
+      "url": "https://www.ietf.org/archive/id/draft-krausz-verification-state-01.txt",
+      "sha256": "22c5ce262bdf4e63ef538a308e7a8455e93c4143b9e1726b7b64720615d516db",
+      "pinned_file": "refs/draft-krausz-verification-state-01.txt",
+      "corpus_dirs": [
+        "refs"
+      ],
+      "last_observed": {
+        "tip": "draft-krausz-verification-state-01",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "current"
+      },
+      "provenance_section": "the main snapshot table (this draft was in the original table)"
+    },
+    {
+      "id": "draft-mih-sokolov-scitt-payload-binding-02",
+      "kind": "ietf-draft",
+      "role": "current",
+      "name": "draft-mih-sokolov-scitt-payload-binding",
+      "pinned_rev": "02",
+      "url": "https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-02.txt",
+      "sha256": "47ab675797d7edfe905c13b8482735239d9c5ceb318accbc33e4a5a51e5ec875",
+      "pinned_file": "refs/draft-mih-sokolov-scitt-payload-binding-02.txt",
+      "corpus_dirs": [
+        "refs"
+      ],
+      "last_observed": {
+        "tip": "draft-mih-sokolov-scitt-payload-binding-02",
+        "at": "2026-09-05T17:57:53.892Z",
+        "outcome": "current"
+      },
+      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"
+    }
+  ]
+}

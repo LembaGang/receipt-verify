@@ -1,0 +1,444 @@
+// The corpus freshness check (tools/drift.ts), under its own controls.
+//
+// This tool's whole job is to answer a question about the outside world, so the
+// temptation is to test it against the outside world -- which would make the
+// suite non-deterministic and, worse, would make every assertion here depend on
+// what someone else's repository happens to hold today. Instead:
+//
+//   git   -- exercised against real git repositories built in a temp directory.
+//            Real `git ls-remote`, real shallow clone, real `rev-parse HEAD:<path>`,
+//            real blob ids. No network: a file:// URL is not the internet.
+//   http  -- exercised through an injected fetch returning canned responses, so
+//   ietf     `current`, `changed`, `superseded` and `unreachable` are each reached
+//            by a stated status code rather than by hoping a server misbehaves.
+//
+// Every case asserts the LITERAL outcome string. An outcome that is merely "not
+// current" is not a first-class row, and the point of this tool is that each of
+// the eight is reportable on its own.
+
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { describe, expect, it } from "vitest";
+import { ROOT } from "./helpers.js";
+import { type DriftFetch, type Upstream, runDrift, summaryLine } from "../tools/drift.js";
+
+const tmp = () => mkdtempSync(join(tmpdir(), "drift-test-"));
+
+/**
+ * A real git repository, built here. `core.autocrlf=false` and a fixed identity
+ * so the blob ids and commit ids are the repository's own and not the machine's;
+ * `commit.gpgsign=false` because every commit in THIS repository is signed and a
+ * throwaway upstream must not inherit that.
+ */
+function repo(): { dir: string; url: string; run: (...a: string[]) => string; write: (p: string, s: string) => void; commit: (m: string) => string } {
+  const dir = tmp();
+  const run = (...a: string[]): string =>
+    execFileSync("git", ["-c", "core.autocrlf=false", "-c", "commit.gpgsign=false", "-c", "user.name=drift test", "-c", "user.email=drift@example.invalid", ...a], {
+      cwd: dir,
+      stdio: ["ignore", "pipe", "pipe"],
+      encoding: "utf8",
+    }).trim();
+  run("init", "-b", "main", "--quiet", ".");
+  const write = (p: string, s: string) => {
+    mkdirSync(dirname(join(dir, p)), { recursive: true });
+    writeFileSync(join(dir, p), s, "utf8");
+  };
+  const commit = (m: string): string => {
+    run("add", "-A");
+    run("commit", "-q", "-m", m);
+    return run("rev-parse", "HEAD");
+  };
+  return { dir, url: pathToFileURL(dir).href, run, write, commit };
+}
+
+/** The canned network. Anything not listed throws, so an unplanned request fails loudly. */
+const canned = (table: Record<string, { status: number; body?: string } | "throw">): DriftFetch =>
+  async (url) => {
+    const hit = table[url];
+    if (hit === undefined) throw new Error(`unplanned request to ${url}`);
+    if (hit === "throw") throw new Error("getaddrinfo ENOTFOUND www.example.invalid");
+    return { status: hit.status, body: Buffer.from(hit.body ?? "", "utf8") };
+  };
+
+const never: DriftFetch = async (url) => {
+  throw new Error(`the git cases must not touch fetch, but ${url} was requested`);
+};
+
+// ---------------------------------------------------------------------------
+// git
+// ---------------------------------------------------------------------------
+
+describe("drift — git", () => {
+  const PINNED = "conformance/vectors.json";
+
+  /** A repo whose tip is the pin. */
+  function pinned(): { url: string; commit: string; blob: string; sha256: string; r: ReturnType<typeof repo> } {
+    const r = repo();
+    r.write(PINNED, '{"vectors":[1,2,3]}\n');
+    r.write("README.md", "one\n");
+    const commit = r.commit("seed");
+    const blob = r.run("rev-parse", `HEAD:${PINNED}`);
+    const sha256 = execFileSync("git", ["cat-file", "blob", blob], { cwd: r.dir, stdio: ["ignore", "pipe", "pipe"] });
+    return { url: r.url, commit, blob, sha256: require("node:crypto").createHash("sha256").update(sha256).digest("hex"), r };
+  }
+
+  const entry = (p: ReturnType<typeof pinned>, over: Partial<Upstream> = {}): Upstream => ({
+    id: "u", kind: "git", role: "current", repo: p.url, ref: "main",
+    pinned_commit: p.commit,
+    paths: [{ path: PINNED, pinned_blob: p.blob, sha256: p.sha256 }],
+    ...over,
+  });
+
+  it("current: the ref's tip is still the pinned commit", async () => {
+    const p = pinned();
+    const run = await runDrift([entry(p)], never);
+    expect(run.results[0]!.outcome).toBe("current");
+    expect(run.results[0]!.tip).toBe(p.commit);
+    expect(run.code).toBe(0);
+  });
+
+  it("moved_untouched: the tip advanced but the pinned path did not", async () => {
+    const p = pinned();
+    p.r.write("README.md", "two\n");
+    const tip = p.r.commit("touch something else");
+    expect(tip).not.toBe(p.commit);
+
+    const run = await runDrift([entry(p)], never);
+    const res = run.results[0]!;
+    expect(res.outcome).toBe("moved_untouched");
+    expect(res.tip).toBe(tip);
+    expect(res.changed_paths).toBeUndefined();
+    // The corpus is still an accurate snapshot, so this does not fail the run.
+    expect(run.code).toBe(0);
+  });
+
+  it("moved_changed: the pinned path itself moved, and the row names it with both blob ids", async () => {
+    const p = pinned();
+    p.r.write(PINNED, '{"vectors":[1,2,3,4]}\n');
+    const tip = p.r.commit("edit the pinned path");
+    const newBlob = p.r.run("rev-parse", `HEAD:${PINNED}`);
+
+    const run = await runDrift([entry(p)], never);
+    const res = run.results[0]!;
+    expect(res.outcome).toBe("moved_changed");
+    expect(res.tip).toBe(tip);
+    expect(res.changed_paths).toEqual([
+      { path: PINNED, old_blob: p.blob, new_blob: newBlob, new_sha256: expect.stringMatching(/^[0-9a-f]{64}$/) },
+    ]);
+    expect(res.changed_paths![0]!.new_blob).not.toBe(p.blob);
+    expect(run.code).toBe(1);
+  });
+
+  it("compares blob ids, not worktree bytes: a CRLF-only difference upstream is still moved_changed", async () => {
+    // The autocrlf trap, as an assertion rather than as a comment. This repository
+    // is developed on a machine with core.autocrlf=true, where a worktree
+    // comparison reports every text file as changed on every run. The control that
+    // this is reading the object store: the tool's answer here comes from a blob id
+    // that differs, and the clone it makes sets core.autocrlf=false so a checkout
+    // could not have manufactured the difference.
+    const p = pinned();
+    p.r.write(PINNED, '{"vectors":[1,2,3]}\r\n');
+    p.r.commit("same text, CRLF");
+    const res = (await runDrift([entry(p)], never)).results[0]!;
+    expect(res.outcome).toBe("moved_changed");
+    expect(res.changed_paths![0]!.new_blob).not.toBe(p.blob);
+  });
+
+  it("moved_changed: a pinned path deleted upstream is a change, not an unreachable", async () => {
+    const p = pinned();
+    p.r.run("rm", "-q", PINNED);
+    p.r.commit("delete the pinned path");
+    const res = (await runDrift([entry(p)], never)).results[0]!;
+    expect(res.outcome).toBe("moved_changed");
+    expect(res.changed_paths).toEqual([{ path: PINNED, old_blob: p.blob, new_blob: null, new_sha256: null }]);
+  });
+
+  it("moved_untouched when the pin gives a sha256 and no blob id, comparing the blob's bytes", async () => {
+    // The 57 TKCollective and ScopeBlind paths in fixtures/upstreams.json carry a
+    // sha256 and no blob id, because their provenance rows are raw URLs. They must
+    // still be checkable, and still without reading a worktree.
+    const p = pinned();
+    p.r.write("README.md", "two\n");
+    p.r.commit("touch something else");
+    const e = entry(p, { paths: [{ path: PINNED, pinned_blob: null, sha256: p.sha256 }] });
+    expect((await runDrift([e], never)).results[0]!.outcome).toBe("moved_untouched");
+
+    p.r.write(PINNED, '{"vectors":[9]}\n');
+    p.r.commit("now edit it");
+    const after = (await runDrift([e], never)).results[0]!;
+    expect(after.outcome).toBe("moved_changed");
+    expect(after.changed_paths![0]!.old_blob).toBeNull();
+    expect(after.changed_paths![0]!.new_sha256).not.toBe(p.sha256);
+  });
+
+  it("moved_untouched when no commit was ever pinned: the tip cannot match, the bytes still can", async () => {
+    // The ScopeBlind case: fourteen rows pinned from `HEAD`, with no commit
+    // recorded. `current` is unreachable for it by construction, and that is the
+    // honest answer -- but the question that matters, "did the bytes move?", is
+    // still answerable.
+    const p = pinned();
+    const res = (await runDrift([entry(p, { pinned_commit: null })], never)).results[0]!;
+    expect(res.outcome).toBe("moved_untouched");
+    expect(res.detail).toContain("no commit was ever pinned");
+  });
+
+  it("unreachable: a repository path that does not exist", async () => {
+    const gone = join(tmp(), "no-such-repo");
+    const res = (await runDrift([{ id: "gone", kind: "git", role: "current", repo: pathToFileURL(gone).href, ref: "main", pinned_commit: "0".repeat(40), paths: [] }], never)).results[0]!;
+    expect(res.outcome).toBe("unreachable");
+    expect(res.detail).toContain("ls-remote");
+    expect(res.tip).toBeNull();
+  });
+
+  it("unreachable: the repository exists but the ref does not", async () => {
+    const p = pinned();
+    const res = (await runDrift([entry(p, { ref: "no-such-branch" })], never)).results[0]!;
+    expect(res.outcome).toBe("unreachable");
+    expect(res.detail).toContain("resolved no ref");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// http and ietf-draft, through the injected fetch
+// ---------------------------------------------------------------------------
+
+const URL_A = "https://example.invalid/keys.json";
+const BODY = '{"public_keys":[]}';
+const SHA_BODY = require("node:crypto").createHash("sha256").update(Buffer.from(BODY, "utf8")).digest("hex");
+
+const httpEntry = (over: Partial<Upstream> = {}): Upstream => ({
+  id: "keys", kind: "http", role: "current", url: URL_A, sha256: SHA_BODY, retrieved: "2026-09-02T17:42:02Z", ...over,
+});
+
+describe("drift — http", () => {
+  it("current: the body still digests to the pin", async () => {
+    const run = await runDrift([httpEntry()], canned({ [URL_A]: { status: 200, body: BODY } }));
+    expect(run.results[0]!.outcome).toBe("current");
+    expect(run.results[0]!.tip).toBe(SHA_BODY);
+    expect(run.code).toBe(0);
+  });
+
+  it("changed: a different body, with both digests in the detail", async () => {
+    const run = await runDrift([httpEntry()], canned({ [URL_A]: { status: 200, body: '{"public_keys":[1]}' } }));
+    const res = run.results[0]!;
+    expect(res.outcome).toBe("changed");
+    expect(res.detail).toContain(SHA_BODY);
+    expect(res.tip).not.toBe(SHA_BODY);
+    expect(run.code).toBe(1);
+  });
+
+  it("unreachable: a non-200, and separately a transport error", async () => {
+    const notFound = await runDrift([httpEntry()], canned({ [URL_A]: { status: 404 } }));
+    expect(notFound.results[0]!.outcome).toBe("unreachable");
+    expect(notFound.results[0]!.detail).toContain("404");
+    expect(notFound.code).toBe(1);
+
+    const threw = await runDrift([httpEntry()], canned({ [URL_A]: "throw" }));
+    expect(threw.results[0]!.outcome).toBe("unreachable");
+    expect(threw.results[0]!.detail).toContain("ENOTFOUND");
+    expect(threw.code).toBe(1);
+  });
+});
+
+const DRAFT = "draft-marques-asqav-compliance-receipts";
+const NEXT = `https://www.ietf.org/archive/id/${DRAFT}-09.txt`;
+const draftEntry = (over: Partial<Upstream> = {}): Upstream => ({
+  id: `${DRAFT}-08`, kind: "ietf-draft", role: "current", name: DRAFT, pinned_rev: "08",
+  url: `https://www.ietf.org/archive/id/${DRAFT}-08.txt`, sha256: "0".repeat(64), ...over,
+});
+
+describe("drift — ietf-draft", () => {
+  it("current: the next revision is 404", async () => {
+    const run = await runDrift([draftEntry()], canned({ [NEXT]: { status: 404 } }));
+    expect(run.results[0]!.outcome).toBe("current");
+    expect(run.results[0]!.tip).toBe(`${DRAFT}-08`);
+    expect(run.code).toBe(0);
+  });
+
+  it("superseded: the next revision is 200, and the run names it", async () => {
+    const run = await runDrift([draftEntry()], canned({ [NEXT]: { status: 200 } }));
+    const res = run.results[0]!;
+    expect(res.outcome).toBe("superseded");
+    expect(res.tip).toBe(`${DRAFT}-09`);
+    expect(res.detail).toContain(`${DRAFT}-09`);
+    expect(run.code).toBe(1);
+  });
+
+  it("unreachable: any status that is neither 200 nor 404", async () => {
+    // A 500 is not a 404. Reading it as "no higher revision exists" would report a
+    // superseded draft as current on the strength of someone else's outage, which
+    // is the fail-open this tool must not have.
+    const run = await runDrift([draftEntry()], canned({ [NEXT]: { status: 500 } }));
+    expect(run.results[0]!.outcome).toBe("unreachable");
+    expect(run.results[0]!.detail).toContain("500");
+    expect(run.code).toBe(1);
+  });
+
+  it("probes exactly NN+1, zero-padded", async () => {
+    // `canned` throws on any unplanned URL, so this passes only if -09 is the sole
+    // request made -- which is what makes the padding assertion real.
+    const run = await runDrift([draftEntry({ pinned_rev: "08" })], canned({ [NEXT]: { status: 404 } }));
+    expect(run.results[0]!.outcome).toBe("current");
+    const one = await runDrift(
+      [draftEntry({ pinned_rev: "01", name: "draft-krausz-verification-state", id: "k" })],
+      canned({ "https://www.ietf.org/archive/id/draft-krausz-verification-state-02.txt": { status: 404 } }),
+    );
+    expect(one.results[0]!.outcome).toBe("current");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// role, exit codes, and the SUMMARY line
+// ---------------------------------------------------------------------------
+
+describe("drift — role, exit code and summary", () => {
+  it("not_checked: a historical pin is never fetched and never counted as current", async () => {
+    // `never` throws on any request, so this passes only because nothing was
+    // requested. A historical pin that quietly reported `current` would be the
+    // worst row in the file: a superseded snapshot asserting it is the tip.
+    const run = await runDrift(
+      [{ id: "old", kind: "http", role: "historical", url: URL_A, sha256: SHA_BODY }],
+      never,
+    );
+    expect(run.results[0]!.outcome).toBe("not_checked");
+    expect(run.totals.not_checked).toBe(1);
+    expect(run.totals.current).toBe(0);
+    expect(run.code).toBe(0);
+  });
+
+  it("exit 0 when every current-role upstream is current or moved_untouched", async () => {
+    const p = repo();
+    p.write("a.txt", "one\n");
+    const commit = p.commit("seed");
+    const run = await runDrift(
+      [
+        { id: "git", kind: "git", role: "current", repo: p.url, ref: "main", pinned_commit: commit, paths: [] },
+        httpEntry(),
+        draftEntry(),
+        { id: "old", kind: "http", role: "historical", url: URL_A, sha256: SHA_BODY },
+      ],
+      canned({ [URL_A]: { status: 200, body: BODY }, [NEXT]: { status: 404 } }),
+    );
+    expect(run.results.map((r) => r.outcome)).toEqual(["current", "current", "current", "not_checked"]);
+    expect(run.code).toBe(0);
+    expect(summaryLine(run.totals)).toBe(
+      "drift: current=3 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=1",
+    );
+  });
+
+  it("exit 1 on any changed, superseded or unreachable among current-role entries", async () => {
+    for (const [table, expected] of [
+      [{ [URL_A]: { status: 200, body: "different" }, [NEXT]: { status: 404 } }, "changed"],
+      [{ [URL_A]: { status: 200, body: BODY }, [NEXT]: { status: 200 } }, "superseded"],
+      [{ [URL_A]: { status: 503 }, [NEXT]: { status: 404 } }, "unreachable"],
+    ] as const) {
+      const run = await runDrift([httpEntry(), draftEntry()], canned(table));
+      expect(run.results.map((r) => r.outcome)).toContain(expected);
+      expect(run.code, `${expected} must exit 1`).toBe(1);
+    }
+  });
+
+  it("a failing check on a HISTORICAL entry does not move the exit code", async () => {
+    // The other half of the role contract, and it can fail on its own: if role
+    // were ignored, this run would exit 1 for a pin nothing claims is current.
+    const run = await runDrift(
+      [{ id: "old", kind: "http", role: "historical", url: URL_A, sha256: "0".repeat(64) }],
+      never,
+    );
+    expect(run.code).toBe(0);
+    expect(run.totals.not_checked).toBe(1);
+  });
+
+  it("the SUMMARY line names all seven outcomes, always", async () => {
+    const run = await runDrift([], never);
+    expect(summaryLine(run.totals)).toBe(
+      "drift: current=0 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=0",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// --record, end to end through the CLI, with no network
+// ---------------------------------------------------------------------------
+
+describe("drift — --record writes last_observed and nothing else", () => {
+  /** Run the real CLI against a temp upstreams file. Local git only: no network. */
+  function cli(upstreams: string, report: string, record: boolean): number {
+    const args = ["tsx", join(ROOT, "tools", "drift.ts"), "--upstreams", upstreams, "--report", report];
+    if (record) args.push("--record");
+    try {
+      execFileSync("npx", args, { cwd: ROOT, stdio: "pipe", shell: process.platform === "win32" });
+      return 0;
+    } catch (e) {
+      return Number((e as { status?: number }).status ?? -1);
+    }
+  }
+
+  function fixture(): { path: string; report: string; commit: string } {
+    const p = repo();
+    p.write("conformance/vectors.json", '{"vectors":[]}\n');
+    const commit = p.commit("seed");
+    const blob = p.run("rev-parse", "HEAD:conformance/vectors.json");
+    const dir = tmp();
+    const doc = {
+      version: 1,
+      note: "throwaway",
+      upstreams: [
+        { id: "live", kind: "git", role: "current", repo: p.url, ref: "main", pinned_commit: commit, paths: [{ path: "conformance/vectors.json", pinned_blob: blob, sha256: "unused-when-the-blob-id-matches" }] },
+        { id: "kept", kind: "git", role: "historical", repo: p.url, ref: "main", pinned_commit: commit, paths: [] },
+      ],
+    };
+    const path = join(dir, "upstreams.json");
+    writeFileSync(path, JSON.stringify(doc, null, 2) + "\n", "utf8");
+    return { path, report: join(dir, "drift.json"), commit };
+  }
+
+  it("a plain run leaves the file byte-identical", async () => {
+    const f = fixture();
+    const before = readFileSync(f.path);
+    expect(cli(f.path, f.report, false)).toBe(0);
+    expect(readFileSync(f.path).equals(before)).toBe(true);
+  });
+
+  it("--record adds exactly the last_observed member, on the checked entry only", async () => {
+    const f = fixture();
+    const before = JSON.parse(readFileSync(f.path, "utf8")) as { upstreams: Upstream[] };
+    expect(cli(f.path, f.report, true)).toBe(0);
+    const after = JSON.parse(readFileSync(f.path, "utf8")) as { upstreams: Upstream[] };
+
+    // Diff the file: every member of every entry is unchanged except for the one
+    // added key. Asserting only "last_observed exists" would pass a --record that
+    // also rewrote a pinned digest.
+    expect(after.upstreams.length).toBe(before.upstreams.length);
+    for (let i = 0; i < after.upstreams.length; i++) {
+      const { last_observed: added, ...rest } = after.upstreams[i]!;
+      const { last_observed: wasThere, ...was } = before.upstreams[i]!;
+      expect(wasThere).toBeUndefined();
+      expect(rest).toEqual(was);
+      if (before.upstreams[i]!.role === "current") {
+        expect(added).toEqual({ tip: f.commit, at: expect.stringMatching(/^\d{4}-\d\d-\d\dT/), outcome: "current" });
+      } else {
+        // A historical entry is never fetched, so there is no observation to
+        // record for it, and inventing one would make the file claim a run it
+        // never made.
+        expect(added).toBeUndefined();
+      }
+    }
+    // Nothing outside `upstreams` moved either.
+    const strip = (d: { upstreams: unknown }) => ({ ...d, upstreams: undefined });
+    expect(strip(after)).toEqual(strip(before));
+  });
+
+  it("--record is the only mode that writes, and a second --record is idempotent but for `at`", async () => {
+    const f = fixture();
+    expect(cli(f.path, f.report, true)).toBe(0);
+    const first = JSON.parse(readFileSync(f.path, "utf8")) as { upstreams: Upstream[] };
+    expect(cli(f.path, f.report, true)).toBe(0);
+    const second = JSON.parse(readFileSync(f.path, "utf8")) as { upstreams: Upstream[] };
+    expect(second.upstreams[0]!.last_observed!.tip).toBe(first.upstreams[0]!.last_observed!.tip);
+    expect(second.upstreams[0]!.last_observed!.outcome).toBe("current");
+  });
+});

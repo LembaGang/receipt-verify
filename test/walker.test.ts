@@ -31,7 +31,8 @@ import { ROOT } from "./helpers.js";
 interface Row {
   corpus: string;
   file: string;
-  pointer: string;
+  /** Null on a rule_idle row: that row is about a rule, not about a field. */
+  pointer: string | null;
   declared: string | null;
   recomputed: string | null;
   outcome: string;
@@ -43,9 +44,10 @@ interface Report {
 }
 
 /** Run the walker. Returns its report and exit code; a non-zero exit is expected on the pinned corpora. */
-function walk(opts: { root?: string; report: string }): { report: Report; code: number } {
+function walk(opts: { root?: string; report: string; scopes?: string }): { report: Report; code: number } {
   const args = ["tsx", join(ROOT, "tools", "walk-digests.ts"), "--report", opts.report];
   if (opts.root) args.push("--root", opts.root);
+  if (opts.scopes) args.push("--scopes", opts.scopes);
   let code = 0;
   try {
     execFileSync("npx", args, { cwd: ROOT, stdio: "pipe", shell: process.platform === "win32" });
@@ -255,11 +257,21 @@ describe("digest walker — the closure pair: green at the tip, red at 05c1c49",
       expect(row!.outcome, `${p} is ${row!.outcome}, not match`).toBe("match");
       expect(row!.rule, `${p} is graded by no registered rule`).not.toBeNull();
     }
-    // And the six that moved are graded by the envelope rule specifically, not by
-    // some other rule that happens to touch the same pointer.
+    // And the six that moved are graded by the rule registered for the SHAPE they
+    // moved to, not by some other rule that happens to touch the same pointer and
+    // not by the rule that names the shape they moved away from. That distinction
+    // is the whole point of the split: one rule spanning both shapes could not say
+    // which shape belonged to which corpus revision.
     const moved = FOURTEEN.filter((x) => x.includes("/expected/"));
     expect(moved.length).toBe(6);
-    for (const p of moved) expect(byPtr.get(p)!.rule).toBe("asqav.counterparty.envelope_hash");
+    for (const p of moved) expect(byPtr.get(p)!.rule).toBe("asqav.counterparty.envelope_hash.expected");
+    // The input side did not move, and is graded by the rule that says so.
+    for (const p of FOURTEEN.filter((x) => x.includes("/input/counterparty_binding/"))) {
+      expect(byPtr.get(p)!.rule).toBe("asqav.counterparty.envelope_hash.input");
+    }
+    // The old shape's rule is not applied to this corpus at all -- it grades no
+    // row here, rather than grading zero rows and looking idle.
+    expect(tip.report.body.rows.some((r) => r.rule === "asqav.counterparty.envelope_hash")).toBe(false);
   });
 
   it("stays red at 05c1c49, on exactly the ten M6 pointers and no others", () => {
@@ -299,13 +311,16 @@ describe("digest walker — the closure pair: green at the tip, red at 05c1c49",
     // Everything the edit broke is in the vector the edit touched.
     expect([...new Set(bad.map((r) => r.pointer.split("/").slice(0, 3).join("/")))]).toEqual(["/vectors/14"]);
 
-    // Three of the four are the envelope rule refusing to grade an unknown scope:
+    // Three of the four are the envelope rules refusing to grade an unknown scope:
     // recomputed is null because the row was compared against neither construction.
-    const byRule = bad.filter((r) => r.rule === "asqav.counterparty.envelope_hash");
-    expect(byRule.map((r) => r.pointer).sort()).toEqual([
-      "/vectors/14/expected/envelope_hash_base64",
-      "/vectors/14/expected/envelope_hash_hex",
-      "/vectors/14/input/counterparty_binding/envelope_hash",
+    // They are three rows under TWO rules, one per published shape, and the pairing
+    // is asserted rather than collapsed -- a filter on "any envelope rule" would
+    // pass just as happily if the split had put every row under one of them.
+    const byRule = bad.filter((r) => (r.rule ?? "").startsWith("asqav.counterparty.envelope_hash"));
+    expect(byRule.map((r) => `${r.rule} ${r.pointer}`).sort()).toEqual([
+      "asqav.counterparty.envelope_hash.expected /vectors/14/expected/envelope_hash_base64",
+      "asqav.counterparty.envelope_hash.expected /vectors/14/expected/envelope_hash_hex",
+      "asqav.counterparty.envelope_hash.input /vectors/14/input/counterparty_binding/envelope_hash",
     ]);
     for (const r of byRule) expect(r.recomputed).toBeNull();
 
@@ -317,7 +332,7 @@ describe("digest walker — the closure pair: green at the tip, red at 05c1c49",
     // The fourth is a true positive of a different kind and is kept, not filtered:
     // editing `input` also invalidates the published `canonical`, and the walker
     // says so with the bytes it recomputed.
-    const rest = bad.filter((r) => r.rule !== "asqav.counterparty.envelope_hash");
+    const rest = bad.filter((r) => !(r.rule ?? "").startsWith("asqav.counterparty.envelope_hash"));
     expect(rest.map((r) => r.pointer)).toEqual(["/vectors/14/canonical"]);
     expect(rest[0]!.recomputed).not.toBeNull();
   });
@@ -342,6 +357,127 @@ describe("digest walker — the closure pair: green at the tip, red at 05c1c49",
     expect(dirty.code).toBe(1);
     expect(dirty.report.body.totals["serializer_disagreement"]).toBeGreaterThan(0);
     expect(dirty.report.body.totals["expected_refusal"]).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The registry's version dimension: applies_to, and the rule_idle row.
+//
+// The quiet failure mode of a versioned registry is a rule that has STOPPED
+// matching. Upstream reshapes its corpus, the rule naming the old shape matches
+// zero pointers, and a zero-row rule is indistinguishable from a rule with
+// nothing to do -- which is exactly how the `expected` shape #473 introduced
+// could have gone ungraded while the walker printed green. These assertions are
+// about that silence being audible.
+// ---------------------------------------------------------------------------
+
+describe("digest walker — applies_to and the rule_idle row", () => {
+  const idle = baseline.report.body.rows.filter((r) => r.outcome === "rule_idle");
+
+  it("emits a rule_idle row per applied rule that matched nothing, with a null pointer", () => {
+    expect(idle.length).toBe(baseline.report.body.totals["rule_idle"]);
+    expect(idle.length).toBeGreaterThan(0);
+    for (const r of idle) {
+      expect(r.pointer).toBeNull();
+      expect(r.rule).not.toBeNull();
+      expect(r.declared).toBeNull();
+      expect(r.recomputed).toBeNull();
+    }
+    // Named exactly, so a rule going idle that is not on this list is a diff and
+    // not a shrug. Nine of the ten are rules a corpus inherits and whose file its
+    // only_files excludes; the tenth is the signing-input scope no document in
+    // refs/ defines, registered as unrecomputable on purpose.
+    expect(idle.map((r) => `${r.corpus} ${r.rule}`).sort()).toEqual([
+      "acta/synthetic acta.synthetic.chain.marques-signing-input",
+      "asqav/3b88156 asqav.chain.acta.whole",
+      "asqav/3b88156 asqav.chain.asqav.payload",
+      "asqav/history/3e13a0d asqav.chain.acta.whole",
+      "asqav/history/3e13a0d asqav.chain.asqav.payload",
+      "asqav/history/4cbdfc0 asqav.chain.acta.whole",
+      "asqav/history/4cbdfc0 asqav.chain.asqav.payload",
+      "asqav/history/ee8a3e7 asqav.chain.acta.whole",
+      "asqav/history/ee8a3e7 asqav.chain.asqav.payload",
+      "evidence-action ea.checkpoint_last_entry_hash",
+    ]);
+  });
+
+  it("does not fail the run and does not inflate `registered`", () => {
+    // rule_idle is a coverage fact, not a wrong digest. The exit code is decided
+    // by mismatch and serializer_disagreement alone, and a rule_idle row grades no
+    // field, so it must not be counted among the registered ones.
+    for (const [id, c] of Object.entries(baseline.report.body.per_corpus)) {
+      const rows = baseline.report.body.rows.filter((r) => r.corpus === id);
+      const graded = rows.filter((r) => r.outcome !== "unregistered" && r.outcome !== "rule_idle").length;
+      expect(c["registered"], `registered at ${id}`).toBe(graded);
+      expect(c["rule_idle"], `rule_idle at ${id}`).toBe(rows.filter((r) => r.outcome === "rule_idle").length);
+    }
+  });
+
+  it("applies each counterparty shape only to the corpus revision that publishes it", () => {
+    // The split, asserted from both sides. Each side can fail alone: applying the
+    // expected-shape rule at 05c1c49 would grade a shape that corpus never
+    // published, and applying the counterparty_binding-shape rule at 3b88156 would
+    // grade a shape upstream #473 removed.
+    const at = (corpus: string, rule: string) =>
+      baseline.report.body.rows.some((r) => r.corpus === corpus && r.rule === rule);
+
+    for (const old of ["asqav/05c1c49", "asqav/history/3e13a0d", "asqav/history/4cbdfc0", "asqav/history/ee8a3e7"]) {
+      expect(at(old, "asqav.counterparty.envelope_hash"), `${old} grades the counterparty_binding shape`).toBe(true);
+      expect(at(old, "asqav.counterparty.envelope_hash.expected"), `${old} must not grade the expected shape`).toBe(false);
+    }
+    expect(at("asqav/3b88156", "asqav.counterparty.envelope_hash.expected")).toBe(true);
+    expect(at("asqav/3b88156", "asqav.counterparty.envelope_hash")).toBe(false);
+    // The input side did not move and is graded at every one of the five.
+    for (const c of ["asqav/05c1c49", "asqav/3b88156", "asqav/history/3e13a0d", "asqav/history/4cbdfc0", "asqav/history/ee8a3e7"]) {
+      expect(at(c, "asqav.counterparty.envelope_hash.input"), `${c} grades the input shape`).toBe(true);
+    }
+    // And no envelope rule is idle anywhere: every registered shape matched.
+    expect(idle.filter((r) => (r.rule ?? "").includes("envelope_hash"))).toEqual([]);
+  });
+
+  it("a deliberately misapplied rule produces exactly one rule_idle row", () => {
+    // The red case. Without it, "the walker emits rule_idle" is asserted only
+    // against rules that were already idle before the member existed -- which is
+    // the walker agreeing with its own registry. Here a rule is pointed at a
+    // corpus that cannot possibly satisfy it, and the row has to appear.
+    const scopes = JSON.parse(readFileSync(join(ROOT, "walker", "scopes.json"), "utf8")) as {
+      corpora: Array<{ id: string; rules?: Array<Record<string, unknown>> }>;
+    };
+    const vs = scopes.corpora.find((c) => c.id === "verification-state")!;
+    vs.rules!.push({
+      id: "test.misapplied",
+      file: "no/such/file.json",
+      kind: "acta_canonical_sha256",
+      field: "/receipt_canonical_sha256",
+      construction: "sha256(jcs(a sibling receipt.json that does not exist in this corpus))",
+      status: "inferred",
+      document: null,
+      lines: null,
+      applies_to: ["verification-state"],
+    });
+    const alt = join(tmp(), "scopes.json");
+    writeFileSync(alt, JSON.stringify(scopes, null, 2));
+
+    const run = walk({ report: join(tmp(), "misapplied.json"), scopes: alt });
+    const added = run.report.body.rows.filter((r) => r.outcome === "rule_idle" && r.rule === "test.misapplied");
+    expect(added.length).toBe(1);
+    expect(added[0]!.corpus).toBe("verification-state");
+    expect(added[0]!.pointer).toBeNull();
+    expect(run.report.body.totals["rule_idle"]).toBe(baseline.report.body.totals["rule_idle"]! + 1);
+    // It changed the coverage report and nothing else: no digest moved, and the
+    // exit code is the one the corpora earn, not one the idle rule caused.
+    expect(run.report.body.totals["mismatch"]).toBe(baseline.report.body.totals["mismatch"]);
+    expect(run.report.body.totals["match"]).toBe(baseline.report.body.totals["match"]);
+    expect(run.code).toBe(baseline.code);
+  });
+
+  it("a rule that does not APPLY to a corpus is not idle there", () => {
+    // Absence of a rule and silence from a rule are different facts, and this is
+    // the assertion that keeps them apart. The counterparty_binding-shape rule
+    // matches nothing at 3b88156 -- but it does not apply there, so it must not
+    // appear as idle. If applies_to were ignored, this row would exist.
+    expect(idle.some((r) => r.corpus === "asqav/3b88156" && r.rule === "asqav.counterparty.envelope_hash")).toBe(false);
+    expect(idle.some((r) => r.corpus === "asqav/05c1c49" && r.rule === "asqav.counterparty.envelope_hash.expected")).toBe(false);
   });
 });
 
