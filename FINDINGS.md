@@ -859,6 +859,77 @@ describes -07 as a profile layered on farley, which is what this side held that 
 carry the withdrawn phrase. The sentence at :738-740 above is likewise not edited, because this file's
 rule is that entries are corrected by appending rather than in place; this block is that correction.
 
+**Appended 2026-09-05 — second correction, on the author's reading of 2026-09-05 (Gmail 1a07050e3d95841a): the sentence "so farley's whole-receipt scope is never applied to a Compliance Receipt and this tool grades no Compliance-Receipt content" was false at 0a7b167.**
+The sentence corrected here is the one at :845-848 in the block immediately above, quoted whole as it
+stands there: "`detect()` in `src/adapters/acta.ts` declines an envelope carrying a top-level `anchors`
+array with a payload-member signature scope, so farley's whole-receipt scope is never applied to a
+Compliance Receipt and this tool grades no Compliance-Receipt content." Its first clause is true —
+`detect()` did decline an envelope carrying an `anchors` ARRAY. The consequence drawn from it is
+withdrawn, not edited: the array was the only shape declined, so a -08 Compliance Receipt whose `anchors`
+member was null, or absent, was claimed as `acta.receipt/0` and graded. The sentence above is left
+standing where it is, under this file's rule that entries are corrected by appending rather than in place.
+
+**What the code was, and what it is.** At 0a7b167, `src/adapters/acta.ts` line 169 read
+`if (Array.isArray(p.env.rest["anchors"])) return false;` — the only anchors check in `detect()` — and
+`parseEnvelope()` copies every top-level member other than `payload` and `signature` into `rest` without
+inspecting it, so a null `anchors` and an absent `anchors` both passed that check and the envelope was
+claimed. At this commit the line reads `if ("anchors" in p.env.rest) return false;`: the KEY is the
+discriminator, with any value. That is -08's own rule, §5.3 line 1037: "the two wire formats are
+distinguished by the Asqav-only anchors key".
+
+**Measured here at 0a7b167, before the fix** (`npm run build`; `node dist/cli.js <input> --jwks
+fixtures/asqav/05c1c49/verifier/conformance-vectors/asqav-01-genesis-permit/jwks.json --json`; the
+constructed variants are that vector's own bytes re-serialised with the one member changed):
+
+| input | format | verdict | reason | stopped_at / detail |
+|---|---|---|---|---|
+| asqav-01-genesis-permit/receipt.json as published (anchors `[]`) | unknown | UNVERIFIABLE | format_unrecognized | `stopped_at` null; declined, as the withdrawn sentence says |
+| same, `anchors: null` (constructed) | acta.receipt/0 | UNVERIFIABLE | malformed_receipt | `signature_encoding`: "signature.sig is not lowercase hexadecimal; §2.1.1 fixes the encoding (88 chars given)" |
+| same, `anchors` member removed (constructed) | acta.receipt/0 | UNVERIFIABLE | malformed_receipt | `signature_encoding`: same detail |
+| same as null, sig re-encoded as hex (constructed) | acta.receipt/0 | UNVERIFIABLE | unsupported_algorithm | `algorithm_supported`: alg "Ed25519"; this tool verifies EdDSA and ES256 |
+| same, alg set to EdDSA as well (constructed) | acta.receipt/0 | UNVERIFIABLE | key_unresolvable | `key_resolution`: the vector's jwks.json is not a JWK Set this adapter reads (kty undefined) |
+| asqav-05-hash-mode-prod/receipt.json as published | — | — | — | not measured here; see the coverage note below |
+| asqav-10-hash-mode-multikey/receipt.json as published | — | — | — | not measured here; see the coverage note below |
+
+The five measured rows reproduce the Lead's table in
+`cc-output/LEAD_VERIFICATION_2026-09-05_detect-anchors.md` row for row, with no difference in format,
+verdict, reason or stopped_at. The last two rows are NOT measured here and are relayed from that
+document, not verified in this repository: `asqav-05-hash-mode-prod` and `asqav-10-hash-mode-multikey`
+are absent from this working tree — searched by filename across the whole tree except `node_modules/`,
+and searched the contents of `fixtures/asqav/05c1c49/conformance/vectors.json`, with no hit for either
+name; `fixtures/asqav/05c1c49/verifier/conformance-vectors/` holds three vectors only
+(`acta-02-chain-link`, `asqav-01-genesis-permit`, `asqav-03-chain-link`). The Lead measured them against
+a clone of asqav-sdk at 05c1c49 and reports both as the flat hash-mode shape, refused at the payload
+check and never claimed.
+
+**Two of the author's specifics did not hold on the bytes.** First, the verdict on the shapes his profile
+emits is UNVERIFIABLE `malformed_receipt` stopping at `signature_encoding`, never INVALID
+`signature_invalid` — scope of that negative: the five inputs measured above, that is
+`asqav-01-genesis-permit` as published plus the four constructed variants of it, run in this repository at
+0a7b167; the sixteen asqav-* vectors at 05c1c49 are the Lead's coverage, not mine. Second, the two M7
+null vectors, `asqav-05` and `asqav-10`, are the flat hash-mode shape (top-level `action_id`, `agent_id`,
+`algorithm`, `anchors` null, `hash`, …, `payload` null, `signature_b64`), refused by `parseEnvelope()` at
+the payload check and so never claimed at all — scope: relayed from the Lead's runs against the 05c1c49
+clone, since as stated above neither vector is present in this tree, searched as described.
+
+**Why the KEY and not the payload type prefix.** The discriminator cannot be `payload.type`, and the
+author's own corpus is what rules it out: `fixtures/asqav/05c1c49/verifier/conformance-vectors/acta-02-chain-link/receipt.json`
+is his upstream ACTA vector, whole-receipt scope, expected verified; read from the fixture its top-level
+keys are exactly `["payload","signature"]` — no `anchors` member — and its `payload.type` is
+`"protectmcp:decision"`, the same prefix `asqav-01-genesis-permit` carries (top-level keys
+`["payload","signature","anchors"]`, `anchors` `[]`, `payload.type` `"protectmcp:decision"`). A detect
+rule on the type prefix would decline acta-02, which is an ACTA receipt this adapter must claim. The key
+separates them and the type does not. An ABSENT `anchors` member is therefore claimed on purpose: an ACTA
+§2.1 envelope carries none, and under -08 §5 line 692 a conformant Compliance Receipt always carries one
+— "Anchors MUST be projected into a top-level anchors array with a type discriminator and a value field
+carrying the anchor bytes".
+
+**The limit, named.** The -08 author has said -09 will make an absent `anchors` member conformant and a
+null one malformed (his mail of 2026-09-05, Gmail 1a07050e3d95841a). Once absent is conformant the key no
+longer distinguishes the two wire formats, and the type prefix does not either, for the acta-02 reason
+above. This commit does not solve that case and does not pretend to: the discriminator for -09 is the
+profile author's to name, and it is put back to him in the reply. What is fixed here is -08 as written.
+
 ### A6. A machine path is not a provenance source
 :233-234 cites `C:\Users\User\agent-action-receipt-vectors` as the source of
 `fixtures/evidence-action/`. No reader can resolve that path. The corpus is a private snapshot whose

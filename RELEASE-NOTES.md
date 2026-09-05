@@ -3,6 +3,20 @@
 Shipped versions, newest first. Entries queued against the next release live in
 `RELEASE-NOTES-NEXT.md` and move here when they ship.
 
+## 0.1.3 (unreleased)
+
+`detect()` in `src/adapters/acta.ts` now declines an ACTA-shaped envelope that carries a
+top-level `anchors` member with ANY value — an array, an empty array, or null. 0.1.2
+declined only an array (`Array.isArray`), so a `-08` Compliance Receipt with `anchors: null`
+fell through the check, was claimed as `acta.receipt/0` and was graded under §2.1.1; measured
+at `0a7b167` that receipt returned UNVERIFIABLE `malformed_receipt` stopping at
+`signature_encoding`. The key is `-08`'s own discriminator, §5.3 line 1037: "the two wire
+formats are distinguished by the Asqav-only anchors key". An absent `anchors` member is still
+claimed, deliberately — an ACTA §2.1 envelope carries none and a conformant `-08` receipt
+always carries one (§5 line 692). `FINDINGS.md` A5 carries the second dated correction of
+2026-09-05, withdrawing the consequence the first correction drew from the array-only check.
+Found by the `-08` author on 2026-09-05.
+
 ## 0.1.2 (2026-09-04)
 
 What shipped since 0.1.1, grouped. Every hash named below is a commit in this

@@ -13,7 +13,7 @@
 // upstream ACTA Commitment Mode receipt under the format that defines it.
 //
 // This adapter implements the ACTA side only. A Compliance Receipt under -08
-// carries a top-level `anchors` array and a payload-member signature scope; it is
+// carries a top-level `anchors` member and a payload-member signature scope; it is
 // NOT an ACTA receipt and this adapter declines it at detection (see detect()),
 // so farley's scope is never applied to one. It grades no Compliance-Receipt
 // content. See FINDINGS.md A5, correction of 2026-09-05.
@@ -159,14 +159,39 @@ function parseEnvelope(bytes: Uint8Array): ParseOutcome {
 export function detect(bytes: Uint8Array): boolean {
   const p = parseEnvelope(bytes);
   if (!p.ok) return false;
-  // A top-level `anchors` array is the draft-marques-asqav-compliance-receipts-08
-  // envelope ({payload, signature, anchors}; §4, §5.4), never an ACTA §2.1
-  // envelope. farley -02 and -03 define no such member, and no ACTA fixture
-  // carries one (checked 2026-09-01). Claiming it here would route a conformant
-  // Compliance Receipt through the whole-receipt signature scope and return a
-  // false INVALID, so this adapter declines and detection reports the format as
+  // The top-level `anchors` KEY — with any value: an array, an empty array,
+  // null — marks the draft-marques-asqav-compliance-receipts-08 envelope
+  // ({payload, signature, anchors}; §4, §5.4), never an ACTA §2.1 envelope.
+  // -08 §5.3 line 1037 makes the key itself the discriminator: "receipts of
+  // this profile chain over the payload member R, whereas receipts of the bare
+  // [ACTA-RECEIPTS] format chain over the whole-receipt object that includes
+  // the signature; the two wire formats are distinguished by the Asqav-only
+  // anchors key". §4 lines 648-650: "The envelope of this profile has exactly
+  // three top-level members (payload, signature, anchors), and all signed
+  // content lives inside the payload member; the signature and anchors members
+  // sit beside it, outside the signed content."
+  //
+  // An ABSENT `anchors` member is claimed, deliberately: an ACTA §2.1 envelope
+  // carries none, and a conformant -08 receipt always carries one — §5 line 692
+  // says "Anchors MUST be projected into a top-level anchors array with a type
+  // discriminator and a value field carrying the anchor bytes".
+  //
+  // Testing `Array.isArray` here (0.1.2, through 0a7b167) checked the VALUE, so
+  // a -08 receipt with `anchors: null` fell through and was claimed and graded
+  // under §2.1.1. The -08 author reported that on 2026-09-05 (Gmail
+  // 1a07050e3d95841a); see FINDINGS.md A5, second correction of 2026-09-05.
+  //
+  // The limit: the -08 author has said -09 will make an absent `anchors` member
+  // conformant, at which point the key no longer distinguishes the two formats
+  // and the discriminator is his to name — the payload type prefix cannot serve,
+  // because his own upstream ACTA vector acta-02-chain-link carries
+  // `payload.type` "protectmcp:decision", the same prefix as the asqav-* vectors
+  // (author's mail of 2026-09-05, Gmail 1a07050e3d95841a).
+  //
+  // Claiming a Compliance Receipt here would route it through the whole-receipt
+  // signature scope; this adapter declines and detection reports the format as
   // unrecognized, which tells the caller to name it.
-  if (Array.isArray(p.env.rest["anchors"])) return false;
+  if ("anchors" in p.env.rest) return false;
   return true;
 }
 

@@ -138,6 +138,50 @@ describe("acta — declines the draft-marques -08 Compliance Receipt envelope", 
 });
 
 // --------------------------------------------------------------------------
+// The discriminator is the anchors KEY, not an array value (2026-09-05).
+//
+// 0.1.2 probed `Array.isArray`, so a -08 envelope whose `anchors` member was
+// null was claimed as acta.receipt/0 and graded under §2.1.1 — the shape the
+// -08 author reported on 2026-09-05. -08 §5.3 line 1037 makes the KEY the
+// discriminator: "the two wire formats are distinguished by the Asqav-only
+// anchors key". Case (b) is the one that was RED at 0a7b167.
+// --------------------------------------------------------------------------
+
+describe("detect(): the -08 anchors key", () => {
+  const vec = join(ASQAV_05C1C49, "verifier", "conformance-vectors");
+  const asqav01 = join(vec, "asqav-01-genesis-permit", "receipt.json");
+  const acta02 = join(vec, "acta-02-chain-link", "receipt.json");
+  const reserialise = (o: unknown) => Buffer.from(JSON.stringify(o), "utf8");
+  const asqav01Object = () => JSON.parse(read(asqav01).toString("utf8")) as Record<string, unknown>;
+
+  it("(a) declines asqav-01-genesis-permit as published, anchors []", () => {
+    expect(detect(read(asqav01))).toBe(false);
+  });
+
+  it("(b) declines the same receipt with anchors set to null", () => {
+    const o = asqav01Object();
+    o["anchors"] = null;
+    expect(detect(reserialise(o))).toBe(false);
+  });
+
+  it("(c) claims the same receipt with the anchors member deleted", () => {
+    // Claimed on purpose: an ACTA §2.1 envelope carries no anchors member and
+    // a conformant -08 receipt always does (§5 line 692), so an absent member
+    // is the ACTA side under -08. -09 is expected to change this; see detect().
+    const o = asqav01Object();
+    delete o["anchors"];
+    expect(detect(reserialise(o))).toBe(true);
+  });
+
+  it("(d) claims acta-02-chain-link as published, the upstream ACTA vector", () => {
+    // The type prefix is not a usable discriminator: this vector carries
+    // `payload.type` "protectmcp:decision", the same prefix as the asqav-*
+    // vectors, and no anchors member.
+    expect(detect(read(acta02))).toBe(true);
+  });
+});
+
+// --------------------------------------------------------------------------
 // What the PUBLISHED corpus actually establishes.
 // --------------------------------------------------------------------------
 
