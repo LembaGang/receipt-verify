@@ -961,7 +961,9 @@ Source of every value in this section: `refs/insight-oracle-keys-2026-09-02T1741
 **Appended 2026-09-05 — the registry changed after the 17:41Z pin: the diff, the sample key, H8 as measured**
 
 `npm run drift` at `3b6ca3f` reported `changed` for `https://www.oracleinsight.xyz/.well-known/oracle-keys.json`:
-the first upstream this repository pins that has actually moved. It was re-fetched at
+the first `changed` outcome that tool has produced against any upstream. (Two git upstreams have
+moved their tips since being pinned; both are `moved_untouched`, byte-unchanged at every pinned path,
+which is a different fact and is why `changed` is a separate outcome.) It was re-fetched at
 2026-09-05T18:29:05Z (HTTP 200, `application/json`, `Cache-Control: public, max-age=300`,
 `X-Vercel-Cache: MISS`, no `ETag` and no `Last-Modified`) and pinned byte-exact. The digest is the one
 drift predicted. Nothing below is taken from the handoff's summary paragraph; every count is counted
