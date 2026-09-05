@@ -62,7 +62,7 @@
           "id": "asqav.counterparty.envelope_hash",
           "file": "conformance/vectors.json",
           "kind": "asqav_envelope_hash",
-          "field": "/vectors/{i}/counterparty_binding/{envelope_hash,envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url} and the same members under /vectors/{i}/input/counterparty_binding",
+          "field": "/vectors/{i}/counterparty_binding/{envelope_hash,envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url}, the same members under /vectors/{i}/input/counterparty_binding, and the same members under /vectors/{i}/expected",
           "construction": "sha256(jcs({payload,signature,anchors} of this vector's originating envelope))",
           "which_envelope": {
             "1": "the vector named by originating_envelope_ref, when the vector carries one (happy_path, base64url_tolerance)",
@@ -81,7 +81,28 @@
             "document": "marques-08",
             "lines": "657",
             "graded": false,
-            "note": "The -09 forward scope. Recomputed and reported for information; never used to decide match/mismatch, because -08 as it reads today is the graded text (the author's instruction of 2026-09-02 13:07:20Z, recorded in FINDINGS.md A5)."
+            "note": "The scope NOT selected by counterparty_binding.scope for this block. Recomputed and reported for information on a mismatch; never used to decide match/mismatch. Through -08 with no scope member the graded scope is the three-key object and this is the minus-anchors one (the author's instruction of 2026-09-02 13:07:20Z, recorded in FINDINGS.md A5); where the corpus declares envelope_minus_anchors the two swap roles."
+          },
+          "field_shapes": {
+            "counterparty_binding": "The shape through 05c1c49: the block sits at the vector's top level and under `input`, and carries the renderings as members of a counterparty_binding object.",
+            "expected": "The shape from upstream 66ab579 (#473, 2026-09-04): the OUTPUT-side renderings moved to a sibling `expected` object where envelope_hash_{hex,base64,base64url} sit directly, with originating_envelope_ref beside them. Registered here because a registry that names only the old shape reports the new one `unregistered` -- which does not fail a run. At the tip that would have graded six fewer members than the ten graded at 05c1c49 and still printed green.",
+            "why_both": "Both shapes stay registered. The pinned history corpora carry the first, the pinned tip carries the second, and a corpus is graded under whichever shape it actually uses."
+          },
+          "scope_member": {
+            "member": "counterparty_binding.scope",
+            "added_upstream": "#452 (2026-09-02), the commit that fixed M6",
+            "values": {
+              "envelope_minus_anchors": "sha256(jcs({payload,signature})) -- marques-08 s4 line 657, the -09 forward scope",
+              "<absent>": "sha256(jcs({payload,signature,anchors})) -- marques-08 s5.7 lines 1351-1369, the default this repository grades",
+              "<anything else>": "graded against neither; reported as a MISMATCH naming the value. A scope the corpus asserts and no document defines is a claim that failed, not a field never claimed."
+            },
+            "resolution_order": [
+              "the block's own `scope` member (declared)",
+              "the same vector's input.counterparty_binding.scope, for an `expected` block that carries renderings but no scope of its own (declared, one hop)",
+              "the unanimous counterparty_binding.scope of the other vectors binding to the SAME originating envelope (inferred; the row names them). This is what resolves counterparty_binding_envelope_byte_equality, whose `expected` members publish the binding for an envelope its own input does not bind to.",
+              "no scope member anywhere -> the -08 s5.7 three-key default"
+            ],
+            "ambiguous": "If those peers declare more than one scope, the block is reported `unregistered` with that reason. Nothing here can choose between two declarations, and grading against a guess would manufacture the result."
           }
         },
         {
@@ -114,19 +135,34 @@
       "id": "asqav/history/3e13a0d",
       "dir": "fixtures/asqav/history/3e13a0d",
       "inherits_rules_from": "asqav/05c1c49",
-      "only_files": ["conformance/vectors.json"]
+      "only_files": [
+        "conformance/vectors.json"
+      ]
     },
     {
       "id": "asqav/history/4cbdfc0",
       "dir": "fixtures/asqav/history/4cbdfc0",
       "inherits_rules_from": "asqav/05c1c49",
-      "only_files": ["conformance/vectors.json"]
+      "only_files": [
+        "conformance/vectors.json"
+      ]
     },
     {
       "id": "asqav/history/ee8a3e7",
       "dir": "fixtures/asqav/history/ee8a3e7",
       "inherits_rules_from": "asqav/05c1c49",
-      "only_files": ["conformance/vectors.json"]
+      "only_files": [
+        "conformance/vectors.json"
+      ]
+    },
+    {
+      "id": "asqav/3b88156",
+      "dir": "fixtures/asqav/3b88156",
+      "inherits_rules_from": "asqav/05c1c49",
+      "only_files": [
+        "conformance/vectors.json"
+      ],
+      "corpus_note": "The asqav-sdk tip of 2026-09-05, pinned for the M6 closure run (fixtures/provenance.md). conformance/manifest.lock.json is pinned beside it as the author's own corpus lock and is not walked: its digests are SHA-256 over raw file bytes of files this repository does not hold, not digests over JSON structures the walker can address by pointer. Its vectors.json entry -- sha256 05fc1d8a2521e5dac3e9fed20358c46278a4174989fd43ee79c555133ffc31e1, 37383 bytes -- is the same digest fixtures/provenance.md records for the pinned file, arrived at independently."
     },
     {
       "id": "acta/published",
@@ -309,6 +345,19 @@
       "dir": "cpb",
       "rules": [],
       "corpus_note": "cpb/ holds TypeScript sources and Markdown result tables, no JSON corpus data. Its digest-shaped tokens are 64-hex strings inside prose and code, not fields of a document the walker can address by JSON pointer. Counted as non-field tokens in the report, not registered."
+    }
+  ],
+  "expected_refusals": [
+    {
+      "id": "asqav.number.at-safe-range-boundary",
+      "corpus_prefix": "asqav/",
+      "file_suffix": "conformance/vectors.json",
+      "pointer_suffix": "/canonical",
+      "refusal_equals": "ValueError: integer outside the IEEE754 safe range: 9007199254740992",
+      "reason": "This is OUR Python serialiser's fail-closed bound, not a refusal the corpus asked for. tools/asqav_envelope_hash.py refuses |n| >= 2**53; RFC 8785 s3.2.2.3 defers to ECMAScript Number::toString, which represents 2**53 = 9007199254740992 exactly, so our bound sits one value tighter than the specification draws it and the corpus declares this vector (asqav-25-number-at-safe-range-boundary) verifiable. The corpus's own must-reject vector is a DIFFERENT one -- asqav-25-number-above-safe-range-rejected, 9007199254740993 -- which carries `input_text` and no `input` and is therefore never canonicalized by this walker at all. Registered so that a fail-closed refusal by this repository's own tool does not permanently red a corpus it declines to grade. It is NOT a statement that the corpus is wrong.",
+      "what_goes_ungraded": "this vector's `canonical` member is not compared under the two-serialiser rule. Its sibling `sha256` IS still graded, because that rule digests the published canonical string directly and needs no canonicalization; and the TypeScript serialiser's own output for this value is 22 bytes, which is not compared to anything here on purpose -- one serialiser agreeing with itself is what this tool exists not to do.",
+      "narrowness": "All four of corpus_prefix, file_suffix, pointer_suffix and the EXACT refusal_equals text must match. A refusal on any other value, the same value with a reworded message, a refusal at any other pointer, or a genuine byte disagreement between the two serialisers, all still fail the run. The negative control in test/walker.test.ts is the input that turns this red.",
+      "fix_that_would_retire_this": "Widen the bound in tools/asqav_envelope_hash.py from |n| >= 2**53 to |n| > 2**53. Not done in this run: that module is the independent serialiser every digest in the -08 rerun was checked with, and changing it is a change to a control, not to the thing under test. Rowed rather than reached for."
     }
   ]
 }

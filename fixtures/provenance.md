@@ -703,3 +703,47 @@ long before a key was revoked resolves the same as one signed after. That is the
 it is the right default, but it is not the same as being able to say "valid as of the signing instant,
 revoked since", which is what a caller re-verifying an archived receipt actually wants. Closing it needs a
 revocation instant the registry does not currently publish in any bytes we hold.
+
+## Appended 2026-09-05 — the asqav-sdk tip `3b88156`, pinned for the M6 closure run
+
+`FINDINGS-rerun-2026-09-02.md` M6 closes against the tip of 2026-09-05. The closure asserts counts and
+digests over the tip's `conformance/vectors.json`; a clone in a session scratchpad is not evidence this
+repository holds, so the bytes the closure was measured from are pinned here, and the walker
+(`tools/walk-digests.ts`, registry `walker/scopes.json`) grades them on every run.
+
+Taken with `git cat-file blob <commit>:<path>` from a clone of
+`https://github.com/jagmarques/asqav-sdk`, never from a worktree: `core.autocrlf` is `true` on this
+machine and a checkout would rewrite the bytes these digests pin. Each `sha256` below was verified
+equal to `git cat-file blob <id> | sha256sum` before being written here, and each file carries **0 CR
+bytes**.
+
+| field | value |
+|---|---|
+| URL | `https://github.com/jagmarques/asqav-sdk` |
+| commit | `3b88156497d42a360576ecd580dad95ef031926b` |
+| subject | `chore(release): 0.10.10 (#483)` |
+| commit date | 2026-09-05T14:58:30+02:00 = **2026-09-05 12:58:30 UTC** |
+| fetched at | 2026-09-05T15:18:53Z (`git fetch origin` returned no new refs; `origin/main` = the same commit) |
+
+| fixture path | upstream blob at 3b88156 | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/asqav/3b88156/conformance/vectors.json` | `ef8cf090a18da7a4914b9104681f3ba877db7b31` | 37383 | `05fc1d8a2521e5dac3e9fed20358c46278a4174989fd43ee79c555133ffc31e1` |
+| `fixtures/asqav/3b88156/conformance/manifest.lock.json` | `ac5bc95ad58044adf47eec8f324e57b8d8a5fa5f` | 12906 | `49378c480f5e9cb5c4e8069bc98e91952cc35ea03937a973eb7a3f4807a6f2b6` |
+
+`manifest.lock.json` is the author's own corpus lock and is pinned because it is part of the closure
+evidence, not decoration: it declares `corpus_version` 5 and carries a `files` entry
+`{"path": "vectors.json", "sha256": "05fc1d8a2521e5dac3e9fed20358c46278a4174989fd43ee79c555133ffc31e1",
+"bytes": 37383}` — the same digest and the same byte count as the row above, arrived at by the author's
+tooling and by ours independently. `66ab579` (#473), the commit that moved the derived
+`envelope_hash` literal, updated this lock in the same change; that is what makes it evidence for the
+closure rather than a second copy of the same claim.
+
+**The `.gitattributes` flaw recorded against the earlier entries applies here too, and is again
+harmless.** `git check-attr text eol` reports `text: set, eol: lf` for both files, because
+`*.json text eol=lf` still sorts after `fixtures/** -text` and the last matching line wins. Both files
+are LF-only, and each staged blob was verified to hash to the sha256 in the table.
+
+**What this pin does not do.** It fixes the bytes of one upstream commit on one day. It carries no
+relation to the upstream ref it came from, so nothing in this repository can answer "has the upstream
+of this corpus moved since it was pinned?" — the question that made this closure run necessary in the
+first place, and the reason the v1 run of 2026-09-05 measured a value one commit out of date.

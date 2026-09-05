@@ -17,6 +17,31 @@ always carries one (§5 line 692). `FINDINGS.md` A5 carries the second dated cor
 2026-09-05, withdrawing the consequence the first correction drew from the array-only check.
 Found by the `-08` author on 2026-09-05.
 
+The digest walker learned three things and the evidence tree gained a corpus, all for the M6
+closure run against asqav-sdk `3b88156` (`FINDINGS-rerun-2026-09-02.md`, closure appended
+2026-09-05). `tools/walk-digests.ts` now reads `counterparty_binding.scope`: `envelope_minus_anchors`
+grades against `jcs({payload, signature})`, an absent member keeps the `-08` §5.7 three-key object,
+and any other value is a mismatch naming the unknown scope rather than a silent pass —
+a corpus that declares its scope and a walker that ignores the declaration is M6's own
+mechanism with the sides swapped. `walker/scopes.json` registers the `/vectors/{i}/expected/…`
+pointer shape upstream `66ab579` moved the output-side renderings to, alongside the older
+`counterparty_binding` shape; without it the walker would have gone green at the tip while
+grading six fewer members than the red it replaced, which is the failure this tool exists to
+catch committed by the tool itself. `tools/jcs-cross-check.py` reads `sys.stdin.buffer` and
+writes `sys.stdout.buffer` as UTF-8 explicitly instead of at the platform locale, so the second
+serialiser receives the bytes the first one read — on this cp1252 machine an astral or fullwidth
+member name arrived as mojibake and was reported as a serializer disagreement that was our
+harness, not the corpus. One `expected_refusal` outcome was added for the single case where our
+own Python serialiser fails closed at `|n| >= 2**53` on a value RFC 8785 represents exactly; it is
+registered by corpus, file, pointer and exact refusal text in `walker/scopes.json`, printed with
+what it leaves ungraded, and any other refusal still fails the run. The asqav-sdk tip is pinned at
+`fixtures/asqav/3b88156/` — `conformance/vectors.json` and the author's own
+`conformance/manifest.lock.json`, whose `files` entry for `vectors.json` carries the same sha256
+this repository computed independently — with provenance rows in `fixtures/provenance.md`. The
+walker exits 0 on that corpus with all fourteen published renderings graded as registered matches,
+and stays red on `05c1c49` with exactly the same ten pointers; `test/walker.test.ts` asserts both
+outcomes literally, each with the input that would turn it red.
+
 ## 0.1.2 (2026-09-04)
 
 What shipped since 0.1.1, grouped. Every hash named below is a commit in this

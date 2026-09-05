@@ -538,6 +538,108 @@ moved) rather than only the symptom, and the fix is a recomputation of one
 value, not an investigation.
 
 
+**Closure run 2026-09-05, against asqav-sdk 3b88156 (vectors.json blob ef8cf090…)**
+
+M6 is **CLOSED**. The finding stands as found; what closes it is that the value is
+now correct at the tip and, more than that, that the mechanism the finding named
+did not recur on its next opportunity.
+
+Measured against `3b88156497d42a360576ecd580dad95ef031926b`, *"chore(release):
+0.10.10 (#483)"*, 2026-09-05 12:58:30 UTC, `conformance/vectors.json` blob
+`ef8cf090a18da7a4914b9104681f3ba877db7b31`, sha256
+`05fc1d8a2521e5dac3e9fed20358c46278a4174989fd43ee79c555133ffc31e1`, 37,383 bytes,
+now pinned at `fixtures/asqav/3b88156/` with `conformance/manifest.lock.json`
+alongside it (`fixtures/provenance.md`). Counts and digests below are taken from
+those bytes with `git cat-file blob`, never from a worktree.
+
+**Found at `05c1c49`.** The published `counterparty_binding.envelope_hash` was
+`0d6c88a1…`, the three-key digest of the peer envelope *as it stood before* `#416`
+— a correct digest of a superseded envelope, carried as a literal in fourteen
+slots across five vectors and asserted by no test.
+
+**Fixed by the author at `f0305c0`**, *"fix(conformance): re-pin the stale
+counterparty digest and gate the corpus on its own inputs (#452)"*, 2026-09-02
+19:06:14 UTC, released at `2272cbf` *"release: cut the SDK at 0.10.7 (#457)"* on
+2026-09-03 15:43:37 UTC. Read from the diff, not from the message: `#452` removed
+fourteen occurrences of the stale value and added fourteen of
+`a4504d771dd14c5ef6de2edcfd2f44544f54afcfd7756921412584f8aaea0abd`, added the
+`counterparty_binding.scope` member with the value `envelope_minus_anchors`, and
+added `verifier/regen_fingerprint_vectors.py` and 340 lines of
+`python/tests/test_corpus_integrity.py` — that is, it fixed the value *and* built
+the thing whose absence was the finding. `2272cbf` touches no file under
+`conformance/`; it is the release that shipped the fix, not the fix.
+
+**Re-derived at `66ab579`**, *"test(conformance): counterparty vectors carry the
+profile payload_digest shape (#473)"*, 2026-09-04 21:01:27 UTC. That commit
+reshaped `payload_digest` from `{"alg", "value"}` to the profile's `{"hash",
+"size"}` form. **That changes A's envelope bytes, so the derived digest had to
+move with them, and it did** — in the same commit, fourteen occurrences of
+`a4504d77…` out and fourteen of
+`0da13f574caf75108a20605a00c615f6308c7844cc892779330e87656b31d8f9` in, with
+`conformance/manifest.lock.json` updated in the same change. **This is the
+substantive fact of the closure.** M6's mechanism is *a derived literal not
+recomputed when its input moves*. At `66ab579` the input moved again — the first
+opportunity for the failure to recur after the fix — and the literal moved with
+it, in one commit, together with the corpus lock that pins it. The fix was not a
+one-off correction of a number; the recomputation is now part of how the corpus is
+built.
+
+`66ab579` also moved the six **output-side** renderings out of the vectors'
+top-level `counterparty_binding` blocks into a sibling `expected` object
+(`/vectors/{i}/expected/envelope_hash_{hex,base64,base64url}`). The values did not
+change scope, only location.
+
+**Verified at the tip, from the bytes.**
+
+| value | hex | base64 | base64url | total |
+|---|---|---|---|---|
+| stale `0d6c88a1…` | 0 | 0 | 0 | **0** |
+| `a4504d77…` (correct at `f0305c0`) | 0 | 0 | 0 | **0** |
+| `0da13f57…` (correct at the tip) | **1** | **9** | **4** | **14** |
+
+Control at `f0305c0`, same script, same three renderings: `0d6c88a1…` 0/0/0,
+`a4504d77…` **1/9/4 = 14**, `0da13f57…` 0/0/0. The counter finds fourteen where
+fourteen are, so the zeros at the tip are facts about the tip and not about the
+script. The fourteen sit in the same five vectors and the same shape — 1 hex, 9
+base64, 4 base64url — at both commits; only the value moved.
+
+Recomputed with `tools/asqav_envelope_hash.py`, this repository's independent
+Python RFC 8785 implementation, imported unmodified. The two candidate scopes over
+A's envelope at the tip are genuinely distinct — (a) three-key
+`{payload, signature, anchors}`, 872 canonical bytes,
+`f3b138b08bd91a5a7cf20d3873bbf8949048fdb0a77925cb739d363b48343de6`; (b)
+minus-anchors `{payload, signature}`, 746 bytes, `0da13f57…` — so the match below
+is a claim that could have failed:
+
+- happy-path `input.counterparty_binding.envelope_hash`, `expected.envelope_hash_hex`
+  and `expected.envelope_hash_base64` all equal the **minus-anchors** digest, which
+  is the scope the vector's own `counterparty_binding.scope` names. **EQUAL: True**,
+  three times.
+- the four cascade vectors' `canonical` recomputed from `input` alone, and their
+  `sha256` from that canonical: eight literal equalities, all **True**.
+- the byte-equality vector keeps its **own three-key** digest in its `sha256`
+  (`f3b138b0…`), declares no `scope` member, and publishes the minus-anchors value
+  in `expected.envelope_hash_*`. Its description says exactly that, and the two
+  digests differ, so "it keeps the three-key digest" is checked, not assumed.
+
+Fourteen equalities, all true.
+
+**The walker now grades this, and grades it at both commits.** `tools/walk-digests.ts`
+reads `counterparty_binding.scope`, `walker/scopes.json` registers the `expected/…`
+shape as well as the old one, and `tools/jcs-cross-check.py` reads and writes UTF-8
+explicitly. At the pinned tip the walker exits **0** with `mismatch=0`,
+`serializer_disagreement=0`, and **all fourteen renderings graded as registered
+`match` rows, listed by pointer**. At `05c1c49` it stays **RED**, exit 1, on
+**exactly the same ten pointers** as before this run. `test/walker.test.ts` asserts
+both outcomes literally, together with the red case for each change.
+
+**What this closure does not establish.** The tip is a pin, and a pin has no
+liveness relation to the ref it came from. Nothing in this repository can answer
+"has the upstream of a corpus I pin moved since I pinned it?" — which is why a
+value correct on 2 September and superseded on 4 September could only be caught by
+a run that happened to be scheduled on the 5th. Rowed separately.
+
+
 ### M7. Eight of sixteen `asqav-*` vectors carry no anchor and expect `verified`, against §5.4's own MUST
 
 `-08` §5.4, lines 1052 and 1074–1075:
@@ -686,7 +788,7 @@ about whether `-08` is right.
 | new | subject | status |
 |---|---|---|
 | **M5** | `-08` states the `envelope_hash` scope two ways (§4 line 657 vs §5.7 lines 1351–1369; change list 7249–7253 agrees with §5.7) | Author-acknowledged 2026-09-02 13:07:20Z; §4 is the intent, `-09` corrects §5.7 and adds `counterparty_binding.scope`. Graded here as `-08` reads: the three-key object |
-| **M6** | the published `counterparty_binding.envelope_hash` matches neither scope, and disagrees with its own vector's `sha256` | **OPEN** — reported to the author with the two recomputed digests |
+| **M6** | the published `counterparty_binding.envelope_hash` matches neither scope, and disagrees with its own vector's `sha256` | **CLOSED at 3b88156** (found at 05c1c49; fixed f0305c0; re-derived 66ab579; closure appended 2026-09-05) |
 | **M7** | 8 of 16 `asqav-*` vectors carry no anchor and expect `verified`, against §5.4's "Verifiers MUST reject" | **OPEN** — no verdict offered on which side moves |
 
 **All four errata are RESOLVED as sent.** The chain-digest scope is settled in

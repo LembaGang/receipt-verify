@@ -196,3 +196,187 @@ describe("digest walker — determinism", () => {
     expect(headers[1]).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// The M6 closure pair, asserted literally. Added 2026-09-05 with the closure run
+// against asqav-sdk 3b88156 (fixtures/provenance.md).
+//
+// The finding was found at 05c1c49 and fixed upstream. Both halves have to stay
+// true at once, and each can fail on its own: if the walker went green at 05c1c49
+// it would have stopped detecting M6, and if it stayed red at the tip it would be
+// reporting a corrected corpus as broken. One assertion cannot cover both.
+// ---------------------------------------------------------------------------
+
+/** Copy exactly one pinned corpus into a throwaway root, so its exit code is its own. */
+function corpusRoot(id: string): string {
+  const dir = tmp();
+  cpSync(join(ROOT, "fixtures", "asqav", id), join(dir, "fixtures", "asqav", id), { recursive: true });
+  return dir;
+}
+
+const TIP = "3b88156";
+
+describe("digest walker — the closure pair: green at the tip, red at 05c1c49", () => {
+  const tip = walk({ root: corpusRoot(TIP), report: join(tmp(), "tip.json") });
+  const old = walk({ root: corpusRoot("05c1c49"), report: join(tmp(), "old.json") });
+
+  it("exits 0 on the pinned tip, with no mismatch and no serializer disagreement", () => {
+    expect(tip.code).toBe(0);
+    expect(tip.report.body.totals["mismatch"]).toBe(0);
+    expect(tip.report.body.totals["serializer_disagreement"]).toBe(0);
+  });
+
+  it("grades all fourteen published renderings of the tip's envelope_hash, by pointer", () => {
+    // The fourteen slots the closure counts from the bytes: six on the `expected`
+    // shape #473 introduced, four on input.counterparty_binding, and four carried
+    // inside the `canonical` strings that recompute from those inputs. Listing
+    // them by pointer is the point -- a green that graded ten of the fourteen and
+    // left six `unregistered` would still print mismatch=0.
+    const FOURTEEN = [
+      "/vectors/14/canonical",
+      "/vectors/14/expected/envelope_hash_base64",
+      "/vectors/14/expected/envelope_hash_hex",
+      "/vectors/14/input/counterparty_binding/envelope_hash",
+      "/vectors/15/expected/envelope_hash_base64",
+      "/vectors/15/expected/envelope_hash_base64url",
+      "/vectors/16/canonical",
+      "/vectors/16/expected/envelope_hash_base64",
+      "/vectors/16/expected/envelope_hash_base64url",
+      "/vectors/16/input/counterparty_binding/envelope_hash",
+      "/vectors/17/canonical",
+      "/vectors/17/input/counterparty_binding/envelope_hash",
+      "/vectors/18/canonical",
+      "/vectors/18/input/counterparty_binding/envelope_hash",
+    ];
+    const byPtr = new Map(tip.report.body.rows.map((r) => [r.pointer, r]));
+    for (const p of FOURTEEN) {
+      const row = byPtr.get(p);
+      expect(row, `no walker row grades ${p}`).toBeDefined();
+      expect(row!.outcome, `${p} is ${row!.outcome}, not match`).toBe("match");
+      expect(row!.rule, `${p} is graded by no registered rule`).not.toBeNull();
+    }
+    // And the six that moved are graded by the envelope rule specifically, not by
+    // some other rule that happens to touch the same pointer.
+    const moved = FOURTEEN.filter((x) => x.includes("/expected/"));
+    expect(moved.length).toBe(6);
+    for (const p of moved) expect(byPtr.get(p)!.rule).toBe("asqav.counterparty.envelope_hash");
+  });
+
+  it("stays red at 05c1c49, on exactly the ten M6 pointers and no others", () => {
+    expect(old.code).toBe(1);
+    expect(old.report.body.rows.filter((r) => r.outcome === "mismatch").map((r) => r.pointer).sort()).toEqual([
+      "/vectors/14/counterparty_binding/envelope_hash_base64",
+      "/vectors/14/counterparty_binding/envelope_hash_hex",
+      "/vectors/14/input/counterparty_binding/envelope_hash",
+      "/vectors/15/counterparty_binding/envelope_hash_base64",
+      "/vectors/15/counterparty_binding/envelope_hash_base64url",
+      "/vectors/16/counterparty_binding/envelope_hash_base64",
+      "/vectors/16/counterparty_binding/envelope_hash_base64url",
+      "/vectors/16/input/counterparty_binding/envelope_hash",
+      "/vectors/17/input/counterparty_binding/envelope_hash",
+      "/vectors/18/input/counterparty_binding/envelope_hash",
+    ]);
+  });
+
+  it("reads counterparty_binding.scope rather than assuming one: an unknown value is a mismatch", () => {
+    // The red case for the scope change. Without it, the tip would grade green for
+    // a reason that has nothing to do with the member being read -- so "the walker
+    // reads scope" needs an input where ignoring the member gives a different
+    // answer, and this is it.
+    const dir = corpusRoot(TIP);
+    const target = join(dir, "fixtures", "asqav", TIP, "conformance", "vectors.json");
+    const doc = JSON.parse(readFileSync(target, "utf8")) as {
+      vectors: Array<{ name: string; input?: { counterparty_binding?: { scope?: string } } }>;
+    };
+    const v = doc.vectors.find((x) => x.name === "counterparty_binding_happy_path")!;
+    expect(v.input!.counterparty_binding!.scope).toBe("envelope_minus_anchors");
+    v.input!.counterparty_binding!.scope = "envelope_over_something_no_document_defines";
+    writeFileSync(target, JSON.stringify(doc, null, 2));
+
+    const dirty = walk({ root: dir, report: join(tmp(), "scope.json") });
+    expect(dirty.code).toBe(1);
+    const bad = dirty.report.body.rows.filter((r) => r.outcome === "mismatch");
+    // Everything the edit broke is in the vector the edit touched.
+    expect([...new Set(bad.map((r) => r.pointer.split("/").slice(0, 3).join("/")))]).toEqual(["/vectors/14"]);
+
+    // Three of the four are the envelope rule refusing to grade an unknown scope:
+    // recomputed is null because the row was compared against neither construction.
+    const byRule = bad.filter((r) => r.rule === "asqav.counterparty.envelope_hash");
+    expect(byRule.map((r) => r.pointer).sort()).toEqual([
+      "/vectors/14/expected/envelope_hash_base64",
+      "/vectors/14/expected/envelope_hash_hex",
+      "/vectors/14/input/counterparty_binding/envelope_hash",
+    ]);
+    for (const r of byRule) expect(r.recomputed).toBeNull();
+
+    // The `expected` block carries no scope member of its own; it reached the
+    // unknown value through the sibling input.counterparty_binding.scope, which is
+    // the resolution chain walker/scopes.json documents. Two of the three rows
+    // above are that chain working.
+    //
+    // The fourth is a true positive of a different kind and is kept, not filtered:
+    // editing `input` also invalidates the published `canonical`, and the walker
+    // says so with the bytes it recomputed.
+    const rest = bad.filter((r) => r.rule !== "asqav.counterparty.envelope_hash");
+    expect(rest.map((r) => r.pointer)).toEqual(["/vectors/14/canonical"]);
+    expect(rest[0]!.recomputed).not.toBeNull();
+  });
+
+  it("registers one expected refusal, and any other refusal still fails the run", () => {
+    // The refusal allowance is the one thing here that turns a red outcome green,
+    // so it carries the tightest control in the file. The registered entry matches
+    // on the exact refusal text; a different out-of-range integer produces a
+    // different text, matches nothing, and the run goes back to exit 1.
+    expect(tip.report.body.totals["expected_refusal"]).toBe(1);
+    expect(
+      tip.report.body.rows.filter((r) => r.outcome === "expected_refusal").map((r) => r.pointer),
+    ).toEqual(["/vectors/25/canonical"]);
+
+    const dir = corpusRoot(TIP);
+    const target = join(dir, "fixtures", "asqav", TIP, "conformance", "vectors.json");
+    const raw = readFileSync(target, "utf8");
+    expect(raw).toContain("9007199254740992");
+    writeFileSync(target, raw.split("9007199254740992").join("9007199254740994"));
+
+    const dirty = walk({ root: dir, report: join(tmp(), "refusal.json") });
+    expect(dirty.code).toBe(1);
+    expect(dirty.report.body.totals["serializer_disagreement"]).toBeGreaterThan(0);
+    expect(dirty.report.body.totals["expected_refusal"]).toBe(0);
+  });
+});
+
+describe("digest walker — the second serialiser reads UTF-8 on every platform", () => {
+  it("digests an astral and a fullwidth member name identically with and without PYTHONUTF8", () => {
+    // The walker compares two serialisers, and the comparison is only evidence if
+    // both received the same bytes. Python decodes stdin at the locale encoding;
+    // on a cp1252 machine a non-Latin-1 member name arrived as mojibake and the
+    // walker reported a disagreement that was its own harness, not the corpus.
+    // No pinned corpus carried such a key until the tip was pinned -- which is to
+    // say this check could not have gone red until the day it mattered.
+    const script = join(ROOT, "tools", "jcs-cross-check.py");
+    // Real UTF-8 bytes, not \u escapes: escapes are ASCII and would not exercise
+    // the decode at all.
+    const req = Buffer.from(JSON.stringify({ id: "t", value: { "\u{1F600}": 1, "＠": 1 } }) + "\n", "utf8");
+    expect(req.includes(Buffer.from([0xf0, 0x9f, 0x98, 0x80]))).toBe(true);
+
+    const run = (utf8: boolean): { len: number; sha256: string } => {
+      const env: NodeJS.ProcessEnv = { ...process.env };
+      if (utf8) env["PYTHONUTF8"] = "1";
+      else delete env["PYTHONUTF8"];
+      const out = execFileSync("python", [script], { input: req, env, stdio: "pipe" }).toString("utf8");
+      return JSON.parse(out.trim()) as { len: number; sha256: string };
+    };
+
+    const a = run(false);
+    expect(a).toEqual(run(true));
+
+    // And it is the RIGHT digest, not merely a stable one: the corpus publishes
+    // the canonical form and its SHA-256 for this exact object.
+    const doc = JSON.parse(
+      readFileSync(join(ROOT, "fixtures", "asqav", TIP, "conformance", "vectors.json"), "utf8"),
+    ) as { vectors: Array<{ name: string; canonical?: string; sha256?: string }> };
+    const v = doc.vectors.find((x) => x.name === "asqav-24-jcs-astral-key-order")!;
+    expect(a.sha256).toBe(v.sha256);
+    expect(a.len).toBe(Buffer.from(v.canonical!, "utf8").length);
+  });
+});
