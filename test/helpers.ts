@@ -139,3 +139,34 @@ export const INSIGHT_KEY_202609 = "0x6506F789Edd43338A416f59822A63F309f97E8ce";
  */
 export const INSIGHT_NOW_1741 = 1788370900;
 export const INSIGHT_NOW_1530 = 1788363000;
+
+/**
+ * The 2026-09-05T18:29Z registry pin — the fifth pin of the same URL, and the
+ * first that is not one of the two digests the 2 September pins carry. It adds
+ * a THIRD key, `insight-oracle-safety-sample`, carrying members no earlier pin
+ * published: `role: "sample"` and a `note`. Both sample endpoints the registry
+ * names now sign with it.
+ *
+ * The two sample files are the endpoint responses byte-exact, wrapper and all.
+ * No derived attestation file is pinned beside them, unlike the 15:46Z pair:
+ * the cases below read `data.attestation` out of the wrapper, which is a tighter
+ * relation than a second file that could drift from its parent.
+ *
+ * These endpoints mint a fresh signature per call, so these bytes are one
+ * observation and can never be re-fetched — which is why they are pinned rather
+ * than checked live, and why `fixtures/upstreams.json` carries no drift entry
+ * for either.
+ */
+export const INSIGHT_REGISTRY_0905 = join(dirname(FIX), "refs", "insight-oracle-keys-2026-09-05T1829Z.json");
+export const INSIGHT_EXEC_SAMPLE_0905 = join(INSIGHT, "execution-sample-2026-09-05T1830Z.json");
+export const INSIGHT_SAFETY_SAMPLE_0905 = join(INSIGHT, "safety-sample-2026-09-05T1830Z.json");
+
+/** The third published key, by address: `insight-oracle-safety-sample`, role "sample". */
+export const INSIGHT_KEY_SAMPLE = "0xa41d5Ee795d95B87B3AA988150fC2d5e5fE5A534";
+
+/**
+ * The instant the 18:29Z registry was fetched (2026-09-05T18:29:05Z, the
+ * response's own `Date` header). Inside the sample key's window, which opens
+ * 2026-09-03, and 2,614,409 s past `insight-oracle-safety-v2`'s validUntil.
+ */
+export const INSIGHT_NOW_0905 = 1788632945;

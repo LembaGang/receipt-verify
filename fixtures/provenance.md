@@ -747,3 +747,77 @@ are LF-only, and each staged blob was verified to hash to the sha256 in the tabl
 relation to the upstream ref it came from, so nothing in this repository can answer "has the upstream
 of this corpus moved since it was pinned?" — the question that made this closure run necessary in the
 first place, and the reason the v1 run of 2026-09-05 measured a value one commit out of date.
+
+## Appended 2026-09-05 — the fifth Insight registry pin (18:29Z) and the two 18:30Z sample endpoints
+
+`npm run drift` at `3b6ca3f` reported the Insight key registry `changed` — the first `changed`
+outcome that tool has produced against any upstream. Three files were fetched in this session, each
+over HTTPS, each saved as the response body byte-exact with no re-serialisation, and each hashed
+before being copied into the tree. No other host was contacted, and nothing under `keys/` was touched.
+
+| path | source URL | retrieved (UTC) | bytes | sha256 |
+|---|---|---|---|---|
+| `refs/insight-oracle-keys-2026-09-05T1829Z.json` | `https://www.oracleinsight.xyz/.well-known/oracle-keys.json` | 2026-09-05T18:29:05Z | 17958 | `7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330` |
+| `fixtures/insight/execution-sample-2026-09-05T1830Z.json` | `https://www.oracleinsight.xyz/api/v1/execution/attestation/sample` | 2026-09-05T18:30:58Z | 4894 | `a2c442e02df4682899ee9707d0c695e17ce4f65029b2ccd7c67728061f143b5b` |
+| `fixtures/insight/safety-sample-2026-09-05T1830Z.json` | `https://www.oracleinsight.xyz/api/v1/safety/attestation/sample` | 2026-09-05T18:30:59Z | 4052 | `28110d2f0ca8286168a457254afeb99204312b39ed751ba9cac38a81e32f6139` |
+
+The two endpoint URLs are the ones the **newly fetched** registry names in its own `execution_sample`
+and `sample` members; no URL was supplied from outside the bytes. The `retrieved` instant in each row
+is the response's own `Date` header, not a local clock read.
+
+**Response headers, recorded because a pin without them is a body with no provenance.** All three:
+HTTP/1.1 200, `Content-Type: application/json`, `Server: Vercel`, `Transfer-Encoding: chunked`, and
+**no `ETag` and no `Last-Modified` on any of the three** — so nothing but the digest identifies these
+bodies, which is why the digest is the pin. The registry answered `Cache-Control: public, max-age=300`
+with `Age: 0` and `X-Vercel-Cache: MISS`; both sample endpoints answered `Cache-Control: no-store,
+no-cache, must-revalidate, proxy-revalidate`, `Pragma: no-cache`, `Expires: 0`, `X-Vercel-Cache: MISS`
+and `X-RateLimit-Limit: 200` with 199 remaining. The registry response also set an `__internal`
+cookie, which is not part of the body and is not pinned.
+
+**The two sample pins are single observations and cannot be reproduced.** Each endpoint mints a fresh
+signature per call: the execution sample's `signedAt` is 2026-09-05T18:30:57.383Z and the safety
+sample's is 2026-09-05T18:30:59.932Z, both within two seconds of the fetch. Re-fetching either URL
+returns different bytes with a different digest, so `fixtures/upstreams.json` deliberately carries no
+drift entry for either — an http entry against them would report `changed` on every run forever, and
+a check that always fails says no more than one that cannot fail. The registry URL, by contrast, is a
+stable document and **is** entered there; the `insight-oracle-keys` upstream now points at the 18:29Z
+pin, and the 17:41Z pin joins the 09:09Z, 11:54Z and 15:45Z pins as a `historical` entry.
+
+**No derived attestation file is pinned this time.** The 15:46Z pair kept both the wrapper and a
+`data.attestation` extraction re-serialised at two-space indent, because the adapter reads a single
+attestation object. Here the two wrappers are pinned alone and `test/insight.test.ts` reads
+`data.attestation` out of them in memory. That is a tighter relation than a second file: an extraction
+held only in the test cannot drift from its parent at all, where a pinned copy has to be asserted
+equal to one.
+
+**What the new registry bytes say.** `public_keys` gains a **third** entry —
+`insight-oracle-safety-sample`, `0xa41d5Ee795d95B87B3AA988150fC2d5e5fE5A534`, `validFrom`
+`2026-09-03`, `validUntil` `null`, `revoked` `false` — carrying two members no key in any earlier pin
+has carried: `role: "sample"` and a `note` beginning "SAMPLE ONLY". The two production keys are
+deep-equal to their 17:41Z selves, `revoked_keys` is still `[]`, `key_rotation_policy` is unchanged
+character for character, and all ten other published schemas are deep-equal. `ExecutionReceipt` stays
+at `schemaVersion` 4 with **44** signed fields — the same 44 `{name, type}` pairs in the same order,
+counted from both files — and gains three sibling members: `commitments`, `sentinels` and
+`sampleSigningKeyRole: "sample"`. Four leaf additions in total, nothing removed, nothing changed. The
+handoff's summary read of the live registry said 39 fields; it was marked as a summary rather than a
+measurement, and the bytes say 44. `FINDINGS.md` section F carries the field-by-field diff.
+
+**Both sample endpoints now sign with the sample key**, recovered from the pinned bytes through this
+repository's own EIP-712 path: `0xa41d5ee795d95b87b3aa988150fc2d5e5fe5a534` for both, matching that
+registry entry by address, with each artefact's `uid` equal to our recomputed digest. That is H8
+closed in production — the round-3 letter named a registry-labelled non-production key as one of three
+remedies and the issuer took it — and `FINDINGS.md` F2 records the three things it leaves standing,
+the first being that the 44 signed fields still carry no mark and still say `environment: "production"`.
+
+**Same `.gitattributes` ordering flaw as every earlier Insight entry, same harmlessness, recorded
+again.** `git check-attr text eol` reports `text: set, eol: lf` for all three paths because
+`*.json text eol=lf` sorts after `fixtures/** -text` and the last matching line wins. Harmless here
+for a reason worth stating precisely: all three files contain **zero** LF bytes and **zero** CR bytes
+— each is a single unterminated JSON line — so there is no line ending for a filter to rewrite, and
+each staged blob was verified to hash to the sha256 in the table above.
+
+**What these pins do not do.** They fix three bodies at three instants on one day. The registry moved
+between 2026-09-02T17:42Z and 2026-09-05T18:29Z with no announcement and no `Last-Modified` to date
+the move, so nothing here can say *when* the third key appeared — only that it was absent at the first
+instant and present at the second. `validFrom: "2026-09-03"` is the issuer's claim about that, not an
+observation of ours.

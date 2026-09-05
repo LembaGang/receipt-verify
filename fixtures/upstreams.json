@@ -36,8 +36,8 @@
         "reason": "Email attachments (2026-09-02), copied from cc-output. fixtures/provenance.md records no URL for them and no endpoint served them."
       },
       {
-        "rows": "the 2 `fixtures/insight/execution-sample-*.json` rows",
-        "reason": "fixtures/provenance.md names the source only as 'production sample endpoint' and records no URL. The pinned registry bytes name https://www.oracleinsight.xyz/api/v1/execution/attestation/sample, but that endpoint mints a fresh signature per call — the two pins 116 minutes apart are both 4675 bytes with different sha256 — so an http entry against it would report `changed` on every run forever. A check that always fails says no more than one that cannot fail."
+        "rows": "the 4 `fixtures/insight/*-sample-*.json` endpoint-response rows",
+        "reason": "fixtures/provenance.md names the source of the two 2026-09-02 rows only as 'production sample endpoint'; the two 2026-09-05 rows (`execution-sample-2026-09-05T1830Z.json`, `safety-sample-2026-09-05T1830Z.json`) do name their URLs, https://www.oracleinsight.xyz/api/v1/execution/attestation/sample and .../safety/attestation/sample. Neither is entered here anyway: both endpoints mint a fresh signature per call — the two execution pins 116 minutes apart are both 4675 bytes with different sha256 — so an http entry against either would report `changed` on every run forever. A check that always fails says no more than one that cannot fail."
       },
       {
         "rows": "`fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json`",
@@ -80,7 +80,7 @@
       "provenance_section": "Appended 2026-09-05 — the asqav-sdk tip `3b88156`, pinned for the M6 closure run",
       "last_observed": {
         "tip": "3b88156497d42a360576ecd580dad95ef031926b",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       }
     },
@@ -455,7 +455,7 @@
       "provenance_section": "the main snapshot table, rows 44-86",
       "last_observed": {
         "tip": "49b7d039576b17e39dd707c9f223de5670c9be86",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "moved_untouched"
       }
     },
@@ -546,7 +546,7 @@
       "provenance_section": "the main snapshot table rows 100-113, and the flag at line 231",
       "last_observed": {
         "tip": "a320f24a9400e2386f04483132bda4556f10c085",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "moved_untouched"
       }
     },
@@ -564,7 +564,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       }
     },
@@ -583,7 +583,7 @@
       "role_note": "The URL is the digest, so this body cannot change without the URL changing. What the check can still turn red is disappearance: a 404 or a DNS failure is `unreachable`, and a content-addressed mapping that stops resolving is the thing worth knowing about here.",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       }
     },
@@ -601,7 +601,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       }
     },
@@ -610,6 +610,26 @@
       "kind": "http",
       "role": "current",
       "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
+      "sha256": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
+      "retrieved": "2026-09-05T18:29:05Z",
+      "pinned_file": "refs/insight-oracle-keys-2026-09-05T1829Z.json",
+      "corpus_dirs": [
+        "fixtures/insight",
+        "refs"
+      ],
+      "provenance_section": "the five Insight registry pins",
+      "role_note": "The newest of the five pins of this URL, and therefore the one a drift check is about. Moved here from the 2026-09-02T17:41Z pin on 2026-09-05, after the first `changed` outcome this tool has reported: the registry published a third key, `insight-oracle-safety-sample`.",
+      "last_observed": {
+        "tip": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
+        "at": "2026-09-05T18:44:21.085Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "insight-oracle-keys/2026-09-02T1741Z",
+      "kind": "http",
+      "role": "historical",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
       "sha256": "76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2",
       "retrieved": "2026-09-02T17:42:02Z",
       "pinned_file": "refs/insight-oracle-keys-2026-09-02T1741Z.json",
@@ -617,13 +637,8 @@
         "fixtures/insight",
         "refs"
       ],
-      "provenance_section": "the four Insight registry pins",
-      "role_note": "The newest of the four pins of this URL, and therefore the one a drift check is about.",
-      "last_observed": {
-        "tip": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
-        "at": "2026-09-05T17:57:53.892Z",
-        "outcome": "changed"
-      }
+      "provenance_section": "the five Insight registry pins",
+      "role_reason": "Superseded by the 2026-09-05T18:29Z pin. Kept for the finding it carries with the 15:45Z pin: two pins with the same digest either side of 2026-09-02T17:35:36Z are what say the registry does not change when a key's window shuts."
     },
     {
       "id": "insight-oracle-keys/2026-09-02T0909Z",
@@ -637,7 +652,7 @@
         "fixtures/insight",
         "refs"
       ],
-      "provenance_section": "the four Insight registry pins",
+      "provenance_section": "the five Insight registry pins",
       "role_reason": "Kept for the finding it carries: ExecutionReceipt published at 43 fields under schemaVersion 1, the regression the 11:54Z pin shows corrected."
     },
     {
@@ -652,7 +667,7 @@
         "fixtures/insight",
         "refs"
       ],
-      "provenance_section": "the four Insight registry pins",
+      "provenance_section": "the five Insight registry pins",
       "role_reason": "Kept as the second half of that pair — the pin that shows the 09:09Z state corrected."
     },
     {
@@ -667,7 +682,7 @@
         "fixtures/insight",
         "refs"
       ],
-      "provenance_section": "the four Insight registry pins",
+      "provenance_section": "the five Insight registry pins",
       "role_reason": "Byte-identical to the 17:41Z pin and kept anyway: the HOUR is the evidence that the registry does not change on expiry (fixtures/provenance.md, 'Appended 2026-09-03 — the post-rotation Insight pins')."
     },
     {
@@ -684,7 +699,7 @@
       ],
       "last_observed": {
         "tip": "draft-marques-asqav-compliance-receipts-08",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"
@@ -718,7 +733,7 @@
       ],
       "last_observed": {
         "tip": "draft-farley-acta-signed-receipts-03",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"
@@ -752,7 +767,7 @@
       ],
       "last_observed": {
         "tip": "draft-krausz-verification-state-01",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       },
       "provenance_section": "the main snapshot table (this draft was in the original table)"
@@ -771,7 +786,7 @@
       ],
       "last_observed": {
         "tip": "draft-mih-sokolov-scitt-payload-binding-02",
-        "at": "2026-09-05T17:57:53.892Z",
+        "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"

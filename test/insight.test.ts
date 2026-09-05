@@ -48,6 +48,11 @@ import {
   INSIGHT_SAMPLE_1546,
   INSIGHT_SAMPLE_1741,
   INSIGHT_SAMPLE_ATTESTATION_1546,
+  INSIGHT_REGISTRY_0905,
+  INSIGHT_EXEC_SAMPLE_0905,
+  INSIGHT_SAFETY_SAMPLE_0905,
+  INSIGHT_KEY_SAMPLE,
+  INSIGHT_NOW_0905,
   INSIGHT_V3_NOW,
   INSIGHT_V4_NOW,
   read,
@@ -473,8 +478,9 @@ describe("insight — detection", () => {
     // "claims ZERO of the other fixtures" above is measured against. Was 2 (the
     // found and repaired packages); round 3 added the v4 package, the production
     // sample as the endpoint returned it, and the attestation extracted from it;
-    // B-29 added the post-rotation sample pinned at 17:41Z.
-    expect(insightFixtures.length).toBe(6);
+    // B-29 added the post-rotation sample pinned at 17:41Z; B-70 added the two
+    // 2026-09-05T18:30Z endpoint responses, execution and safety.
+    expect(insightFixtures.length).toBe(8);
   });
 });
 
@@ -1505,5 +1511,351 @@ describe("insight — the resolver reads both revocation channels", () => {
       r["revoked_keys"] = [ATTESTER];
     });
     expect(resolveRegistryKey(withList, ATTESTER, INSIGHT_NOW_1741).status).toBe("not_found");
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * B-70: the registry moved for the first time since 2 September, and what it
+ * added is the remedy H8 named.
+ *
+ * H8 (round-3 letter, `cc-output/YUTAO_ROUND3_2026-09-02.md` line 16) was that
+ * the PRODUCTION key signed a synthetic sample whose 44 signed fields carried
+ * nothing saying synthetic — the word SYNTHETIC lived in the unsigned wrapper,
+ * so a party who stripped the wrapper held a genuine production-key signature
+ * over a settlement that never happened. One of the three remedies named was a
+ * key the registry itself labels as non-production. The 18:29Z pin publishes
+ * exactly that, and both sample endpoints now sign with it.
+ *
+ * Every count below is COUNTED from the pinned bytes. The handoff that
+ * commissioned this work relayed a fetch tool's summary saying ExecutionReceipt
+ * v4 was published with 39 fields where the pin had 44; the assertion here is
+ * that both pins publish 44 and the same 44, which is what that summary would
+ * have gone red against.
+ *
+ * The old pins are untouched and every case above still runs against them.
+ */
+describe("insight — the 2026-09-05T18:29Z registry pin", () => {
+  const NEW_BYTES = read(INSIGHT_REGISTRY_0905);
+  const OLD_BYTES = read(INSIGHT_REGISTRY_1741);
+  const neu = JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>;
+  const old = JSON.parse(OLD_BYTES.toString("utf8")) as Record<string, any>;
+
+  it("is the single fetch of 2026-09-05T18:29:05Z, and is NOT the 17:41Z bytes", () => {
+    expect(NEW_BYTES.length).toBe(17958);
+    expect(sha256Hex(NEW_BYTES)).toBe("7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330");
+    // The 17:41Z and 15:45Z pins are byte-identical to each other. This one is
+    // not: it is the first observation of this URL moving at all.
+    expect(NEW_BYTES.equals(OLD_BYTES)).toBe(false);
+    expect(sha256Hex(OLD_BYTES)).toBe("76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2");
+  });
+
+  it("carries the same thirteen top-level members, in the same order", () => {
+    expect(Object.keys(neu)).toEqual(Object.keys(old));
+    expect(Object.keys(neu)).toHaveLength(13);
+    for (const k of [
+      "issuer",
+      "mic",
+      "attestation_enabled",
+      "verify",
+      "sample",
+      "watch_verify",
+      "watch_sample",
+      "execution_verify",
+      "execution_sample",
+      "key_rotation_policy",
+    ]) {
+      expect(neu[k]).toEqual(old[k]);
+    }
+    expect(neu["revoked_keys"]).toEqual([]);
+    expect(old["revoked_keys"]).toEqual([]);
+  });
+
+  it('publishes a THIRD key, role "sample", and changes neither of the two it already had', () => {
+    expect(old["public_keys"]).toHaveLength(2);
+    expect(neu["public_keys"]).toHaveLength(3);
+    expect(neu["public_keys"].slice(0, 2)).toEqual(old["public_keys"]);
+    const third = neu["public_keys"][2];
+    expect(third["key_id"]).toBe("insight-oracle-safety-sample");
+    expect(third["public_key"]).toBe(INSIGHT_KEY_SAMPLE);
+    expect(third["algorithm"]).toBe("EIP-712/secp256k1");
+    expect(third["validFrom"]).toBe("2026-09-03");
+    expect(third["validUntil"]).toBeNull();
+    expect(third["revoked"]).toBe(false);
+    expect(third["role"]).toBe("sample");
+    expect(String(third["note"])).toContain("SAMPLE ONLY");
+    // `role` and `note` are members NO earlier pin published on any key. If the
+    // registry ever puts a role on the production keys, this goes red.
+    for (const k of old["public_keys"] as Record<string, unknown>[]) {
+      expect(k["role"]).toBeUndefined();
+      expect(k["note"]).toBeUndefined();
+    }
+    for (const k of neu["public_keys"].slice(0, 2) as Record<string, unknown>[]) {
+      expect(k["role"]).toBeUndefined();
+    }
+  });
+
+  it("still publishes ExecutionReceipt v4 with 44 fields — the same 44, in the same order", () => {
+    const nf = neu["schemas"]["ExecutionReceipt"]["eip712"]["types"]["ExecutionReceipt"] as { name: string; type: string }[];
+    const of = old["schemas"]["ExecutionReceipt"]["eip712"]["types"]["ExecutionReceipt"] as { name: string; type: string }[];
+    expect(neu["schemas"]["ExecutionReceipt"]["schemaVersion"]).toBe(4);
+    // Counted, not relayed. The handoff's summary said 39.
+    expect(nf).toHaveLength(44);
+    expect(of).toHaveLength(44);
+    expect(nf).toEqual(of);
+    expect(nf.map((f) => f.name).filter((n) => !of.map((g) => g.name).includes(n))).toEqual([]);
+    expect(of.map((f) => f.name).filter((n) => !nf.map((g) => g.name).includes(n))).toEqual([]);
+    expect(neu["schemas"]["ExecutionReceipt"]["eip712"]["domain"]).toEqual({ name: "Insight Execution", version: "1", chainId: 1 });
+  });
+
+  it("every other published schema is byte-equal to the 17:41Z pin's", () => {
+    expect(Object.keys(neu["schemas"])).toEqual(Object.keys(old["schemas"]));
+    for (const name of Object.keys(old["schemas"])) {
+      if (name === "ExecutionReceipt") continue;
+      expect(neu["schemas"][name]).toEqual(old["schemas"][name]);
+    }
+    // Counted from the bytes, so a silently reshaped retired layout is red here.
+    const count = (n: string, pt: string): number => (neu["schemas"][n]["eip712"]["types"][pt] as unknown[]).length;
+    expect(count("ExecutionReceiptV3", "ExecutionReceipt")).toBe(43);
+    expect(count("ExecutionReceiptV2", "ExecutionReceipt")).toBe(32);
+    expect(count("ExecutionReceiptV1", "ExecutionReceipt")).toBe(30);
+    expect(count("OracleSafetyCheck", "OracleSafetyCheck")).toBe(27);
+    expect(count("OracleSafetyCheckV2", "OracleSafetyCheck")).toBe(26);
+    expect(count("OracleSafetyCheckV1", "OracleSafetyCheck")).toBe(11);
+    expect(count("OracleSafetyRecheck", "OracleSafetyRecheck")).toBe(28);
+    expect(count("OracleWatchCheck", "OracleWatchCheck")).toBe(26);
+    expect(count("OracleWatchCheckV1", "OracleWatchCheck")).toBe(22);
+    expect(count("CanonicalPreTradeRequest", "CanonicalPreTradeRequest")).toBe(5);
+  });
+
+  it("adds exactly three members under schemas.ExecutionReceipt and removes none", () => {
+    const added = Object.keys(neu["schemas"]["ExecutionReceipt"]).filter((k) => !(k in old["schemas"]["ExecutionReceipt"]));
+    const removed = Object.keys(old["schemas"]["ExecutionReceipt"]).filter((k) => !(k in neu["schemas"]["ExecutionReceipt"]));
+    expect(added).toEqual(["commitments", "sentinels", "sampleSigningKeyRole"]);
+    expect(removed).toEqual([]);
+    // The registry now says, in the schema, which key role signs its samples.
+    expect(neu["schemas"]["ExecutionReceipt"]["sampleSigningKeyRole"]).toBe("sample");
+    expect(neu["schemas"]["ExecutionReceipt"]["sentinels"]["attestationAgeAtExecSeconds"]["value"]).toBe(4294967295);
+    expect(String(neu["schemas"]["ExecutionReceipt"]["commitments"]["preTradeUidsHash"])).toContain("keccak256");
+  });
+
+  it("the sample key's window is read the same way every other key's is", () => {
+    const p = parseRegistry(NEW_BYTES, "refs/insight-oracle-keys-2026-09-05T1829Z.json");
+    if ("error" in p) throw new Error(p.error);
+    expect(p.keys).toHaveLength(3);
+    expect(p.revokedRefs).toEqual([]);
+    expect(p.revocationListUnreadable).toEqual([]);
+    // validFrom 2026-09-03: not_yet_valid at both 2 September instants, valid at
+    // the instant the pin was taken.
+    expect(resolveRegistryKey(p, INSIGHT_KEY_SAMPLE, INSIGHT_NOW_1530).status).toBe("not_yet_valid");
+    expect(resolveRegistryKey(p, INSIGHT_KEY_SAMPLE, INSIGHT_NOW_1741).status).toBe("not_yet_valid");
+    expect(resolveRegistryKey(p, INSIGHT_KEY_SAMPLE, INSIGHT_NOW_0905).status).toBe("valid");
+    // The retired key is still retired, and the current one still open-ended.
+    expect(resolveRegistryKey(p, INSIGHT_KEY_V2, INSIGHT_NOW_0905).status).toBe("expired");
+    expect(resolveRegistryKey(p, INSIGHT_KEY_202609, INSIGHT_NOW_0905).status).toBe("valid");
+  });
+
+  /**
+   * The gap this pin opens, asserted rather than described. `parseRegistry`
+   * reads key_id, public_key, revoked and the window; it does not read `role`,
+   * so nothing the adapter prints distinguishes a sample-role key from a
+   * production one. Closing it means carrying `role` onto `RegistryKey` and
+   * saying so on the result — not a one-line change, so it is recorded here and
+   * in FINDINGS.md rather than done inside this handoff. This case goes red the
+   * day it is closed, which is the point.
+   */
+  it('but the adapter does not yet read `role`, so nothing it prints says "sample"', () => {
+    const p = parseRegistry(NEW_BYTES, "refs/insight-oracle-keys-2026-09-05T1829Z.json");
+    if ("error" in p) throw new Error(p.error);
+    const key = p.keys.find((k) => k.keyId === "insight-oracle-safety-sample");
+    expect(key).toBeDefined();
+    expect(Object.keys(key!).sort()).toEqual(["keyId", "malformedWindow", "publicKey", "revoked", "validFrom", "validUntil"]);
+    expect((key as unknown as Record<string, unknown>)["role"]).toBeUndefined();
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * H8, measured. Both endpoints the 18:29Z registry names were fetched at
+ * 18:30Z and pinned as bytes; each mints a fresh signature per call, so these
+ * are one observation and cannot be re-fetched.
+ *
+ * The recovery is driven red two ways per sample: a changed signed field moves
+ * the recovered address to ONE SPECIFIC other address, which no implementation
+ * that shortcut the digest could reproduce.
+ */
+describe("insight — the 18:30Z samples, and H8", () => {
+  const NEW_BYTES = read(INSIGHT_REGISTRY_0905);
+  const execWrapper = JSON.parse(read(INSIGHT_EXEC_SAMPLE_0905).toString("utf8")) as Record<string, any>;
+  const safetyWrapper = JSON.parse(read(INSIGHT_SAFETY_SAMPLE_0905).toString("utf8")) as Record<string, any>;
+  const execAtt = execWrapper["data"]["attestation"];
+  const safetyAtt = safetyWrapper["data"]["attestation"];
+
+  const newBase = (now: number): VerifyOptions => ({
+    registry: NEW_BYTES,
+    registryOrigin: "refs/insight-oracle-keys-2026-09-05T1829Z.json",
+    now,
+  });
+  const oldBase = (now: number): VerifyOptions => ({
+    registry: read(INSIGHT_REGISTRY_1741),
+    registryOrigin: "refs/insight-oracle-keys-2026-09-02T1741Z.json",
+    now,
+  });
+  const EXEC_NOW = 1788633057; // the exec sample's signedAt, to the second
+  const SAFETY_NOW = 1788633059;
+
+  it("both pins are the endpoint responses byte-exact", () => {
+    expect(read(INSIGHT_EXEC_SAMPLE_0905).length).toBe(4894);
+    expect(sha256Hex(read(INSIGHT_EXEC_SAMPLE_0905))).toBe("a2c442e02df4682899ee9707d0c695e17ce4f65029b2ccd7c67728061f143b5b");
+    expect(read(INSIGHT_SAFETY_SAMPLE_0905).length).toBe(4052);
+    expect(sha256Hex(read(INSIGHT_SAFETY_SAMPLE_0905))).toBe("28110d2f0ca8286168a457254afeb99204312b39ed751ba9cac38a81e32f6139");
+    // Not copies of the 2 September sample.
+    expect(read(INSIGHT_EXEC_SAMPLE_0905).equals(read(INSIGHT_SAMPLE_1741))).toBe(false);
+  });
+
+  it("execution_sample: uid == our digest, and recovery lands on the SAMPLE key", () => {
+    const d = eip712Digest(execAtt.eip712.domain, execAtt.eip712.primaryType, execAtt.eip712.types, execAtt.data);
+    expect(`0x${Buffer.from(d).toString("hex")}`).toBe("0xd6b8fcfb66b8862661c09a43e1bfd283d4397ecebf14fc478a64af814bec76b4");
+    expect(`0x${Buffer.from(d).toString("hex")}`).toBe(execAtt.uid);
+    expect(recoverAddress(d, execAtt.signature)?.toLowerCase()).toBe(INSIGHT_KEY_SAMPLE.toLowerCase());
+    expect(execAtt.attester).toBe(INSIGHT_KEY_SAMPLE);
+    expect(execAtt.schemaVersion).toBe(4);
+    expect(execAtt.eip712.types.ExecutionReceipt).toHaveLength(44);
+  });
+
+  it("execution_sample: two tamper controls move the recovered address to two specific others", () => {
+    const t1 = clone(execAtt);
+    t1.data.environment = "nonproduction";
+    expect(recoverAddress(eip712Digest(t1.eip712.domain, t1.eip712.primaryType, t1.eip712.types, t1.data), t1.signature)).toBe(
+      "0x47ed0d0c7510512b1e21e3a7658e164e2bc9186e",
+    );
+    const t2 = clone(execAtt);
+    t2.data.executedPrice = t2.data.executedPrice + 1;
+    expect(recoverAddress(eip712Digest(t2.eip712.domain, t2.eip712.primaryType, t2.eip712.types, t2.data), t2.signature)).toBe(
+      "0xa0b076050a01f7d29dcde5095465b876b8b0d2dc",
+    );
+  });
+
+  it("sample (safety): uid == our digest, recovery lands on the same SAMPLE key, and a tamper moves it", () => {
+    const d = eip712Digest(safetyAtt.eip712.domain, safetyAtt.eip712.primaryType, safetyAtt.eip712.types, safetyAtt.data);
+    expect(`0x${Buffer.from(d).toString("hex")}`).toBe("0x2750ef636e144b42bd95a6857631e3e9d5338a13557a97a43aef0f4765235f5e");
+    expect(`0x${Buffer.from(d).toString("hex")}`).toBe(safetyAtt.uid);
+    expect(recoverAddress(d, safetyAtt.signature)?.toLowerCase()).toBe(INSIGHT_KEY_SAMPLE.toLowerCase());
+    expect(safetyAtt.eip712.primaryType).toBe("OracleSafetyCheck");
+    expect(safetyAtt.schemaVersion).toBe(3);
+    const t = clone(safetyAtt);
+    t.data.verdict = "FAIL";
+    expect(recoverAddress(eip712Digest(t.eip712.domain, t.eip712.primaryType, t.eip712.types, t.data), t.signature)).toBe(
+      "0x31ab7c4137aff89204e38e50da20c6fb1518a74e",
+    );
+  });
+
+  it('H8 CLOSED IN PRODUCTION: the signer is the key the registry labels role "sample"', async () => {
+    // The whole claim, end to end through the adapter: no flag, the key comes
+    // out of the published registry, and the kid is the sample key's.
+    const r = await insightAdapter.verify(Buffer.from(JSON.stringify(execAtt), "utf8"), newBase(EXEC_NOW));
+    expect(r.verdict).toBe("VALID");
+    expect(r.resolvedKey?.kid).toBe("insight-oracle-safety-sample");
+    expect(r.resolvedKey?.origin).toBe("refs/insight-oracle-keys-2026-09-05T1829Z.json");
+    expect(r.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-sample)");
+    expect(r.annotations?.["recovered_signer"]).toBe(INSIGHT_KEY_SAMPLE.toLowerCase());
+    const entry = (JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>)["public_keys"].find(
+      (k: Record<string, unknown>) => String(k["public_key"]).toLowerCase() === INSIGHT_KEY_SAMPLE.toLowerCase(),
+    );
+    expect(entry["role"]).toBe("sample");
+  });
+
+  it("what H8 does NOT close: the 44 signed fields still carry no mark, and environment still says production", () => {
+    // The 2026-09-02 case asserted this and it has not changed. What HAS changed
+    // is where the mark lives: on the key, not in the fields.
+    const signed = JSON.stringify(execAtt.data);
+    for (const mark of ["SYNTHETIC", "synthetic", "Synthetic", "SAMPLE", "Sample", "demo", "DEMO", "Demo", "fake", "mock"]) {
+      expect(signed.includes(mark)).toBe(false);
+    }
+    // No signed FIELD NAME and no signed VALUE carries the word either. (The
+    // only substring hit anywhere near it is `test` inside the field name
+    // attestationAgeAtExecSeconds, which is neither a value nor a mark.)
+    expect(Object.keys(execAtt.data).some((k) => k.toLowerCase().includes("sample"))).toBe(false);
+    expect(Object.values(execAtt.data).some((v) => typeof v === "string" && v.toLowerCase().includes("sample"))).toBe(false);
+    expect(execAtt.data.environment).toBe("production");
+    expect(execAtt.data.fillStatus).toBe("FULL");
+    expect(execAtt.data.slippageSatisfied).toBe(true);
+    // The wrapper still carries the words, and now says how to check it.
+    expect(execWrapper["data"]["isSample"]).toBe(true);
+    expect(String(execWrapper["data"]["note"])).toContain("SYNTHETIC");
+    expect(String(execWrapper["data"]["note"])).toContain('role "sample"');
+    expect(String(safetyWrapper["data"]["note"])).toContain('role "sample"');
+  });
+
+  it("against the 17:41Z pin both samples are UNVERIFIABLE/key_unresolvable — the key did not exist yet", async () => {
+    for (const [att, now] of [
+      [execAtt, EXEC_NOW],
+      [safetyAtt, SAFETY_NOW],
+    ] as const) {
+      const r = await insightAdapter.verify(Buffer.from(JSON.stringify(att), "utf8"), oldBase(now));
+      expect(r.verdict).toBe("UNVERIFIABLE");
+      expect(r.reason).toBe("key_unresolvable");
+      expect(r.annotations?.["identity"]).toBe("signer_not_in_registry");
+      expect(String(r.detail)).toContain("is not among the 2 published keys");
+    }
+  });
+
+  it("against the 18:29Z pin both are VALID, and the schema comparison finds the right published type", async () => {
+    const e = await insightAdapter.verify(Buffer.from(JSON.stringify(execAtt), "utf8"), newBase(EXEC_NOW));
+    expect(e.verdict).toBe("VALID");
+    expect(e.annotations?.["registry_schema"]).toBe("match (v4)");
+    const s = await insightAdapter.verify(Buffer.from(JSON.stringify(safetyAtt), "utf8"), newBase(SAFETY_NOW));
+    expect(s.verdict).toBe("VALID");
+    expect(s.reason).toBe("verified");
+    expect(s.resolvedKey?.kid).toBe("insight-oracle-safety-sample");
+    expect(s.annotations?.["registry_schema"]).toBe("match (v3)");
+  });
+
+  /**
+   * The `validUntil` gap the handoff asked about, driven from bytes rather than
+   * from reading the source.
+   *
+   * `resolveRegistryKey` compares the key's window against `ctx.now` (check 5,
+   * `resolveRegistryKey(ctx.registry, art.attester, ctx.now)`), and `ctx.now` is
+   * the CALLER's `--now`. The artefact's own signing instant never enters that
+   * comparison. So a receipt signed AFTER a key's window shut still resolves
+   * that key, provided the caller names an instant inside it — and the freshness
+   * check (check 6) does not catch it either, because it only fails when `now`
+   * is PAST the artefact's validUntil, never when it is before the artefact
+   * existed.
+   *
+   * Demonstrated on the pinned 17:41Z sample against a registry built from the
+   * 18:29Z bytes with that key's validUntil moved to 17:41:00Z — 63 s before the
+   * receipt's own `executedAt` and 64 s before its `signedAt`. Nothing is
+   * re-signed and no Insight key material is used.
+   */
+  it("a receipt signed after its key's window shut still resolves, if the caller names an earlier --now", async () => {
+    const w = JSON.parse(read(INSIGHT_SAMPLE_1741).toString("utf8")) as Record<string, any>;
+    const att = w["data"]["attestation"];
+    expect(att.signedAt).toBe("2026-09-02T17:42:03.934Z");
+    expect(att.data.executedAt).toBe(1788370923);
+    const doc = JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>;
+    doc["public_keys"] = (doc["public_keys"] as Record<string, unknown>[]).map((k) =>
+      k["public_key"] === INSIGHT_KEY_202609 ? { ...k, validUntil: "2026-09-02T17:41:00.000Z" } : k,
+    );
+    const shut = Buffer.from(JSON.stringify(doc), "utf8"); // 1788370860
+    const bytes = Buffer.from(JSON.stringify(att), "utf8");
+    const opts = { registry: shut, registryOrigin: "the 18:29Z pin with validUntil moved to 1788370860" };
+
+    // The gap: --now inside the window, receipt signed after it closed. VALID.
+    const inside = await insightAdapter.verify(bytes, { ...opts, now: 1788370800 });
+    expect(inside.verdict).toBe("VALID");
+    expect(inside.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-v2-202609)");
+
+    // The control: name an instant past the window and the same bytes are
+    // UNVERIFIABLE/expired. So the window IS read — it is just read against the
+    // wrong clock. What would close the gap is comparing the key's window
+    // against the artefact's own signed executedAt/checkedAt as well.
+    const after = await insightAdapter.verify(bytes, { ...opts, now: INSIGHT_NOW_1741 });
+    expect(after.verdict).toBe("UNVERIFIABLE");
+    expect(after.reason).toBe("expired");
+    expect(after.annotations?.["identity"]).toBe("key_expired (insight-oracle-safety-v2-202609)");
   });
 });

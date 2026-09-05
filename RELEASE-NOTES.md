@@ -5,6 +5,30 @@ Shipped versions, newest first. Entries queued against the next release live in
 
 ## 0.1.3 (unreleased)
 
+The Insight key registry moved, and `npm run drift` is what noticed. `refs/insight-oracle-keys-2026-09-05T1829Z.json`
+pins the body byte-exact (17,958 B, sha256 `7cc00b95…`, fetched 2026-09-05T18:29:05Z); the four earlier
+pins are untouched and the 2026-09-02T17:41Z one joins them as a `historical` upstream, so
+`fixtures/upstreams.json` now carries twenty-one entries rather than the twenty the paragraph below
+counts, and its Insight row reads `current` again. Measured from the two files rather than relayed:
+four leaf differences, all additions, nothing removed and no existing value changed. `public_keys`
+gains a **third** key, `insight-oracle-safety-sample`, the first in any pin to carry `role: "sample"`
+and a `note`; `schemas.ExecutionReceipt` gains `commitments`, `sentinels` and
+`sampleSigningKeyRole: "sample"`. `ExecutionReceipt` v4 still publishes **44** signed fields — the
+same 44 pairs in the same order, counted from both pins, against a relayed summary that said 39.
+Both sample endpoints the new registry names were fetched and pinned, and both now recover to
+`0xa41d5Ee7…A534`, that sample key, through this repository's own EIP-712 path: H8 — the production
+key signing a synthetic receipt whose signed bytes did not say so — is **closed in production**, by
+the remedy the round-3 letter named. Two things it does not close are recorded rather than fixed, each
+with the check that would close it and each asserted as a case that goes red the day it is: the 44
+signed fields still carry no mark and still say `environment: "production"`, so the distinction lives
+in the key and needs the registry to read; and `parseRegistry` does not read `role`, so a sample-role
+key reaches VALID with nothing in the verdict, key line or annotations saying it is one. Separately,
+a key's validity window is still compared only against `--now` and never against the artefact's own
+signed instant, so a receipt signed after its key's window shut still resolves if the caller names an
+earlier instant — demonstrated from the pinned bytes, with the `--now`-past control beside it.
+`FINDINGS.md` gains section F, the file's first Insight section; `fixtures/provenance.md` carries the
+three retrieval rows with their response headers.
+
 `detect()` in `src/adapters/acta.ts` now declines an ACTA-shaped envelope that carries a
 top-level `anchors` member with ANY value — an array, an empty array, or null. 0.1.2
 declined only an array (`Array.isArray`), so a `-08` Compliance Receipt with `anchors: null`

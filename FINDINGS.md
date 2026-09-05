@@ -942,6 +942,271 @@ companion document says entries are "never edited in place"; this file carried n
 six edits. Recorded now so the git history and the prose agree.
 
 
+## F. `oracleinsight.xyz` key registry and `insight.attestation/eip712`
+
+This file carried no Insight section before this one. At `3b6ca3f`, `grep -ic insight FINDINGS.md`
+returned 0, and so did a case-insensitive search for `eip712`, `eip-712`, `attestation` and
+`oracleinsight` in the same file. The Insight record lived in `fixtures/provenance.md`, in the three
+round notes under `cc-output/` (`VERIFICATION_NOTE_2026-09-02_insight-execution-receipt.md`,
+`…-v3-recheck.md`, `…-v4-round3.md`) and in `test/insight.test.ts`. The section is opened here rather
+than left implicit, and it begins with the block below.
+
+Source of every value in this section: `refs/insight-oracle-keys-2026-09-02T1741Z.json`
+(sha256 `76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2`, 17,019 B) and
+`refs/insight-oracle-keys-2026-09-05T1829Z.json`
+(sha256 `7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330`, 17,958 B), plus the two
+2026-09-05T18:30Z endpoint responses pinned under `fixtures/insight/`. Retrieval rows are in
+`fixtures/provenance.md`.
+
+**Appended 2026-09-05 — the registry changed after the 17:41Z pin: the diff, the sample key, H8 as measured**
+
+`npm run drift` at `3b6ca3f` reported `changed` for `https://www.oracleinsight.xyz/.well-known/oracle-keys.json`:
+the first upstream this repository pins that has actually moved. It was re-fetched at
+2026-09-05T18:29:05Z (HTTP 200, `application/json`, `Cache-Control: public, max-age=300`,
+`X-Vercel-Cache: MISS`, no `ETag` and no `Last-Modified`) and pinned byte-exact. The digest is the one
+drift predicted. Nothing below is taken from the handoff's summary paragraph; every count is counted
+from the two pinned files, and where the two disagree the pins are what is recorded.
+
+### F1. The diff, from the bytes
+
+A full recursive comparison of the two parsed documents reports **exactly four leaf differences, all
+additions**. Nothing was removed and no existing value changed.
+
+| what | 17:41Z pin | 18:29Z pin |
+|---|---|---|
+| top-level members | 13: `issuer`, `mic`, `public_keys`, `revoked_keys`, `attestation_enabled`, `schemas`, `verify`, `sample`, `watch_verify`, `watch_sample`, `execution_verify`, `execution_sample`, `key_rotation_policy` | the same 13, in the same order |
+| `issuer` / `mic` / `attestation_enabled` | `https://www.oracleinsight.xyz` / `Insight Oracle Safety Attestation` / `true` | unchanged |
+| `verify` | `…/api/v1/safety/attestation/verify` | unchanged |
+| `sample` | `…/api/v1/safety/attestation/sample` | unchanged |
+| `watch_verify` / `watch_sample` | `…/api/v1/oracle-watch/attestation/verify` / `…/sample` | unchanged |
+| `execution_verify` | `…/api/v1/execution/attestation/verify` | unchanged |
+| `execution_sample` | `…/api/v1/execution/attestation/sample` | unchanged |
+| `key_rotation_policy` | "config-driven multi-key; rotate by publishing new key_id with validFrom, retaining prior key with validUntil for overlap; revoke on compromise (annual target or immediate)" | unchanged, character for character |
+| `revoked_keys` | `[]` | `[]` |
+| `public_keys` | **2 entries** | **3 entries**; the first two are deep-equal to the 17:41Z pair |
+
+Key entries, old versus new:
+
+| key_id | address | algorithm | validFrom | validUntil | revoked | role | in 17:41Z | in 18:29Z |
+|---|---|---|---|---|---|---|---|---|
+| `insight-oracle-safety-v2` | `0xa268676C85b927D64a4e2384636874f76D69e419` | EIP-712/secp256k1 | `2026-08-05` | `2026-09-02T17:35:36.000Z` | false | *(no member)* | yes | yes, unchanged |
+| `insight-oracle-safety-v2-202609` | `0x6506F789Edd43338A416f59822A63F309f97E8ce` | EIP-712/secp256k1 | `2026-08-26T17:35:36.000Z` | `null` | false | *(no member)* | yes | yes, unchanged |
+| `insight-oracle-safety-sample` | `0xa41d5Ee795d95B87B3AA988150fC2d5e5fE5A534` | EIP-712/secp256k1 | `2026-09-03` | `null` | false | **`"sample"`** | **no** | **yes, new** |
+
+The new entry also carries a member no key in any of the five pins has carried before, `note`:
+"SAMPLE ONLY: receipts signed by this key carry synthetic demo facts (clearly-labelled demo inputs, no
+real settlement). Verify them to exercise the signature loop; never treat them as evidence of a real
+trade." `role` and `note` appear on this key and on no other, in either pin.
+
+Schemas. Every entry name, `schemaVersion`, signing status and field count is unchanged; the counts
+below were obtained by taking `length` of each published `eip712.types[primaryType]` array in each
+file, not by reading a declared number.
+
+| entry | primaryType | schemaVersion | retiredForSigning | fields, 17:41Z | fields, 18:29Z |
+|---|---|---|---|---|---|
+| `ExecutionReceipt` | ExecutionReceipt | 4 | false | **44** | **44** |
+| `ExecutionReceiptV3` | ExecutionReceipt | 3 | true | 43 | 43 |
+| `ExecutionReceiptV2` | ExecutionReceipt | 2 | true | 32 | 32 |
+| `ExecutionReceiptV1` | ExecutionReceipt | 1 | true | 30 | 30 |
+| `OracleSafetyCheck` | OracleSafetyCheck | 3 | false | 27 | 27 |
+| `OracleSafetyCheckV2` | OracleSafetyCheck | 2 | true | 26 | 26 |
+| `OracleSafetyCheckV1` | OracleSafetyCheck | 1 | true | 11 | 11 |
+| `OracleSafetyRecheck` | OracleSafetyRecheck | 2 | false | 28 | 28 |
+| `OracleWatchCheck` | OracleWatchCheck | 2 | false | 26 | 26 |
+| `OracleWatchCheckV1` | OracleWatchCheck | 1 | true | 22 | 22 |
+| `CanonicalPreTradeRequest` | CanonicalPreTradeRequest | *(none)* | false | 5 | 5 |
+
+**The `ExecutionReceipt` v4 field list is diffed field by field and is identical.** Both pins publish
+the same 44 `{name, type}` pairs in the same order: added `[]`, removed `[]`, order identical. The
+domain is `{name "Insight Execution", version "1", chainId 1}` in both. The list, in order:
+`bindingMode`, `claimRole`, `subject`, `taker`, `preTradeUid`, `destinationPreTradeUid`,
+`preTradeUidsHash`, `requestHash`, `sourceAssetId`, `destinationAssetId`, `subjectChainId`,
+`settlementChainId`, `action`, `quotedPrice`, `executedPrice`, `priceScale`, `quoteBasis`,
+`quoteBlockNumber`, `quoteVenueIndependent`, `priceDeltaBps`, `maxSlippageBps`, `slippageSatisfied`,
+`quotedAmountUsd`, `executedAmountUsd`, `actualFeeUsd`, `measuredFieldsHash`, `fillStatus`,
+`priceExecutionStatus`, `txHash`, `blockNumber`, `executedAt`, `preTradeSignedAt`,
+`attestationAgeAtExecSeconds`, `priceStateAgeAtExecSeconds`, `participantCount`,
+`requiredParticipantCount`, `sourceGroupCount`, `requiredSourceGroupCount`, `independenceSatisfied`,
+`mevRiskBps`, `reasonCodesHash`, `validUntil`, `schemaVersion`, `environment`.
+
+**The handoff that commissioned this work said the live registry listed ExecutionReceipt v4 with 39
+fields where the pin recorded 44, and marked that reading as a fetch tool's summary rather than a
+measurement. It is wrong: both pins publish 44, and the same 44.** `test/insight.test.ts` asserts the
+count on each pin, the equality of the two lists, and the empty added/removed sets; a 39-field
+publication is what those assertions go red against.
+
+What did change under `schemas.ExecutionReceipt` is three sibling members, added, none removed:
+
+- `commitments` — prose definitions for two derived fields: `preTradeUidsHash` as
+  "keccak256(concat(uids in route order, 32 raw bytes each, no separator)); empty set ->
+  keccak256(\"\")", and `measuredFieldsHash` as "keccak256(join(\",\", sorted unique measured field
+  names)); universe + empty-set rule as for preTradeUidsHash". Both agree with what this adapter
+  already recomputes: `uidsHashCandidates` names the packed source-first construction as the matching
+  one on the 2026-09-02 package, and `measuredFieldsHash` for the empty set recomputes to
+  `keccak256("")` = `0xc5d2…a470` there. The registry has written down what the bytes already said.
+- `sentinels` — `attestationAgeAtExecSeconds` value `4294967295` meaning "undefined — the paired
+  pre-trade attestation did not exist at execution (signed after the fill); such a receipt is never
+  FAITHFUL". This is the issuer acting on B2 of the round-3 note, which observed the field signing 0
+  for an attestation that did not yet exist. **This tool does not read the sentinel.** A receipt
+  carrying `4294967295` in that field is treated by `precedenceAnnotations` as an age like any other.
+  Recorded, not fixed here.
+- `sampleSigningKeyRole` — the string `"sample"`. The registry now states, inside the schema, which
+  key role signs its samples.
+
+### F2. The samples, and H8
+
+Both endpoints the **new** registry names were fetched at 2026-09-05T18:30Z and pinned byte-exact.
+Each mints a fresh signature per call, so each pin is one observation that cannot be re-fetched.
+
+| endpoint | registry member | pinned as | bytes | sha256 |
+|---|---|---|---|---|
+| `https://www.oracleinsight.xyz/api/v1/execution/attestation/sample` | `execution_sample` | `fixtures/insight/execution-sample-2026-09-05T1830Z.json` | 4894 | `a2c442e02df4682899ee9707d0c695e17ce4f65029b2ccd7c67728061f143b5b` |
+| `https://www.oracleinsight.xyz/api/v1/safety/attestation/sample` | `sample` | `fixtures/insight/safety-sample-2026-09-05T1830Z.json` | 4052 | `28110d2f0ca8286168a457254afeb99204312b39ed751ba9cac38a81e32f6139` |
+
+For each, the EIP-712 digest was recomputed through this adapter's own path (`eip712Digest`, written
+from the EIP text) and the signer recovered from it with `recoverAddress`:
+
+| | `execution_sample` | `sample` (safety) |
+|---|---|---|
+| primaryType, version | `ExecutionReceipt`, v4, 44 signed fields | `OracleSafetyCheck`, v3, 27 signed fields |
+| uid | `0xd6b8fcfb66b8862661c09a43e1bfd283d4397ecebf14fc478a64af814bec76b4` | `0x2750ef636e144b42bd95a6857631e3e9d5338a13557a97a43aef0f4765235f5e` |
+| our digest == uid | yes | yes |
+| **recovered signer** | **`0xa41d5ee795d95b87b3aa988150fc2d5e5fe5a534`** | **`0xa41d5ee795d95b87b3aa988150fc2d5e5fe5a534`** |
+| registry entry matched by address | `insight-oracle-safety-sample`, role `"sample"`, validFrom `2026-09-03`, validUntil `null`, revoked `false` | the same entry |
+| a mark in the signed fields | none | none |
+| `environment` in the signed fields | `"production"` | *(the v3 safety layout has no `environment` field)* |
+| the wrapper | `isSample: true`, `note` beginning "SYNTHETIC sample: signed by the dedicated SAMPLE signer (see .well-known registry, role \"sample\")…" | `note` naming "the dedicated SAMPLE signer (.well-known registry, role \"sample\")" |
+
+Recovery is driven red on both: changing `environment` to `nonproduction` on the execution sample
+moves the recovered address to `0x47ed0d0c7510512b1e21e3a7658e164e2bc9186e`, adding one to
+`executedPrice` moves it to `0xa0b076050a01f7d29dcde5095465b876b8b0d2dc`, and flipping the safety
+sample's `verdict` to `FAIL` moves it to `0x31ab7c4137aff89204e38e50da20c6fb1518a74e`. Each is one
+specific other address, which an implementation that shortcut the digest could not reproduce.
+
+**H8: CLOSED IN PRODUCTION.** Both samples the registry names are signed by
+`0xa41d5Ee795d95B87B3AA988150fC2d5e5fE5A534`, recovered from the pinned bytes, and that address is
+the registry's `insight-oracle-safety-sample` entry, which the registry labels `role: "sample"`. The
+production key `insight-oracle-safety-v2-202609` signs neither. That is the remedy the round-3 letter
+named — "sign samples with a key the registry labels as non-production" — and the issuer took it.
+
+Three things that closing leaves standing, stated so the close is not read as wider than it is:
+
+1. **The signed fields still carry no mark, and still say `environment: "production"`.** Searching the
+   44 signed values and field names of the execution sample for `SYNTHETIC`, `synthetic`, `Synthetic`,
+   `SAMPLE`, `Sample`, `sample`, `demo`, `DEMO`, `Demo`, `fake` and `mock` returns nothing; the single
+   substring hit anywhere is `test` inside the field *name* `attestationAgeAtExecSeconds`, which is
+   neither a value nor a mark. `fillStatus` is `FULL` and `slippageSatisfied` is `true`. What
+   distinguishes the sample is the key it was signed with, not the content it was signed over.
+2. **The distinction therefore requires the registry.** A party holding only the stripped attestation
+   can recover the signer, but needs the published registry to learn that that signer is a sample key.
+   That is a weaker property than a self-describing signed field, and it is the property the issuer
+   chose. It is enough for any verifier that resolves keys against the registry — which is what this
+   tool does, and what a verifier must do anyway.
+3. **This tool does not yet say it.** See F3.
+
+### F3. `parseRegistry` does not read `role`, so nothing this tool prints distinguishes a sample key
+
+`RegistryKey` carries `keyId`, `publicKey`, `revoked`, `validFrom`, `validUntil` and
+`malformedWindow`, and `parseRegistry` populates exactly those six from each `public_keys` entry.
+`role` and `note` are dropped. The consequence, measured: the 18:30Z execution sample against the
+18:29Z pin returns **VALID / verified**, resolved key `insight-oracle-safety-sample`, annotation
+`identity = signer_in_registry (insight-oracle-safety-sample)` — a correct result with no indication
+anywhere in the verdict, the reason, the key line or the annotations that the registry calls this key
+a sample signer. A consumer branching on the verdict alone treats a synthetic demo receipt exactly as
+it treats a real one; only a consumer that reads the `kid` string and happens to know what
+`insight-oracle-safety-sample` means does better, which is a naming convention, not a check.
+
+**The check that would close it:** carry `role` (and, since it is published, `note`) onto
+`RegistryKey`, and on the `valid` branch of `resolveRegistryKey` emit the role on the result — as an
+annotation for a role the tool does not act on, and, for `role: "sample"` specifically, a decision the
+issuer has effectively already made for us. Not implemented here: it is not a one-line reason token on
+an existing path — it needs a new member on a published interface, a new annotation, and a decision
+about whether a sample-role key should be able to reach VALID at all. Asserted as a test rather than
+only described: `test/insight.test.ts`, "but the adapter does not yet read `role`", pins the six
+members `RegistryKey` actually carries, and goes red the day a seventh is added.
+
+### F4. What the adapter does with the two registries
+
+Every run below is `insightAdapter.verify` over the named file, with the named registry bytes and the
+named evaluation instant. `--allow-unregistered-signer` is off except where the row says otherwise.
+
+| artefact (file) | `--now` | vs 17:41Z pin | vs 18:29Z pin |
+|---|---|---|---|
+| `fixtures/insight/execution-receipt-bytes-2026-09-02-v4.json` | 1788361990 | UNVERIFIABLE / `key_unresolvable`; "not among the **2** published keys"; `registry_schema = match (v4)` | UNVERIFIABLE / `key_unresolvable`; "not among the **3** published keys"; `registry_schema = match (v4)` |
+| the same, `--allow-unregistered-signer` | 1788361990 | VALID / verified; key = the artefact's own `attester` `0xf39Fd6e5…2266`, `identity = signer_not_in_registry` | identical |
+| `fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json` | 1788363959 | VALID / verified; key `insight-oracle-safety-v2-202609`; `registry_schema = match (v4)` | VALID / verified; same key, same schema line, origin now the 18:29Z pin |
+| `fixtures/insight/execution-sample-2026-09-02T1741Z.json` (`data.attestation`) | 1788370923 | VALID / verified; key `insight-oracle-safety-v2-202609` | VALID / verified; same |
+| `fixtures/insight/execution-sample-2026-09-05T1830Z.json` (`data.attestation`) | 1788633057 | UNVERIFIABLE / `key_unresolvable`; `identity = signer_not_in_registry` | **VALID / verified; key `insight-oracle-safety-sample`; `registry_schema = match (v4)`** |
+| `fixtures/insight/safety-sample-2026-09-05T1830Z.json` (`data.attestation`) | 1788633059 | UNVERIFIABLE / `key_unresolvable`; `identity = signer_not_in_registry` | **VALID / verified; key `insight-oracle-safety-sample`; `registry_schema = match (v3)`** |
+
+The two 2 September artefacts are unaffected by the change, which is the point of keeping the old pin:
+adding a key to a registry must not move a verdict that did not depend on it, and it does not. The
+`recovered_signer`, `digest` and `uid_equals_digest` annotations are byte-identical across the two
+registries for every row; only `identity`, the key line and the "among the N published keys" count
+differ, and N is 2 against the old pin and 3 against the new one, counted by the adapter from the
+bytes it was handed.
+
+`detect` was run over all five files and over the three extracted attestations. It claims the bare
+attestation object in every case and **declines the endpoint wrapper**: the `{success, data, meta}`
+envelope the sample endpoints return is not an Insight attestation and is not claimed by this adapter
+or by any of the other three (`evidence.action/0`, `verification.*`, `acta.receipt/0` all return false
+on both the wrapper and the attestation). That is the fail-closed answer for an unrecognised shape,
+and it means a caller handed a raw sample response must unwrap `data.attestation` itself — which is
+what the cases in `test/insight.test.ts` do, and what the 15:46Z pin's derived-attestation file
+exists to spare them. The detection sweep in that file asserts the other three adapters claim zero of
+the files under `fixtures/`; that sweep now covers the two new pins.
+
+### F5. A key's validity window is compared against `--now`, never against the receipt's own signing instant
+
+The handoff asked whether a receipt signed by `insight-oracle-safety-v2` after its `validUntil`
+(`2026-09-02T17:35:36.000Z` = 1788370536) would still resolve that key. Measured against the 18:29Z
+pin through `resolveRegistryKey`:
+
+| key | at 1788363000 (15:30Z) | at 1788370900 (17:41:40Z) | at 1788632945 (2026-09-05T18:29:05Z) |
+|---|---|---|---|
+| `insight-oracle-safety-v2` | `valid` | `expired` (validUntil 1788370536) | `expired` |
+| `insight-oracle-safety-v2-202609` | `valid` | `valid` | `valid` |
+| `insight-oracle-safety-sample` | `not_yet_valid` (validFrom 1788393600) | `not_yet_valid` | `valid` |
+
+So the window is read, and B-29's fix holds against the new pin as it did against the old one. **The
+gap is not that the window is ignored; it is that the window is compared against the caller's clock
+and never against the artefact's own.** Check 5 calls
+`resolveRegistryKey(ctx.registry, art.attester, ctx.now)`, and `ctx.now` is `opts.now` (the `--now`
+flag) falling back to the wall clock; check 6 compares the artefact's signed `validUntil` against the
+same `ctx.now` and fails only when `now` is PAST it, never when `now` is before the artefact could
+have existed. Nothing joins the two.
+
+Demonstrated from bytes, with nothing re-signed and no Insight key material used: the pinned
+2026-09-02T17:41Z sample (`signedAt` 2026-09-02T17:42:03.934Z, signed `executedAt` 1788370923) run
+against a registry built from the 18:29Z pin with `insight-oracle-safety-v2-202609`'s `validUntil`
+moved to `2026-09-02T17:41:00.000Z` = 1788370860 — 63 seconds *before* the receipt's own `executedAt`:
+
+- `--now 1788370800` (inside the moved window): **VALID**, `identity = signer_in_registry
+  (insight-oracle-safety-v2-202609)`. The receipt was signed after that key stopped being vouched
+  for, and the tool says nothing.
+- `--now 1788370900` (past it): UNVERIFIABLE / `expired`, `identity = key_expired
+  (insight-oracle-safety-v2-202609)`. The control, so the case is not vacuous.
+
+**The check that would close it:** compare the resolved key's `[validFrom, validUntil]` against the
+artefact's own signed instant — `executedAt` for an `ExecutionReceipt`, `checkedAt` for an
+`OracleSafetyCheck` — in addition to `--now`, and report a receipt whose own timestamps fall outside
+the window of the key that signed it. **Not implemented in this handoff**, and it is not a one-line
+reason token on an existing path: it needs a per-primaryType choice of which signed member is the
+artefact's instant, a new reason code distinct from `expired` (which currently means "at the instant
+you asked about"), and a decision about which verdict it carries. Recorded here and asserted in
+`test/insight.test.ts` as "a receipt signed after its key's window shut still resolves, if the caller
+names an earlier `--now`", which goes red the day it is closed.
+
+### F6. What this section does not establish
+
+That the samples describe anything real — they do not, by construction and by the issuer's own
+statement. That the production signing flow is sound beyond the two responses measured here. That the
+registry will not move again: it moved between 2026-09-02T17:42Z and 2026-09-05T18:29Z with no
+announcement, and the only reason this was noticed is that `npm run drift` asks. Nothing here is a
+statement about any key material, and nothing here was fetched other than the registry URL and the
+two endpoint URLs the registry itself names.
+
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`
