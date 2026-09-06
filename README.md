@@ -492,6 +492,45 @@ itself to revision -01 (`FINDINGS.md` §E1). So:
 
 ---
 
+## Format 4 — `insight.attestation/eip712`
+
+`insight.attestation/eip712` is **this repository's** label for the EIP-712
+attestations published at `oracleinsight.xyz`. The issuer publishes no format
+name and no specification prose; the only document it publishes is the key
+registry at `/.well-known/oracle-keys.json`, pinned under `refs/`. The EIP-712
+encoding is written from the EIP text rather than taken from a library — see the
+header of `src/adapters/insight.ts` and `FINDINGS.md` section F.
+
+The registry publishes a per-key validity window and, on one key, a `role`.
+**A key's role is reported on every verdict and never moves it**: the identity
+annotation reads `signer_in_registry (<key_id>, role <role>)` — or `role not
+declared` where the entry publishes none — and a declared role other than
+`attester` adds `identity_role_observation`, verbatim: *"signed by a key the
+registry labels role `<role>`; the signed fields do not say so."* This tool
+verifies receipts under formats and does not issue gate decisions; it cannot say
+whether a role is trustworthy, only what the registry says it is.
+
+### Verdict mapping
+
+| Condition | Verdict | `reason` |
+|---|---|---|
+| Signer is not among the registry's published keys | `UNVERIFIABLE` | `key_unresolvable` |
+| Signer's key is revoked on either channel | `UNVERIFIABLE` | `key_revoked` |
+| Key's window does not contain **`--now`** | `UNVERIFIABLE` | `expired`, `not_yet_valid` |
+| Key's window does not contain the **artefact's own instant** (`signedAt`, else the signed `executedAt`/`checkedAt`) | `UNVERIFIABLE` | `signed_outside_key_window` |
+| Everything above passes and the signature recovers the stated attester | `VALID` | `verified` |
+
+The last two window rows are **different facts** and both are reported on every
+result, as `identity_key_window` and `identity_key_window_at_signing`. `expired`
+is a statement about the instant the caller asked about, and naming a different
+`--now` can change it; `signed_outside_key_window` is a statement about two
+documents — the registry was not vouching for that key when the artefact says it
+was made — and no `--now` recovers it. `identity_signing_instant` names which
+member supplied the instant and whether that member was inside the signature:
+`signedAt` is package metadata and is not.
+
+---
+
 ## Fixtures
 
 Everything under `fixtures/` and `refs/` is a byte-exact snapshot, pinned by

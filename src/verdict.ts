@@ -56,6 +56,21 @@ export function invalid(
  * UNVERIFIABLE — fail-closed. The check could not be completed, so no claim is
  * made either way. Deliberately takes no ResolvedKey parameter: there is no way
  * to emit a "verified under key" line from this path.
+ *
+ * THREE OF THESE REASONS ARE ABOUT A KEY'S VALIDITY WINDOW and a consumer must
+ * not collapse them, because two are recoverable and one is not. The union
+ * itself lives in `src/types.ts`; the distinction is recorded here, beside the
+ * constructor that emits all three:
+ *
+ *  - `expired` / `not_yet_valid` — the key's window does not contain the
+ *    instant the CALLER asked about (`--now`). Naming a different instant can
+ *    change the answer, and the detail says so.
+ *  - `signed_outside_key_window` — the key's window does not contain the
+ *    ARTEFACT'S OWN instant (`signedAt`, else the signed `executedAt`/
+ *    `checkedAt`). No `--now` changes that: it is a fact about the two
+ *    documents, not about when they were read. Added for
+ *    insight.attestation/eip712, where the registry publishes per-key windows
+ *    and the artefact publishes its own instant, so the pair is checkable.
  */
 export function unverifiable(
   format: string,

@@ -85,6 +85,18 @@ export type ReasonCode =
    * side of an UNVERIFIABLE.
    */
   | "key_revoked"
+  /**
+   * The signer resolved to a published key, and the ARTEFACT'S OWN instant falls
+   * outside that key's `[validFrom, validUntil]`. Distinct from `expired` and
+   * `not_yet_valid`, which are both statements about the instant the CALLER
+   * asked about (`--now`) and are recoverable by asking about a different one.
+   * This one is not: the artefact says when it was made, the registry says when
+   * the key was good for, and the two do not overlap at any `--now`. A consumer
+   * that could not tell the two apart would retry a check that cannot pass.
+   * Additive to this union — a consumer branching on the older members falls
+   * through to its default, which is the fail-closed side of an UNVERIFIABLE.
+   */
+  | "signed_outside_key_window"
   | "mapping_unresolvable"
   | "mapping_hash_mismatch"
   | "recompute_mismatch"

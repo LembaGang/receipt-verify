@@ -420,6 +420,15 @@ const num = (v: unknown): number | null => (typeof v === "number" && Number.isFi
 
 export interface Attestation {
   uid?: string;
+  /**
+   * The attestation's own `signedAt`, as published. PACKAGE METADATA: it sits
+   * beside `data`, not inside it, so it is not covered by the signature. Read
+   * because the artefact publishes no signed member that means "when this was
+   * signed" — `executedAt` and `checkedAt` are the nearest signed instants and
+   * are used when this is absent. Every place that reads it says which of the
+   * two it took and whether that member was signed.
+   */
+  signedAt?: string;
   attester: string;
   signature: string;
   data: Record<string, unknown>;
@@ -455,6 +464,8 @@ function asAttestation(o: Record<string, unknown>, label: string): Attestation |
   };
   const uid = str(o["uid"]);
   if (uid !== null) att.uid = uid;
+  const signedAt = str(o["signedAt"]);
+  if (signedAt !== null) att.signedAt = signedAt;
   return att;
 }
 
@@ -513,6 +524,17 @@ export interface RegistryKey {
   keyId: string;
   publicKey: string;
   revoked: boolean;
+  /**
+   * Every other member the registry publishes on a `public_keys` entry. These
+   * were parsed and dropped until 2026-09-07; dropping `role` is what let a key
+   * the registry labels a SAMPLE signer reach VALID with nothing in the verdict
+   * saying so. Kept as `null` when the entry does not publish the member, so
+   * "absent" and "published as something" are distinguishable — the registry
+   * declares `role` on exactly one of its three keys.
+   */
+  algorithm: string | null;
+  role: string | null;
+  note: string | null;
   /**
    * The key's own validity window, in epoch seconds. `null` is open ended —
    * either the member is absent or the registry publishes `null`, which is what
@@ -612,6 +634,9 @@ export function parseRegistry(bytes: Uint8Array, origin: string): Registry | { e
       keyId: str(e["key_id"]) ?? pub,
       publicKey: pub,
       revoked: e["revoked"] === true,
+      algorithm: str(e["algorithm"]),
+      role: str(e["role"]),
+      note: str(e["note"]),
       validFrom: "at" in from ? from.at : null,
       validUntil: "at" in until ? until.at : null,
       malformedWindow: malformed,
@@ -738,6 +763,122 @@ export function resolveRegistryKey(registry: Registry, address: string, now: num
 /** For a detail line: the instant as the registry wrote it, beside the number. */
 function instantLine(sec: number): string {
   return `${sec} (${new Date(sec * 1000).toISOString()})`;
+}
+
+/** The key's window as one readable interval, with `open` for an absent end. */
+function windowLine(key: RegistryKey): string {
+  const from = key.validFrom === null ? "validFrom open" : `validFrom ${instantLine(key.validFrom)}`;
+  const until = key.validUntil === null ? "validUntil open" : `validUntil ${instantLine(key.validUntil)}`;
+  return `[${from}, ${until}]`;
+}
+
+/**
+ * WHICH INSTANT IS THE ARTEFACT'S OWN — `signedAt` first, then the signed
+ * `executedAt`, then the signed `checkedAt`.
+ *
+ * The order is stated because it prefers an UNSIGNED member to a signed one,
+ * and that is a real cost. `signedAt` is the only member that means "when this
+ * was signed"; the two fallbacks mean "when the trade executed" and "when the
+ * check ran", which are the nearest signed instants but not the same fact. A
+ * party who can edit the wrapper without touching the signature can move what
+ * this reads. So every result that uses it prints which member was taken and
+ * whether that member was signed, and prints the signed instant beside it when
+ * both exist — the exposure is on the verdict rather than only in FINDINGS.
+ */
+export type SigningInstant =
+  | { at: number; member: string; signed: boolean; alsoSigned: { member: string; at: number } | null; signedAtUnreadable: string | null }
+  | { missing: string[] };
+
+export function signingInstant(art: Attestation): SigningInstant {
+  const signedMember = num(art.data["executedAt"]) !== null ? "executedAt" : num(art.data["checkedAt"]) !== null ? "checkedAt" : null;
+  const signedSec = signedMember === null ? null : Math.floor(num(art.data[signedMember])!);
+  if (art.signedAt !== undefined) {
+    const ms = Date.parse(art.signedAt);
+    if (Number.isFinite(ms)) {
+      return {
+        at: Math.floor(ms / 1000),
+        member: "signedAt",
+        signed: false,
+        alsoSigned: signedMember === null ? null : { member: signedMember, at: signedSec! },
+        signedAtUnreadable: null,
+      };
+    }
+    // Present and not an instant. Fall through to the signed member rather than
+    // to nothing, and carry the unreadable text so the result says what was
+    // skipped instead of quietly reading a different member.
+    if (signedMember !== null) {
+      return { at: signedSec!, member: signedMember, signed: true, alsoSigned: null, signedAtUnreadable: art.signedAt };
+    }
+    return { missing: [`signedAt (present, not an instant: ${JSON.stringify(art.signedAt)})`, "data.executedAt", "data.checkedAt"] };
+  }
+  if (signedMember !== null) return { at: signedSec!, member: signedMember, signed: true, alsoSigned: null, signedAtUnreadable: null };
+  return { missing: ["signedAt", "data.executedAt", "data.checkedAt"] };
+}
+
+/**
+ * The key's `[validFrom, validUntil]` against the ARTEFACT'S OWN instant, not
+ * against the caller's clock. Pure, and boundary-inclusive on both ends, the
+ * same way `resolveRegistryKey` treats `--now`, so the two comparisons cannot
+ * disagree about an instant that sits exactly on an edge.
+ *
+ * This answers a different question from `resolveRegistryKey`'s window check
+ * and neither replaces the other: that one asks "was this key good at the
+ * instant you asked about", this one asks "was it good when this artefact says
+ * it was made". A receipt can pass one and fail the other in either direction,
+ * which is precisely why both are reported.
+ */
+export type SigningWindow =
+  | { status: "no_instant"; searched: string[] }
+  | { status: "inside"; at: number; member: string }
+  | { status: "before"; at: number; member: string; validFrom: number }
+  | { status: "after"; at: number; member: string; validUntil: number };
+
+export function keyWindowAtSigningTime(key: RegistryKey, art: Attestation): SigningWindow {
+  const si = signingInstant(art);
+  if ("missing" in si) return { status: "no_instant", searched: si.missing };
+  if (key.validFrom !== null && si.at < key.validFrom) {
+    return { status: "before", at: si.at, member: si.member, validFrom: key.validFrom };
+  }
+  if (key.validUntil !== null && si.at > key.validUntil) {
+    return { status: "after", at: si.at, member: si.member, validUntil: key.validUntil };
+  }
+  return { status: "inside", at: si.at, member: si.member };
+}
+
+/**
+ * The registry declares `role` on exactly one of the three keys it publishes,
+ * and the value there is `"sample"`. No pin declares a role for the keys that
+ * sign production, so there is no published token for "this is the real
+ * attester" — the production keys simply carry no `role` member.
+ *
+ * `ATTESTER_ROLE` is therefore the one declared value that would NOT draw the
+ * observation if the registry ever started publishing it. Today every declared
+ * role draws it and an absent role draws none, which is the behaviour the two
+ * production keys and the sample key need. It is a constant rather than a
+ * hardcoded comparison so the assumption is visible and testable.
+ */
+const ATTESTER_ROLE = "attester";
+const ROLE_NOT_DECLARED = "not declared";
+const roleLabel = (key: RegistryKey): string => key.role ?? ROLE_NOT_DECLARED;
+
+/**
+ * Verbatim, as specified: the tool says what the registry says, and stops. It
+ * cannot say whether a role is trustworthy — only which label the registry
+ * attached to the key that made this signature, and that the signed fields do
+ * not carry that label themselves.
+ */
+const roleObservation = (role: string): string =>
+  `signed by a key the registry labels role ${role}; the signed fields do not say so`;
+
+/** One line for the artefact-instant comparison, in every one of its four states. */
+function signingWindowLine(key: RegistryKey, w: SigningWindow): string {
+  const win = `key ${key.keyId} ${windowLine(key)}`;
+  if (w.status === "no_instant") {
+    return `not_checked — the attestation carries no readable instant (searched ${w.searched.join(", ")}); ${win} was not compared against one`;
+  }
+  if (w.status === "inside") return `inside — ${w.member} ${instantLine(w.at)} is within ${win}`;
+  if (w.status === "before") return `OUTSIDE — ${w.member} ${instantLine(w.at)} is ${w.validFrom - w.at}s BEFORE the validFrom of ${win}`;
+  return `OUTSIDE — ${w.member} ${instantLine(w.at)} is ${w.at - w.validUntil}s PAST the validUntil of ${win}`;
 }
 
 /**
@@ -1029,6 +1170,42 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
     const cmp = compareRegistrySchema(art, ctx.registry);
     ann[p("registry_schema")] = cmp.line;
     if (cmp.domainLine !== null) ann[p("registry_domain_version")] = cmp.domainLine;
+
+    // THE KEY'S ROLE, on every result whose signer resolved to a registry entry
+    // — including each refusal below. A reader must not have to reach VALID to
+    // learn that the registry labels this key a sample signer, and a consumer
+    // must not have to know what `insight-oracle-safety-sample` means by name.
+    // The role NEVER moves the verdict: this tool verifies receipts under
+    // formats, and what a role is good for is the caller's policy.
+    if (res.status !== "not_found") {
+      ann[p("identity_key_role")] = roleLabel(res.key);
+      if (res.key.role !== null && res.key.role !== ATTESTER_ROLE) {
+        ann[p("identity_role_observation")] = roleObservation(res.key.role);
+      }
+      // The registry's own words about the key, where it publishes any. Carried
+      // verbatim; this tool does not summarise the issuer.
+      if (res.key.note !== null) ann[p("identity_key_registry_note")] = res.key.note;
+    }
+
+    // BOTH WINDOW COMPARISONS, computed before either can refuse, so a refusal
+    // on one still shows what the other found. They are different facts: the
+    // `--now` one is "was this key good at the instant you asked about", the
+    // signing one is "was it good when this artefact says it was made", and a
+    // receipt can pass either while failing the other. Only the three statuses
+    // that got past `window_malformed` have a window readable enough to compare.
+    let signingWindow: SigningWindow | null = null;
+    if (res.status === "valid" || res.status === "expired" || res.status === "not_yet_valid") {
+      signingWindow = keyWindowAtSigningTime(res.key, art);
+      ann[p("identity_key_window_at_signing")] = signingWindowLine(res.key, signingWindow);
+      const si = signingInstant(art);
+      if (!("missing" in si)) {
+        ann[p("identity_signing_instant")] =
+          `${si.member} ${instantLine(si.at)} — ${si.signed ? "a signed field" : "package metadata, OUTSIDE the signed bytes"}` +
+          (si.alsoSigned === null ? "" : `; the signed ${si.alsoSigned.member} reads ${instantLine(si.alsoSigned.at)}`) +
+          (si.signedAtUnreadable === null ? "" : `; signedAt is present and is not an instant (${JSON.stringify(si.signedAtUnreadable)}), so it was not read`);
+      }
+    }
+
     if (res.status === "not_found") {
       ann[p("identity")] = "signer_not_in_registry";
       if (!ctx.allowUnregistered) {
@@ -1128,10 +1305,46 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
         ),
       );
     } else {
+      // The key is good at the instant the CALLER asked about — recorded here,
+      // before the second question, so a refusal on that one still carries the
+      // answer to this one. One question is left, and it is the one the old code
+      // never asked.
+      //
+      // ORDER, and why it is this one. The `--now` comparison runs FIRST and
+      // keeps the exact answer it has always given, so no caller's verdict moves
+      // for a receipt whose own instant was never in question — an `expired` key
+      // still reports `expired`, and the detail still tells the caller to re-run
+      // with `--now` inside the window. This check runs on what survives that,
+      // which is exactly the case the old code let through: a `--now` inside the
+      // key's window and an artefact that says it was made outside it. Unlike
+      // `expired`, no `--now` recovers this one, so the detail says so rather
+      // than suggesting a re-run — the same reason revocation outranks the
+      // window above.
+      ann[p("identity_key_window")] = `inside — evaluated at ${instantLine(ctx.now)} against key ${res.key.keyId} ${windowLine(res.key)}`;
+      if (signingWindow !== null && (signingWindow.status === "before" || signingWindow.status === "after")) {
+        const edge =
+          signingWindow.status === "after"
+            ? `${signingWindow.at - signingWindow.validUntil}s PAST that key's validUntil ${instantLine(signingWindow.validUntil)}`
+            : `${signingWindow.validFrom - signingWindow.at}s BEFORE that key's validFrom ${instantLine(signingWindow.validFrom)}`;
+        ann[p("identity")] = `signed_outside_key_window (${res.key.keyId})`;
+        return fail(
+          unverifiable(
+            FORMAT,
+            "signed_outside_key_window",
+            `signer ${art.attester} resolves to published key ${res.key.keyId} in ${ctx.registry.origin}, and that key's window is ` +
+              `open at the evaluation instant ${instantLine(ctx.now)} — but the ${art.label}'s own ${signingWindow.member} is ` +
+              `${instantLine(signingWindow.at)}, ${edge}. The registry was not vouching for this key when this artefact says it was ` +
+              `made, so no published identity is established for it at any evaluation instant: unlike a closed window at --now, this ` +
+              `is not recoverable by re-running with a different --now`,
+            ann,
+            "identity",
+          ),
+        );
+      }
       // No `identity_revoked` annotation here any more: revocation is caught
       // above, so a key reaching this branch is not revoked and a conditional
       // that can never fire would only look like a check.
-      ann[p("identity")] = `signer_in_registry (${res.key.keyId})`;
+      ann[p("identity")] = `signer_in_registry (${res.key.keyId}, role ${roleLabel(res.key)})`;
       key = { kid: res.key.keyId, alg: "EIP-712/secp256k1", origin: ctx.registry.origin };
     }
   }

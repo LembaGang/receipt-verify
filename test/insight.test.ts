@@ -25,7 +25,19 @@
 import { describe, expect, it } from "vitest";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { insightAdapter, detect, eip712Digest, extraDomainKeys, findDuplicateKey, parseRegistry, recoverAddress, resolveRegistryKey, FORMAT } from "../src/adapters/insight.js";
+import {
+  insightAdapter,
+  detect,
+  eip712Digest,
+  extraDomainKeys,
+  findDuplicateKey,
+  keyWindowAtSigningTime,
+  parseRegistry,
+  recoverAddress,
+  resolveRegistryKey,
+  FORMAT,
+} from "../src/adapters/insight.js";
+import type { Attestation, RegistryKey } from "../src/adapters/insight.js";
 import { evidenceActionAdapter } from "../src/adapters/evidence-action.js";
 import { verificationStateAdapter } from "../src/adapters/verification-state.js";
 import { actaAdapter } from "../src/adapters/acta.js";
@@ -1320,8 +1332,30 @@ describe("insight — an expired registry key does not establish identity", () =
   it("the control: the same package, the same key, a window still open at --now is VALID", async () => {
     const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: withKey(OPEN) });
     expect(r.verdict).toBe("VALID");
-    expect(r.annotations?.["identity"]).toBe("signer_in_registry (throwaway-under-test)");
+    // The identity line carries the key's registry role from 2026-09-07. This
+    // throwaway entry publishes no `role`, so it reads "not declared" — absent
+    // and "sample" must not print the same way.
+    expect(r.annotations?.["identity"]).toBe("signer_in_registry (throwaway-under-test, role not declared)");
+    expect(r.annotations?.["identity_key_role"]).toBe("not declared");
+    expect(r.annotations?.["identity_role_observation"]).toBeUndefined();
     expect(r.resolvedKey?.kid).toBe("throwaway-under-test");
+  });
+
+  it("the key's role is printed on the REFUSAL too, not only on VALID", async () => {
+    // "Every verdict on a receipt whose signer resolves to a registry key prints
+    // the key's role" — a reader must not have to reach VALID to learn it. The
+    // window here is shut at --now, so the result is a refusal that still names
+    // the role, and still reports what the OTHER window check found.
+    const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: withKey(CLOSED) });
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("expired");
+    expect(r.annotations?.["identity_key_role"]).toBe("not declared");
+    // And BOTH window facts are on the refusal: the `--now` one is the reason,
+    // the signing one is reported beside it rather than lost behind the return.
+    expect(r.annotations?.["identity_key_window"]).toBe(
+      "validUntil 1788325200 (2026-09-02T05:00:00.000Z), evaluated at 1788327600 (2026-09-02T05:40:00.000Z)",
+    );
+    expect(String(r.annotations?.["identity_key_window_at_signing"])).toContain("OUTSIDE — signedAt 1788327672");
   });
 
   it("and an open-ended key (validUntil null) is VALID, so the check is the window and not the member's presence", async () => {
@@ -1433,7 +1467,7 @@ describe("insight — a revoked registry key establishes no identity", () => {
   it("CONTROL: the same package, the same key, not revoked on either channel, is VALID", async () => {
     const r = await insightAdapter.verify(PKG_BYTES, { ...base, registry: reg(false) });
     expect(r.verdict).toBe("VALID");
-    expect(r.annotations?.["identity"]).toBe("signer_in_registry (throwaway-under-test)");
+    expect(r.annotations?.["identity"]).toBe("signer_in_registry (throwaway-under-test, role not declared)");
     // And the annotation that used to be the whole of the revocation handling
     // is gone from the VALID path, because a key reaching it is not revoked.
     expect(r.annotations?.["identity_revoked"]).toBeUndefined();
@@ -1657,21 +1691,71 @@ describe("insight — the 2026-09-05T18:29Z registry pin", () => {
   });
 
   /**
-   * The gap this pin opens, asserted rather than described. `parseRegistry`
-   * reads key_id, public_key, revoked and the window; it does not read `role`,
-   * so nothing the adapter prints distinguishes a sample-role key from a
-   * production one. Closing it means carrying `role` onto `RegistryKey` and
-   * saying so on the result — not a one-line change, so it is recorded here and
-   * in FINDINGS.md rather than done inside this handoff. This case goes red the
-   * day it is closed, which is the point.
+   * The gap this pin opened, now closed (2026-09-07). Until then `parseRegistry`
+   * read key_id, public_key, revoked and the window and DROPPED `role`, `note`
+   * and `algorithm`, so nothing the adapter printed distinguished a sample-role
+   * key from a production one. The predecessor of this case pinned the six
+   * members that were carried and went red the day a seventh was added, which is
+   * what happened.
+   *
+   * What replaces it is the guard in the other direction: every member the
+   * pinned registry publishes on a `public_keys` entry is carried onto
+   * `RegistryKey`. That is the case that goes red the day the registry adds a
+   * member and the parser silently drops it — the failure mode `role` was.
    */
-  it('but the adapter does not yet read `role`, so nothing it prints says "sample"', () => {
+  it("parseRegistry carries every member the registry publishes on a key entry, `role` included", () => {
     const p = parseRegistry(NEW_BYTES, "refs/insight-oracle-keys-2026-09-05T1829Z.json");
     if ("error" in p) throw new Error(p.error);
     const key = p.keys.find((k) => k.keyId === "insight-oracle-safety-sample");
     expect(key).toBeDefined();
-    expect(Object.keys(key!).sort()).toEqual(["keyId", "malformedWindow", "publicKey", "revoked", "validFrom", "validUntil"]);
-    expect((key as unknown as Record<string, unknown>)["role"]).toBeUndefined();
+    expect(Object.keys(key!).sort()).toEqual([
+      "algorithm",
+      "keyId",
+      "malformedWindow",
+      "note",
+      "publicKey",
+      "revoked",
+      "role",
+      "validFrom",
+      "validUntil",
+    ]);
+    expect(key!.role).toBe("sample");
+    expect(key!.algorithm).toBe("EIP-712/secp256k1");
+    expect(String(key!.note)).toContain("SAMPLE ONLY");
+
+    // The guard, stated as a comparison against the bytes rather than against a
+    // list written here: nothing the registry publishes on a key entry is lost.
+    const published = new Set<string>();
+    for (const e of (JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>)["public_keys"]) {
+      for (const k of Object.keys(e)) published.add(k);
+    }
+    expect([...published].sort()).toEqual(["algorithm", "key_id", "note", "public_key", "revoked", "role", "validFrom", "validUntil"]);
+    const carried: Record<string, unknown> = {
+      key_id: key!.keyId,
+      public_key: key!.publicKey,
+      revoked: key!.revoked,
+      algorithm: key!.algorithm,
+      role: key!.role,
+      note: key!.note,
+      validFrom: key!.validFrom,
+      validUntil: key!.validUntil,
+    };
+    for (const member of published) expect(Object.keys(carried)).toContain(member);
+  });
+
+  // The two keys that sign production publish no `role` at all, and absent must
+  // not read the same way as declared. This is the known-bad input for the
+  // "role not declared" branch: it goes red if an absent role starts printing as
+  // anything else, including an empty string.
+  it("the two production keys publish no role, and read as `not declared`", () => {
+    const p = parseRegistry(NEW_BYTES, "refs/insight-oracle-keys-2026-09-05T1829Z.json");
+    if ("error" in p) throw new Error(p.error);
+    for (const id of ["insight-oracle-safety-v2", "insight-oracle-safety-v2-202609"]) {
+      const k = p.keys.find((x) => x.keyId === id);
+      expect(k).toBeDefined();
+      expect(k!.role).toBeNull();
+      expect(k!.note).toBeNull();
+    }
   });
 });
 
@@ -1759,7 +1843,7 @@ describe("insight — the 18:30Z samples, and H8", () => {
     expect(r.verdict).toBe("VALID");
     expect(r.resolvedKey?.kid).toBe("insight-oracle-safety-sample");
     expect(r.resolvedKey?.origin).toBe("refs/insight-oracle-keys-2026-09-05T1829Z.json");
-    expect(r.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-sample)");
+    expect(r.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-sample, role sample)");
     expect(r.annotations?.["recovered_signer"]).toBe(INSIGHT_KEY_SAMPLE.toLowerCase());
     const entry = (JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>)["public_keys"].find(
       (k: Record<string, unknown>) => String(k["public_key"]).toLowerCase() === INSIGHT_KEY_SAMPLE.toLowerCase(),
@@ -1814,48 +1898,304 @@ describe("insight — the 18:30Z samples, and H8", () => {
   });
 
   /**
-   * The `validUntil` gap the handoff asked about, driven from bytes rather than
-   * from reading the source.
-   *
-   * `resolveRegistryKey` compares the key's window against `ctx.now` (check 5,
-   * `resolveRegistryKey(ctx.registry, art.attester, ctx.now)`), and `ctx.now` is
-   * the CALLER's `--now`. The artefact's own signing instant never enters that
-   * comparison. So a receipt signed AFTER a key's window shut still resolves
-   * that key, provided the caller names an instant inside it — and the freshness
-   * check (check 6) does not catch it either, because it only fails when `now`
-   * is PAST the artefact's validUntil, never when it is before the artefact
-   * existed.
-   *
-   * Demonstrated on the pinned 17:41Z sample against a registry built from the
-   * 18:29Z bytes with that key's validUntil moved to 17:41:00Z — 63 s before the
-   * receipt's own `executedAt` and 64 s before its `signedAt`. Nothing is
-   * re-signed and no Insight key material is used.
+   * J3(a). Both 18:30Z samples, against the 18:29Z pin, at an instant inside
+   * their window. The verdict stays what the format earns — a good signature by
+   * a registry key is VALID, and this tool does not issue gate decisions — and
+   * the ROLE is surfaced on the identity line, in its own annotation, and in the
+   * observation, verbatim.
    */
-  it("a receipt signed after its key's window shut still resolves, if the caller names an earlier --now", async () => {
-    const w = JSON.parse(read(INSIGHT_SAMPLE_1741).toString("utf8")) as Record<string, any>;
-    const att = w["data"]["attestation"];
-    expect(att.signedAt).toBe("2026-09-02T17:42:03.934Z");
-    expect(att.data.executedAt).toBe(1788370923);
-    const doc = JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>;
-    doc["public_keys"] = (doc["public_keys"] as Record<string, unknown>[]).map((k) =>
-      k["public_key"] === INSIGHT_KEY_202609 ? { ...k, validUntil: "2026-09-02T17:41:00.000Z" } : k,
+  it("(a) both 18:30Z samples: VALID, identity carries `role sample`, and the observation is present", async () => {
+    for (const [att, now, schema] of [
+      [execAtt, EXEC_NOW, "match (v4)"],
+      [safetyAtt, SAFETY_NOW, "match (v3)"],
+    ] as const) {
+      const r = await insightAdapter.verify(Buffer.from(JSON.stringify(att), "utf8"), newBase(now));
+      expect(r.verdict).toBe("VALID");
+      expect(r.reason).toBe("verified");
+      expect(r.annotations?.["registry_schema"]).toBe(schema);
+      expect(r.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-sample, role sample)");
+      expect(r.annotations?.["identity_key_role"]).toBe("sample");
+      expect(r.annotations?.["identity_role_observation"]).toBe(
+        "signed by a key the registry labels role sample; the signed fields do not say so",
+      );
+      // The registry's own words about the key, carried without summarising.
+      expect(String(r.annotations?.["identity_key_registry_note"])).toContain("SAMPLE ONLY");
+      // Surfaced, never turned into a refusal: the key line is still printed.
+      expect(r.resolvedKey?.kid).toBe("insight-oracle-safety-sample");
+    }
+  });
+
+  /**
+   * J3(b). The production sample from 2 September against the same pin. Its key
+   * publishes no `role`, so the identity line says so in those words and NO
+   * observation is emitted — the known-bad input for (a): if an absent role
+   * produced the observation, this goes red.
+   */
+  it("(b) the 2 Sep production sample: identity carries `role not declared`, and no observation", async () => {
+    const att = (JSON.parse(read(INSIGHT_SAMPLE_1741).toString("utf8")) as Record<string, any>)["data"]["attestation"];
+    const r = await insightAdapter.verify(Buffer.from(JSON.stringify(att), "utf8"), newBase(1788370923));
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-v2-202609, role not declared)");
+    expect(r.annotations?.["identity_key_role"]).toBe("not declared");
+    expect(r.annotations?.["identity_role_observation"]).toBeUndefined();
+    expect(r.annotations?.["identity_key_registry_note"]).toBeUndefined();
+  });
+
+  /**
+   * J3(d). An unknown role string is REPORTED, not mapped. The tool says what
+   * the registry says; it has no table of roles it understands and no default
+   * for one it does not. The known-bad input is in the same case: the literal
+   * `attester` is the one declared role that draws no observation, so a
+   * substitution that reported every role identically would fail on the second
+   * half.
+   */
+  it("(d) an unknown role string is reported verbatim, and `attester` alone draws no observation", async () => {
+    const withRole = async (role: string | null): Promise<VerifyResult> => {
+      const doc = JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>;
+      doc["public_keys"] = (doc["public_keys"] as Record<string, any>[]).map((k) =>
+        String(k["public_key"]).toLowerCase() === INSIGHT_KEY_SAMPLE.toLowerCase()
+          ? role === null
+            ? Object.fromEntries(Object.entries(k).filter(([n]) => n !== "role"))
+            : { ...k, role }
+          : k,
+      );
+      return insightAdapter.verify(Buffer.from(JSON.stringify(execAtt), "utf8"), {
+        registry: Buffer.from(JSON.stringify(doc), "utf8"),
+        registryOrigin: "the 18:29Z pin with the sample key's role rewritten",
+        now: EXEC_NOW,
+      });
+    };
+
+    const weird = await withRole("ceremonial-understudy/2");
+    expect(weird.verdict).toBe("VALID");
+    expect(weird.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-sample, role ceremonial-understudy/2)");
+    expect(weird.annotations?.["identity_key_role"]).toBe("ceremonial-understudy/2");
+    expect(weird.annotations?.["identity_role_observation"]).toBe(
+      "signed by a key the registry labels role ceremonial-understudy/2; the signed fields do not say so",
     );
-    const shut = Buffer.from(JSON.stringify(doc), "utf8"); // 1788370860
-    const bytes = Buffer.from(JSON.stringify(att), "utf8");
-    const opts = { registry: shut, registryOrigin: "the 18:29Z pin with validUntil moved to 1788370860" };
 
-    // The gap: --now inside the window, receipt signed after it closed. VALID.
-    const inside = await insightAdapter.verify(bytes, { ...opts, now: 1788370800 });
-    expect(inside.verdict).toBe("VALID");
-    expect(inside.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-v2-202609)");
+    // The one declared value that means "this is the attester", and so draws no
+    // observation. Without this half, a rule that observed on EVERY role would
+    // pass the first half unnoticed.
+    const attester = await withRole("attester");
+    expect(attester.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-sample, role attester)");
+    expect(attester.annotations?.["identity_role_observation"]).toBeUndefined();
 
-    // The control: name an instant past the window and the same bytes are
-    // UNVERIFIABLE/expired. So the window IS read — it is just read against the
-    // wrong clock. What would close the gap is comparing the key's window
-    // against the artefact's own signed executedAt/checkedAt as well.
-    const after = await insightAdapter.verify(bytes, { ...opts, now: INSIGHT_NOW_1741 });
-    expect(after.verdict).toBe("UNVERIFIABLE");
-    expect(after.reason).toBe("expired");
-    expect(after.annotations?.["identity"]).toBe("key_expired (insight-oracle-safety-v2-202609)");
+    // And with the member deleted entirely, the same bytes read "not declared".
+    const none = await withRole(null);
+    expect(none.annotations?.["identity_key_role"]).toBe("not declared");
+    expect(none.annotations?.["identity_role_observation"]).toBeUndefined();
+  });
+
+  /**
+   * J3(c) — THE PAIR. The gap the 5 September run measured, closed, with the
+   * case that was red on the old code shown beside the three that were not.
+   *
+   * `resolveRegistryKey` compares the key's window against `ctx.now`, and
+   * `ctx.now` is the CALLER's `--now`. Until 2026-09-07 the artefact's own
+   * instant never entered that comparison, so a receipt signed AFTER a key's
+   * window shut still resolved that key provided the caller named an instant
+   * inside it — and the freshness check did not catch it either, because it
+   * only fails when `now` is PAST the artefact's own validUntil.
+   *
+   * Driven from the pinned bytes against a registry built from the 18:29Z pin
+   * with `insight-oracle-safety-v2-202609`'s validUntil moved to
+   * 2026-09-02T17:35:36.000Z = 1788370536. Nothing is re-signed and no Insight
+   * key material is used. Two artefacts sit either side of that instant: the
+   * 15:46Z sample (signedAt 1788363959, inside) and the 17:41Z sample (signedAt
+   * 1788370923, 387 s past it).
+   *
+   * Measured at dd21d5e, the four rows below read VALID / expired / **VALID** /
+   * expired. Only the third moves, and it is the only one that should.
+   */
+  describe("(c) the key window against the artefact's own signed instant", () => {
+    const MOVED_UNTIL = 1788370536; // 2026-09-02T17:35:36.000Z
+    const moved = (): Buffer => {
+      const doc = JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>;
+      doc["public_keys"] = (doc["public_keys"] as Record<string, unknown>[]).map((k) =>
+        k["public_key"] === INSIGHT_KEY_202609 ? { ...k, validUntil: "2026-09-02T17:35:36.000Z" } : k,
+      );
+      return Buffer.from(JSON.stringify(doc), "utf8");
+    };
+    const opts = (now: number): VerifyOptions => ({
+      registry: moved(),
+      registryOrigin: "the 18:29Z pin with insight-oracle-safety-v2-202609's validUntil moved to 1788370536",
+      now,
+    });
+    const attOf = (p: string): Record<string, any> => (JSON.parse(read(p).toString("utf8")) as Record<string, any>)["data"]["attestation"];
+    const A1546 = attOf(INSIGHT_SAMPLE_1546);
+    const A1741 = attOf(INSIGHT_SAMPLE_1741);
+    const bytesOf = (a: Record<string, any>): Buffer => Buffer.from(JSON.stringify(a), "utf8");
+
+    it("the two artefacts really do sit either side of the moved instant", () => {
+      expect(A1546.signedAt).toBe("2026-09-02T15:45:59.885Z");
+      expect(Math.floor(Date.parse(A1546.signedAt) / 1000)).toBe(1788363959);
+      expect(A1741.signedAt).toBe("2026-09-02T17:42:03.934Z");
+      expect(Math.floor(Date.parse(A1741.signedAt) / 1000)).toBe(1788370923);
+      expect(1788363959).toBeLessThan(MOVED_UNTIL);
+      expect(1788370923).toBeGreaterThan(MOVED_UNTIL);
+      expect(A1741.data.executedAt).toBe(1788370923);
+    });
+
+    it("signed INSIDE, verified inside: VALID, and both window facts read `inside`", async () => {
+      const r = await insightAdapter.verify(bytesOf(A1546), opts(1788363999));
+      expect(r.verdict).toBe("VALID");
+      expect(r.annotations?.["identity_key_window_at_signing"]).toBe(
+        "inside — signedAt 1788363959 (2026-09-02T15:45:59.000Z) is within key insight-oracle-safety-v2-202609 " +
+          "[validFrom 1787765736 (2026-08-26T17:35:36.000Z), validUntil 1788370536 (2026-09-02T17:35:36.000Z)]",
+      );
+      expect(r.annotations?.["identity_key_window"]).toBe(
+        "inside — evaluated at 1788363999 (2026-09-02T15:46:39.000Z) against key insight-oracle-safety-v2-202609 " +
+          "[validFrom 1787765736 (2026-08-26T17:35:36.000Z), validUntil 1788370536 (2026-09-02T17:35:36.000Z)]",
+      );
+    });
+
+    it("signed INSIDE, verified AFTER: the --now check reports exactly as it did, and the signing check is reported beside it", async () => {
+      const r = await insightAdapter.verify(bytesOf(A1546), opts(1788370900));
+      expect(r.verdict).toBe("UNVERIFIABLE");
+      expect(r.reason).toBe("expired"); // unchanged from dd21d5e
+      expect(r.annotations?.["identity"]).toBe("key_expired (insight-oracle-safety-v2-202609)");
+      expect(r.annotations?.["identity_key_window"]).toBe(
+        "validUntil 1788370536 (2026-09-02T17:35:36.000Z), evaluated at 1788370900 (2026-09-02T17:41:40.000Z)",
+      );
+      // Both facts stay visible: the key was good when this was signed, and is
+      // not good at the instant the caller asked about. Different questions.
+      expect(String(r.annotations?.["identity_key_window_at_signing"])).toContain("inside — signedAt 1788363959");
+    });
+
+    it("signed AFTER, verified inside: the case that was VALID at dd21d5e is now UNVERIFIABLE/signed_outside_key_window", async () => {
+      const r = await insightAdapter.verify(bytesOf(A1741), opts(1788370500));
+      expect(r.verdict).toBe("UNVERIFIABLE");
+      expect(r.reason).toBe("signed_outside_key_window");
+      expect(r.stoppedAt).toBe("identity");
+      // Fail closed: no key line for an identity that was never established.
+      expect(r.resolvedKey).toBeUndefined();
+      expect(r.annotations?.["identity"]).toBe("signed_outside_key_window (insight-oracle-safety-v2-202609)");
+      expect(r.annotations?.["identity_key_window_at_signing"]).toBe(
+        "OUTSIDE — signedAt 1788370923 (2026-09-02T17:42:03.000Z) is 387s PAST the validUntil of key insight-oracle-safety-v2-202609 " +
+          "[validFrom 1787765736 (2026-08-26T17:35:36.000Z), validUntil 1788370536 (2026-09-02T17:35:36.000Z)]",
+      );
+      // The --now fact is still reported, and it is the one that used to decide.
+      expect(String(r.annotations?.["identity_key_window"])).toContain("inside — evaluated at 1788370500");
+      // No --now recovers it, and the detail says so rather than suggesting one.
+      expect(r.detail).toContain("not recoverable by re-running with a different --now");
+      expect(r.detail).toContain("387s PAST that key's validUntil 1788370536");
+    });
+
+    it("signed AFTER, verified after: still `expired` — the --now question is answered first and keeps its answer", async () => {
+      const r = await insightAdapter.verify(bytesOf(A1741), opts(1788370900));
+      expect(r.verdict).toBe("UNVERIFIABLE");
+      expect(r.reason).toBe("expired"); // unchanged from dd21d5e
+      expect(String(r.annotations?.["identity_key_window_at_signing"])).toContain("OUTSIDE — signedAt 1788370923");
+    });
+
+    it("the CONTROL against the unmodified pin: nothing about that key's real window refuses either artefact", async () => {
+      // Without the moved validUntil the key is open-ended, so both artefacts
+      // pass both checks. If they did not, the four rows above would be
+      // measuring the fixtures rather than the moved window.
+      for (const [a, now] of [
+        [A1546, 1788363999],
+        [A1741, 1788370923],
+      ] as const) {
+        const r = await insightAdapter.verify(bytesOf(a), newBase(now));
+        expect(r.verdict).toBe("VALID");
+        expect(String(r.annotations?.["identity_key_window_at_signing"])).toContain("is within key insight-oracle-safety-v2-202609");
+      }
+    });
+
+    it("the mirror case: an artefact signed BEFORE validFrom is refused with the same token", async () => {
+      // The sample key's validFrom is 2026-09-03, and the 2 September samples
+      // were signed before it. Pointing the sample key's entry at the production
+      // address makes the 17:41Z sample resolve to a window it predates, with
+      // --now inside that window. Without this, only the `after` edge is tested.
+      const doc = JSON.parse(NEW_BYTES.toString("utf8")) as Record<string, any>;
+      doc["public_keys"] = (doc["public_keys"] as Record<string, any>[]).map((k) =>
+        k["public_key"] === INSIGHT_KEY_202609 ? { ...k, validFrom: "2026-09-03", validUntil: null } : k,
+      );
+      const r = await insightAdapter.verify(bytesOf(A1741), {
+        registry: Buffer.from(JSON.stringify(doc), "utf8"),
+        registryOrigin: "the 18:29Z pin with the production key's validFrom moved to 2026-09-03",
+        now: INSIGHT_NOW_0905,
+      });
+      expect(r.reason).toBe("signed_outside_key_window");
+      expect(String(r.annotations?.["identity_key_window_at_signing"])).toContain(
+        "OUTSIDE — signedAt 1788370923 (2026-09-02T17:42:03.000Z) is 22677s BEFORE the validFrom",
+      );
+    });
+
+    /**
+     * The exposure this check carries, asserted rather than only described.
+     * `signedAt` is the only member that MEANS "when this was signed", and it
+     * sits outside the signature — so a party who can edit the wrapper without
+     * touching `data` can move what this check reads, and the signature does not
+     * notice. The annotation says so on every result and prints the signed
+     * instant beside it; this case is what keeps that true.
+     */
+    it("signedAt is package metadata: editing it moves this check and the signature still verifies", async () => {
+      const forged = { ...A1741, signedAt: "2026-09-02T17:00:00.000Z" }; // inside the moved window
+      const r = await insightAdapter.verify(bytesOf(forged), opts(1788370500));
+      // The signature is over `data`, which was not touched: still VALID.
+      expect(r.verdict).toBe("VALID");
+      expect(r.annotations?.["recovered_signer"]).toBe(INSIGHT_KEY_202609.toLowerCase());
+      // And the result says, on its face, that the instant it used was not signed
+      // — beside the signed member, which still reads 387s past the window.
+      expect(r.annotations?.["identity_signing_instant"]).toBe(
+        "signedAt 1788368400 (2026-09-02T17:00:00.000Z) — package metadata, OUTSIDE the signed bytes; " +
+          "the signed executedAt reads 1788370923 (2026-09-02T17:42:03.000Z)",
+      );
+    });
+
+    it("a signedAt that is not an instant falls back to the signed member, and says it did", async () => {
+      const bad = { ...A1741, signedAt: "whenever" };
+      const r = await insightAdapter.verify(bytesOf(bad), opts(1788370500));
+      // The signed executedAt is 387s past the window, so the fallback refuses —
+      // an unreadable wrapper member is not a way past the check.
+      expect(r.reason).toBe("signed_outside_key_window");
+      expect(r.annotations?.["identity_signing_instant"]).toBe(
+        'executedAt 1788370923 (2026-09-02T17:42:03.000Z) — a signed field; signedAt is present and is not an instant ("whenever"), so it was not read',
+      );
+      expect(String(r.annotations?.["identity_key_window_at_signing"])).toContain("OUTSIDE — executedAt 1788370923");
+    });
+
+    it("an artefact carrying no readable instant is reported not_checked, and the searched members are named", () => {
+      const key: RegistryKey = {
+        keyId: "k",
+        publicKey: "0x00",
+        revoked: false,
+        algorithm: null,
+        role: null,
+        note: null,
+        validFrom: 1,
+        validUntil: 2,
+        malformedWindow: [],
+      };
+      const bare = { attester: "0x00", signature: "0x00", data: {}, domain: {}, types: {}, primaryType: "X", eip712: {}, label: "attestation" };
+      const w = keyWindowAtSigningTime(key, bare as unknown as Attestation);
+      expect(w.status).toBe("no_instant");
+      if (w.status !== "no_instant") throw new Error("unreachable");
+      expect(w.searched).toEqual(["signedAt", "data.executedAt", "data.checkedAt"]);
+      // The control: give it one, and it is compared rather than skipped.
+      const withOne = { ...bare, data: { checkedAt: 5 } };
+      expect(keyWindowAtSigningTime(key, withOne as unknown as Attestation).status).toBe("after");
+    });
+
+    it("the boundary instants are INSIDE, the same way the --now comparison treats them", () => {
+      const key: RegistryKey = {
+        keyId: "k",
+        publicKey: "0x00",
+        revoked: false,
+        algorithm: null,
+        role: null,
+        note: null,
+        validFrom: 100,
+        validUntil: 200,
+        malformedWindow: [],
+      };
+      const at = (n: number) => keyWindowAtSigningTime(key, { data: { checkedAt: n } } as unknown as Attestation).status;
+      expect(at(99)).toBe("before");
+      expect(at(100)).toBe("inside");
+      expect(at(200)).toBe("inside");
+      expect(at(201)).toBe("after");
+    });
   });
 });

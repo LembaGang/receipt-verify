@@ -5,6 +5,35 @@ Shipped versions, newest first. Entries queued against the next release live in
 
 ## 0.1.3 (unreleased)
 
+The two Insight adapter gaps the 5 September run recorded are closed, and the two test cases written
+to go red the day they closed did. **`parseRegistry` was dropping three of the eight members the
+registry publishes on a key entry — `role`, `note` and `algorithm` — so a key the registry labels
+`role: "sample"` reached VALID with nothing in the verdict, the key line or the annotations saying
+so.** All three are carried now, and every verdict whose signer resolves to a registry key prints the
+key's role: `identity` reads `signer_in_registry (insight-oracle-safety-sample, role sample)`, or
+`role not declared` for the two production keys, which publish no `role` at all; a declared role other
+than `attester` adds `identity_role_observation` verbatim — "signed by a key the registry labels role
+sample; the signed fields do not say so" — and the entry's own `note` is carried unedited. The verdict
+does not move: a good signature by a published key is what the format earns, this tool does not issue
+gate decisions, and the role is surfaced rather than turned into a refusal. What a caller gains is a
+stable annotation to branch on instead of the spelling of a key_id. **Second, a key's validity window
+is now applied to the ARTEFACT'S own instant as well as to `--now`**, under a new reason token
+`signed_outside_key_window` (UNVERIFIABLE), registered in `src/types.ts`, documented beside the
+`unverifiable` constructor, in the coverage manifest's `identity` check and in the README's new
+Format 4 reason table. `expired` and `not_yet_valid` are statements about the instant the caller asked
+about and a different `--now` answers them differently; this one is a statement about two documents and
+no `--now` recovers it, so it is its own token. The `--now` comparison runs first and keeps the answer
+it has always given, and both comparisons are annotated before either can refuse
+(`identity_key_window`, `identity_key_window_at_signing`). Measured on the pinned 2 September samples
+against the 18:29Z pin with one key's `validUntil` moved to 1788370536, exactly one of four rows
+moves — the 17:41Z sample signed 387 s past that instant and verified with `--now` inside it, VALID at
+`dd21d5e` and UNVERIFIABLE now — with the other three rows and the unmodified pin as controls. The
+instant is `signedAt`, falling back to the signed `executedAt`/`checkedAt`, and `signedAt` is package
+metadata outside the signature: `identity_signing_instant` says which member was taken and whether it
+was signed, and prints the signed instant beside it, so the exposure is on every verdict rather than
+only in `FINDINGS.md`. `FINDINGS.md` section F gains F7–F9 with the before/after strings and both
+controls.
+
 The Insight key registry moved, and `npm run drift` is what noticed. `refs/insight-oracle-keys-2026-09-05T1829Z.json`
 pins the body byte-exact (17,958 B, sha256 `7cc00b95…`, fetched 2026-09-05T18:29:05Z); the four earlier
 pins are untouched and the 2026-09-02T17:41Z one joins them as a `historical` upstream, so

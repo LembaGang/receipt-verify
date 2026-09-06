@@ -1208,6 +1208,108 @@ announcement, and the only reason this was noticed is that `npm run drift` asks.
 statement about any key material, and nothing here was fetched other than the registry URL and the
 two endpoint URLs the registry itself names.
 
+**Appended 2026-09-07 — the two adapter gaps from the 5 September run, closed**
+
+F3 and F5 each recorded a gap in this tool, with the check that would close it and a test case that
+would go red the day it was closed. Both are closed here, and both of those cases went red, which is
+what dated them. Every value below is measured through `insightAdapter.verify` against the pinned
+bytes named in F's source line; nothing is re-signed and no Insight key material is used.
+
+### F7. `role` is carried and printed on every verdict; the verdict is unchanged (closes F3)
+
+`parseRegistry` parsed each `public_keys` entry and kept six members — `keyId`, `publicKey`,
+`revoked`, `validFrom`, `validUntil`, `malformedWindow`. It **dropped three** of the eight the pinned
+registry publishes: `role`, `note` and `algorithm`. All three are now carried on `RegistryKey`, and
+the guard that replaces F3's case compares the parsed members against the member names actually
+present in the pinned bytes, so it goes red when the registry adds a member and the parser drops it —
+which is the failure `role` was.
+
+What changed on the output, measured on the three fixtures at `--now` inside each artefact's window,
+against `refs/insight-oracle-keys-2026-09-05T1829Z.json`:
+
+| artefact | `identity` at `dd21d5e` | `identity` now |
+|---|---|---|
+| `execution-sample-2026-09-05T1830Z.json` | `signer_in_registry (insight-oracle-safety-sample)` | `signer_in_registry (insight-oracle-safety-sample, role sample)` |
+| `safety-sample-2026-09-05T1830Z.json` | `signer_in_registry (insight-oracle-safety-sample)` | `signer_in_registry (insight-oracle-safety-sample, role sample)` |
+| `execution-sample-2026-09-02T1741Z.json` | `signer_in_registry (insight-oracle-safety-v2-202609)` | `signer_in_registry (insight-oracle-safety-v2-202609, role not declared)` |
+
+Both sample rows additionally carry `identity_key_role = sample`, the registry's own `note` verbatim
+under `identity_key_registry_note`, and the observation, verbatim:
+
+> `signed by a key the registry labels role sample; the signed fields do not say so`
+
+The production row carries `identity_key_role = not declared` and **no** observation and **no** note —
+that asymmetry is the known-bad input for the observation, and it is asserted rather than described.
+`identity_key_role` is printed on refusals too, not only on VALID, so a reader never has to reach a
+VALID to learn what the registry calls the key.
+
+**The verdict did not move, deliberately.** All three artefacts were VALID before and are VALID now.
+A good signature by a key the registry publishes is what the format earns; this tool verifies receipts
+under formats and does not issue gate decisions, so the role is surfaced and never turned into a
+refusal. A caller who wants a sample-role signer refused has `identity_key_role` to branch on, in a
+stable annotation, without parsing a key_id's spelling — which was the only handle before.
+
+### F8. The key's window is checked against the artefact's own instant, under a new reason token (closes F5)
+
+New reason token, added to `ReasonCode` in `src/types.ts` and documented beside the `unverifiable`
+constructor in `src/verdict.ts`:
+
+> **`signed_outside_key_window`** — the signer resolved to a published key, and the artefact's own
+> instant falls outside that key's `[validFrom, validUntil]`. UNVERIFIABLE, and distinct from
+> `expired`/`not_yet_valid` on purpose: those are statements about the instant the CALLER asked about
+> and a different `--now` answers them differently, this one is a statement about two documents and no
+> `--now` recovers it.
+
+The artefact's instant is `signedAt`, falling back to the signed `executedAt` and then the signed
+`checkedAt`. The `--now` comparison **runs first and keeps the answer it has always given**, so no
+result whose signing instant was never in question moves; both comparisons are annotated before either
+can refuse (`identity_key_window` for `--now`, `identity_key_window_at_signing` for the artefact),
+because they answer different questions and a refusal on one must not hide what the other found.
+
+Measured on the two pinned 2 September samples against a registry built from the 18:29Z pin with
+`insight-oracle-safety-v2-202609`'s `validUntil` moved to `2026-09-02T17:35:36.000Z` = 1788370536.
+The 15:46Z sample's `signedAt` is 1788363959, inside it; the 17:41Z sample's is 1788370923, 387 s past
+it. The `dd21d5e` column is the same four runs against the same bytes on the code as it stood:
+
+| artefact | `--now` | at `dd21d5e` | now |
+|---|---|---|---|
+| 15:46Z (signed inside) | 1788363999, inside | VALID / `verified` | VALID / `verified` |
+| 15:46Z (signed inside) | 1788370900, past | UNVERIFIABLE / `expired` | UNVERIFIABLE / `expired` |
+| **17:41Z (signed 387 s past)** | **1788370500, inside** | **VALID / `verified`** | **UNVERIFIABLE / `signed_outside_key_window`** |
+| 17:41Z (signed 387 s past) | 1788370900, past | UNVERIFIABLE / `expired` | UNVERIFIABLE / `expired` |
+
+**One row of four moves, and it is the row F5 named.** The other three are the control: without them
+the change could be a check that refuses everything. Against the unmodified pin — where that key's
+window is genuinely open-ended — both artefacts stay VALID, which is the second control. The refusing
+row prints, on its face:
+
+> `identity_key_window_at_signing = OUTSIDE — signedAt 1788370923 (2026-09-02T17:42:03.000Z) is 387s PAST the validUntil of key insight-oracle-safety-v2-202609 [validFrom 1787765736 (2026-08-26T17:35:36.000Z), validUntil 1788370536 (2026-09-02T17:35:36.000Z)]`
+
+and `identity_key_window = inside — evaluated at 1788370500 …`, so both facts are readable from one
+result. No key line is printed: the identity was never established. The `before validFrom` edge is
+asserted with the same token in its own case, so only one side of the interval is not being tested.
+
+### F9. What F7 and F8 do not establish
+
+**That a role is trustworthy.** This tool reports the label the registry attached to the key that made
+the signature. It has no table of roles it understands, no default for one it does not, and no way to
+check whether `role: "sample"` means what the registry's `note` says it means. An unknown role string
+is printed verbatim and never mapped; `attester` is the one value that draws no observation, and no
+pin publishes it on any key today.
+
+**That the instant this check reads was signed.** `signedAt` is the only member that means "when this
+was signed", and it sits beside `data`, not inside it — the signature does not cover it. A party who
+can edit the wrapper without touching `data` can move what this check reads, and the signature still
+verifies. That is asserted rather than only described: a case moves `signedAt` into the window, gets
+VALID, and requires the result to print `signedAt … — package metadata, OUTSIDE the signed bytes; the
+signed executedAt reads 1788370923 …`. The exposure is on every verdict rather than in this file
+alone. Closing it needs a signed member that means "signed at", which the format does not publish.
+
+**That the two 18:30Z samples describe anything real.** Unchanged from F6, and unaffected by either
+change here: what F7 adds is that the verdict now says which key the registry considers a sample
+signer, not that the signed fields say so. They still do not — the 44 signed fields carry no mark and
+still read `environment: "production"`.
+
 
 ## Interests
 
