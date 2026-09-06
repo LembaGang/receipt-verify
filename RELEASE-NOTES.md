@@ -5,6 +5,31 @@ Shipped versions, newest first. Entries queued against the next release live in
 
 ## 0.1.3 (unreleased)
 
+Nothing checked `fixtures/upstreams.json` against the corpora that actually exist, so a corpus with
+no entry was indistinguishable in a drift run's output from a corpus that was fine — and one already
+was: `fixtures/delivery/` had been graded by the walker on every run since 2 September with no
+provenance row and no upstream entry. **`test/upstream-coverage.test.ts` closes that**, in the
+ordinary suite rather than on the Monday drift schedule: every path under `fixtures/` and `refs/`, and
+every file of every corpus `walker/scopes.json` grades, must resolve to an entry or to a named
+`unmapped` row carrying a one-line reason. It was red on 49 paths and 4 corpus directories when
+written and is green now, with nothing added to an exclusion list — there is no exclusion list, by
+design, because the drift tool reads `upstreams.json` and would never see one written in a test. Its
+own negative control found the reason such a check usually proves nothing: eleven single-file pins
+claimed `corpus_dirs: ["refs"]`, which resolved every neighbouring file, including a draft nobody had
+pinned. `corpus_dirs` now names only what an upstream produced whole. The delivery corpus gains a
+provenance section and a `kind: local` entry — a new kind for corpora this repository authors, checked
+for nothing but existence and digest against the object store — and `pilot-exa-contents/`, which is a
+signed mainnet capture and not this repository's work, is a named `unmapped` row beside it rather than
+hidden under a broad `corpus_dirs`. `tools/drift.ts` gains `no_entry` as an eighth first-class
+outcome and a repeatable `--corpus <dir>` flag to ask for it, so the failure mode has a name in the
+output as well as in a test; a directory an `unmapped` row accounts for is `not_checked` with the row
+named, because a row that cried at every deliberate decision in the file would not be read. Separately,
+the walker's `rule_idle` column drops from 10 rows to 2: the two chain rules the four
+`conformance/vectors.json`-only asqav corpora inherited grade files under `verifier/conformance-vectors/`,
+and `find` shows that tree is absent from all four — so the inheritance is removed with a `corpus_note`
+at each, rather than left as eight permanently idle rows that train the reader to ignore the column.
+Every other walker count is byte-identical before and after.
+
 The two Insight adapter gaps the 5 September run recorded are closed, and the two test cases written
 to go red the day they closed did. **`parseRegistry` was dropping three of the eight members the
 registry publishes on a key entry — `role`, `note` and `algorithm` — so a key the registry labels

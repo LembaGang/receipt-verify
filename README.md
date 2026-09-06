@@ -572,11 +572,21 @@ One row per upstream, each a first-class outcome rather than a pass/fail:
 `moved_changed` (git: a pinned path differs — each is listed with its old and
 new blob id), `changed` (http: the body's digest differs, both printed),
 `superseded` (an IETF draft has a higher revision, named), `unreachable` (the
-check could not be made, with the error), and `not_checked` (a `historical` pin,
+check could not be made, with the error), `not_checked` (a `historical` pin,
 kept for a finding rather than as the current corpus — printed, never counted as
-current). Exit 0 only when every `role: current` upstream is `current` or
-`moved_untouched`; `unreachable` is a failure, because a check that could not be
-made has not passed.
+current), and `no_entry` (`npm run drift -- --corpus <dir>` was asked about a
+corpus directory that nothing in `upstreams.json` claims or excuses). Exit 0
+only when every `role: current` upstream is `current` or `moved_untouched`;
+`unreachable` is a failure, because a check that could not be made has not
+passed, and `no_entry` is a failure because a corpus nothing watches has not
+passed a freshness check — it was never given one.
+
+`test/upstream-coverage.test.ts` is what keeps that file honest: it requires
+every path under `fixtures/` and `refs/`, and every file of every corpus
+`walker/scopes.json` grades, to resolve either to an `upstreams.json` entry or
+to a named `unmapped` row carrying a one-line reason — so it is red in the
+ordinary suite on every push, not only on the Monday drift schedule, and a new
+fixture cannot be added without saying where it came from.
 
 Comparisons read the git object store — `git rev-parse HEAD:<path>` and
 `git cat-file blob` — never a worktree, because `core.autocrlf` on a Windows

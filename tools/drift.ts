@@ -22,6 +22,17 @@
  *   superseded       ietf-draft: a higher revision exists; it is named
  *   unreachable      the check could not be made, with the error text
  *   not_checked      role: historical -- printed, never counted as current
+ *   no_entry         a corpus directory was named and NOTHING here claims it
+ *
+ * `no_entry` is the row for the failure this tool could not previously report at
+ * all. Every other outcome answers a question about an entry; this one answers
+ * the question the entries cannot be asked -- "is there an entry?" -- and it is
+ * the shape B-67 found: `fixtures/delivery/` was graded by the walker on every
+ * run, had no entry, and a drift run printed `current=8 ... not_checked=9` with a
+ * green conscience while saying nothing whatsoever about it. In the output, a
+ * corpus with no entry looked exactly like a corpus that was fine.
+ * `test/upstream-coverage.test.ts` is what makes it impossible to add one; this
+ * row is what gives it a NAME when `--corpus` asks.
  *
  * Exit 0 only when every `role: current` upstream is `current` or
  * `moved_untouched`. `unreachable` is never silently a 0: a check that could not
@@ -36,6 +47,7 @@
  *
  *   npm run drift             # read-only; writes walker/drift.json (gitignored)
  *   npm run drift -- --record # ALSO writes last_observed into upstreams.json
+ *   npm run drift -- --corpus fixtures/delivery   # is this directory watched?
  *
  * `--record` is the only mode that touches a tracked file, and a `--record` run
  * is a change to commit deliberately, never a side effect of looking.
@@ -57,7 +69,8 @@ export type Outcome =
   | "changed"
   | "superseded"
   | "unreachable"
-  | "not_checked";
+  | "not_checked"
+  | "no_entry";
 
 /** The eight rows, in the order the SUMMARY line prints them. */
 export const OUTCOMES: Outcome[] = [
@@ -68,6 +81,7 @@ export const OUTCOMES: Outcome[] = [
   "superseded",
   "unreachable",
   "not_checked",
+  "no_entry",
 ];
 
 export interface PathPin {
@@ -79,7 +93,7 @@ export interface PathPin {
 
 export interface Upstream {
   id: string;
-  kind: "git" | "http" | "ietf-draft";
+  kind: "git" | "http" | "ietf-draft" | "local";
   role: "current" | "historical";
   // git
   repo?: string;
@@ -93,6 +107,10 @@ export interface Upstream {
   // ietf-draft
   name?: string;
   pinned_rev?: string;
+  // local -- repository-relative paths this repository itself authors
+  files?: Array<{ path: string; sha256: string }>;
+  corpus_dirs?: string[];
+  pinned_file?: string;
   // written by --record
   last_observed?: { tip: string | null; at: string; outcome: Outcome };
   [k: string]: unknown;
@@ -298,6 +316,130 @@ async function checkDraft(u: Upstream, fetchFn: DriftFetch): Promise<Result> {
 }
 
 // ---------------------------------------------------------------------------
+// local
+// ---------------------------------------------------------------------------
+
+/**
+ * A corpus this repository authors. There is no upstream, so there is nothing to
+ * resolve and nothing to fetch -- existence and digest is the whole check, and
+ * saying so is the point: a `local` entry claims only that the committed bytes
+ * are still the ones this file recorded.
+ *
+ * Read from the object store like every other comparison here, never from the
+ * worktree. `core.autocrlf` is true on this machine, so digesting the checked-out
+ * file would report a change on every text file on every run.
+ */
+function checkLocal(u: Upstream, repoRoot: string): Result {
+  const base = { id: u.id, kind: u.kind, role: u.role } as const;
+  const files = u.files ?? [];
+  if (files.length === 0) {
+    return { ...base, outcome: "unreachable", tip: null, detail: `${u.id} is kind: local and names no files, so there is nothing to check` };
+  }
+  const changed: PathChange[] = [];
+  for (const f of files) {
+    let now: string | null = null;
+    try {
+      const bytes = execFileSync("git", ["cat-file", "blob", `HEAD:${f.path}`], { cwd: repoRoot, stdio: ["ignore", "pipe", "pipe"], maxBuffer: 1 << 28 });
+      now = sha256Hex(Buffer.from(bytes));
+    } catch {
+      // Not at HEAD at all -- deleted, renamed, or never committed. A check that
+      // was made and failed, not one that could not be made.
+      changed.push({ path: f.path, old_blob: f.sha256, new_blob: null, new_sha256: null });
+      continue;
+    }
+    if (now !== f.sha256) changed.push({ path: f.path, old_blob: f.sha256, new_blob: null, new_sha256: now });
+  }
+  if (changed.length === 0) {
+    return { ...base, outcome: "current", tip: null, detail: `all ${files.length} local path${files.length === 1 ? "" : "s"} are present at HEAD and digest to the recorded sha256` };
+  }
+  return {
+    ...base,
+    outcome: "changed",
+    tip: null,
+    detail: `${changed.length} of ${files.length} local paths differ from the recorded sha256 or are gone from HEAD`,
+    changed_paths: changed,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// no_entry
+// ---------------------------------------------------------------------------
+
+/** Every path an entry claims: `corpus_dirs` as a prefix, `pinned_file` and `files[].path` exactly. */
+function claims(u: Upstream): { dirs: string[]; exact: string[] } {
+  return {
+    dirs: (u.corpus_dirs ?? []).filter((d) => d !== "").map((d) => d.replace(/\/+$/, "") + "/"),
+    exact: [...(u.pinned_file ? [u.pinned_file] : []), ...(u.files ?? []).map((f) => f.path)],
+  };
+}
+
+/** A named `unmapped` row: paths this file accounts for and deliberately does not watch. */
+export interface UnmappedRow {
+  id: string;
+  paths: string[];
+  reason: string;
+}
+
+/** `fixtures/acta/synthetic/*` matches anything beneath it. Only `*` is special. */
+function globMatch(pattern: string, path: string): boolean {
+  if (!pattern.includes("*")) return pattern === path;
+  const rx = new RegExp("^" + pattern.split("*").map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[^]*") + "$");
+  return rx.test(path);
+}
+
+/**
+ * Ask of a corpus DIRECTORY whether anything in this file accounts for it, and
+ * give the answer a row. Nothing here fetches: this is a question about the
+ * record, not about the world.
+ *
+ * Three answers, not two. An entry claiming it is `not_checked` here and checked
+ * on its own row. An `unmapped` row accounting for it is ALSO `not_checked`: a
+ * corpus deliberately recorded as unwatchable -- a local clone with no remote, a
+ * sample endpoint that mints a fresh signature per call -- is accounted for, and
+ * reporting it as `no_entry` would turn the row that exists to name real gaps
+ * into one that cries at every deliberate decision in the file. Only a directory
+ * that appears NOWHERE is `no_entry`.
+ */
+export function checkCorpusDirs(upstreams: Upstream[], dirs: string[], unmapped: UnmappedRow[] = []): Result[] {
+  return dirs.map((raw) => {
+    const dir = raw.split("\\").join("/").replace(/\/+$/, "");
+    const owners = upstreams.filter((u) => {
+      const c = claims(u);
+      return c.dirs.some((d) => `${dir}/`.startsWith(d)) || c.exact.some((e) => e === dir || e.startsWith(`${dir}/`));
+    });
+    if (owners.length > 0) {
+      return {
+        id: dir,
+        kind: owners[0]!.kind,
+        role: "current" as const,
+        outcome: "not_checked" as const,
+        tip: null,
+        detail: `claimed by ${owners.map((u) => u.id).join(", ")}; the entr${owners.length === 1 ? "y is" : "ies are"} checked on its own row above`,
+      };
+    }
+    const excused = unmapped.filter((r) => (r.paths ?? []).some((g) => globMatch(g, `${dir}/`) || globMatch(g, dir) || g.startsWith(`${dir}/`)));
+    if (excused.length > 0) {
+      return {
+        id: dir,
+        kind: "local" as const,
+        role: "current" as const,
+        outcome: "not_checked" as const,
+        tip: null,
+        detail: `no entry, and none is wanted: accounted for by the unmapped row${excused.length === 1 ? "" : "s"} ${excused.map((r) => r.id).join(", ")} -- ${excused[0]!.reason}`,
+      };
+    }
+    return {
+      id: dir,
+      kind: "local" as const,
+      role: "current" as const,
+      outcome: "no_entry" as const,
+      tip: null,
+      detail: `no entry in fixtures/upstreams.json claims ${dir}, by corpus_dirs, pinned_file or files, and no unmapped row accounts for it -- so no run of this tool has ever said anything about it`,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // The run
 // ---------------------------------------------------------------------------
 
@@ -307,7 +449,16 @@ export interface DriftRun {
   code: number;
 }
 
-export async function runDrift(upstreams: Upstream[], fetchFn: DriftFetch = realFetch): Promise<DriftRun> {
+export interface DriftOptions {
+  /** Corpus directories to ask `no_entry` of. Empty is the ordinary run. */
+  corpusDirs?: string[];
+  /** Repository root the `local` kind reads its object store from. */
+  repoRoot?: string;
+  /** The file's `unmapped` rows, so a deliberately unwatchable corpus is not reported as a gap. */
+  unmapped?: UnmappedRow[];
+}
+
+export async function runDrift(upstreams: Upstream[], fetchFn: DriftFetch = realFetch, opts: DriftOptions = {}): Promise<DriftRun> {
   const results: Result[] = [];
   for (const u of upstreams) {
     if (u.role === "historical") {
@@ -323,8 +474,11 @@ export async function runDrift(upstreams: Upstream[], fetchFn: DriftFetch = real
     }
     if (u.kind === "git") results.push(checkGit(u));
     else if (u.kind === "http") results.push(await checkHttp(u, fetchFn));
+    else if (u.kind === "local") results.push(checkLocal(u, opts.repoRoot ?? REPO));
     else results.push(await checkDraft(u, fetchFn));
   }
+
+  results.push(...checkCorpusDirs(upstreams, opts.corpusDirs ?? [], opts.unmapped ?? []));
 
   const totals = Object.fromEntries(OUTCOMES.map((o) => [o, 0])) as Record<Outcome, number>;
   for (const r of results) totals[r.outcome]++;
@@ -332,8 +486,12 @@ export async function runDrift(upstreams: Upstream[], fetchFn: DriftFetch = real
   // Exit 0 ONLY when every current-role upstream is current or moved_untouched.
   // unreachable is a failure, not a shrug: a check that could not be made has not
   // passed, and an upstream that silently stops resolving is exactly the state
-  // this tool exists to make loud.
-  const bad = results.filter((r) => r.role === "current" && r.outcome !== "current" && r.outcome !== "moved_untouched");
+  // this tool exists to make loud. `no_entry` fails for the same reason one step
+  // further out: a corpus nothing watches has not passed a freshness check, it
+  // was never given one.
+  const bad = results.filter(
+    (r) => r.outcome === "no_entry" || (r.role === "current" && r.outcome !== "current" && r.outcome !== "moved_untouched" && r.outcome !== "not_checked"),
+  );
   return { results, totals, code: bad.length > 0 ? 1 : 0 };
 }
 
@@ -382,11 +540,14 @@ async function main(): Promise<number> {
     return i >= 0 ? argv[i + 1] : undefined;
   };
   const record = argv.includes("--record");
+  // Repeatable: every `--corpus <dir>` asks whether anything in upstreams.json
+  // claims that directory. Nothing is fetched for it.
+  const corpusDirs = argv.flatMap((a, i) => (a === "--corpus" && argv[i + 1] ? [argv[i + 1]!] : []));
   const UPSTREAMS = resolve(argOf("--upstreams") ?? join(REPO, "fixtures", "upstreams.json"));
   const REPORT = resolve(argOf("--report") ?? join(REPO, "walker", "drift.json"));
 
-  const doc = JSON.parse(readFileSync(UPSTREAMS, "utf8")) as { upstreams: Upstream[] };
-  const run = await runDrift(doc.upstreams);
+  const doc = JSON.parse(readFileSync(UPSTREAMS, "utf8")) as { upstreams: Upstream[]; unmapped?: { rows: UnmappedRow[] } };
+  const run = await runDrift(doc.upstreams, realFetch, { corpusDirs, unmapped: doc.unmapped?.rows ?? [] });
 
   for (const line of render(run)) console.log(line);
 

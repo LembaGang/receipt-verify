@@ -10,7 +10,7 @@
       "inferred": "the document is silent; the scope is taken from the corpus's own self-description (a header member, a description string, or the fixture generator) and that source is named"
     },
     "applies_to": "A rule may name the corpora it applies to, as a list of corpus ids or globs (`asqav/history/*`). ABSENT means every corpus that carries or inherits this rule set, which is the behaviour this registry had before the member existed. The member exists because a corpus has a version: upstream #473 moved the output-side counterparty_binding renderings to a sibling `expected` object, and one rule covering both shapes could not say which shape belonged to which corpus revision.",
-    "rule_idle": "A rule that APPLIES to a corpus and matched zero pointers there is reported as a `rule_idle` row (pointer null), counted per corpus and in the SUMMARY. It does not fail the run. It exists because the quiet failure mode of a versioned registry is a rule that has stopped matching: an upstream reshapes its corpus, the rule that named the old shape matches nothing, and a zero-row rule looks exactly like a rule with nothing to do. A rule that does NOT apply to a corpus is not evaluated there and is never idle there -- absence of a rule and silence from a rule are different facts. A corpus directory that is not present in the tree at all yields no idle rows either: nothing was skipped, there was nothing to skip."
+    "rule_idle": "A rule that APPLIES to a corpus and matched zero pointers there is reported as a `rule_idle` row (pointer null), counted per corpus and in the SUMMARY. It does not fail the run. It exists because the quiet failure mode of a versioned registry is a rule that has stopped matching: an upstream reshapes its corpus, the rule that named the old shape matches nothing, and a zero-row rule looks exactly like a rule with nothing to do. A rule that does NOT apply to a corpus is not evaluated there and is never idle there -- absence of a rule and silence from a rule are different facts. A corpus directory that is not present in the tree at all yields no idle rows either: nothing was skipped, there was nothing to skip. A rule that goes idle because its input is ABSENT from a corpus is not left idle: it is un-applied there with a corpus_note saying so. An idle row is a signal that something needs deciding, and a permanently idle row is the thing that stops the column being read."
   },
   "documents": {
     "marques-08": {
@@ -156,7 +156,10 @@
           "document": "marques-08",
           "lines": "944-948",
           "quote": "populated with the lowercase hex encoding of SHA-256(JCS(R)), where R is the payload member of the immediately prior receipt ... the digest covers R, NOT the envelope object",
-          "applies_to_note": "No applies_to: this rule applies to every corpus in the asqav family, which is what it did before the member existed. The four history/* and 3b88156 corpora inherit it and restrict themselves to conformance/vectors.json via only_files, so it grades nothing there and is reported `rule_idle` at each. That is accurate -- the rule is registered for them and matches nothing -- and it is the kind of silence the rule_idle row exists to make visible."
+          "applies_to": [
+            "asqav/05c1c49"
+          ],
+          "applies_to_reason": "The rule grades a file in the asqav-sdk `verifier/conformance-vectors/` tree. That tree is not in asqav/3b88156, asqav/history/3e13a0d, asqav/history/4cbdfc0, asqav/history/ee8a3e7: each of those corpora was pinned as conformance/vectors.json alone (3b88156 also carries conformance/manifest.lock.json), so `find <dir> -name verifier` returns nothing at all four. The rule was inherited from asqav/05c1c49 and had graded nothing at any of them since it was written -- reported as eight `rule_idle` rows from the run of 2026-09-05, which is the row's whole purpose. Resolved 2026-09-06 by removing the inheritance rather than by widening `only_files`: `only_files` is not what was hiding the file, the file is genuinely absent, and a rule kept applied to a corpus that cannot carry its input is a permanent idle row that trains the reader to ignore the column."
         },
         {
           "id": "asqav.chain.acta.whole",
@@ -169,7 +172,10 @@
           "document": "farley-02",
           "lines": "930-936",
           "quote": "The previousReceiptHash field MUST be the lowercase hex encoding of SHA-256(JCS(receipt)), where receipt is the entire signed receipt object including the signature field.",
-          "applies_to_note": "No applies_to: this rule applies to every corpus in the asqav family, which is what it did before the member existed. The four history/* and 3b88156 corpora inherit it and restrict themselves to conformance/vectors.json via only_files, so it grades nothing there and is reported `rule_idle` at each. That is accurate -- the rule is registered for them and matches nothing -- and it is the kind of silence the rule_idle row exists to make visible."
+          "applies_to": [
+            "asqav/05c1c49"
+          ],
+          "applies_to_reason": "The rule grades a file in the asqav-sdk `verifier/conformance-vectors/` tree. That tree is not in asqav/3b88156, asqav/history/3e13a0d, asqav/history/4cbdfc0, asqav/history/ee8a3e7: each of those corpora was pinned as conformance/vectors.json alone (3b88156 also carries conformance/manifest.lock.json), so `find <dir> -name verifier` returns nothing at all four. The rule was inherited from asqav/05c1c49 and had graded nothing at any of them since it was written -- reported as eight `rule_idle` rows from the run of 2026-09-05, which is the row's whole purpose. Resolved 2026-09-06 by removing the inheritance rather than by widening `only_files`: `only_files` is not what was hiding the file, the file is genuinely absent, and a rule kept applied to a corpus that cannot carry its input is a permanent idle row that trains the reader to ignore the column."
         }
       ]
     },
@@ -179,7 +185,8 @@
       "inherits_rules_from": "asqav/05c1c49",
       "only_files": [
         "conformance/vectors.json"
-      ]
+      ],
+      "corpus_note": "conformance/vectors.json alone -- the 2026-05-18 20:35:36 +0000 state of that one file, pinned to date M6. It inherits the asqav/05c1c49 rule set, but the two chain rules there grade files under verifier/conformance-vectors/, which this pin does not contain, so they are no longer applied here (walker/scopes.json, asqav.chain.* applies_to). Absent, not excluded: `find fixtures/asqav/history/3e13a0d -name verifier` returns nothing."
     },
     {
       "id": "asqav/history/4cbdfc0",
@@ -187,7 +194,8 @@
       "inherits_rules_from": "asqav/05c1c49",
       "only_files": [
         "conformance/vectors.json"
-      ]
+      ],
+      "corpus_note": "conformance/vectors.json alone -- the 2026-07-28 12:53:24 +0200 state of that one file, pinned to date M6. Same as 3e13a0d: the two inherited chain rules grade files under verifier/conformance-vectors/, which this pin does not contain, so they are no longer applied here. Absent, not excluded: `find fixtures/asqav/history/4cbdfc0 -name verifier` returns nothing."
     },
     {
       "id": "asqav/history/ee8a3e7",
@@ -195,7 +203,8 @@
       "inherits_rules_from": "asqav/05c1c49",
       "only_files": [
         "conformance/vectors.json"
-      ]
+      ],
+      "corpus_note": "conformance/vectors.json alone -- the 2026-08-04 21:03:12 +0200 state of that one file, pinned to date M6 and the commit that made the envelope_hash literal stale. Same as 3e13a0d: the two inherited chain rules grade files under verifier/conformance-vectors/, which this pin does not contain, so they are no longer applied here. Absent, not excluded: `find fixtures/asqav/history/ee8a3e7 -name verifier` returns nothing."
     },
     {
       "id": "asqav/3b88156",
@@ -204,7 +213,7 @@
       "only_files": [
         "conformance/vectors.json"
       ],
-      "corpus_note": "The asqav-sdk tip of 2026-09-05, pinned for the M6 closure run (fixtures/provenance.md). conformance/manifest.lock.json is pinned beside it as the author's own corpus lock and is not walked: its digests are SHA-256 over raw file bytes of files this repository does not hold, not digests over JSON structures the walker can address by pointer. Its vectors.json entry -- sha256 05fc1d8a2521e5dac3e9fed20358c46278a4174989fd43ee79c555133ffc31e1, 37383 bytes -- is the same digest fixtures/provenance.md records for the pinned file, arrived at independently."
+      "corpus_note": "The asqav-sdk tip of 2026-09-05, pinned for the M6 closure run (fixtures/provenance.md). conformance/manifest.lock.json is pinned beside it as the author's own corpus lock and is not walked: its digests are SHA-256 over raw file bytes of files this repository does not hold, not digests over JSON structures the walker can address by pointer. Its vectors.json entry -- sha256 05fc1d8a2521e5dac3e9fed20358c46278a4174989fd43ee79c555133ffc31e1, 37383 bytes -- is the same digest fixtures/provenance.md records for the pinned file, arrived at independently. The two chain rules inherited from asqav/05c1c49 grade files under verifier/conformance-vectors/, which this pin does not contain either -- its two files are conformance/vectors.json and conformance/manifest.lock.json -- so they are no longer applied here (asqav.chain.* applies_to). Absent, not excluded: `find fixtures/asqav/3b88156 -name verifier` returns nothing."
     },
     {
       "id": "acta/published",

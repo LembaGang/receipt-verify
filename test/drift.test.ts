@@ -15,15 +15,20 @@
 // Every case asserts the LITERAL outcome string. An outcome that is merely "not
 // current" is not a first-class row, and the point of this tool is that each of
 // the eight is reportable on its own.
+//
+// `local` and `no_entry` are exercised against a real git repository built here
+// too: `local` reads the object store, so a test that wrote worktree files and
+// asserted on them would not be testing what the tool does.
 
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ROOT } from "./helpers.js";
-import { type DriftFetch, type Upstream, runDrift, summaryLine } from "../tools/drift.js";
+import { type DriftFetch, type Upstream, checkCorpusDirs, runDrift, summaryLine } from "../tools/drift.js";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "drift-test-"));
 
@@ -325,7 +330,7 @@ describe("drift — role, exit code and summary", () => {
     expect(run.results.map((r) => r.outcome)).toEqual(["current", "current", "current", "not_checked"]);
     expect(run.code).toBe(0);
     expect(summaryLine(run.totals)).toBe(
-      "drift: current=3 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=1",
+      "drift: current=3 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=1 no_entry=0",
     );
   });
 
@@ -352,11 +357,204 @@ describe("drift — role, exit code and summary", () => {
     expect(run.totals.not_checked).toBe(1);
   });
 
-  it("the SUMMARY line names all seven outcomes, always", async () => {
+  it("the SUMMARY line names all eight outcomes, always", async () => {
     const run = await runDrift([], never);
     expect(summaryLine(run.totals)).toBe(
-      "drift: current=0 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=0",
+      "drift: current=0 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=0 no_entry=0",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// local -- a corpus this repository authors
+// ---------------------------------------------------------------------------
+
+describe("drift - local", () => {
+  /** A repository holding one committed file, and the sha256 of its blob. */
+  function local(): { root: string; sha: string; r: ReturnType<typeof repo> } {
+    const r = repo();
+    r.write("fixtures/mine/chain.jsonl", "one\ntwo\n");
+    r.commit("seed");
+    const bytes = execFileSync("git", ["cat-file", "blob", "HEAD:fixtures/mine/chain.jsonl"], { cwd: r.dir });
+    return { root: r.dir, sha: createHash("sha256").update(bytes).digest("hex"), r };
+  }
+
+  const entry = (files: Array<{ path: string; sha256: string }>): Upstream =>
+    ({ id: "mine/local", kind: "local", role: "current", files }) as unknown as Upstream;
+
+  it("current: every file is at HEAD and digests to the recorded sha256", async () => {
+    const p = local();
+    const run = await runDrift([entry([{ path: "fixtures/mine/chain.jsonl", sha256: p.sha }])], never, { repoRoot: p.root });
+    expect(run.results[0]!.outcome).toBe("current");
+    expect(run.code).toBe(0);
+  });
+
+  it("changed: a recorded digest that no longer matches, with the path named", async () => {
+    const p = local();
+    const run = await runDrift([entry([{ path: "fixtures/mine/chain.jsonl", sha256: "0".repeat(64) }])], never, { repoRoot: p.root });
+    expect(run.results[0]!.outcome).toBe("changed");
+    expect(run.results[0]!.changed_paths![0]!.path).toBe("fixtures/mine/chain.jsonl");
+    expect(run.results[0]!.changed_paths![0]!.new_sha256).toBe(p.sha);
+    expect(run.code).toBe(1);
+  });
+
+  it("changed: a file gone from HEAD, not a shrug", async () => {
+    const p = local();
+    const run = await runDrift([entry([{ path: "fixtures/mine/deleted.jsonl", sha256: p.sha }])], never, { repoRoot: p.root });
+    expect(run.results[0]!.outcome).toBe("changed");
+    expect(run.results[0]!.changed_paths![0]!.new_sha256).toBeNull();
+    expect(run.code).toBe(1);
+  });
+
+  // The control for the whole kind: `local` reads the OBJECT STORE. An uncommitted
+  // edit to the worktree must not move the outcome, or every text file on a
+  // core.autocrlf machine would report `changed` on every run.
+  it("reads the object store: an uncommitted worktree edit does not move the outcome", async () => {
+    const p = local();
+    const pin = [{ path: "fixtures/mine/chain.jsonl", sha256: p.sha }];
+    p.r.write("fixtures/mine/chain.jsonl", "ONE\r\nTWO\r\nthree\r\n");
+    const before = await runDrift([entry(pin)], never, { repoRoot: p.root });
+    expect(before.results[0]!.outcome).toBe("current");
+    // and COMMITTING that edit does move it, so the assertion above is not vacuous
+    p.r.commit("edit it");
+    const after = await runDrift([entry(pin)], never, { repoRoot: p.root });
+    expect(after.results[0]!.outcome).toBe("changed");
+  });
+
+  it("never fetches: `never` throws on any request, so reaching an outcome is the assertion", async () => {
+    const p = local();
+    const run = await runDrift([entry([{ path: "fixtures/mine/chain.jsonl", sha256: p.sha }])], never, { repoRoot: p.root });
+    expect(run.results[0]!.kind).toBe("local");
+  });
+
+  it("a local entry that names no files is unreachable, never a silent pass", async () => {
+    const run = await runDrift([entry([])], never, { repoRoot: ROOT });
+    expect(run.results[0]!.outcome).toBe("unreachable");
+    expect(run.code).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// no_entry -- the corpus nothing watches
+// ---------------------------------------------------------------------------
+
+describe("drift - no_entry", () => {
+  // `role: historical` throughout, so nothing here is fetched or digested and
+  // every assertion below is about the DIRECTORY rows alone. The three entries
+  // exist only to be the three ways a directory can be claimed.
+  const claimed = [
+    { id: "by-dir", kind: "git", role: "historical", corpus_dirs: ["fixtures/asqav/05c1c49"] },
+    { id: "by-file", kind: "http", role: "historical", pinned_file: "refs/some-draft-01.txt" },
+    { id: "by-files", kind: "local", role: "historical", files: [{ path: "fixtures/delivery/proven/chain.jsonl", sha256: "x" }] },
+  ] as unknown as Upstream[];
+
+  it("no_entry: a corpus directory nothing claims gets a row of its own", async () => {
+    const run = await runDrift(claimed, never, { corpusDirs: ["fixtures/nobody-watches-this"] });
+    const row = run.results.find((r) => r.id === "fixtures/nobody-watches-this")!;
+    expect(row.outcome).toBe("no_entry");
+    expect(row.detail).toContain("no entry in fixtures/upstreams.json claims fixtures/nobody-watches-this");
+  });
+
+  // What the row does and does not mean, pinned so it cannot drift into the
+  // other reading. It answers "does ANYTHING in upstreams.json mention this
+  // directory" -- the B-67 failure mode, where a whole corpus was unwatched. It
+  // does NOT answer "is every file under it accounted for": an entry naming one
+  // file inside a directory is enough to keep the directory off this row, and
+  // partial coverage is test/upstream-coverage.test.ts's question, file by file.
+  it("a directory is claimed when an entry names a file INSIDE it, not only the directory", async () => {
+    const run = await runDrift(claimed, never, { corpusDirs: ["fixtures/delivery"] });
+    const row = run.results.find((r) => r.id === "fixtures/delivery")!;
+    expect(row.outcome).toBe("not_checked");
+    expect(row.detail).toContain("by-files");
+  });
+
+  it("no_entry fails the run: a corpus nothing watches has not passed a check, it was never given one", async () => {
+    const run = await runDrift([], never, { corpusDirs: ["fixtures/whatever"] });
+    expect(run.totals.no_entry).toBe(1);
+    expect(run.code).toBe(1);
+  });
+
+  // The three ways an entry can claim a directory, asserted separately so a
+  // resolver that understood only one of them would still be red here.
+  it("a directory claimed by corpus_dirs, by pinned_file or by files is NOT no_entry", async () => {
+    const run = await runDrift(claimed, never, {
+      corpusDirs: ["fixtures/asqav/05c1c49", "refs", "fixtures/delivery/proven"],
+    });
+    const by = (id: string) => run.results.find((r) => r.id === id)!;
+    expect(by("fixtures/asqav/05c1c49").outcome).toBe("not_checked");
+    expect(by("fixtures/asqav/05c1c49").detail).toContain("by-dir");
+    expect(by("refs").outcome).toBe("not_checked");
+    expect(by("refs").detail).toContain("by-file");
+    expect(by("fixtures/delivery/proven").outcome).toBe("not_checked");
+    expect(by("fixtures/delivery/proven").detail).toContain("by-files");
+    // A claimed directory does not fail the run: nothing here is `no_entry`.
+    expect(run.totals.no_entry).toBe(0);
+    expect(run.code).toBe(0);
+  });
+
+  it("a trailing slash and a Windows separator resolve the same way", async () => {
+    const run = await runDrift(claimed, never, { corpusDirs: ["fixtures/asqav/05c1c49/", "fixtures\\asqav\\05c1c49"] });
+    expect(run.results.filter((r) => r.outcome === "no_entry")).toEqual([]);
+  });
+
+  // The delivery entry carries `corpus_dirs: []` on purpose, so that the pilot
+  // capture beside it is NOT resolved to the generator's entry. This is that.
+  it("an empty corpus_dirs claims nothing: the delivery entry does not swallow its neighbour", async () => {
+    const withEmpty = [
+      { id: "delivery-fixtures/local", kind: "local", role: "current", corpus_dirs: [], files: [{ path: "fixtures/delivery/proven/chain.jsonl", sha256: "x" }] },
+    ] as unknown as Upstream[];
+    const run = await runDrift(withEmpty, never, { corpusDirs: ["fixtures/delivery/pilot-exa-contents"] });
+    expect(run.results.find((r) => r.id === "fixtures/delivery/pilot-exa-contents")!.outcome).toBe("no_entry");
+  });
+
+  // An `unmapped` row is an accounting, not an absence. A corpus deliberately
+  // recorded as unwatchable -- a local clone with no remote, an endpoint that
+  // mints a fresh signature per call -- must not be reported as a gap, or the row
+  // that exists to name real gaps cries at every deliberate decision in the file.
+  it("a directory accounted for by a named unmapped row is not_checked, not no_entry", async () => {
+    const rows = [{ id: "cpb-sources", paths: ["cpb/*"], reason: "written in this repository; there is nothing upstream of it" }];
+    const run = await runDrift([], never, { corpusDirs: ["cpb"], unmapped: rows });
+    const row = run.results.find((r) => r.id === "cpb")!;
+    expect(row.outcome).toBe("not_checked");
+    expect(row.detail).toContain("cpb-sources");
+    expect(run.code).toBe(0);
+  });
+
+  // ...and the control for that: the SAME query with the row removed is red. An
+  // excuse that would apply whether or not it was written is not an excuse.
+  it("negative control: the same directory with no unmapped row IS no_entry", async () => {
+    const run = await runDrift([], never, { corpusDirs: ["cpb"], unmapped: [] });
+    expect(run.results[0]!.outcome).toBe("no_entry");
+    expect(run.code).toBe(1);
+  });
+
+  it("an unmapped row for a DIFFERENT directory does not excuse this one", async () => {
+    const rows = [{ id: "cpb-sources", paths: ["cpb/*"], reason: "not about fixtures/elsewhere" }];
+    const run = await runDrift([], never, { corpusDirs: ["fixtures/elsewhere"], unmapped: rows });
+    expect(run.results[0]!.outcome).toBe("no_entry");
+  });
+
+  // Every corpus the walker grades must be accounted for in the real file, by an
+  // entry or by an unmapped row. This is the end-to-end form of the same claim
+  // test/upstream-coverage.test.ts makes file by file, made here through the tool
+  // the row exists to serve -- and it opens no socket, because no directory row
+  // fetches anything.
+  it("every corpus walker/scopes.json names is accounted for in the real fixtures/upstreams.json", async () => {
+    const doc = JSON.parse(readFileSync(join(ROOT, "fixtures", "upstreams.json"), "utf8")) as {
+      upstreams: Upstream[];
+      unmapped: { rows: Array<{ id: string; paths: string[]; reason: string }> };
+    };
+    const scopes = JSON.parse(readFileSync(join(ROOT, "walker", "scopes.json"), "utf8")) as { corpora: Array<{ dir: string }> };
+    const rows = checkCorpusDirs(doc.upstreams, scopes.corpora.map((c) => c.dir), doc.unmapped.rows);
+    expect(rows.filter((r) => r.outcome === "no_entry").map((r) => r.id)).toEqual([]);
+  });
+
+  // The control: an ordinary run names no directory, so it can never produce this
+  // row by accident. `no_entry` is only ever an answer to a question that was asked.
+  it("negative control: a run that names no corpus directory produces no no_entry row", async () => {
+    const run = await runDrift(claimed, never);
+    expect(run.totals.no_entry).toBe(0);
+    expect(run.results.map((r) => r.id).sort()).toEqual(["by-dir", "by-file", "by-files"]);
   });
 });
 

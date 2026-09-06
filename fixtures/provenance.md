@@ -821,3 +821,60 @@ between 2026-09-02T17:42Z and 2026-09-05T18:29Z with no announcement and no `Las
 the move, so nothing here can say *when* the third key appeared — only that it was absent at the first
 instant and present at the second. `validFrom: "2026-09-03"` is the issuer's claim about that, not an
 observation of ours.
+
+## Appended 2026-09-06 — the delivery corpus, which had no provenance row at all
+
+`fixtures/delivery/` has been graded by the digest walker on every run since `17172e4`
+(2026-09-02T09:08:33Z) — 21 registered fields, all matching — and until this section no row in this
+file mentioned it. `grep -c 'fixtures/delivery' fixtures/provenance.md` returned `0`. B-67 named that
+as the gap `fixtures/upstreams.json` could not close on its own: a corpus with no provenance row has
+no upstream entry, and in a drift run's output a corpus with no entry is indistinguishable from one
+that is fine. `test/upstream-coverage.test.ts` is the check that now makes it impossible to add one
+without saying where it came from.
+
+The directory holds **two corpora with different authors**, and the distinction is the reason this
+section exists rather than a single line.
+
+**Generated here.** `node tools/make-delivery-fixtures.mjs` writes these four from an Ed25519 seed
+published in plain sight in the generator (ASCII `test-throwaway-receipt-verify-03`). They are not
+copies of any published artifact. Re-run on 2026-09-06, the generator reproduced all four
+byte-identically against the object store — which is what makes their `kind: local` entry in
+`fixtures/upstreams.json` a check and not a decoration.
+
+| file | bytes | sha256 |
+|---|---|---|
+| `fixtures/delivery/jwks.json` | 280 | `16146e4826403e2bef15a172cd0c12e7ac99503e24da7f870e0a73c6a27d4e3f` |
+| `fixtures/delivery/proven/chain.jsonl` | 1459 | `74bf8c28de48717c1a4535a23d6e3530df505b28fe9347cad48a4530a3a967ae` |
+| `fixtures/delivery/unproven/chain.jsonl` | 1371 | `ff16e8830b6a119176faad00153df7a056c0f20555e1d4c2fec8e9f08913934b` |
+| `fixtures/delivery/none/chain.jsonl` | 1366 | `1900e24a97b6a57318308d3a7e4d9c6d9a9426f48005e362265f4eaeaf2f88e1` |
+
+Three two-record `evidence.action/1` chains under one throwaway key
+(`T059dvJofws0np5gULULCv1zNhe9URafWCyH2kvpKg4`), sessions `11111111-…`, `22222222-…` and
+`33333333-…`. They exist because the frozen `evidence.action` conformance bundle predates the x402
+delivery-proof feature, so every vector in it is `delivery: "none"` — testing the projection against
+that bundle alone would exercise one of the three states. The three chains differ only in the two
+fields the projection reads, which is what makes `test/delivery.test.ts` a discrimination rather than
+a file-picking exercise.
+
+**Captured, not generated.** `pilot-exa-contents/` is a signed mainnet capture and is nobody's
+synthetic fixture:
+
+| file | bytes | sha256 |
+|---|---|---|
+| `fixtures/delivery/pilot-exa-contents/chain.jsonl` | 12306 | `bcdf85720e86925a5bc3964943f02834c4db9f80ce015e77ebba2671237a8cd5` |
+| `fixtures/delivery/pilot-exa-contents/jwks.json` | 264 | `a531bb2fb18ce710782dd70ae80a2becc9f785fe44bbede385fa1290fa40a665` |
+
+15 `evidence.action/1` records, session `864b7d23-65ca-4c24-8fe4-b0cce11f32d4`, all timestamped
+between 2026-08-16T18:33:45.995Z and 2026-08-16T18:33:45.998Z, written by
+`delivery-incidence-study/x402-capture-rig` 0.5.0 against `x402.probe:POST https://api.exa.ai/contents`
+and signed under `iss: https://headlessoracle.com`, kid
+`yxjyYJ6HtT7thhoXpZGi4DptSN_b_d5L1_DTL_3SlyI` — the study key published in the v5 JWKS under its RFC
+7638 thumbprint. It is the chain behind the confirmed Delivery Index row, and it carries the one
+`x402_payment_ref` in the corpus plus the corpus's only checkpoint records.
+
+**Why it has no upstream entry and never will.** A past signed event has no tip, no URL and no
+revision: there is nothing to resolve, so none of `git`, `http` or `ietf-draft` fits, and `local` is
+false because this repository did not author it. It is a named `unmapped` row
+(`delivery-pilot-capture`) in `fixtures/upstreams.json` instead. That is also why the `local` entry
+carries an empty `corpus_dirs` with a note: a `corpus_dirs` of `fixtures/delivery` would have resolved
+this capture to the generator's entry and hidden exactly the file that most needed saying out loud.

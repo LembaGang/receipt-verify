@@ -14,42 +14,97 @@
       "changed": "http only: the body's sha256 differs from the pin. Both digests are printed.",
       "superseded": "ietf-draft only: a higher revision exists at the archive; the run names it.",
       "unreachable": "The check could not be made — network, ref or clone failure, with the error text. Never silently a pass.",
-      "not_checked": "role: historical. Printed on its own row, never counted as current."
+      "not_checked": "role: historical. Printed on its own row, never counted as current.",
+      "no_entry": "The tool was asked about a corpus directory that has no entry in this file at all. Never produced by a run over `upstreams` (every entry is by definition an entry); produced when a corpus directory is named with --corpus and nothing here claims it, so the failure mode has a name in the output as well as in test/upstream-coverage.test.ts. Counted as a failure: a corpus nothing watches has not passed a freshness check, it was never given one."
     },
     "blob_ids_not_worktree_bytes": "Every git comparison reads the object store — `git rev-parse HEAD:<path>` for the id, `git cat-file blob <id>` for the bytes — and never a checked-out file. core.autocrlf is true on the machine this repository is developed on, so a worktree comparison would report a change on every text file on every run (fixtures/provenance.md line 398). The tool's clones also set core.autocrlf=false; that is belt and braces, not the mechanism.",
     "pinned_blob_may_be_null": "Where a provenance row gives a blob id, blob ids compare directly. Where it gives only a sha256, the tool digests `git cat-file blob <id>` and compares that. Both read the object store. A row that gives neither cannot be checked and would be a defect in this file.",
-    "what_this_file_is_not": "It is not a second copy of fixtures/provenance.md and must not become one. It carries no byte counts, no retrieval narrative and no findings. If a digest here disagrees with fixtures/provenance.md, that file is right and this one is the defect."
+    "what_this_file_is_not": "It is not a second copy of fixtures/provenance.md and must not become one. It carries no byte counts, no retrieval narrative and no findings. If a digest here disagrees with fixtures/provenance.md, that file is right and this one is the defect.",
+    "kinds": {
+      "git": "A commit in a public repository. The tip is resolved with `git ls-remote`, and pinned paths are compared as blob ids or as sha256 over `git cat-file blob`.",
+      "http": "A URL whose body is pinned by sha256. Checked with a GET.",
+      "ietf-draft": "An Internet-Draft revision. Checked by probing whether revision NN+1 exists at the IETF archive.",
+      "local": "A corpus THIS repository authors -- no upstream exists, so there is no tip, no URL and no revision to resolve. Checked for nothing but existence and digest: every path in `files` must be present and must still digest to the recorded sha256, read from the object store like every other comparison here. It reports `current` when they all do and `changed` when one does not, and it never touches the network. A `local` entry is not a claim that the bytes are correct -- only that they are still the bytes this file recorded."
+    },
+    "corpus_dirs": "Directories the entry's upstream produced WHOLE. A single pinned file is named by `pinned_file` and a `local` corpus by `files`, and neither is written as a directory: test/upstream-coverage.test.ts resolves every path under fixtures/ and refs/ through this file, and a `corpus_dirs` value broader than its upstream actually produced silently resolves paths that came from somewhere else. `refs` was such a value on all eleven single-file pins until 2026-09-06, and it made that test's own negative control resolve a draft nobody had pinned.",
+    "unmapped_rows": "Each `unmapped` row carries an `id`, the `paths` it accounts for (globs; only `*` is special) and a one-line `reason`. The paths are what make the row machine-checkable: test/upstream-coverage.test.ts requires every path under fixtures/ and refs/, and every file of every corpus walker/scopes.json names, to resolve to an entry or to one of these rows, and requires every row to still account for something that exists."
   },
   "unmapped": {
-    "note": "Provenance rows that map to no upstream entry, listed so the absence is a statement rather than an oversight.",
+    "note": "Paths under fixtures/ and refs/ that map to no upstream entry, each named, each carrying the paths it accounts for and a one-line reason, so the absence is a statement rather than an oversight. test/upstream-coverage.test.ts reads this block; nothing here is an exclusion the drift tool cannot see.",
     "rows": [
       {
+        "id": "evidence-action-local-clone",
+        "paths": [
+          "fixtures/evidence-action/*"
+        ],
         "rows": "the 10 `fixtures/evidence-action/*` rows, source `file://C:/Users/User/agent-action-receipt-vectors/...`",
-        "reason": "A local directory, not a network upstream. It is a git repository on this machine (`git rev-parse --is-inside-work-tree` returns true, HEAD 4fac3017d2fe19c46b108b012f03abbb77354da1) but `git remote -v` prints nothing, so there is no remote whose tip could be resolved. None of the three kinds fits."
+        "reason": "A local directory, not a network upstream: it is a git repository on this machine (HEAD 4fac3017d2fe19c46b108b012f03abbb77354da1) but `git remote -v` prints nothing, so there is no remote whose tip could be resolved, and none of the three fetchable kinds fits."
       },
       {
+        "id": "generated-here",
+        "paths": [
+          "fixtures/verification-state/synthetic/*",
+          "fixtures/verification-state/mappings/v0.3.0-2026-05-30.json",
+          "fixtures/acta/synthetic/*",
+          "fixtures/acta/keys/*",
+          "fixtures/keys/*"
+        ],
         "rows": "the 81 rows of the 'Generated here, not snapshotted' table",
-        "reason": "Produced by tools/make-throwaway-fixtures.mjs, tools/make-acta-fixtures.mjs and by hand. That table's own heading says they are not copies of any published artifact, so they have no upstream by construction."
+        "reason": "Produced by tools/make-throwaway-fixtures.mjs, tools/make-acta-fixtures.mjs and by hand (the mapping documents); that table's own heading says they are not copies of any published artifact, so they have no upstream by construction."
       },
       {
-        "rows": "the 4 `fixtures/insight/execution-receipt-bytes-*.json` package rows",
-        "reason": "Email attachments (2026-09-02), copied from cc-output. fixtures/provenance.md records no URL for them and no endpoint served them."
+        "id": "insight-packages",
+        "paths": [
+          "fixtures/insight/execution-receipt-bytes-2026-09-02.json",
+          "fixtures/insight/execution-receipt-bytes-2026-09-02-repaired.headless.json",
+          "fixtures/insight/execution-receipt-bytes-2026-09-02-v4.json"
+        ],
+        "rows": "the `fixtures/insight/execution-receipt-bytes-*.json` package rows",
+        "reason": "Email attachments (2026-09-02), copied from cc-output: fixtures/provenance.md records no URL for them and no endpoint served them."
       },
       {
+        "id": "insight-endpoint-samples",
+        "paths": [
+          "fixtures/insight/execution-sample-2026-09-02T1546Z.json",
+          "fixtures/insight/execution-sample-2026-09-02T1741Z.json",
+          "fixtures/insight/execution-sample-2026-09-05T1830Z.json",
+          "fixtures/insight/safety-sample-2026-09-05T1830Z.json"
+        ],
         "rows": "the 4 `fixtures/insight/*-sample-*.json` endpoint-response rows",
-        "reason": "fixtures/provenance.md names the source of the two 2026-09-02 rows only as 'production sample endpoint'; the two 2026-09-05 rows (`execution-sample-2026-09-05T1830Z.json`, `safety-sample-2026-09-05T1830Z.json`) do name their URLs, https://www.oracleinsight.xyz/api/v1/execution/attestation/sample and .../safety/attestation/sample. Neither is entered here anyway: both endpoints mint a fresh signature per call — the two execution pins 116 minutes apart are both 4675 bytes with different sha256 — so an http entry against either would report `changed` on every run forever. A check that always fails says no more than one that cannot fail."
+        "reason": "Both sample endpoints mint a fresh signature per call -- the two execution pins 116 minutes apart are both 4675 bytes with different sha256 -- so an http entry against either would report `changed` on every run forever, and a check that always fails says no more than one that cannot fail."
       },
       {
+        "id": "insight-derived-attestation",
+        "paths": [
+          "fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json"
+        ],
         "rows": "`fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json`",
-        "reason": "Derived, not fetched: `data.attestation` re-serialised from the row above. test/insight.test.ts asserts it deep-equals its parent, which is a tighter relation than a drift check would be."
+        "reason": "Derived, not fetched: data.attestation re-serialised from the row above, and test/insight.test.ts asserts it deep-equals its parent, which is a tighter relation than a drift check would be."
       },
       {
-        "rows": "every file under `fixtures/delivery/`",
-        "reason": "NOT A PROVENANCE ROW AT ALL, and recorded here because that is the finding. walker/scopes.json grades this corpus (21 registered fields, all matching) and fixtures/provenance.md carries no row for any file in it: `grep -c 'fixtures/delivery' fixtures/provenance.md` returns 0. Flagged, not fixed — writing provenance for a corpus is not this file's job."
+        "id": "delivery-pilot-capture",
+        "paths": [
+          "fixtures/delivery/pilot-exa-contents/*"
+        ],
+        "rows": "`fixtures/delivery/pilot-exa-contents/chain.jsonl` and its `jwks.json`",
+        "reason": "A signed mainnet capture, not a snapshot of anything fetchable: session 864b7d23, Exa /contents, 2026-08-16T18:33:45Z, written by delivery-incidence-study/x402-capture-rig 0.5.0 -- a past event has no tip, no URL and no revision, so no kind here can drift-check it."
       },
       {
+        "id": "cpb-sources",
+        "paths": [
+          "cpb/*"
+        ],
         "rows": "`cpb/`",
-        "reason": "TypeScript sources and Markdown result tables written in this repository. walker/scopes.json registers the directory as a corpus with no rules; there is nothing upstream of it."
+        "reason": "TypeScript sources and Markdown result tables written in this repository; walker/scopes.json registers the directory as a corpus with no rules, and there is nothing upstream of it."
+      },
+      {
+        "id": "repository-records",
+        "paths": [
+          "fixtures/provenance.md",
+          "fixtures/upstreams.json"
+        ],
+        "rows": "`fixtures/provenance.md` and this file",
+        "reason": "This repository's own records of the corpora rather than corpus data: provenance.md is the record of WHAT was pinned and why, this file the liveness relation, and neither was ever fetched from anywhere."
       }
     ]
   },
@@ -558,15 +613,13 @@
       "sha256": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
       "retrieved": "2026-07-29T10:01:35.192Z",
       "pinned_file": "fixtures/verification-state/jwks/agentoracle.co.well-known.jwks.json",
-      "corpus_dirs": [
-        "fixtures/verification-state"
-      ],
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
         "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
-      }
+      },
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "agentoracle-mapping-by-digest",
@@ -576,16 +629,14 @@
       "sha256": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
       "retrieved": "2026-07-29T10:01:36.841Z",
       "pinned_file": "fixtures/verification-state/mappings/published/agentoracle-v0.3-2026-05-30.by-digest.json",
-      "corpus_dirs": [
-        "fixtures/verification-state"
-      ],
       "provenance_section": "the main snapshot table",
       "role_note": "The URL is the digest, so this body cannot change without the URL changing. What the check can still turn red is disappearance: a 404 or a DNS failure is `unreachable`, and a content-addressed mapping that stops resolving is the thing worth knowing about here.",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
         "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
-      }
+      },
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "agentoracle-mapping-named",
@@ -595,15 +646,13 @@
       "sha256": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
       "retrieved": "2026-07-29T10:01:38.542Z",
       "pinned_file": "fixtures/verification-state/mappings/agentoracle-v0.3-2026-05-30.json",
-      "corpus_dirs": [
-        "fixtures/verification-state"
-      ],
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
         "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
-      }
+      },
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "insight-oracle-keys",
@@ -613,17 +662,14 @@
       "sha256": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
       "retrieved": "2026-09-05T18:29:05Z",
       "pinned_file": "refs/insight-oracle-keys-2026-09-05T1829Z.json",
-      "corpus_dirs": [
-        "fixtures/insight",
-        "refs"
-      ],
       "provenance_section": "the five Insight registry pins",
       "role_note": "The newest of the five pins of this URL, and therefore the one a drift check is about. Moved here from the 2026-09-02T17:41Z pin on 2026-09-05, after the first `changed` outcome this tool has reported: the registry published a third key, `insight-oracle-safety-sample`.",
       "last_observed": {
         "tip": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
         "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
-      }
+      },
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "insight-oracle-keys/2026-09-02T1741Z",
@@ -633,12 +679,9 @@
       "sha256": "76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2",
       "retrieved": "2026-09-02T17:42:02Z",
       "pinned_file": "refs/insight-oracle-keys-2026-09-02T1741Z.json",
-      "corpus_dirs": [
-        "fixtures/insight",
-        "refs"
-      ],
       "provenance_section": "the five Insight registry pins",
-      "role_reason": "Superseded by the 2026-09-05T18:29Z pin. Kept for the finding it carries with the 15:45Z pin: two pins with the same digest either side of 2026-09-02T17:35:36Z are what say the registry does not change when a key's window shuts."
+      "role_reason": "Superseded by the 2026-09-05T18:29Z pin. Kept for the finding it carries with the 15:45Z pin: two pins with the same digest either side of 2026-09-02T17:35:36Z are what say the registry does not change when a key's window shuts.",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "insight-oracle-keys/2026-09-02T0909Z",
@@ -648,12 +691,9 @@
       "sha256": "9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006",
       "retrieved": "2026-09-02T09:09:25Z",
       "pinned_file": "refs/insight-oracle-keys-2026-09-02.json",
-      "corpus_dirs": [
-        "fixtures/insight",
-        "refs"
-      ],
       "provenance_section": "the five Insight registry pins",
-      "role_reason": "Kept for the finding it carries: ExecutionReceipt published at 43 fields under schemaVersion 1, the regression the 11:54Z pin shows corrected."
+      "role_reason": "Kept for the finding it carries: ExecutionReceipt published at 43 fields under schemaVersion 1, the regression the 11:54Z pin shows corrected.",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "insight-oracle-keys/2026-09-02T1154Z",
@@ -663,12 +703,9 @@
       "sha256": "21675e382e6ead969d3b3fb823b3199327283152ab241be27d9c5b7177de23eb",
       "retrieved": "2026-09-02T11:54:27Z",
       "pinned_file": "refs/insight-oracle-keys-2026-09-02T1154Z.json",
-      "corpus_dirs": [
-        "fixtures/insight",
-        "refs"
-      ],
       "provenance_section": "the five Insight registry pins",
-      "role_reason": "Kept as the second half of that pair — the pin that shows the 09:09Z state corrected."
+      "role_reason": "Kept as the second half of that pair — the pin that shows the 09:09Z state corrected.",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "insight-oracle-keys/2026-09-02T1545Z",
@@ -678,12 +715,9 @@
       "sha256": "76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2",
       "retrieved": "2026-09-02T15:45:42Z",
       "pinned_file": "refs/insight-oracle-keys-2026-09-02T1545Z.json",
-      "corpus_dirs": [
-        "fixtures/insight",
-        "refs"
-      ],
       "provenance_section": "the five Insight registry pins",
-      "role_reason": "Byte-identical to the 17:41Z pin and kept anyway: the HOUR is the evidence that the registry does not change on expiry (fixtures/provenance.md, 'Appended 2026-09-03 — the post-rotation Insight pins')."
+      "role_reason": "Byte-identical to the 17:41Z pin and kept anyway: the HOUR is the evidence that the registry does not change on expiry (fixtures/provenance.md, 'Appended 2026-09-03 — the post-rotation Insight pins').",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "draft-marques-asqav-compliance-receipts-08",
@@ -694,15 +728,13 @@
       "url": "https://www.ietf.org/archive/id/draft-marques-asqav-compliance-receipts-08.txt",
       "sha256": "ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0",
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-08.txt",
-      "corpus_dirs": [
-        "refs"
-      ],
       "last_observed": {
         "tip": "draft-marques-asqav-compliance-receipts-08",
         "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       },
-      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"
+      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "draft-marques-asqav-compliance-receipts-07",
@@ -713,11 +745,9 @@
       "url": "https://www.ietf.org/archive/id/draft-marques-asqav-compliance-receipts-07.txt",
       "sha256": "082615447288fa1e983fa2cfb7aa7356fbb35d05d65ea256f66111487746d52f",
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-07.txt",
-      "corpus_dirs": [
-        "refs"
-      ],
       "role_reason": "Superseded in this repository by draft-marques-asqav-compliance-receipts-08, which is pinned beside it and carries role current. Kept, and still cited by line number in walker/scopes.json and FINDINGS.md, but a revision this repository already knows is superseded is not a freshness question.",
-      "provenance_section": "the main snapshot table (this draft was in the original table)"
+      "provenance_section": "the main snapshot table (this draft was in the original table)",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "draft-farley-acta-signed-receipts-03",
@@ -728,15 +758,13 @@
       "url": "https://www.ietf.org/archive/id/draft-farley-acta-signed-receipts-03.txt",
       "sha256": "bcde71799a621305254ea8b442fc829ac6d65fcff039f365e8a2349d8e902f19",
       "pinned_file": "refs/draft-farley-acta-signed-receipts-03.txt",
-      "corpus_dirs": [
-        "refs"
-      ],
       "last_observed": {
         "tip": "draft-farley-acta-signed-receipts-03",
         "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       },
-      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"
+      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "draft-farley-acta-signed-receipts-02",
@@ -747,11 +775,9 @@
       "url": "https://www.ietf.org/archive/id/draft-farley-acta-signed-receipts-02.txt",
       "sha256": "14501a68a86e3cc403f56967b19b732316ad3cc2fc011ce3d14aec9c1de68bd2",
       "pinned_file": "refs/draft-farley-acta-signed-receipts-02.txt",
-      "corpus_dirs": [
-        "refs"
-      ],
       "role_reason": "Superseded in this repository by draft-farley-acta-signed-receipts-03, which is pinned beside it and carries role current. Kept, and still cited by line number in walker/scopes.json and FINDINGS.md, but a revision this repository already knows is superseded is not a freshness question.",
-      "provenance_section": "the main snapshot table (this draft was in the original table)"
+      "provenance_section": "the main snapshot table (this draft was in the original table)",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "draft-krausz-verification-state-01",
@@ -762,15 +788,13 @@
       "url": "https://www.ietf.org/archive/id/draft-krausz-verification-state-01.txt",
       "sha256": "22c5ce262bdf4e63ef538a308e7a8455e93c4143b9e1726b7b64720615d516db",
       "pinned_file": "refs/draft-krausz-verification-state-01.txt",
-      "corpus_dirs": [
-        "refs"
-      ],
       "last_observed": {
         "tip": "draft-krausz-verification-state-01",
         "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       },
-      "provenance_section": "the main snapshot table (this draft was in the original table)"
+      "provenance_section": "the main snapshot table (this draft was in the original table)",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
       "id": "draft-mih-sokolov-scitt-payload-binding-02",
@@ -781,15 +805,42 @@
       "url": "https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-02.txt",
       "sha256": "47ab675797d7edfe905c13b8482735239d9c5ceb318accbc33e4a5a51e5ec875",
       "pinned_file": "refs/draft-mih-sokolov-scitt-payload-binding-02.txt",
-      "corpus_dirs": [
-        "refs"
-      ],
       "last_observed": {
         "tip": "draft-mih-sokolov-scitt-payload-binding-02",
         "at": "2026-09-05T18:44:21.085Z",
         "outcome": "current"
       },
-      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry"
+      "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
+    },
+    {
+      "id": "delivery-fixtures/local",
+      "kind": "local",
+      "role": "current",
+      "generator": "tools/make-delivery-fixtures.mjs",
+      "files": [
+        {
+          "path": "fixtures/delivery/jwks.json",
+          "sha256": "16146e4826403e2bef15a172cd0c12e7ac99503e24da7f870e0a73c6a27d4e3f"
+        },
+        {
+          "path": "fixtures/delivery/none/chain.jsonl",
+          "sha256": "1900e24a97b6a57318308d3a7e4d9c6d9a9426f48005e362265f4eaeaf2f88e1"
+        },
+        {
+          "path": "fixtures/delivery/proven/chain.jsonl",
+          "sha256": "74bf8c28de48717c1a4535a23d6e3530df505b28fe9347cad48a4530a3a967ae"
+        },
+        {
+          "path": "fixtures/delivery/unproven/chain.jsonl",
+          "sha256": "ff16e8830b6a119176faad00153df7a056c0f20555e1d4c2fec8e9f08913934b"
+        }
+      ],
+      "kind_reason": "There is no upstream. tools/make-delivery-fixtures.mjs writes these four files from a seed published in plain sight in the generator, and re-running it on 2026-09-06 reproduced all four byte-identically against the object store. Nothing external can move, so the only question left is whether the committed bytes are still the recorded ones.",
+      "why_it_exists": "The frozen evidence.action conformance bundle predates x402 delivery proofs, so every vector in it is delivery: \"none\". These three chains are the other two states, and `unproven` -- payment settled, nothing committed as delivered -- is the safety-critical one.",
+      "corpus_dirs": [],
+      "corpus_dirs_note": "Empty on purpose: fixtures/delivery/ is NOT one corpus. Four of its files are generated here and listed above; pilot-exa-contents/ is a signed mainnet capture by a different author and is accounted for by its own `unmapped` row. A corpus_dirs of fixtures/delivery would resolve that capture to this entry and hide it.",
+      "provenance_section": "Appended 2026-09-06 -- the delivery corpus, which had no provenance row at all"
     }
   ]
 }

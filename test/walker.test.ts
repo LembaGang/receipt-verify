@@ -384,21 +384,44 @@ describe("digest walker — applies_to and the rule_idle row", () => {
       expect(r.recomputed).toBeNull();
     }
     // Named exactly, so a rule going idle that is not on this list is a diff and
-    // not a shrug. Nine of the ten are rules a corpus inherits and whose file its
-    // only_files excludes; the tenth is the signing-input scope no document in
-    // refs/ defines, registered as unrecomputable on purpose.
+    // not a shrug.
+    //
+    // This list was ten rows until 2026-09-06. Eight of them were the two chain
+    // rules the four conformance/vectors.json-only asqav corpora inherited, and
+    // they were idle because the tree those rules grade -- verifier/conformance-
+    // vectors/ -- is ABSENT from all four, which `find` settles. A rule kept
+    // applied to a corpus that cannot carry its input is idle forever, and a
+    // column that is permanently non-zero stops being read, so the inheritance
+    // was removed at each with a corpus_note. The two that remain are the two
+    // that are idle for a reason a byte could change tomorrow.
     expect(idle.map((r) => `${r.corpus} ${r.rule}`).sort()).toEqual([
+      // the third chain scope no document in refs/ defines, registered as
+      // deliberately unrecomputable
       "acta/synthetic acta.synthetic.chain.marques-signing-input",
-      "asqav/3b88156 asqav.chain.acta.whole",
-      "asqav/3b88156 asqav.chain.asqav.payload",
-      "asqav/history/3e13a0d asqav.chain.acta.whole",
-      "asqav/history/3e13a0d asqav.chain.asqav.payload",
-      "asqav/history/4cbdfc0 asqav.chain.acta.whole",
-      "asqav/history/4cbdfc0 asqav.chain.asqav.payload",
-      "asqav/history/ee8a3e7 asqav.chain.acta.whole",
-      "asqav/history/ee8a3e7 asqav.chain.asqav.payload",
+      // this corpus carries no checkpoint record; `delivery` does, and there the
+      // same rule kind grades 4
       "evidence-action ea.checkpoint_last_entry_hash",
     ]);
+  });
+
+  // The control for the removal above: the two chain rules must still be APPLIED
+  // and still grade at 05c1c49, which does carry the tree. Un-applying a rule
+  // everywhere would have produced the same empty idle list and graded nothing.
+  it("the two chain rules still grade at 05c1c49, the one asqav corpus that carries their input", () => {
+    const graded = baseline.report.body.rows.filter(
+      (r) => r.corpus === "asqav/05c1c49" && (r.rule === "asqav.chain.asqav.payload" || r.rule === "asqav.chain.acta.whole"),
+    );
+    expect(graded.map((r) => r.rule).sort()).toEqual(["asqav.chain.acta.whole", "asqav.chain.asqav.payload"]);
+    for (const r of graded) {
+      expect(r.outcome).toBe("match");
+      expect(r.pointer).not.toBeNull();
+    }
+    // ...and they are not merely silent at the other four: they are not applied
+    // there at all, which is a different fact and the one the corpus_note states.
+    const elsewhere = baseline.report.body.rows.filter(
+      (r) => r.corpus !== "asqav/05c1c49" && (r.rule === "asqav.chain.asqav.payload" || r.rule === "asqav.chain.acta.whole"),
+    );
+    expect(elsewhere).toEqual([]);
   });
 
   it("does not fail the run and does not inflate `registered`", () => {
