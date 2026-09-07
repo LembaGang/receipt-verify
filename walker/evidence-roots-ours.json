@@ -1,0 +1,476 @@
+{
+  "produced_by": "tools/evidence-roots-run.ts",
+  "handoff": "CC_HANDOFF_2026-09-07_evidence-root-independent_rev2.md",
+  "spec_extract": "docs/evidence-root-spec-extract.md",
+  "inputs_file": "walker/evidence-inputs-rev5.json",
+  "inputs_source_sha256": "5d499bd01f44bd6e0f12b3617c7f104a214555b57a6c80280f5ceb358409b587",
+  "fixture_title": "evidence-pinning conformance fixtures (v2 preimage, four-term sort, rev 5 rules)",
+  "fixture_vector_count": 28,
+  "leaf_prefix_used": "ao-evidence-leaf-v2",
+  "node_encoding": "raw 32-octet digests (docs/evidence-root-spec-extract.md §2)",
+  "vector_count": 28,
+  "normative_root_count": 22,
+  "root_count_breakdown": {
+    "root_bearing_vectors": 10,
+    "roots_on_root_bearing_vectors": 18,
+    "incidental_roots_on_resolution_vectors": 4
+  },
+  "relations_holding": 28,
+  "vectors": [
+    {
+      "id": "evi-root-order-independent",
+      "designation": "CANONICAL ORDER",
+      "expect": "identical evidence_root",
+      "ours": {
+        "set_1": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960",
+        "set_2": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960"
+      },
+      "halt": null,
+      "relation": {
+        "named": "identical",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-root-odd-promotion",
+      "designation": "ODD NODE",
+      "expect": "root matches promote-not-duplicate (three sorted leaves, third promoted unchanged)",
+      "ours": {
+        "set": "d0cacaa281b5b0a46f8c2eb73c3100a15e5490d2c77ca542c4f9475886887bfd",
+        "non_normative:duplicated_tail": "b50b2da3fc2e7bc2c9298410cd96dfcf6f3e3082f83307ff5c94aacc427b5957",
+        "non_normative:promoted_leftmost": "34ca1c7f9e8e36f502d0010ef93d0fa2918869b76c624100fbf62d8240784f8e"
+      },
+      "halt": null,
+      "relation": {
+        "named": "root matches promote-not-duplicate, promoted entry rightmost",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-leaf-hex-not-raw",
+      "designation": "LEAF PREIMAGE",
+      "expect": "hex form is normative; raw form produces a different root",
+      "ours": {
+        "set": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "non_normative:raw_form": "154920df5849092538d5911db5b3cd8417c291c762fc65d81b8695833953b992"
+      },
+      "halt": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-snippet-change-changes-root",
+      "designation": "BINDING",
+      "expect": "roots differ",
+      "ours": {
+        "set_1": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "set_2": "365973a6cd59577830d4340b3bbb22e2852f92734e2d74b52311a5790e6dad69"
+      },
+      "halt": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-url-normalization-changes-root",
+      "designation": "BINDING",
+      "expect": "roots differ; unnormalized bytes are normative",
+      "ours": {
+        "set_1": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "set_2": "14adb6a20e3e205bfa4ab3dbbb1db2b133c55341117df91fcbba15664561bfd0"
+      },
+      "halt": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-duplicate-url-distinct-digest",
+      "designation": "CANONICAL ORDER",
+      "expect": "deterministic order by the four-term key of §4.1.2; stable root",
+      "ours": {
+        "set_1": "b563b47601d6cd2b75fe01b9047001e5ce6cd42039f5e95c96d7942a13cc7512",
+        "set_2": "b563b47601d6cd2b75fe01b9047001e5ce6cd42039f5e95c96d7942a13cc7512"
+      },
+      "halt": null,
+      "relation": {
+        "named": "identical",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-leaf-binds-content-kind",
+      "designation": "LEAF PREIMAGE",
+      "expect": "evidence_root differs",
+      "ours": {
+        "set_1": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "set_2": "7125a9d8aff13aca214b2f8c3ac70412610164a108cebb502ca7f37644c40af2"
+      },
+      "halt": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-leaf-binds-retrieved-at",
+      "designation": "LEAF PREIMAGE",
+      "expect": "evidence_root differs",
+      "ours": {
+        "set_1": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "set_2": "5e085fc1bf9069bd8c344f44722827c9ed69d33866eda7ae16ba42cdf41a2e0e"
+      },
+      "halt": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-order-tiebreak-content-kind",
+      "designation": "CANONICAL ORDER",
+      "expect": "identical evidence_root both ways",
+      "ours": {
+        "set_1": "2b778cd5517219e86a10d4f8da3bd327c37982fbcd6aad32ad542bdb704d586c",
+        "set_2": "2b778cd5517219e86a10d4f8da3bd327c37982fbcd6aad32ad542bdb704d586c"
+      },
+      "halt": null,
+      "relation": {
+        "named": "identical",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-order-tiebreak-retrieved-at",
+      "designation": "CANONICAL ORDER",
+      "expect": "identical evidence_root both ways",
+      "ours": {
+        "set_1": "ef067e8708b9b3fee310feab4dea16e5f20056aecf5362329ed8b449d635e4f3",
+        "set_2": "ef067e8708b9b3fee310feab4dea16e5f20056aecf5362329ed8b449d635e4f3"
+      },
+      "halt": null,
+      "relation": {
+        "named": "identical",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-set-retrieved-at-not-earliest-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "set_retrieved_at_not_earliest",
+        "detail": "set-level 2026-09-02T12:00:00.000Z against earliest per-item 2026-09-01T12:00:00.000Z"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-content-kind-absent-when-pinned-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed; diagnostic names the missing member, not a root mismatch",
+      "ours": null,
+      "halt": {
+        "diagnostic": "content_kind_absent_when_pinned",
+        "detail": "entry https://example.org/a is pinned and carries no content_kind from the enumeration"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-resource-sha256-with-full-resource-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "resource_sha256_with_full_resource",
+        "detail": "entry https://example.org/a carries content_kind full_resource together with resource_sha256"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-empty-set-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "empty_evidence_set",
+        "detail": "a present evidence_set MUST carry at least one entry in sources (rev4 F20)"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-duplicate-bound-tuple-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "duplicate_bound_tuple",
+        "detail": "two entries identical across url, snippet_sha256, content_kind and retrieved_at: https://example.org/a"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-unpinned-reason-outside-domain-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "unpinned_reason_outside_domain",
+        "detail": "entry https://example.org/a carries unpinned_reason content_not_retained"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-unpinned-without-reason-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "unpinned_reason_absent",
+        "detail": "entry https://example.org/a is unpinned and carries no unpinned_reason"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-source-count-mismatch-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "source_count_mismatch",
+        "detail": "source_count 3 against 2 entries"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-count-inconsistency-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "pinned_count_mismatch",
+        "detail": "pinned_count 2 against 1 pinned entries"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-root-with-zero-pinned-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "root_present_with_zero_pinned",
+        "detail": "evidence_root MUST be null when pinned_count is zero"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-nonzero-pinned-null-root-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "root_absent_with_pinned_items",
+        "detail": "evidence_root MUST be non-null when pinned_count is greater than zero"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-root-mismatch-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "root_mismatch",
+        "detail": "carried ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff against recomputed 35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3"
+      },
+      "relation": {
+        "named": "halt, malformed",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-empty-root-null",
+      "designation": "EMPTY",
+      "expect": "evidence_root null; receipt well-formed",
+      "ours": {
+        "set": null
+      },
+      "halt": null,
+      "relation": {
+        "named": "evidence_root null; receipt well-formed",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false
+      }
+    },
+    {
+      "id": "evi-absent-unknown",
+      "designation": "ADDITIVE",
+      "expect": "unknown; MUST NOT halt",
+      "ours": null,
+      "halt": null,
+      "relation": {
+        "named": "unknown; MUST NOT halt",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false
+      }
+    },
+    {
+      "id": "evi-partial-resolves-unknown",
+      "designation": "COMPLETENESS",
+      "expect": "step resolves unknown; must_not: [\"valid\"] on the offline-recompute claim",
+      "ours": {
+        "set": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960"
+      },
+      "halt": null,
+      "relation": {
+        "named": "step resolves unknown; must_not: [\"valid\"] on the offline-recompute claim",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false,
+        "offline_recompute_claim": false
+      }
+    },
+    {
+      "id": "evi-declared-partial-is-not-invalid",
+      "designation": "COMPLETENESS",
+      "expect": "receipt core-valid; NOT malformed; MUST NOT halt",
+      "ours": {
+        "set": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960"
+      },
+      "halt": null,
+      "relation": {
+        "named": "receipt core-valid; NOT malformed; MUST NOT halt",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false,
+        "offline_recompute_claim": false
+      }
+    },
+    {
+      "id": "evi-content-mismatch-unknown",
+      "designation": "UNKNOWN",
+      "expect": "unknown; MUST NOT halt; per-item reason content_differs (MUST per rev 5 Finding 17)",
+      "ours": {
+        "set": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3"
+      },
+      "halt": null,
+      "relation": {
+        "named": "unknown; MUST NOT halt; per-item reason content_differs",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false,
+        "item_reasons": [
+          {
+            "url": "https://example.org/a",
+            "reason": "content_differs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "evi-content-not-held-unknown",
+      "designation": "UNKNOWN",
+      "expect": "unknown; per-item reason content_not_held (MUST per rev 5 Finding 17)",
+      "ours": {
+        "set": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3"
+      },
+      "halt": null,
+      "relation": {
+        "named": "unknown; MUST NOT halt; per-item reason content_not_held",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false,
+        "item_reasons": [
+          {
+            "url": "https://example.org/a",
+            "reason": "content_not_held"
+          }
+        ]
+      }
+    }
+  ]
+}
