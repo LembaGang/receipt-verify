@@ -1269,3 +1269,89 @@ narrowing of what the daily check can catch: a change confined to that file alon
 and will not fail the run. That is safe only for as long as the file stays what it is here — the
 author's bookkeeping — and the sentence above about the `vectors.json` row is the reason to believe
 it, not a proof.
+
+## Appended 2026-09-08 — the Insight registry re-pinned after the `preTradeUidsHash` prose changed under schemaVersion 4
+
+`npm run drift` reported the Insight key registry `changed` for the second time this tool has produced
+that outcome against this URL, and the first time for a reason that is not a new key. One file was
+fetched in this session, over HTTPS, saved as the response body byte-exact with no re-serialisation,
+and hashed before being copied into the tree. No other host was contacted and nothing under `keys/`
+was touched.
+
+| path | source URL | retrieved (UTC) | bytes | sha256 |
+|---|---|---|---|---|
+| `refs/insight-oracle-keys-2026-09-08T1218Z.json` | `https://www.oracleinsight.xyz/.well-known/oracle-keys.json` | 2026-09-08T12:18:10Z | 18003 | `a45b5d0a8e3b432c1e827310bc4caa7b67ad440133ee32900d8520615a0f9003` |
+
+The `retrieved` instant is the response's own `Date` header, not a local clock read, on the convention
+the 5 September section states. The fetch used the same client `tools/drift.ts` uses — node
+`fetch(url, { method: "GET", redirect: "follow" })` with no added headers (`tools/drift.ts` l.177–181)
+— through a one-off script that was deleted after the pin was written.
+
+**Four GETs, one body.** 12:11:41Z (headers only), 12:14:29Z, 12:14:40Z and 12:18:39Z local, all
+HTTP/1.1 200, all 18003 bytes, all `a45b5d0a…f9003`; `cmp` between the saved bodies is clean. The pin
+is the 12:18:39Z fetch, whose `Date` header is the row's instant above. That repetition is what says
+this is a changed **document** rather than a nondeterministic endpoint, and it is the same control the
+B-123 session applied at 10:59Z with two fetches.
+
+**Response headers, recorded because a pin without them is a body with no provenance.**
+HTTP/1.1 200, `Content-Type: application/json`, `Server: Vercel`, `Transfer-Encoding: chunked`,
+`Content-Encoding: br`, `Cache-Control: public, max-age=300`, `X-Matched-Path:
+/.well-known/oracle-keys.json`. **No `ETag` and no `Last-Modified`** — the same absence as every
+earlier pin of this URL, so nothing but the digest identifies this body and nothing in the response
+dates the change. The two observations that carry an `Age` disagree about the edge copy, not the
+body: 12:11:41Z answered `X-Vercel-Cache: STALE, Age: 388` (edge copy generated ≈12:05:13Z) and
+12:18:10Z answered `X-Vercel-Cache: HIT, Age: 29` (≈12:17:41Z). Both are cache-generation instants
+for identical bytes and neither is a publication instant.
+
+**The timing window, and the two independent sources for it.**
+
+| bound | instant | source |
+|---|---|---|
+| last observation of the **old** bytes | 2026-09-08T09:37:29.728Z | `fixtures/upstreams.json` `last_observed` for `insight-oracle-keys` as committed at `7fa2f08` — the scheduled drift `--record` of this morning, which read `outcome: current` against `7cc00b95…7330` |
+| first observation of the **new** bytes | 2026-09-08T10:59Z | the B-123 session's P0 `npm run drift`, `a45b5d0a…f9003`, 18003 B, two byte-identical fetches (`CC_REPORT_2026-09-08_asqav-tip-and-path-check.md`); the Lead's own fetch at ≈11:24Z read the same digest and size, and this session's P0 at 12:11Z read it a third time |
+
+So the registry published the changed body between **09:37:29.728Z and 10:59Z**, a window of about
+eighty-two minutes, with no announcement and nothing in the response to date it more precisely.
+`Cache-Control: max-age=300` in front of a CDN loosens the earlier bound by up to five minutes — the
+09:37:29.728Z observation could have been served from an edge copy generated as early as ≈09:32:29Z —
+so the window as a statement about the *origin* is **09:32:29Z–10:59Z**. The observed window is the
+one quoted elsewhere; this paragraph is why it cannot be tightened.
+
+**What changed: exactly one leaf, out of 701.** A structural diff of the two documents flattened to
+leaf paths (both 701 leaves, no path present in one and absent in the other, same 13 top-level
+members):
+
+`schemas.ExecutionReceipt.commitments.preTradeUidsHash`
+
+| | |
+|---|---|
+| 5 Sep pin (`7cc00b95…`) | `keccak256(concat(uids in route order, 32 raw bytes each, no separator)); empty set -> keccak256("")` |
+| 8 Sep pin (`a45b5d0a…`) | `keccak256(concat(non-zero uids in route order, 32 raw bytes each, no separator)); zero bytes32 is omitted; empty after omission -> keccak256("")` |
+
+**`schemas.ExecutionReceipt.schemaVersion` is 4 in both.** The issuer changed a commitment rule and
+did not version it, so a verifier that pinned the 5 September prose and re-read `schemaVersion` to
+decide whether to re-read the rule would not have looked. That is the finding, and `FINDINGS.md`'s
+8 September section carries it with the evidence that the issuer's own code already implemented the
+new rule on 2 September.
+
+**Registry bookkeeping.** `fixtures/upstreams.json`: `insight-oracle-keys` now points at this pin;
+the 18:29Z pin becomes `insight-oracle-keys/2026-09-05T1829Z`, `role: historical`, with a
+`role_reason` naming what superseded it and a `last_observed_note` on why its frozen `last_observed`
+is kept rather than deleted — the pattern `asqav-sdk/22a970d` set on 8 September. Two members the
+handoff asked for were **not** written: a `bytes` count and a `pinned_at` duplicate of `retrieved`.
+That file's own `what_this_file_is_not` says it carries no byte counts, and a second unchecked copy of
+a byte count or an instant is exactly the kind of silent disagreement `test/upstreams-provenance.test.ts`
+exists to prevent. The byte count lives in the table above, which is the row that test reads.
+
+**Same `.gitattributes` ordering flaw as every earlier Insight entry, same harmlessness, checked
+again.** `git check-attr text eol` reports `text: set, eol: lf` for this path because `*.json text
+eol=lf` sorts after `refs/** -text` and the last matching line wins. Harmless here for the same
+measured reason: the file contains **zero** LF bytes and **zero** CR bytes — a single unterminated
+JSON line — so there is no line ending for a filter to rewrite, and the staged blob was verified to
+hash to the sha256 in the table above.
+
+**What this pin does not do.** It fixes one body at one instant. It does not say when the prose
+changed inside the eighty-two-minute window, whether the issuer's implementation changed at the same
+time or long before, or whether any receipt was ever issued under the superseded prose. The 2 September
+attestation sample says only that *that* receipt was hashed under the new rule; it does not establish
+what Insight's code did before 2 September or what it does now.
