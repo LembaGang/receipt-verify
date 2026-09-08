@@ -63,7 +63,7 @@ const SCOPES = resolve(argOf("--scopes") ?? join(REPO, "walker", "scopes.json"))
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
-type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle";
+type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle" | "declared_opaque";
 
 interface Row {
   corpus: string;
@@ -80,6 +80,8 @@ interface Row {
   recomputed: string | null;
   outcome: Outcome;
   note?: string;
+  /** Where a declared_opaque row's declaration came from. Absent on every other row. */
+  source?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -398,6 +400,53 @@ function matchRefusal(corpus: string, file: string, pointer: string, refusal: st
       pointer.endsWith(a.pointer_suffix) &&
       refusal === a.refusal_equals,
   );
+}
+
+/**
+ * A value the FORMAT'S AUTHOR states no third party can recompute.
+ *
+ * This is the only status in the registry sourced from outside the registry, and
+ * it is deliberately NOT `unregistered`. Those are different facts about
+ * different things. `unregistered` says no rule in THIS registry covers the
+ * field: a fact about our coverage, repaired by writing a rule. `declared_opaque`
+ * says the pre-image cannot be rebuilt from what the format publishes: a fact
+ * about the format, stated by the person who defines it, that no rule we could
+ * write would repair. Collapsing the second into the first would have this
+ * registry claim a gap in its own coverage that it can never close.
+ *
+ * The gate is the citation. `source` and `quote` are REQUIRED and the walker
+ * refuses to run without them, because the entire weight of the status is "the
+ * author said so, and here is where" -- an entry that cannot say where still
+ * reads as though it could, which is worse than no entry. `until` records the
+ * condition under which the entry is to be revisited, so a declaration made
+ * about a corpus mid-rework does not quietly become permanent.
+ */
+interface Declaration {
+  pointer: string;
+  declared_by: string;
+  source: string;
+  quote: string;
+  until: string;
+  note?: string;
+}
+
+/** Every member the status rests on. Missing any of these refuses the run (exit 2). */
+const DECLARATION_REQUIRED = ["pointer", "declared_by", "source", "quote", "until"] as const;
+
+function validateDeclarations(corpus: string, decls: Declaration[]) {
+  decls.forEach((d, i) => {
+    for (const k of DECLARATION_REQUIRED) {
+      const v = (d as unknown as Record<string, unknown>)[k];
+      if (typeof v !== "string" || v.trim() === "") {
+        throw new Error(
+          `walker/scopes.json: declared_opaque[${i}] on corpus ${corpus} is missing a non-empty \`${k}\`. ` +
+            `A declared_opaque entry must carry ${DECLARATION_REQUIRED.join(", ")}: the status asserts that the ` +
+            `format's author declared this value unrecomputable, and an entry that cannot cite who said so and ` +
+            `where still reads as sourced. Refusing to run.`,
+        );
+      }
+    }
+  });
 }
 
 /** A canonicalization that failed: a registered refusal, or a disagreement that fails the run. */
@@ -837,7 +886,7 @@ async function ruleEvidenceChain(ctx: Ctx, rules: Rule[], filePath: string) {
 // The census: every digest-shaped field a rule did not consume.
 // ---------------------------------------------------------------------------
 
-function census(ctx: Ctx, files: string[], reasons: Map<string, string>) {
+function census(ctx: Ctx, files: string[], reasons: Map<string, string>, decls: Declaration[], matched: Set<number>) {
   for (const p of files) {
     const r = rel(p);
     const lower = p.toLowerCase();
@@ -864,6 +913,32 @@ function census(ctx: Ctx, files: string[], reasons: Map<string, string>) {
 
     for (const [ptr, shape, val] of entries) {
       if (ctx.consumed.has(key(r, ptr))) continue;
+      // Matched here, on the census, and never before it: a declaration must not
+      // be able to pull a field OUT of the grade. If a rule covers the pointer it
+      // stays graded and the declaration reports unmatched, which is the loud
+      // outcome rather than the quiet one.
+      const di = decls.findIndex((d) => d.pointer === ptr);
+      if (di >= 0) {
+        matched.add(di);
+        const d = decls[di]!;
+        ctx.rows.push({
+          corpus: ctx.corpus,
+          file: r,
+          pointer: ptr,
+          rule: null,
+          scope: null,
+          document: null,
+          lines: null,
+          status: "declared_opaque",
+          encoding: shape,
+          declared: val,
+          recomputed: null,
+          outcome: "declared_opaque",
+          note: `declared opaque by ${d.declared_by}: "${d.quote}" Not graded and not counted unregistered; until: ${d.until}.${d.note ? " " + d.note : ""}`,
+          source: d.source,
+        });
+        continue;
+      }
       ctx.rows.push({
         corpus: ctx.corpus,
         file: r,
@@ -897,10 +972,15 @@ async function main(): Promise<number> {
       inherits_rules_from?: string;
       only_files?: string[];
       corpus_note?: string;
+      declared_opaque?: Declaration[];
     }>;
   };
 
   REFUSALS = scopes.expected_refusals ?? [];
+  // Before any corpus is walked: an unsourced declaration refuses the whole run,
+  // not just the corpus carrying it. A partial report written under a registry
+  // this tool has already found unfit to read is a worse artefact than no report.
+  for (const c of scopes.corpora) if (c.declared_opaque) validateDeclarations(c.id, c.declared_opaque);
 
   py = new PythonJcs();
   const rows: Row[] = [];
@@ -986,7 +1066,36 @@ async function main(): Promise<number> {
       }
     }
 
-    census(ctx, files.filter((p) => wanted(rel(p))), reasons);
+    const decls = c.declared_opaque ?? [];
+    const matchedDecls = new Set<number>();
+    census(ctx, files.filter((p) => wanted(rel(p))), reasons, decls, matchedDecls);
+
+    // Every declaration that matched no pointer here. Same argument as rule_idle,
+    // one level over: an upstream that settles the rework and drops or renames the
+    // member leaves the entry matching nothing, and a zero-row declaration is
+    // indistinguishable from a satisfied one. This row is the difference. It is
+    // counted and it does not fail the run.
+    if (existsSync(dir)) {
+      decls.forEach((d, i) => {
+        if (matchedDecls.has(i)) return;
+        ctx.rows.push({
+          corpus: c.id,
+          file: c.dir,
+          pointer: null,
+          rule: null,
+          scope: null,
+          document: null,
+          lines: null,
+          status: "declared_opaque",
+          encoding: null,
+          declared: null,
+          recomputed: null,
+          outcome: "declared_opaque",
+          note: `this declaration names ${d.pointer}, which is not a digest-shaped field of ${c.id}: it was consumed by a rule, or it is no longer in the corpus. Declared by ${d.declared_by}; until: ${d.until}.`,
+          source: d.source,
+        });
+      });
+    }
 
     // Every rule that APPLIES here and matched nothing. The quiet failure mode of
     // a versioned registry is a rule that has stopped matching: upstream reshapes
@@ -1019,17 +1128,21 @@ async function main(): Promise<number> {
       }
     }
 
-    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared: 0, inferred: 0 };
+    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared: 0, inferred: 0 };
     for (const row of ctx.rows) {
       counts[row.outcome] = (counts[row.outcome] ?? 0) + 1;
-      if (row.outcome === "rule_idle") continue;
+      if (row.outcome === "rule_idle" || row.outcome === "declared_opaque") continue;
       if (row.outcome !== "unregistered" && row.status === "declared") counts["declared"]!++;
       if (row.outcome !== "unregistered" && row.status === "inferred") counts["inferred"]!++;
     }
     // `registered` counts graded FIELDS. A rule_idle row grades no field, so it is
     // excluded here -- which is what keeps every count at every pinned corpus
     // identical to a856323's, with rule_idle purely an added column.
-    counts["registered"] = ctx.rows.length - counts["unregistered"]! - counts["rule_idle"]!;
+    // `registered` counts graded FIELDS. A rule_idle row grades no field and neither
+    // does a declared_opaque one -- the point of the status is that the value is not
+    // graded -- so both are excluded, which is what keeps every count at every pinned
+    // corpus identical to what it was before either column existed.
+    counts["registered"] = ctx.rows.length - counts["unregistered"]! - counts["rule_idle"]! - counts["declared_opaque"]!;
     perCorpus[c.id] = counts;
     rows.push(...ctx.rows);
   }
@@ -1038,8 +1151,13 @@ async function main(): Promise<number> {
 
   // Deterministic body: sorted rows, sorted keys, no timestamps inside it.
   // A rule_idle row has a null pointer; sort it by its rule id instead, so the
-  // ordering stays total and two runs still produce byte-identical bodies.
-  const sortPtr = (r: Row): string => (r.pointer === null ? ` ${r.rule ?? ""}` : r.pointer);
+  // ordering stays total and two runs still produce byte-identical bodies. An
+  // unmatched declared_opaque row has neither pointer nor rule, so it sorts by
+  // its source and note, which carry the declaration's own pointer.
+  const sortPtr = (r: Row): string =>
+    r.pointer !== null ? r.pointer
+      : r.outcome === "declared_opaque" ? ` ${r.source ?? ""}${r.note ?? ""}`
+      : ` ${r.rule ?? ""}`;
   rows.sort((a, b) =>
     a.corpus < b.corpus ? -1 : a.corpus > b.corpus ? 1
       : a.file < b.file ? -1 : a.file > b.file ? 1
@@ -1055,7 +1173,7 @@ async function main(): Promise<number> {
     return v;
   };
 
-  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0 };
+  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0 };
   for (const r of rows) totals[r.outcome]++;
 
   const body = sortKeys({ per_corpus: perCorpus, rows, totals });
@@ -1069,12 +1187,18 @@ async function main(): Promise<number> {
       `  ${id.padEnd(24)} registered=${String(c["registered"]).padStart(4)}  match=${String(c["match"]).padStart(4)}` +
         `  mismatch=${String(c["mismatch"]).padStart(3)}  unregistered=${String(c["unregistered"]).padStart(4)}` +
         `  serializer_disagreement=${c["serializer_disagreement"]}  expected_refusal=${c["expected_refusal"]}` +
-        `  rule_idle=${c["rule_idle"]}` +
+        `  rule_idle=${c["rule_idle"]}  declared_opaque=${c["declared_opaque"]}` +
         `  (declared=${c["declared"]} inferred=${c["inferred"]})`,
     );
   }
   console.log("");
   for (const r of rows) {
+    if (r.outcome === "declared_opaque") {
+      console.log(`  DECLARED_OPAQUE  ${r.corpus}  ${r.pointer ?? "(matched no pointer in this corpus)"}`);
+      console.log(`      source     : ${r.source}`);
+      if (r.note) console.log(`      note       : ${r.note}`);
+      continue;
+    }
     if (r.outcome === "rule_idle") {
       console.log(`  RULE_IDLE  ${r.corpus}  ${r.rule}`);
       console.log(`      applies to this corpus and matched no pointer in it; the rule's file pattern is ${r.file}`);
@@ -1092,7 +1216,7 @@ async function main(): Promise<number> {
   console.log(
     `SUMMARY match=${totals.match} mismatch=${totals.mismatch} unregistered=${totals.unregistered} ` +
       `serializer_disagreement=${totals.serializer_disagreement} expected_refusal=${totals.expected_refusal} ` +
-      `rule_idle=${totals.rule_idle}; report walker/report.json`,
+      `rule_idle=${totals.rule_idle} declared_opaque=${totals.declared_opaque}; report walker/report.json`,
   );
   return totals.mismatch > 0 || totals.serializer_disagreement > 0 ? 1 : 0;
 }

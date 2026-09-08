@@ -189,6 +189,65 @@ is correct — but it means six values that read as verified are not graded.
 Registering them needs a source that defines the preimage; that is a question for
 the draft author, not something to infer here.
 
+**Appended 2026-09-08 — N1 answered by the author: `action_ref` declared opaque**
+
+Asked on 8 Sep at 10:57Z whether the new `sha256:<64 hex>` form names a pre-image a
+third party could rebuild, the author answered at **11:23:07Z (Gmail
+`1a080c1f84f6d1a1`)**, verbatim:
+
+> "On action_ref, record it as declared opaque. -09 points at the upstream canonical
+> Action representation, and ACTA -03 computes that over agentId, actionType,
+> scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a
+> hash-mode receipt carries no action_type either, so nobody holding only the receipt
+> can rebuild the pre-image. It works as a join key across engines during an audit,
+> not as something a third party recomputes. The six values you hit are mid-rework,
+> so leave them out of the grade rather than marking them unregistered until the
+> corpus settles."
+
+**Six, and the seventh.** N1 above names six because six is the *delta*: the
+`unregistered` count rose by six at this pin. Enumerated over the corpus bytes rather
+than over the delta, `conformance/vectors.json` carries **seven** `action_ref`
+members, and it carries the same seven at both `asqav/22a970d` and `asqav/a21d060` —
+the two files are byte-identical (blob `9e0c093c`). All seven were `unregistered`
+before this change; none was graded by a rule, and none is nested inside a member some
+rule grades.
+
+| JSON pointer | vector | at `3b88156` | at `22a970d` / `a21d060` |
+|---|---|---|---|
+| `/vectors/14/input/action_ref` | `counterparty_binding_happy_path` | `act_01HVZA_ORIGINATOR_0001` | `sha256:e3b0c442…` |
+| `/vectors/15/input/payload/action_ref` | `counterparty_binding_envelope_byte_equality` | `act_01HVZA_ORIGINATOR_0001` | `sha256:e3b0c442…` |
+| `/vectors/16/input/action_ref` | `counterparty_binding_base64url_tolerance` | `act_01HVZA_ORIGINATOR_0001` | `sha256:e3b0c442…` |
+| `/vectors/17/input/action_ref` | `counterparty_binding_opaque_receipt_ref` | `act_01HVZA_ORIGINATOR_0001` | `sha256:e3b0c442…` |
+| `/vectors/18/input/action_ref` | `counterparty_binding_transport_label_non_trust` | `act_01HVZA_ORIGINATOR_0001` | `sha256:e3b0c442…` |
+| `/vectors/19/input/action_ref` | `counterparty_binding_missing_envelope_hash_rejected` | `act_01HVZA_ORIGINATOR_0001` | `sha256:e3b0c442…` |
+| **`/vectors/20/input/action_ref`** | `receipt_v2_signer_canary` | **`sha256:e3b0c442…` already** | `sha256:e3b0c442…` |
+
+The first six are the ones upstream `0b5fa1e` (#484) rewrote, and they are the six the
+author's "six values you hit" names. The seventh predates #484: `/vectors/20` carried
+the `sha256:` form at `3b88156`, at `05c1c49` and at both `history/*` pins, so it never
+entered the delta N1 measured and was `unregistered` for the whole of that time.
+
+**How the walker treats them.** `walker/scopes.json` gains a corpus-level
+`declared_opaque` list on `asqav/22a970d` and on `asqav/a21d060`: one entry per exact
+JSON pointer, each carrying `declared_by`, `source` (the Gmail id and timestamp),
+`quote` and `until`. A field whose pointer matches is reported with status
+`declared_opaque` and the citation on its row, is **not** counted `unregistered`, and
+is not graded. `unregistered` on each corpus falls 38 → 31; `declared_opaque` is 7;
+`registered`, `match` and `mismatch` are unchanged at 60 / 59 / 0. The status is not
+`unregistered` because the two are facts about different things: `unregistered` says
+no rule in this registry covers the field, which is repaired by writing a rule, while
+`declared_opaque` says the pre-image cannot be rebuilt from what the format publishes,
+which no rule could repair. The walker refuses to run on an entry that cannot cite its
+source, and a declaration matching no pointer is reported as a null-pointer row and
+counted, so it cannot outlive the member it names.
+
+**`until`:** *the corpus settles; revisit at the -09 re-pin.* All seven are recorded
+against the same letter, but `/vectors/20` is filed as its own entry with a note
+saying it is **not** one of the six he named — it rests on his first sentence and on
+the reason he gives, both of which are about the field rather than about those six
+vectors. If that reading is wrong, that entry is the one that is wrong and it can be
+withdrawn without touching the six.
+
 ### Falsifiability of the walk itself
 
 The rule `asqav.counterparty.envelope_hash.expected` carries an **explicit**
@@ -277,6 +336,27 @@ The eight M7 named are all still present and still in that state
 `-25-payload-digest-rederives`, `-27-anchors-absent`). This is an **observation
 against a clone**, not a finding this repository can cite: nothing here pins those
 bytes, and a note to the author would have to pin them first.
+
+**Appended 2026-09-08 — M7: the author's answer of 11:23:07Z (Gmail `1a080c1f84f6d1a1`)**
+
+In the same letter that answered N1, and quoted verbatim:
+
+> "On the unanchored count, -09 answers it. 10.5 makes the anchor check part of the
+> verified verdict, so a receipt with no anchor is unverified, and 5.4 has a verifier
+> report anchoring as its own axis instead of dropping the signature, chain and key
+> results it can still establish. The corpus expectations move to match. That one is
+> mine and it is part of why the vectors are still moving."
+
+So M7 is not a defect he disputes and not one he has closed: it is an item he owns, to
+be answered by `-09` §10.5 and §5.4 and by corpus expectations that have not yet moved.
+**M7 stays open in this record** until two things exist that this repository can read:
+the `-09` text, and a re-pinned corpus whose expectations carry the change. Neither is
+in the tree today, so nothing here is re-measured on the strength of the letter — an
+answer about what a draft will say is not bytes, and this document grades bytes.
+
+The **28 / 13 clone observation above stands exactly as it was written**: an observation
+against a clone's object store, not a finding this repository can cite, because nothing
+here pins those bytes. It is neither strengthened nor retired by his answer.
 
 ---
 

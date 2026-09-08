@@ -37,6 +37,10 @@ interface Row {
   recomputed: string | null;
   outcome: string;
   rule: string | null;
+  /** Set on every row; "declared_opaque" on a declaration row. */
+  status: string | null;
+  /** Where a declared_opaque row's declaration came from. Absent on other rows. */
+  source?: string;
 }
 interface Report {
   header: Record<string, string>;
@@ -58,6 +62,28 @@ function walk(opts: { root?: string; report: string; scopes?: string }): { repor
 }
 
 const tmp = () => mkdtempSync(join(tmpdir(), "walker-"));
+
+/**
+ * The same run, but keeping stdout, stderr and the exit code instead of the
+ * report. The declared_opaque assertions need two things `walk` cannot give:
+ * the SUMMARY line the walker prints, and the behaviour when the walker REFUSES
+ * to run at all -- in which case no report is written and parsing one would
+ * throw over the failure being asserted.
+ */
+function walkRaw(opts: { root?: string; report: string; scopes?: string }): { code: number; stdout: string; stderr: string } {
+  const args = ["tsx", join(ROOT, "tools", "walk-digests.ts"), "--report", opts.report];
+  if (opts.root) args.push("--root", opts.root);
+  if (opts.scopes) args.push("--scopes", opts.scopes);
+  try {
+    const stdout = execFileSync("npx", args, {
+      cwd: ROOT, stdio: "pipe", shell: process.platform === "win32", encoding: "utf8",
+    });
+    return { code: 0, stdout, stderr: "" };
+  } catch (e) {
+    const err = e as { status?: number; stdout?: string | Buffer; stderr?: string | Buffer };
+    return { code: Number(err.status ?? -1), stdout: String(err.stdout ?? ""), stderr: String(err.stderr ?? "") };
+  }
+}
 
 // One walk of the real corpora, shared by the assertions that only read it.
 const baseline = walk({ report: join(tmp(), "report.json") });
@@ -427,10 +453,15 @@ describe("digest walker — applies_to and the rule_idle row", () => {
   it("does not fail the run and does not inflate `registered`", () => {
     // rule_idle is a coverage fact, not a wrong digest. The exit code is decided
     // by mismatch and serializer_disagreement alone, and a rule_idle row grades no
-    // field, so it must not be counted among the registered ones.
+    // field, so it must not be counted among the registered ones. declared_opaque
+    // is excluded on the same argument and is asserted here rather than only in its
+    // own block: `registered` must equal the rows that actually graded something,
+    // whatever new row kinds the walker grows.
     for (const [id, c] of Object.entries(baseline.report.body.per_corpus)) {
       const rows = baseline.report.body.rows.filter((r) => r.corpus === id);
-      const graded = rows.filter((r) => r.outcome !== "unregistered" && r.outcome !== "rule_idle").length;
+      const graded = rows.filter(
+        (r) => r.outcome !== "unregistered" && r.outcome !== "rule_idle" && r.outcome !== "declared_opaque",
+      ).length;
       expect(c["registered"], `registered at ${id}`).toBe(graded);
       expect(c["rule_idle"], `rule_idle at ${id}`).toBe(rows.filter((r) => r.outcome === "rule_idle").length);
     }
@@ -537,5 +568,140 @@ describe("digest walker — the second serialiser reads UTF-8 on every platform"
     const v = doc.vectors.find((x) => x.name === "asqav-24-jcs-astral-key-order")!;
     expect(a.sha256).toBe(v.sha256);
     expect(a.len).toBe(Buffer.from(v.canonical!, "utf8").length);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// declared_opaque: a value the FORMAT'S AUTHOR says no third party can recompute.
+//
+// This is the one status in the registry that comes from outside the registry,
+// so it carries the tightest control after the refusal allowance. It removes
+// fields from the unregistered census, and anything that removes rows from a
+// census has to be unable to remove them quietly. Four assertions:
+//
+//   (a) the enumerated action_ref pointers moved status and NOTHING else moved:
+//       unregistered + declared_opaque is the old unregistered, exactly, and
+//       registered/match/mismatch are untouched. A status that changed the grade
+//       would be a way to make red things green.
+//   (b) an entry missing `source` or `quote` REFUSES the run. The whole claim of
+//       this status is "the author said so, here is where"; an entry that cannot
+//       say where is worse than no entry, because it reads as sourced.
+//   (c) an entry matching no pointer is reported with a null pointer and counted,
+//       the rule_idle pattern. A declaration must not outlive the member it names.
+//   (d) the printed SUMMARY carries the count. A status only in report.json is a
+//       status nobody reads.
+// ---------------------------------------------------------------------------
+
+describe("digest walker — declared_opaque", () => {
+  // Enumerated from the corpus bytes, not copied from the letter that asked for
+  // them: every `action_ref` in fixtures/asqav/{22a970d,a21d060}/conformance/
+  // vectors.json. Seven, in both, which are byte-identical files. Six of them
+  // (vectors 14-19, the counterparty_binding_* set) took the sha256: wire form
+  // in upstream 0b5fa1e (#484) and are the six the author named; the seventh,
+  // /vectors/20/input/action_ref on receipt_v2_signer_canary, already carried
+  // that form at 3b88156 and at every earlier pin.
+  const OPAQUE = [
+    "/vectors/14/input/action_ref",
+    "/vectors/15/input/payload/action_ref",
+    "/vectors/16/input/action_ref",
+    "/vectors/17/input/action_ref",
+    "/vectors/18/input/action_ref",
+    "/vectors/19/input/action_ref",
+    "/vectors/20/input/action_ref",
+  ];
+  const CORPORA = ["asqav/22a970d", "asqav/a21d060"];
+  // The B-128 end state, read from the run this change starts from. Written as
+  // literals so the assertion cannot drift with the thing it measures.
+  const BEFORE = { registered: 60, match: 59, mismatch: 0, unregistered: 38, declared_opaque: 0 };
+
+  it("(a) reports the enumerated action_ref pointers as declared_opaque, not unregistered, on both corpora", () => {
+    for (const corpus of CORPORA) {
+      const mine = baseline.report.body.rows.filter((r) => r.corpus === corpus);
+      const opaque = mine.filter((r) => r.outcome === "declared_opaque");
+      expect(opaque.map((r) => r.pointer).sort(), `${corpus} declared_opaque pointers`).toEqual([...OPAQUE].sort());
+      // None of them is still in the census, and no OTHER field left it.
+      expect(mine.filter((r) => r.outcome === "unregistered" && String(r.pointer).endsWith("action_ref"))).toEqual([]);
+
+      const c = baseline.report.body.per_corpus[corpus]!;
+      expect(c["declared_opaque"], `${corpus} declared_opaque count`).toBe(OPAQUE.length);
+      expect(c["unregistered"], `${corpus} unregistered count`).toBe(BEFORE.unregistered - OPAQUE.length);
+      // The conserved quantity: the census did not shrink, it was re-labelled.
+      expect(c["unregistered"]! + c["declared_opaque"]!).toBe(BEFORE.unregistered + BEFORE.declared_opaque);
+      // And the grade is untouched: a declared value is not graded, so it is not
+      // `registered` either, and no digest moved.
+      expect(c["registered"], `${corpus} registered`).toBe(BEFORE.registered);
+      expect(c["match"], `${corpus} match`).toBe(BEFORE.match);
+      expect(c["mismatch"], `${corpus} mismatch`).toBe(BEFORE.mismatch);
+    }
+    // Every declared_opaque row names where the declaration came from. A row
+    // without a source is the failure this status exists to prevent.
+    const all = baseline.report.body.rows.filter((x) => x.outcome === "declared_opaque");
+    expect(all.length).toBe(OPAQUE.length * CORPORA.length);
+    for (const r of all) {
+      expect(r.status).toBe("declared_opaque");
+      expect(String(r.source)).toContain("1a080c1f84f6d1a1");
+    }
+  });
+
+  it("(b) refuses to run on a declaration missing its source or its quote", () => {
+    for (const missing of ["source", "quote"] as const) {
+      const scopes = JSON.parse(readFileSync(join(ROOT, "walker", "scopes.json"), "utf8")) as {
+        corpora: Array<{ id: string; declared_opaque?: Array<Record<string, unknown>> }>;
+      };
+      const c = scopes.corpora.find((x) => x.id === "asqav/a21d060")!;
+      expect(c.declared_opaque, "the corpus carries declarations to strip").toBeTruthy();
+      delete c.declared_opaque![0]![missing];
+      const alt = join(tmp(), "scopes.json");
+      writeFileSync(alt, JSON.stringify(scopes, null, 2));
+
+      const run = walkRaw({ report: join(tmp(), `no-${missing}.json`), scopes: alt });
+      // Not 0 (clean) and not 1 (the exit the corpora earn): a refusal to run.
+      expect(run.code, `missing ${missing} must refuse the run`).toBe(2);
+      expect(run.stderr).toContain("declared_opaque");
+      expect(run.stderr).toContain(missing);
+    }
+  });
+
+  it("(c) reports a declaration that matches nothing as one null-pointer row, and counts it", () => {
+    // The red case for (a). Without it, "the pointers are declared_opaque" is the
+    // walker agreeing with a list someone wrote. Here the list names a member that
+    // is not in the corpus and the row has to appear anyway. It is the rule_idle
+    // argument applied to a declaration: an upstream that settles the rework and
+    // drops the field leaves this entry matching nothing, and a zero-row
+    // declaration looks exactly like a satisfied one.
+    const scopes = JSON.parse(readFileSync(join(ROOT, "walker", "scopes.json"), "utf8")) as {
+      corpora: Array<{ id: string; declared_opaque?: Array<Record<string, unknown>> }>;
+    };
+    const c = scopes.corpora.find((x) => x.id === "asqav/a21d060")!;
+    c.declared_opaque!.push({ ...c.declared_opaque![0]!, pointer: "/vectors/99/input/action_ref" });
+    const alt = join(tmp(), "scopes.json");
+    writeFileSync(alt, JSON.stringify(scopes, null, 2));
+
+    const run = walk({ report: join(tmp(), "unmatched.json"), scopes: alt });
+    const added = run.report.body.rows.filter(
+      (r) => r.outcome === "declared_opaque" && r.pointer === null && r.corpus === "asqav/a21d060",
+    );
+    expect(added.length).toBe(1);
+    expect(run.report.body.per_corpus["asqav/a21d060"]!["declared_opaque"]).toBe(OPAQUE.length + 1);
+    expect(run.report.body.totals["declared_opaque"]).toBe(baseline.report.body.totals["declared_opaque"]! + 1);
+    // It changed the coverage report and nothing else.
+    expect(run.report.body.totals["match"]).toBe(baseline.report.body.totals["match"]);
+    expect(run.report.body.totals["mismatch"]).toBe(baseline.report.body.totals["mismatch"]);
+    expect(run.report.body.totals["unregistered"]).toBe(baseline.report.body.totals["unregistered"]);
+    expect(run.code).toBe(baseline.code);
+  });
+
+  it("(d) prints declared_opaque on the SUMMARY and on the per-corpus lines", () => {
+    const run = walkRaw({ report: join(tmp(), "summary.json") });
+    const total = OPAQUE.length * CORPORA.length;
+    expect(run.stdout).toContain(`declared_opaque=${total};`);
+    expect(run.stdout).toContain(`match=${baseline.report.body.totals["match"]} `);
+    expect(run.stdout).toContain(`mismatch=${baseline.report.body.totals["mismatch"]} `);
+    for (const corpus of CORPORA) {
+      const line = run.stdout.split("\n").find((l) => l.includes(corpus) && l.includes("registered="));
+      expect(line, `a per-corpus line for ${corpus}`).toBeTruthy();
+      expect(line).toContain(`declared_opaque=${OPAQUE.length}`);
+      expect(line).toContain(`unregistered=${String(BEFORE.unregistered - OPAQUE.length).padStart(4)}`);
+    }
   });
 });
