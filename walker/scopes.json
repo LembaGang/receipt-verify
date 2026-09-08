@@ -139,9 +139,10 @@
           "holder": "expected",
           "field": "/vectors/{i}/expected/{envelope_hash,envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url}, with originating_envelope_ref beside them",
           "applies_to": [
-            "asqav/3b88156"
+            "asqav/3b88156",
+            "asqav/22a970d"
           ],
-          "applies_to_reason": "The output-side shape upstream #473 (66ab579, 2026-09-04) introduced: the renderings sit directly on a sibling `expected` object rather than inside a counterparty_binding wrapper. It does not exist at 05c1c49 or at any history/* pin, and applying it there would report a shape those corpora never published.",
+          "applies_to_reason": "The output-side shape upstream #473 (66ab579, 2026-09-04) introduced: the renderings sit directly on a sibling `expected` object rather than inside a counterparty_binding wrapper. It does not exist at 05c1c49 or at any history/* pin, and applying it there would report a shape those corpora never published. asqav/22a970d carries the same `expected` shape: the six counterparty_binding_* vectors there still hold envelope_hash_{hex,base64,base64url} in a sibling `expected` object beside originating_envelope_ref, and upstream 0b5fa1e (#484) changed only the action_ref wire form inside them, not where the renderings live. Named explicitly rather than by a glob because this list is explicit: a new corpus that is not added here is graded on fewer members and still prints green.",
           "scope_documented_in": "asqav.counterparty.envelope_hash",
           "scope_member_note": "The `expected` block carries the renderings but no scope member of its own. It reaches one through the resolution_order recorded on asqav.counterparty.envelope_hash: the same vector's input.counterparty_binding.scope, then the unanimous scope of the vectors binding to the same originating envelope."
         },
@@ -214,6 +215,15 @@
         "conformance/vectors.json"
       ],
       "corpus_note": "The asqav-sdk tip of 2026-09-05, pinned for the M6 closure run (fixtures/provenance.md). conformance/manifest.lock.json is pinned beside it as the author's own corpus lock and is not walked: its digests are SHA-256 over raw file bytes of files this repository does not hold, not digests over JSON structures the walker can address by pointer. Its vectors.json entry -- sha256 05fc1d8a2521e5dac3e9fed20358c46278a4174989fd43ee79c555133ffc31e1, 37383 bytes -- is the same digest fixtures/provenance.md records for the pinned file, arrived at independently. The two chain rules inherited from asqav/05c1c49 grade files under verifier/conformance-vectors/, which this pin does not contain either -- its two files are conformance/vectors.json and conformance/manifest.lock.json -- so they are no longer applied here (asqav.chain.* applies_to). Absent, not excluded: `find fixtures/asqav/3b88156 -name verifier` returns nothing."
+    },
+    {
+      "id": "asqav/22a970d",
+      "dir": "fixtures/asqav/22a970d",
+      "inherits_rules_from": "asqav/05c1c49",
+      "only_files": [
+        "conformance/vectors.json"
+      ],
+      "corpus_note": "The asqav-sdk commit the first scheduled drift run of 2026-09-07 06:00Z named, pinned 2026-09-08 (fixtures/provenance.md). Same document and same line ranges as asqav/3b88156: the rules it inherits cite marques-08 1351-1369 for the envelope_hash digest scope, and the only upstream edit between the two pins (0b5fa1e, #484) rewrote the action_ref wire form inside the vectors, which changes the bytes the rules are applied TO and not the section that defines them. It carries the `expected` field shape, so it is named in asqav.counterparty.envelope_hash.expected's applies_to beside asqav/3b88156. conformance/manifest.lock.json is pinned beside it as the author's own corpus lock and is not walked, for the same reason as at 3b88156: its digests are SHA-256 over raw file bytes, not digests over JSON structures the walker can address by pointer. Its vectors.json entry -- sha256 7beebf7661c02b1e70045aa956ba49836c968edd9b24ecd4ebfb893cca7c6341, 37923 bytes -- is the same digest fixtures/provenance.md records for the pinned file, arrived at independently. The two chain rules inherited from asqav/05c1c49 grade files under verifier/conformance-vectors/, which this pin does not contain -- its two files are conformance/vectors.json and conformance/manifest.lock.json -- so they are not applied here (asqav.chain.* applies_to). Absent, not excluded: `find fixtures/asqav/22a970d -name verifier` returns nothing."
     },
     {
       "id": "acta/published",

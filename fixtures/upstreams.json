@@ -110,9 +110,39 @@
   },
   "upstreams": [
     {
-      "id": "asqav-sdk/3b88156",
+      "id": "asqav-sdk/22a970d",
       "kind": "git",
       "role": "current",
+      "repo": "https://github.com/jagmarques/asqav-sdk",
+      "ref": "main",
+      "ref_source": "Resolved in this session from a fresh clone: `git -c core.autocrlf=false clone --quiet https://github.com/jagmarques/asqav-sdk` then `git rev-parse origin/main` printed `a21d0608b0ff949c583138f2987eba3b6c15749f` at 2026-09-08T09:14Z. `main` had therefore already moved PAST 22a970d by two days and nine commits; 22a970d is pinned anyway because it is the commit the first scheduled drift finding named, and the pin follows the finding rather than the tip. `conformance/vectors.json` is byte-identical at a21d060 (blob 9e0c093c) and only `conformance/manifest.lock.json` differs there (blob 4fe1d441, corpus_version 7, LICENSE/NOTICE/README rows), so `npm run drift` reports this entry `moved_changed` on 1 of 2 paths until it is re-pinned again.",
+      "pinned_commit": "22a970d8fd5a0b20fdd1626226ba3c0a6fe0a5b1",
+      "paths": [
+        {
+          "path": "conformance/vectors.json",
+          "pinned_blob": "9e0c093c83b3fff96a026093179adc09f8ffa96c",
+          "sha256": "7beebf7661c02b1e70045aa956ba49836c968edd9b24ecd4ebfb893cca7c6341"
+        },
+        {
+          "path": "conformance/manifest.lock.json",
+          "pinned_blob": "2a61ab12e0f41589893d912bec5463c973da3971",
+          "sha256": "b9c0b2e5819ad8984951b9f3175b293c9cc7a64a8ccb999e76a6ecc273348c99"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/asqav/22a970d"
+      ],
+      "provenance_section": "Appended 2026-09-08 — the asqav-sdk tip `22a970d`, pinned after the first scheduled drift finding",
+      "last_observed": {
+        "tip": "a21d0608b0ff949c583138f2987eba3b6c15749f",
+        "at": "2026-09-08T09:27:50.343Z",
+        "outcome": "moved_changed"
+      }
+    },
+    {
+      "id": "asqav-sdk/3b88156",
+      "kind": "git",
+      "role": "historical",
       "repo": "https://github.com/jagmarques/asqav-sdk",
       "ref": "main",
       "ref_source": "fixtures/provenance.md line 726: `git fetch origin` returned no new refs; `origin/main` = the same commit.",
@@ -132,12 +162,8 @@
       "corpus_dirs": [
         "fixtures/asqav/3b88156"
       ],
-      "provenance_section": "Appended 2026-09-05 — the asqav-sdk tip `3b88156`, pinned for the M6 closure run",
-      "last_observed": {
-        "tip": "3b88156497d42a360576ecd580dad95ef031926b",
-        "at": "2026-09-05T18:44:21.085Z",
-        "outcome": "current"
-      }
+      "role_reason": "Superseded in this repository by asqav-sdk/22a970d on 2026-09-08; the first scheduled drift run of 2026-09-07 06:00Z found main at 22a970d with both pinned paths changed; kept because FINDINGS.md and walker/scopes.json cite it by line.",
+      "provenance_section": "Appended 2026-09-05 — the asqav-sdk tip `3b88156`, pinned for the M6 closure run"
     },
     {
       "id": "asqav-sdk/05c1c49",
@@ -509,8 +535,8 @@
       "paths_note": "The provenance rows give sha256 and no blob id, so `pinned_blob` is null and the comparison at a moved tip is sha256(git cat-file blob <id>) against the pin. Still the object store, never a worktree.",
       "provenance_section": "the main snapshot table, rows 44-86",
       "last_observed": {
-        "tip": "49b7d039576b17e39dd707c9f223de5670c9be86",
-        "at": "2026-09-05T18:44:21.085Z",
+        "tip": "ac33ad1dd660ea8473123ab8a3371934255926e9",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "moved_untouched"
       }
     },
@@ -601,7 +627,7 @@
       "provenance_section": "the main snapshot table rows 100-113, and the flag at line 231",
       "last_observed": {
         "tip": "a320f24a9400e2386f04483132bda4556f10c085",
-        "at": "2026-09-05T18:44:21.085Z",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "moved_untouched"
       }
     },
@@ -616,7 +642,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
-        "at": "2026-09-05T18:44:21.085Z",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -633,7 +659,7 @@
       "role_note": "The URL is the digest, so this body cannot change without the URL changing. What the check can still turn red is disappearance: a 404 or a DNS failure is `unreachable`, and a content-addressed mapping that stops resolving is the thing worth knowing about here.",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-05T18:44:21.085Z",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -649,7 +675,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-05T18:44:21.085Z",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -666,7 +692,7 @@
       "role_note": "The newest of the five pins of this URL, and therefore the one a drift check is about. Moved here from the 2026-09-02T17:41Z pin on 2026-09-05, after the first `changed` outcome this tool has reported: the registry published a third key, `insight-oracle-safety-sample`.",
       "last_observed": {
         "tip": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
-        "at": "2026-09-05T18:44:21.085Z",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -730,7 +756,7 @@
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-08.txt",
       "last_observed": {
         "tip": "draft-marques-asqav-compliance-receipts-08",
-        "at": "2026-09-05T18:44:21.085Z",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -760,7 +786,7 @@
       "pinned_file": "refs/draft-farley-acta-signed-receipts-03.txt",
       "last_observed": {
         "tip": "draft-farley-acta-signed-receipts-03",
-        "at": "2026-09-05T18:44:21.085Z",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -790,7 +816,7 @@
       "pinned_file": "refs/draft-krausz-verification-state-01.txt",
       "last_observed": {
         "tip": "draft-krausz-verification-state-01",
-        "at": "2026-09-05T18:44:21.085Z",
+        "at": "2026-09-08T09:27:50.343Z",
         "outcome": "current"
       },
       "provenance_section": "the main snapshot table (this draft was in the original table)",
@@ -806,9 +832,9 @@
       "sha256": "47ab675797d7edfe905c13b8482735239d9c5ceb318accbc33e4a5a51e5ec875",
       "pinned_file": "refs/draft-mih-sokolov-scitt-payload-binding-02.txt",
       "last_observed": {
-        "tip": "draft-mih-sokolov-scitt-payload-binding-02",
-        "at": "2026-09-05T18:44:21.085Z",
-        "outcome": "current"
+        "tip": "draft-mih-sokolov-scitt-payload-binding-03",
+        "at": "2026-09-08T09:27:50.343Z",
+        "outcome": "superseded"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -840,7 +866,12 @@
       "why_it_exists": "The frozen evidence.action conformance bundle predates x402 delivery proofs, so every vector in it is delivery: \"none\". These three chains are the other two states, and `unproven` -- payment settled, nothing committed as delivered -- is the safety-critical one.",
       "corpus_dirs": [],
       "corpus_dirs_note": "Empty on purpose: fixtures/delivery/ is NOT one corpus. Four of its files are generated here and listed above; pilot-exa-contents/ is a signed mainnet capture by a different author and is accounted for by its own `unmapped` row. A corpus_dirs of fixtures/delivery would resolve that capture to this entry and hide it.",
-      "provenance_section": "Appended 2026-09-06 -- the delivery corpus, which had no provenance row at all"
+      "provenance_section": "Appended 2026-09-06 -- the delivery corpus, which had no provenance row at all",
+      "last_observed": {
+        "tip": null,
+        "at": "2026-09-08T09:27:50.343Z",
+        "outcome": "current"
+      }
     }
   ]
 }

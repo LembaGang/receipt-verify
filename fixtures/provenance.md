@@ -878,3 +878,90 @@ false because this repository did not author it. It is a named `unmapped` row
 (`delivery-pilot-capture`) in `fixtures/upstreams.json` instead. That is also why the `local` entry
 carries an empty `corpus_dirs` with a note: a `corpus_dirs` of `fixtures/delivery` would have resolved
 this capture to the generator's entry and hidden exactly the file that most needed saying out loud.
+
+## Appended 2026-09-08 — the asqav-sdk tip `22a970d`, pinned after the first scheduled drift finding
+
+The first scheduled `drift` run (Monday 2026-09-07 06:00Z, on `dd21d5e`) went red as designed:
+`asqav-sdk/3b88156` came back `moved_changed`, both pinned paths differing at the tip. That is the
+question the pin of 2026-09-05 recorded itself as unable to answer, asked and answered by a cron. The
+bytes the finding names are pinned here so that `FINDINGS-rerun-2026-09-08.md` measures against
+evidence this repository holds rather than against a clone in a scratchpad.
+
+Taken with `git cat-file blob <commit>:<path>` from a fresh clone of
+`https://github.com/jagmarques/asqav-sdk`, never from a worktree: `core.autocrlf` is `true` on this
+machine and a checkout would rewrite the bytes these digests pin. Each `sha256` below was verified
+equal to `git cat-file blob <id> | sha256sum` in the clone before the file was copied, and
+`git hash-object` over the copied file reproduced the upstream blob id exactly. Each file carries
+**0 CR bytes**.
+
+| field | value |
+|---|---|
+| URL | `https://github.com/jagmarques/asqav-sdk` |
+| commit | `22a970d8fd5a0b20fdd1626226ba3c0a6fe0a5b1` |
+| subject | `docs: specify standalone dependencies and trust inputs (#490)` |
+| commit date | 2026-09-06T21:01:56+02:00 = **2026-09-06 19:01:56 UTC** |
+| fetched at | 2026-09-08T09:14Z (`git rev-parse origin/main` in the fresh clone printed `a21d0608b0ff949c583138f2987eba3b6c15749f`) |
+
+| fixture path | upstream blob at 22a970d | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/asqav/22a970d/conformance/vectors.json` | `9e0c093c83b3fff96a026093179adc09f8ffa96c` | 37923 | `7beebf7661c02b1e70045aa956ba49836c968edd9b24ecd4ebfb893cca7c6341` |
+| `fixtures/asqav/22a970d/conformance/manifest.lock.json` | `2a61ab12e0f41589893d912bec5463c973da3971` | 13040 | `b9c0b2e5819ad8984951b9f3175b293c9cc7a64a8ccb999e76a6ecc273348c99` |
+
+**`main` had already moved past this commit when it was pinned.** `origin/main` resolved to
+`a21d0608b0ff949c583138f2987eba3b6c15749f` (`fix: declare supported Node release lines (#501)`,
+2026-09-08 06:00Z), nine commits and two days ahead. `22a970d` is pinned regardless, because it is the
+commit the scheduled finding names and a pin that chases the tip rather than the finding records a
+different fact from the one that was observed. At `a21d060` the pinned `conformance/vectors.json` is
+byte-identical (the same blob `9e0c093c`); only `conformance/manifest.lock.json` differs there
+(blob `4fe1d441`, `corpus_version` 7, changed `LICENSE`, `NOTICE` and `README.md` rows from
+`docs: preserve corpus license notices (#500)`). So `npm run drift` reports this entry
+`moved_changed` on **1 of 2** paths, and the one that moved is the author's own bookkeeping rather
+than corpus data.
+
+**What changed in `vectors.json` between `ef8cf090` (3b88156) and `9e0c093c` (22a970d).** The header
+is unchanged (`version` 2, `canonicalization` "RFC 8785 JCS", `hash_algorithm` "SHA-256") and the
+vector count is unchanged at **26**, in the same order. **0 vectors added, 0 removed, 6 changed** —
+every one of them a `counterparty_binding_*` vector, and every one changed by the same single edit
+upstream: `0b5fa1e`, `fix(conformance): one action_ref wire form across both corpora (#484)`, which
+rewrote `action_ref` from the bare id `act_01HVZA_ORIGINATOR_0001` to the digest form
+`sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. Because `action_ref` sits
+inside A's signed payload, that edit cascades: the originating envelope's bytes change, so its
+`envelope_hash` changes from `DaE/V0yvdRCKIGBaAMYV9jCMeETMiSd5Mw6HZWsx2Pk=` to
+`dXqDdpt/tBY7ILMJMczYw6sx8vPmQCFXMR8W3ADW2e8=` (hex `0da13f57…d8f9` → `757a8376…d9ef`), and every
+vector's own `canonical` and `sha256` move with it.
+
+| vector | fields changed |
+|---|---|
+| `counterparty_binding_happy_path` | `input`, `canonical`, `sha256`, `expected` |
+| `counterparty_binding_envelope_byte_equality` | `input`, `canonical`, `sha256`, `expected` |
+| `counterparty_binding_base64url_tolerance` | `input`, `canonical`, `sha256`, `expected` |
+| `counterparty_binding_opaque_receipt_ref` | `input`, `canonical`, `sha256` |
+| `counterparty_binding_transport_label_non_trust` | `input`, `canonical`, `sha256` |
+| `counterparty_binding_missing_envelope_hash_rejected` | `input`, `canonical`, `sha256` |
+
+The other twenty vectors (`minimal_read`, `tool_call_with_counterparty`, `traced_child_action`,
+`tampered_signature`, `swapped_public_key`, `stale_card`, `nonce_mismatch`, `card_version_downgrade`,
+the six `capture_topology_*`, `receipt_v2_signer_canary`, the two `asqav-24-jcs-astral-key-order*` and
+the three `asqav-25-number-*`) are byte-identical. The intervening commit `e1daa48`
+(`feat(conformance): wire-version v on every asqav-native signed payload (#485)`) did not touch this
+file.
+
+**What changed in `manifest.lock.json`.** `corpus_version` 5 → 6; the whole-corpus `digest`
+`1ef6d34d…732f` → `1857cd56…8094`; `version_history` gains its version-5 row (the digest the previous
+lock carried as its own) and drops nothing; and exactly one `files` row moves — `vectors.json`, from
+`{sha256 05fc1d8a…31e1, bytes 37383}` to `{sha256 7beebf76…6341, bytes 37923}`, which is the same
+digest and the same byte count as the row in the table above, arrived at by the author's tooling and
+by ours independently. The `LICENSE` and `README.md` rows, `corpus`, `rolling`, `digest_algorithm` and
+`signing` are unchanged. That independent agreement on `vectors.json` is what makes the lock evidence
+rather than a second copy of the same claim.
+
+**The `.gitattributes` flaw recorded against the earlier entries applies here too, and is again
+harmless.** `git check-attr text eol` reports `text: set, eol: lf` for both files, because
+`*.json text eol=lf` still sorts after `fixtures/** -text` and the last matching line wins. Both files
+are LF-only, and `git hash-object` over each copied file returned the upstream blob id above.
+
+**What this pin does not do.** It fixes the bytes of one upstream commit on one day, and it is already
+not the tip: the pin was made two days and nine commits behind `main`. It says nothing about whether
+the six changed vectors are *correct* — only about what they are. Whether this repository's verdicts
+move with them is `FINDINGS-rerun-2026-09-08.md`, and those verdicts are ours over Joao's bytes, not
+his.
