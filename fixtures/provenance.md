@@ -1355,3 +1355,118 @@ changed inside the eighty-two-minute window, whether the issuer's implementation
 time or long before, or whether any receipt was ever issued under the superseded prose. The 2 September
 attestation sample says only that *that* receipt was hashed under the new rule; it does not establish
 what Insight's code did before 2 September or what it does now.
+
+---
+
+## Appended 2026-09-08 — the MCP changelog pinned at its source after the render moved with a site redeploy
+
+The `mcp-specification-changelog` entry pinned above pinned the **rendered page**
+`https://modelcontextprotocol.io/specification/latest/changelog` by the sha256 of its body. On
+2026-09-08 it went `changed` without the changelog changing, and that is the B-125 class of defect:
+the pin named the page rather than what the page carries. It is retired to `role: historical` as
+`mcp-specification-changelog/render-2026-09-08T0959Z` and replaced by a `git` entry over the two
+changelog **source files** in `modelcontextprotocol/modelcontextprotocol`.
+
+### What was measured, and in which order
+
+The render was characterised **before** anything was re-pointed, because "the page moved but the
+content did not" is a claim that has to be established from the source repository rather than assumed
+from the shape of the diff.
+
+| observation | at (UTC) | result |
+|---|---|---|
+| B-128 `npm run drift -- --record` | 2026-09-08T12:21:23Z | render `current` at `c1496005…f6f6` |
+| render `changed` first seen | by 2026-09-08T12:34Z | `968394b4…14fb`, 294168 bytes |
+| the Lead's three fetches | ~2026-09-08T12:47Z | `968394b4…14fb`, all three identical |
+| this session's `npm run drift` (P0) | 2026-09-08T14:25Z | `CHANGED`, `968394b4…14fb`, 294168 bytes |
+| this session's fetch, drift's own client | 2026-09-08T14:28:47Z | 200, 294168 bytes, `968394b4…14fb`; redirected to `/specification/2026-07-28/changelog` |
+| fresh full clone of the source repository | 2026-09-08T14:27:42Z → 14:27:51Z | `git rev-parse origin/main` → `aa8ce049f089f92618340190d4ece141f663310d` |
+
+The render therefore moved once, between 12:21:23Z and 12:34Z, and has been stable at the new digest
+for the two hours since — the same 294168 bytes either side.
+
+**The source did not move.** In the clone at `aa8ce049`:
+
+```
+$ git log -1 --format='%H %cI %s' origin/main -- docs/specification/2026-07-28/changelog.mdx
+db4bfcff3d60f5df01a21bdf6b78f7012cac4634 2026-07-28T20:04:27Z Date remaining draft links in the 2026-07-28 spec tree
+
+$ git log -1 --format='%H %cI %s' origin/main -- docs/specification/draft/changelog.mdx
+b488c16623e5202a3961e551886044577ae0f096 2026-07-28T15:56:05Z Add 2026-07-28 MCP specification
+```
+
+Both changelogs were last touched on **2026-07-28**, six weeks before the render moved. What moved is
+the site: the tip itself is `Merge pull request #3282 from DanielTemesgen/add-filesystems-wg`,
+committed **2026-09-08T13:24:34+01:00 = 12:24:34 UTC**, which falls inside the 12:21:23Z–12:34Z window
+in which the render changed. The page is a Mintlify render whose asset URLs carry build chunk hashes,
+so a redeploy rewrites the body while the content is untouched. This independently reproduces the
+Lead's characterisation, which was made from the GitHub API at ~12:55Z and named the same blob
+(`424b2653ee39…`, 11719 bytes).
+
+### What is pinned now
+
+| field | value |
+|---|---|
+| URL | `https://github.com/modelcontextprotocol/modelcontextprotocol` |
+| commit | `aa8ce049f089f92618340190d4ece141f663310d` |
+| subject | `Merge pull request #3282 from DanielTemesgen/add-filesystems-wg` |
+| commit date | 2026-09-08T13:24:34+01:00 = **2026-09-08 12:24:34 UTC** |
+| fetched at | 2026-09-08T14:27:51Z (`git rev-parse origin/main` in the fresh clone printed `aa8ce049f089f92618340190d4ece141f663310d`) |
+
+| fixture path | upstream blob at aa8ce049 | bytes | sha256 | `check` |
+|---|---|---|---|---|
+| `fixtures/mcp/aa8ce04/docs/specification/2026-07-28/changelog.mdx` | `424b2653ee392eaaede97ec07d35771ad6216c35` | 11719 | `b327e576f4c96b34e92f338f8ffefc35e13d0e953ab76bdb3aab342d104c8e53` | `fail` |
+| `fixtures/mcp/aa8ce04/docs/specification/draft/changelog.mdx` | `7f0db68c5f599bcc4102323cbf53aa7ea6b07e6a` | 86 | `09d94d1a4525a5296627636774c7145bd837f736aaa5ea3ed6e4c8474200f77e` | `note` |
+
+Taken with `git cat-file blob <commit>:<path>` from the fresh clone, never from a worktree:
+`core.autocrlf` is `true` on this machine and a checkout would rewrite the bytes these digests pin.
+`git hash-object` over each copied file and `git rev-parse :<path>` over each **staged** blob both
+reproduced the upstream blob id exactly. Each file carries **0 CR bytes**, so the
+`.gitattributes` ordering flaw recorded for the Insight entries above (`* text=auto eol=lf` sorts after
+`fixtures/** -text`, and `git check-attr text eol` reports `text: auto, eol: lf` here too) is harmless
+for the same measured reason: there is no CRLF for a filter to rewrite.
+
+**Why the two paths are checked differently.** `2026-07-28/changelog.mdx` is the changelog of the
+revision **in force**, so a change to it is a change to what the specification says changed and must
+red the run: `check: "fail"`, written out rather than left to the default because its sibling is
+`note`. `draft/changelog.mdx` is where the next revision's changes accumulate; at this tip it is an
+86-byte placeholder whose entire body below the front matter is *"Changes since the most recent
+release will accumulate here."* A move there is the **early warning that a new revision is coming**,
+and it is reported rather than failed because it moves with every accepted SEP — under `fail` it would
+red the daily check for ordinary upstream progress no finding here depends on. The `noted:` line still
+prints both blob ids, so a green row still says out loud what moved.
+
+**The redirect, recorded so a reader can see which dated page `latest` meant.** At the time of writing,
+`https://modelcontextprotocol.io/specification/latest/changelog` returns 200 after redirecting to
+`https://modelcontextprotocol.io/specification/2026-07-28/changelog` (observed this session at
+14:28:47Z with node `fetch`, `redirect: "follow"` — drift's own client). `/specification/changelog` is
+404. That redirect is the thing the retired entry was really watching, and it is written down here
+because the git pin no longer observes it.
+
+**Registry bookkeeping.** `fixtures/upstreams.json`: the http entry becomes
+`mcp-specification-changelog/render-2026-09-08T0959Z`, `role: historical`, with a `role_reason` naming
+what superseded it and a `last_observed_note` on why its frozen `last_observed` is kept rather than
+deleted — the pattern `asqav-sdk/22a970d` set on 8 September. The new `git` entry takes the plain
+`mcp-specification-changelog` id. As with the Insight and `a21d060` entries, **no `bytes` member and no
+`pinned_at` member were written into that file**: its own `what_this_file_is_not` says it carries no
+byte counts, and the instant lives here. The byte counts are in the table above, which is the row
+`test/upstreams-provenance.test.ts` reads.
+
+**What this pin does not do.**
+
+- **It does not detect a new revision *directory* appearing.** If the project cuts `2026-11-xx` and
+  adds `docs/specification/2026-11-xx/changelog.mdx`, both pinned paths can stay byte-identical and
+  this entry reports `current` — a new file at a path nothing names is invisible to a pin over named
+  paths. The `draft/changelog.mdx` note is a proxy for that event and not a substitute: it fires when
+  the draft accumulates a change, which is *correlated* with a coming revision, not the same event. The
+  general form is B-125's directory-tree question, which is not answered here.
+- **It does not observe the rendered page at all any more.** If the render breaks, 404s, or diverges
+  from the source, nothing in this repository would see it. The retired entry's digest is frozen
+  evidence of one body at one instant and is never fetched again.
+- **It does not establish that the redeploy is what changed the render.** The merge at 12:24:34Z sits
+  inside the 12:21:23Z–12:34Z window and the source files are six weeks old, which makes a
+  content-driven change impossible and a redeploy overwhelmingly likely — but the two captures were
+  not diffed byte-for-byte to locate the changed elements, as was done for the C2PA page above. The
+  mechanism here is inferred from the timing and the source, not located in the bytes.
+- **It does not say the tip is still the tip.** It is one observation of `origin/main` at 14:27:51Z.
+  The next scheduled run is what will say whether `main` moved after.

@@ -156,7 +156,7 @@
       "provenance_section": "Appended 2026-09-08 — the asqav-sdk tip `a21d060`, pinned after the re-pin at `22a970d` was overtaken the same day",
       "last_observed": {
         "tip": "a21d0608b0ff949c583138f2987eba3b6c15749f",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -589,7 +589,7 @@
       "provenance_section": "the main snapshot table, rows 44-86",
       "last_observed": {
         "tip": "ac33ad1dd660ea8473123ab8a3371934255926e9",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "moved_untouched"
       }
     },
@@ -680,7 +680,7 @@
       "provenance_section": "the main snapshot table rows 100-113, and the flag at line 231",
       "last_observed": {
         "tip": "a320f24a9400e2386f04483132bda4556f10c085",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "moved_untouched"
       }
     },
@@ -695,7 +695,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -712,7 +712,7 @@
       "role_note": "The URL is the digest, so this body cannot change without the URL changing. What the check can still turn red is disappearance: a 404 or a DNS failure is `unreachable`, and a content-addressed mapping that stops resolving is the thing worth knowing about here.",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -728,7 +728,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -747,7 +747,7 @@
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry.",
       "last_observed": {
         "tip": "a45b5d0a8e3b432c1e827310bc4caa7b67ad440133ee32900d8520615a0f9003",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -829,7 +829,7 @@
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-08.txt",
       "last_observed": {
         "tip": "draft-marques-asqav-compliance-receipts-08",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -859,7 +859,7 @@
       "pinned_file": "refs/draft-farley-acta-signed-receipts-03.txt",
       "last_observed": {
         "tip": "draft-farley-acta-signed-receipts-03",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -889,7 +889,7 @@
       "pinned_file": "refs/draft-krausz-verification-state-01.txt",
       "last_observed": {
         "tip": "draft-krausz-verification-state-01",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       },
       "provenance_section": "the main snapshot table (this draft was in the original table)",
@@ -907,7 +907,7 @@
       "provenance_section": "Appended 2026-09-08 — CPB `-03`, pinned after the first scheduled drift finding",
       "last_observed": {
         "tip": "draft-mih-sokolov-scitt-payload-binding-03",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -954,7 +954,7 @@
       "provenance_section": "Appended 2026-09-06 -- the delivery corpus, which had no provenance row at all",
       "last_observed": {
         "tip": null,
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -978,7 +978,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "dd927a26cfefc98c24b3ec38b3a8f204dad0c60d",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -995,7 +995,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -1012,7 +1012,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -1036,14 +1036,48 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "356c29635f1c44df7de02edb58699ca9f29bece6",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
     {
       "id": "mcp-specification-changelog",
-      "kind": "http",
+      "kind": "git",
       "role": "current",
+      "repo": "https://github.com/modelcontextprotocol/modelcontextprotocol",
+      "ref": "main",
+      "ref_source": "Resolved in this session from a fresh clone outside the repository: `git -c core.autocrlf=false clone --quiet https://github.com/modelcontextprotocol/modelcontextprotocol` started 2026-09-08T14:27:42Z and finished at 14:27:51Z, then `git rev-parse origin/main` printed aa8ce049f089f92618340190d4ece141f663310d. Subject `Merge pull request #3282 from DanielTemesgen/add-filesystems-wg`, committed 2026-09-08T13:24:34+01:00 (12:24:34Z). A FULL clone rather than --depth 1: this pin exists because the rendered page moved while the source did not, and `git log -1 -- <path>` cannot establish that in a shallow clone, where a path untouched at the tip has no history to report at all. tools/drift.ts's own clone is shallow, which is correct for it -- it compares blob ids at the tip and never asks for history.",
+      "pinned_commit": "aa8ce049f089f92618340190d4ece141f663310d",
+      "paths": [
+        {
+          "path": "docs/specification/2026-07-28/changelog.mdx",
+          "pinned_blob": "424b2653ee392eaaede97ec07d35771ad6216c35",
+          "sha256": "b327e576f4c96b34e92f338f8ffefc35e13d0e953ab76bdb3aab342d104c8e53",
+          "check": "fail",
+          "check_reason": "The changelog of the revision in force: 2026-07-28 is the current specification version (https://modelcontextprotocol.io redirects to /docs/2026-07-28/getting-started/intro, and /specification/latest/changelog redirects to /specification/2026-07-28/changelog). A change here is a change to what the specification says changed, so it must red the run. `fail` is the default and would be the meaning of an absent attribute; it is written out because the sibling path is `note`, and a reader deciding whether the draft path was marked deliberately should not have to infer this one. Last touched upstream 2026-07-28T20:04:27Z (db4bfcff3d60f5df01a21bdf6b78f7012cac4634, `Date remaining draft links in the 2026-07-28 spec tree`) -- it has not moved in six weeks, which is what makes a move here worth failing on."
+        },
+        {
+          "path": "docs/specification/draft/changelog.mdx",
+          "pinned_blob": "7f0db68c5f599bcc4102323cbf53aa7ea6b07e6a",
+          "sha256": "09d94d1a4525a5296627636774c7145bd837f736aaa5ea3ed6e4c8474200f77e",
+          "check": "note",
+          "check_reason": "The next revision's changes accumulate here. At this tip the file is an 86-byte placeholder whose entire body below the front matter is `Changes since the most recent release will accumulate here.`, last touched 2026-07-28T15:56:05Z (b488c16623e5202a3961e551886044577ae0f096, `Add 2026-07-28 MCP specification`) when the 2026-07-28 revision was cut. A move is the early warning that a new revision is coming. It is REPORTED rather than failed because it moves with every accepted SEP, and under `fail` it would red the daily check for ordinary upstream progress that no finding here depends on. Noted, not failed: the row's detail line still prints the old and new blob ids and the run carries them in noted_paths, so the warning is not lost by the row being green."
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/mcp/aa8ce04"
+      ],
+      "provenance_section": "Appended 2026-09-08 — the MCP changelog pinned at its source after the render moved with a site redeploy",
+      "last_observed": {
+        "tip": "aa8ce049f089f92618340190d4ece141f663310d",
+        "at": "2026-09-08T14:36:33.405Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "mcp-specification-changelog/render-2026-09-08T0959Z",
+      "kind": "http",
+      "role": "historical",
       "url": "https://modelcontextprotocol.io/specification/latest/changelog",
       "sha256": "c1496005be9752775e25f46d7459cc7d56e7e9e1f44b7842fd875793d17fe6f6",
       "retrieved": "2026-09-08T09:59:01Z",
@@ -1054,7 +1088,9 @@
         "tip": "c1496005be9752775e25f46d7459cc7d56e7e9e1f44b7842fd875793d17fe6f6",
         "at": "2026-09-08T12:21:23.142Z",
         "outcome": "current"
-      }
+      },
+      "role_reason": "Pinned as a RENDERED page rather than as the thing the page carries. It went `changed` on 2026-09-08 between 12:21:23Z -- the B-128 session's `--record`, which read it `current` at c1496005be9752775e25f46d7459cc7d56e7e9e1f44b7842fd875793d17fe6f6 -- and 12:34Z, and has read 968394b49be25880ac4a897bd76bcdf633f0dd0b06f66c0abfad9a98a33a14fb at the same 294168 bytes on every fetch since, including this session's at 2026-09-08T14:28:47Z. Nothing in the changelog changed: docs/specification/2026-07-28/changelog.mdx is blob 424b2653ee392eaaede97ec07d35771ad6216c35 at the tip and was last touched 2026-07-28T20:04:27Z. What moved was the site. modelcontextprotocol/modelcontextprotocol merged to `main` at 2026-09-08T12:24:34Z (aa8ce049, `Merge pull request #3282 from DanielTemesgen/add-filesystems-wg`), inside that window, and the page is a Mintlify render whose asset URLs carry build chunk hashes, so a redeploy rewrites the body without touching the content. A render is not a stable pin -- this is the B-125 class: pin what the page carries, not the page. Superseded in this repository by the git entry `mcp-specification-changelog`, which pins the two changelog source files directly. The purpose this entry was written for -- going `changed` when a new specification version is published -- is kept by that entry's docs/specification/draft/changelog.mdx path, which is `check: note`, and by the redirect recorded in provenance.",
+      "last_observed_note": "Kept as written, not deleted: it is a true record of the last check ever made of this entry, and tools/drift.ts never touches a historical entry again, so it is frozen rather than stale. It records `current` at 12:21:23Z, which is the last moment the render agreed with its pin; the `changed` that followed is the finding this entry was retired for, and it is recorded in role_reason and in fixtures/provenance.md rather than by overwriting this."
     },
     {
       "id": "draft-hillier-scitt-arp-03",
@@ -1070,7 +1106,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "draft-hillier-scitt-arp-03",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -1088,7 +1124,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "draft-sirkkavaara-vaara-receipt-10",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -1106,7 +1142,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "draft-vauban-x402-consolidated-00",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -1122,7 +1158,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "abc75d74bf90f97356b9c6348c4a62e85cb341c8af7f556e76010325ff5eeb7c",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -1146,7 +1182,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "a53ffae1268cf2a9dda0a7796a641618543fe657",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     },
@@ -1162,7 +1198,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b",
-        "at": "2026-09-08T12:21:23.142Z",
+        "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
       }
     }
