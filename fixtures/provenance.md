@@ -1194,3 +1194,78 @@ depending on which HTTP client asks, so its pin is valid **for node `fetch`** an
 A second checker — a different runtime, a proxy that strips or adds `Accept-Encoding`, a CI runner
 behind a transcoding CDN — could read `changed` off an unmoved page. The `git` and `ietf-draft` pins
 have no such property: a blob id and an archived `.txt` are the same bytes to every client that asks.
+
+## Appended 2026-09-08 — the asqav-sdk tip `a21d060`, pinned after the re-pin at `22a970d` was overtaken the same day
+
+The `22a970d` pin above was made at 09:14Z and was already nine commits behind `main` when it was
+made, by that section's own admission. The consequence was not theoretical: `npm run drift` read
+`moved_changed` for `asqav-sdk/22a970d` on every run afterwards, and would have read it every morning
+at 06:00Z, for `conformance/manifest.lock.json` — a path no finding in this repository depends on. A
+red the reader learns to ignore is worse than no check, so the tip is pinned here and the path that
+moves for the author's own reasons is marked `check: "note"` (see `fixtures/upstreams.json`
+`how_to_read.path_check`).
+
+Taken with `git cat-file blob <commit>:<path>` from a fresh clone of
+`https://github.com/jagmarques/asqav-sdk`, never from a worktree: `core.autocrlf` is `true` on this
+machine and a checkout would rewrite the bytes these digests pin. Each `sha256` below was verified
+equal to `git cat-file blob <id> | sha256sum` in the clone before the file was copied;
+`git hash-object` over each copied file and `git rev-parse :<path>` over each *staged* blob both
+reproduced the upstream blob id exactly. Each file carries **0 CR bytes**.
+
+| field | value |
+|---|---|
+| URL | `https://github.com/jagmarques/asqav-sdk` |
+| commit | `a21d0608b0ff949c583138f2987eba3b6c15749f` |
+| subject | `fix: declare supported Node release lines (#501)` |
+| commit date | 2026-09-08T08:00:00+02:00 = **2026-09-08 06:00:00 UTC** |
+| fetched at | 2026-09-08T11:07:31Z (`git rev-parse origin/main` in the fresh clone printed `a21d0608b0ff949c583138f2987eba3b6c15749f`) |
+
+| fixture path | upstream blob at a21d060 | bytes | sha256 | `check` |
+|---|---|---|---|---|
+| `fixtures/asqav/a21d060/conformance/vectors.json` | `9e0c093c83b3fff96a026093179adc09f8ffa96c` | 37923 | `7beebf7661c02b1e70045aa956ba49836c968edd9b24ecd4ebfb893cca7c6341` | `fail` |
+| `fixtures/asqav/a21d060/conformance/manifest.lock.json` | `4fe1d441ff6891ec68ed826dc7e52bc0e64ae429` | 13315 | `fcdd36d43def70756e2fc66e12bce265e839a8a82b1df98dceac71ce9a8e977a` | `note` |
+
+**This pin is the tip at the moment it was made**, and it is the same tip three independent
+observations of `origin/main` returned on 2026-09-08 — 09:14Z (the drift session's clone), 10:32Z (the
+Lead), 11:07:31Z (this clone). That is not a guarantee it is still the tip: it is a statement that
+`main` did not move across a two-hour window, and the next scheduled run is what will say whether it
+moved after.
+
+**The corpus did not move between `22a970d` and `a21d060`.** `conformance/vectors.json` is the *same
+blob* — `9e0c093c83b3fff96a026093179adc09f8ffa96c`, 37923 bytes, sha256 `7beebf76…6341` — at both
+commits. So `fixtures/asqav/a21d060/conformance/vectors.json` is byte-identical to
+`fixtures/asqav/22a970d/conformance/vectors.json`, the graded corpus is unchanged, and the re-walk
+protocol a changed corpus would have required was not needed and was not run. What `npm run walk` does
+report for the new corpus is the arithmetic of that identity: `asqav/a21d060` comes back **60
+registered, 59 match, 0 mismatch, 1 expected refusal**, the same row as `asqav/22a970d`, and the
+whole-run totals move by exactly that corpus and nothing else (`match` 351 → 410, `unregistered`
+486 → 524, `expected_refusal` 2 → 3, `mismatch` 20 → 20, `rule_idle` 2 → 2).
+
+**What changed in `manifest.lock.json`** between `2a61ab12` (22a970d) and `4fe1d441` (a21d060), from
+`docs: preserve corpus license notices (#500)`: `corpus_version` 6 → 7; the whole-corpus `digest`
+`1857cd56…8094` → `e5a3b808…1c7b`; the `files` array gains a `NOTICE` row
+(`c4cc5692…d2de`, 1931 bytes) and its `LICENSE` (10256 → 11358 bytes) and `README.md`
+(6815 → 7358 bytes) rows move. **The `vectors.json` row does not move**: it is still
+`{sha256 7beebf76…6341, bytes 37923}`, the same digest and byte count as the table above, reached by
+the author's tooling independently of ours. That is what makes marking this path `note` safe rather
+than convenient — the lock is *also* where a corpus change would surface, and a corpus change would
+move the `vectors.json` row and the `fail` path together, not the lock alone.
+
+**The `.gitattributes` flaw recorded against the earlier entries applies here too, and is again
+harmless.** `git check-attr text eol` reports `text: set, eol: lf` for both files, because
+`*.json text eol=lf` still sorts after `fixtures/** -text` and the last matching line wins. Both files
+are LF-only, and the copied and staged blob ids are the upstream ones above.
+
+**`asqav-sdk/22a970d` is now `role: historical`**, with its `role_reason` naming this pin. Its corpus
+directory, `FINDINGS-rerun-2026-09-08.md` and its `walker/scopes.json` entry all stay: it is the
+commit the first scheduled drift finding named, and the finding must keep measuring against the bytes
+it was written about.
+
+**What this pin does not do.** It fixes the bytes of one upstream commit on one day, and pinning the
+tip does not stop the tip moving — the next commit upstream puts this entry back to
+`moved_untouched` or `moved_changed`, which is the tool working. It says nothing about whether the
+vectors are *correct*, only about what they are. And `check: "note"` on the manifest is a deliberate
+narrowing of what the daily check can catch: a change confined to that file alone will now be printed
+and will not fail the run. That is safe only for as long as the file stays what it is here — the
+author's bookkeeping — and the sentence above about the `vectors.json` row is the reason to believe
+it, not a proof.

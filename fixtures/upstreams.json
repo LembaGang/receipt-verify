@@ -127,9 +127,43 @@
   },
   "upstreams": [
     {
-      "id": "asqav-sdk/22a970d",
+      "id": "asqav-sdk/a21d060",
       "kind": "git",
       "role": "current",
+      "repo": "https://github.com/jagmarques/asqav-sdk",
+      "ref": "main",
+      "ref_source": "Resolved in this session from a fresh clone outside the repository: `git -c core.autocrlf=false clone --quiet https://github.com/jagmarques/asqav-sdk` then `git rev-parse origin/main` printed `a21d0608b0ff949c583138f2987eba3b6c15749f` at 2026-09-08T11:07:31Z, the same tip the Lead recorded at 10:32Z and the same tip the 09:14Z clone of the drift session saw. Subject `fix: declare supported Node release lines (#501)`, committed 2026-09-08T08:00:00+02:00. This pin IS the tip: the 22a970d pin was overtaken the same day it was made, so the daily check read moved_changed every morning on a path no finding depends on.",
+      "pinned_commit": "a21d0608b0ff949c583138f2987eba3b6c15749f",
+      "paths": [
+        {
+          "path": "conformance/vectors.json",
+          "pinned_blob": "9e0c093c83b3fff96a026093179adc09f8ffa96c",
+          "sha256": "7beebf7661c02b1e70045aa956ba49836c968edd9b24ecd4ebfb893cca7c6341",
+          "check": "fail",
+          "check_reason": "This IS the graded corpus -- every vector walker/scopes.json expands a rule over lives in this file -- so a difference at the tip must red the run. `fail` is the default and would be the meaning of an absent attribute; it is written out here because the sibling path is `note`, and a reader deciding whether the manifest was marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "conformance/manifest.lock.json",
+          "pinned_blob": "4fe1d441ff6891ec68ed826dc7e52bc0e64ae429",
+          "sha256": "fcdd36d43def70756e2fc66e12bce265e839a8a82b1df98dceac71ce9a8e977a",
+          "check": "note",
+          "check_reason": "Pinned for PROVENANCE, not as graded data: it is the author's own lock over their corpus directory, and walker/scopes.json does not walk it (its rows are SHA-256 over raw file bytes of files this repository does not hold, not digests over JSON structures the walker can address by pointer). It moves whenever the author touches any file in that directory -- between 22a970d and this tip it moved for LICENSE, NOTICE and README.md alone (#500), with corpus_version 5 -> 7 -- so under `fail` it reds the daily check for a change no finding depends on. Noted, not failed. Its `vectors.json` row is still sha256 7beebf7661c02b1e70045aa956ba49836c968edd9b24ecd4ebfb893cca7c6341 at 37923 bytes, which is the corpus digest this file records, reached by the author's tooling independently -- so a corpus change would show HERE too, and would not be hidden by the note."
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/asqav/a21d060"
+      ],
+      "provenance_section": "Appended 2026-09-08 — the asqav-sdk tip `a21d060`, pinned after the re-pin at `22a970d` was overtaken the same day",
+      "last_observed": {
+        "tip": "a21d0608b0ff949c583138f2987eba3b6c15749f",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "asqav-sdk/22a970d",
+      "kind": "git",
+      "role": "historical",
       "repo": "https://github.com/jagmarques/asqav-sdk",
       "ref": "main",
       "ref_source": "Resolved in this session from a fresh clone: `git -c core.autocrlf=false clone --quiet https://github.com/jagmarques/asqav-sdk` then `git rev-parse origin/main` printed `a21d0608b0ff949c583138f2987eba3b6c15749f` at 2026-09-08T09:14Z. `main` had therefore already moved PAST 22a970d by two days and nine commits; 22a970d is pinned anyway because it is the commit the first scheduled drift finding named, and the pin follows the finding rather than the tip. `conformance/vectors.json` is byte-identical at a21d060 (blob 9e0c093c) and only `conformance/manifest.lock.json` differs there (blob 4fe1d441, corpus_version 7, LICENSE/NOTICE/README rows), so `npm run drift` reports this entry `moved_changed` on 1 of 2 paths until it is re-pinned again.",
@@ -154,7 +188,9 @@
         "tip": "a21d0608b0ff949c583138f2987eba3b6c15749f",
         "at": "2026-09-08T09:37:29.728Z",
         "outcome": "moved_changed"
-      }
+      },
+      "role_reason": "Superseded in this repository by asqav-sdk/a21d060 on 2026-09-08; the vectors blob is identical at both (9e0c093c83b3fff96a026093179adc09f8ffa96c), so the corpus this pin graded IS the tip's corpus, and only conformance/manifest.lock.json moved, with corpus_version 5 -> 7 and changed LICENSE / NOTICE / README.md rows; kept because FINDINGS-rerun-2026-09-08.md and walker/scopes.json cite it.",
+      "last_observed_note": "Kept as written, not deleted: it is a true record of the last check ever made of this entry, and tools/drift.ts never touches a historical entry again, so it is frozen rather than stale. The moved_changed it records is the outcome B-123 was raised about."
     },
     {
       "id": "asqav-sdk/3b88156",
@@ -553,7 +589,7 @@
       "provenance_section": "the main snapshot table, rows 44-86",
       "last_observed": {
         "tip": "ac33ad1dd660ea8473123ab8a3371934255926e9",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "moved_untouched"
       }
     },
@@ -644,7 +680,7 @@
       "provenance_section": "the main snapshot table rows 100-113, and the flag at line 231",
       "last_observed": {
         "tip": "a320f24a9400e2386f04483132bda4556f10c085",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "moved_untouched"
       }
     },
@@ -659,7 +695,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -676,7 +712,7 @@
       "role_note": "The URL is the digest, so this body cannot change without the URL changing. What the check can still turn red is disappearance: a 404 or a DNS failure is `unreachable`, and a content-addressed mapping that stops resolving is the thing worth knowing about here.",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -692,7 +728,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -708,9 +744,9 @@
       "provenance_section": "the five Insight registry pins",
       "role_note": "The newest of the five pins of this URL, and therefore the one a drift check is about. Moved here from the 2026-09-02T17:41Z pin on 2026-09-05, after the first `changed` outcome this tool has reported: the registry published a third key, `insight-oracle-safety-sample`.",
       "last_observed": {
-        "tip": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
-        "at": "2026-09-08T09:37:29.728Z",
-        "outcome": "current"
+        "tip": "a45b5d0a8e3b432c1e827310bc4caa7b67ad440133ee32900d8520615a0f9003",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "changed"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
@@ -773,7 +809,7 @@
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-08.txt",
       "last_observed": {
         "tip": "draft-marques-asqav-compliance-receipts-08",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -803,7 +839,7 @@
       "pinned_file": "refs/draft-farley-acta-signed-receipts-03.txt",
       "last_observed": {
         "tip": "draft-farley-acta-signed-receipts-03",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -833,7 +869,7 @@
       "pinned_file": "refs/draft-krausz-verification-state-01.txt",
       "last_observed": {
         "tip": "draft-krausz-verification-state-01",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "current"
       },
       "provenance_section": "the main snapshot table (this draft was in the original table)",
@@ -851,7 +887,7 @@
       "provenance_section": "Appended 2026-09-08 — CPB `-03`, pinned after the first scheduled drift finding",
       "last_observed": {
         "tip": "draft-mih-sokolov-scitt-payload-binding-03",
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "current"
       }
     },
@@ -898,7 +934,7 @@
       "provenance_section": "Appended 2026-09-06 -- the delivery corpus, which had no provenance row at all",
       "last_observed": {
         "tip": null,
-        "at": "2026-09-08T09:37:29.728Z",
+        "at": "2026-09-08T11:12:58.344Z",
         "outcome": "current"
       }
     },
@@ -919,7 +955,12 @@
       ],
       "identification": "Identified as the v2 specification by the file's own path and name: `specs/` carries exactly two numbered specification documents, `x402-specification-v1.md` and `x402-specification-v2.md`, beside `transports-v1/` and `transports-v2/` directories. No inference was needed and none was made.",
       "watch_only": "Nothing under fixtures/ or refs/ holds a copy. This entry watches a path in someone else’s repository by blob id; it does not pin bytes this repository can serve. The pinned blob id is what a moved tip is compared against.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "dd927a26cfefc98c24b3ec38b3a8f204dad0c60d",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "x402-core-dist-tags",
@@ -931,7 +972,12 @@
       "pinned_file": "refs/x402-core-dist-tags-2026-09-08.json",
       "body_note": "The whole body is {\"latest\":\"2.25.0\"}, 19 bytes. Both packages are at the same version, so both entries carry the same digest; that is a fact about the two packages, not a copy-paste.",
       "why_this_url_and_not_the_packument": "The dist-tags endpoint, NOT https://registry.npmjs.org/@x402/core. The packument changes on every publish and on metadata churn, and is megabytes; this document changes exactly when `latest` moves, which is the release signal worth a `changed` outcome. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "x402-fetch-dist-tags",
@@ -943,7 +989,12 @@
       "pinned_file": "refs/x402-fetch-dist-tags-2026-09-08.json",
       "body_note": "The whole body is {\"latest\":\"2.25.0\"}, 19 bytes. Both packages are at the same version, so both entries carry the same digest; that is a fact about the two packages, not a copy-paste.",
       "why_this_url_and_not_the_packument": "The dist-tags endpoint, NOT https://registry.npmjs.org/@x402/core. The packument changes on every publish and on metadata churn, and is megabytes; this document changes exactly when `latest` moves, which is the release signal worth a `changed` outcome. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "verifiable-intent-changelog",
@@ -962,7 +1013,12 @@
       ],
       "identification": "The repository does carry a file named CHANGELOG.md at its root (1874 bytes), so no substitute had to be found and named.",
       "watch_only": "Nothing under fixtures/ or refs/ holds a copy; this entry watches a path by blob id.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "356c29635f1c44df7de02edb58699ca9f29bece6",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "mcp-specification-changelog",
@@ -973,7 +1029,12 @@
       "retrieved": "2026-09-08T09:59:01Z",
       "url_source": "Resolved from https://modelcontextprotocol.io, which redirects to /docs/2026-07-28/getting-started/intro, naming 2026-07-28 as the current specification version. /specification/changelog is 404; /specification/latest/changelog is 200 and redirects to /specification/2026-07-28/changelog. The `latest` URL is pinned rather than the dated one because the dated URL can never change and would be a check that cannot fail, while `latest` goes `changed` exactly when a new specification version is published.",
       "no_pinned_file": "294168 bytes of rendered HTML. Not copied into refs/: the sha256 in this entry IS the check, and a quarter-megabyte of stale site markup is ballast rather than evidence. Measured with the SAME client tools/drift.ts uses -- node global fetch, redirect: \"follow\", body read as an arrayBuffer -- four times over 45 seconds, all four byte-identical. That instrument matters and is not a detail: the first attempt at this pin measured with python urllib and recorded a digest node fetch never reproduces, because the two negotiate content encoding differently and this host transcodes on negotiation. A digest in an http entry is only meaningful as the digest the checker computes.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "c1496005be9752775e25f46d7459cc7d56e7e9e1f44b7842fd875793d17fe6f6",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "draft-hillier-scitt-arp-03",
@@ -986,7 +1047,12 @@
       "retrieved": "2026-09-08T09:40:26Z",
       "pinned_file": "refs/draft-hillier-scitt-arp-03.txt",
       "rev_source": "The datatracker document API (https://datatracker.ietf.org/api/v1/doc/document/?name=draft-hillier-scitt-arp) reported rev \"03\", time 2026-08-14T04:24:24Z, title \"Attestation Reconciliation Protocol\".",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "draft-hillier-scitt-arp-03",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "draft-sirkkavaara-vaara-receipt-10",
@@ -999,7 +1065,12 @@
       "retrieved": "2026-09-08T09:40:26Z",
       "pinned_file": "refs/draft-sirkkavaara-vaara-receipt-10.txt",
       "rev_source": "The datatracker document API reported rev \"10\", time 2026-09-04T13:20:56Z, title \"The Vaara Receipt: A Recomputable Receipt Format for Decisions About A...\".",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "draft-sirkkavaara-vaara-receipt-10",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "draft-vauban-x402-consolidated-00",
@@ -1012,7 +1083,12 @@
       "retrieved": "2026-09-08T09:40:26Z",
       "pinned_file": "refs/draft-vauban-x402-consolidated-00.txt",
       "rev_source": "The strategy names -00 and the datatracker document API confirms it: rev \"00\", time 2026-09-03T17:14:32Z, title \"x402 Cryptographic Receipts: Format, Post-Quantum Discipline, and Star...\". Confirmed rather than assumed.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "draft-vauban-x402-consolidated-00",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "rfc9964-info",
@@ -1023,7 +1099,12 @@
       "retrieved": "2026-09-08T09:59:01Z",
       "redirect_note": "The URL as written answers HTTP 302 with Location: /info/rfc9964/; the trailing-slash form answers 200 text/html. tools/drift.ts fetches with redirect: \"follow\", so the digest above is of the 200 body at the redirect target, and the URL is recorded as the strategy names it rather than silently rewritten.",
       "no_pinned_file": "731071 bytes of rendered HTML, the largest of the three surviving page pins; the sha256 here is the check. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical. This host and docs.dapr.io served the same bytes to python urllib as to node fetch; modelcontextprotocol.io and c2pa.org did not, which is why every digest here is now recorded from the checking client only. c2pa.org was subsequently dropped from the registry altogether: its body carries a per-render CSP nonce and cannot be pinned by digest at all.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "abc75d74bf90f97356b9c6348c4a62e85cb341c8af7f556e76010325ff5eeb7c",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "obsigna-receipt-spec",
@@ -1042,7 +1123,12 @@
       ],
       "identification": "agent-receipts/obsigna is the repository whose description reads \"Agent Receipts — cryptographically signed audit trails for AI agent actions\"; the sibling agent-receipts/obsigna-site describes Obsigna as \"the reference implementation of the Agent Receipts\" specification, which is what ties the two names the strategy uses to one repository. spec/ carries versioned directories v0.4.0 and v0.5.0; v0.5.0/spec.md (58204 bytes) is the highest, and is the pinned path.",
       "watch_only": "Nothing under fixtures/ or refs/ holds a copy; this entry watches a path by blob id.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "a53ffae1268cf2a9dda0a7796a641618543fe657",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     },
     {
       "id": "dapr-workflow-history-signing",
@@ -1053,7 +1139,12 @@
       "retrieved": "2026-09-08T09:59:01Z",
       "url_source": "Resolved from https://docs.dapr.io by reading the workflow building-block index (/developing-applications/building-blocks/workflow/), which lists workflow-history-signing/ beside workflow-history-propagation/ and workflow-history-retention-policy/. The prose that names the feature is on workflow-features-concepts/: \"When this is combined with workflow history signing, you can further cryptographically confirm or attest this.\" /operations/security/workflow-history-signing/ is 404; the building-block path is the page.",
       "no_pinned_file": "72326 bytes of rendered HTML; the sha256 here is the check. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical.",
-      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
+      "last_observed": {
+        "tip": "7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b",
+        "at": "2026-09-08T11:12:58.344Z",
+        "outcome": "current"
+      }
     }
   ]
 }
