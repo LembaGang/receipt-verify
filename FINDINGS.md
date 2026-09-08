@@ -1311,6 +1311,188 @@ signer, not that the signed fields say so. They still do not — the 44 signed f
 still read `environment: "production"`.
 
 
+**Appended 2026-09-08 — the `preTradeUidsHash` rule changed under an unchanged `schemaVersion`, and the issuer's own 2 September receipt already used the new one**
+
+Source of every value in this block: `refs/insight-oracle-keys-2026-09-05T1829Z.json` (sha256
+`7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330`, 17,958 B) and
+`refs/insight-oracle-keys-2026-09-08T1218Z.json` (sha256
+`a45b5d0a8e3b432c1e827310bc4caa7b67ad440133ee32900d8520615a0f9003`, 18,003 B), both pinned byte-exact
+from the same URL, plus `fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json`.
+Retrieval rows are in `fixtures/provenance.md`, section "Appended 2026-09-08 — the Insight registry
+re-pinned after the `preTradeUidsHash` prose changed under schemaVersion 4".
+
+### F10. The change: one leaf out of 701, and no version bump
+
+A structural comparison of the two documents flattened to leaf paths gives **701 leaves in each, no
+path present in one and absent in the other, and exactly one differing value**:
+
+`schemas.ExecutionReceipt.commitments.preTradeUidsHash`
+
+| | |
+|---|---|
+| before (5 Sep) | `keccak256(concat(uids in route order, 32 raw bytes each, no separator)); empty set -> keccak256("")` |
+| after (8 Sep) | `keccak256(concat(non-zero uids in route order, 32 raw bytes each, no separator)); zero bytes32 is omitted; empty after omission -> keccak256("")` |
+
+`schemas.ExecutionReceipt.schemaVersion` is **4 in both**. The two documents also agree on all 13
+top-level members, on `public_keys`, on `revoked_keys` and on all eleven published schemas but for
+that one string.
+
+This is the finding. A verifier that pinned the 5 September prose, and that re-reads a rule only when
+`schemaVersion` moves, would never look again — and would compute the wrong commitment for any
+receipt with a zero uid. The rule is semantic: it decides which bytes are hashed.
+
+**The window, and the two independent sources for it.** The changed body was published between
+**2026-09-08T09:37:29.728Z** — the `last_observed` the scheduled drift `--record` wrote for
+`insight-oracle-keys` in `fixtures/upstreams.json` at commit `7fa2f08`, reading `outcome: current`
+against `7cc00b95…7330` — and **2026-09-08T10:59Z**, the B-123 session's P0 `npm run drift`, which
+read `a45b5d0a…f9003` at 18,003 B twice byte-identical. Those are two different sessions using the
+same tool at two instants, and they are the whole basis for the window. The Lead's fetch at ≈11:24Z
+and this session's four fetches at 12:11–12:18Z read the same digest a third, fourth and fifth time.
+Eighty-two minutes; the response carries no `ETag` and no `Last-Modified`, so nothing narrows it
+further, and `Cache-Control: max-age=300` in front of a CDN widens the earlier bound to ≈09:32:29Z as
+a statement about the origin.
+
+### F11. The code preceded the prose: Insight's own 2 September sample
+
+`fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json` is a production-key-signed
+`ExecutionReceipt` Insight served on 2026-09-02. It carries
+
+```
+preTradeUid             0x0000000000000000000000000000000000000000000000000000000000000001
+destinationPreTradeUid  0x0000000000000000000000000000000000000000000000000000000000000000   (the zero bytes32)
+preTradeUidsHash        0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6   (signed)
+```
+
+Recomputed through this repository's own keccak (`@noble/hashes`, the import `src/adapters/insight.ts`
+uses), from the fixture's own bytes:
+
+| construction | digest | equals the signed value |
+|---|---|---|
+| keccak256(src alone) — the 8 Sep rule | `0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6` | **yes** |
+| keccak256(src ‖ zero32) — the 5 Sep rule | `0xada5013122d395ba3c54772283fb069b10426056ef8ca54750cb9bb552a59e7d` | no |
+| keccak256(zero32 ‖ src) | `0xa6eef7e35abe7026729641147f7915573c7e97b47efa546f5f6e3230263bcb49` | no |
+
+So a receipt Insight signed on **2 September** already hashed under the rule the document adopted on
+**8 September**. The change is documentation catching up with code, not a change of behaviour — and a
+verifier that had implemented the 5 September prose exactly would have rejected a valid single-gate
+receipt for six days. That is the direction of the error worth stating: the *prose* was wrong, and it
+was wrong in the fail-closed direction, which is why no receipt was wrongly accepted on its account.
+
+**What this does not establish.** It says what *that* receipt did. It does not say whether Insight's
+implementation ever computed the concatenate-everything rule the 5 September prose described, and it
+does not say whether receipts issued before 2 September exist under either rule — no artefact in this
+repository predates 2 September, and the registry publishes no history.
+
+### F12. What this adapter did before, and does now
+
+**Before.** `uidsHashCandidates` (`src/adapters/insight.ts`) computed four two-uid constructions —
+`keccak(src || dst), packed`, `keccak(dst || src), packed`, `keccak(sorted, packed)` and
+`keccak(abi.encode(bytes32[2]))` — and **none of them omitted a zero uid**. Handed the 2 September
+sample's two uids the four produce `0xada5013122d395ba3c54772283fb069b10426056ef8ca54750cb9bb552a59e7d`,
+`0xa6eef7e35abe7026729641147f7915573c7e97b47efa546f5f6e3230263bcb49` (twice — `keccak(sorted, packed)`
+coincides with `keccak(dst || src), packed` when the destination sorts first) and
+`0x61a10db6caa3bf0b2eca21afe0aa8535f3fac8a60110e923af156fb70a2d3eb8`; **none** is the signed
+`0xb10e2d52…0cf6`. Reached under the package path, that is a hard `INVALID /
+content_commitment_mismatch`, which is exactly what a verifier implementing the 5 September prose
+would return for this receipt.
+
+**The RED run, quoted.** With the rule's tests written and the construction not yet added, five tests
+failed, and the failures are about the rule and not about a missing symbol — `uidsHashCandidates` was
+exported first, as a separate step, so the red could not be satisfied by the export alone:
+
+```
+× insight v3 — independent agreement with the Lead's recheck > preTradeUidsHash is named as the
+    registry's documented rule, and its value is unchanged
+    → expected 'keccak(src || dst), packed — reproduc…' to be 'keccak(non-zero uids in route order, …'
+× insight — preTradeUidsHash under the registry rule of 2026-09-08 > a zero destination uid is
+    omitted: the documented construction reproduces the signed hash
+    → expected undefined to be '0xb10e2d527612073b26eecdfd717e6a320cf…'
+× … > the documented construction is the FIRST candidate, so it is the one named when several coincide
+    → expected 'keccak(src || dst), packed' to be 'keccak(non-zero uids in route order, …'
+× … > a zero SOURCE uid is omitted the same way: keccak of the destination alone
+    → expected undefined to be '0xb10e2d527612073b26eecdfd717e6a320cf…'
+× … > both uids zero: keccak256 of the empty string
+    → expected undefined to be '0xc5d2460186f7233c927e7db2dcc703c0e50…'
+Tests  5 failed | 151 passed (156)
+```
+
+**The verdict on the sample itself did not move, and could not have.** Handed to the adapter, the
+2 September attestation returns **VALID / verified** both before and after this change, because it is
+a BARE attestation: `asPackage` requires `receipt`, `preTrade` and one of `onchain` / `publishedKeys`,
+and this document has none of them, so the run never enters the package branch where the
+`preTradeUidsHash` check lives. Before and after, it carries **no `pre_trade_uids_hash` annotation at
+all**. That is asserted as a test rather than described, and it is the honest "before": the adapter
+did not grade this commitment wrongly — it did not grade it.
+
+**After.** `uidsHashCandidates` gains, as its **first** entry,
+`keccak(non-zero uids in route order, packed) [registry 2026-09-08]` — the uids that are not the zero
+`bytes32`, in route order, packed; a zero destination gives keccak of the source alone, a zero source
+with a non-zero destination gives keccak of the destination alone, both zero gives
+keccak256("") = `0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470`. The four older
+constructions stay as diagnostics and are reported only in
+`pre_trade_uids_hash_other_constructions`. The date is in the construction's name deliberately: with
+two prose rules six days apart under one `schemaVersion`, the name is the only thing in a verdict that
+says which of them a run was graded against.
+
+Because the documented rule and `keccak(src || dst), packed` coincide whenever both uids are non-zero,
+the annotation now marks a coinciding diagnostic rather than listing it as a second, unexplained
+construction that happens to equal the signed value. On the v4 package:
+
+```
+pre_trade_uids_hash = keccak(non-zero uids in route order, packed) [registry 2026-09-08] — reproduced
+                      from preTradeUid and destinationPreTradeUid
+other_constructions = keccak(src || dst), packed = 0x9ca1002feb0c43e8fcc11392e5302e1e65edbd445a7581979a5ebfda2b29ac29 [same digest as the named construction];
+                      keccak(dst || src), packed = 0x57da5e29fa0181df22f85cdfef2d0dafecbdc5e87632c95a3cfd218c5786e82d;
+                      keccak(sorted, packed) = 0x57da5e29fa0181df22f85cdfef2d0dafecbdc5e87632c95a3cfd218c5786e82d;
+                      keccak(abi.encode(bytes32[2])) = 0x90f78f4984942a9e3bfbe0f167296df84f7e9b4cb2d74a72fa391ada93ba951e
+```
+
+### F13. The fixture census: every zero `bytes32` under `fixtures/insight/`
+
+`grep -rl` for the 64-zero hex string under `fixtures/insight/` returns **four** files. In **all four**
+the zero value is in `destinationPreTradeUid`; **none** carries it in `preTradeUid`, so the
+zero-source and both-zero branches of the documented rule have no fixture and are covered by unit
+tests alone. All four carry the same signed `preTradeUidsHash` `0xb10e2d52…0cf6` over the same
+`preTradeUid` `0x…0001` — they are the same synthetic sample receipt served at four instants, not four
+independent receipts.
+
+| file | zero uid field | matching construction after this change | graded as the whole file |
+|---|---|---|---|
+| `execution-sample-2026-09-02T1546Z.json` | `destinationPreTradeUid` | documented rule (8 Sep) | UNVERIFIABLE / `malformed_receipt` |
+| `execution-sample-2026-09-02T1741Z.json` | `destinationPreTradeUid` | documented rule (8 Sep) | UNVERIFIABLE / `malformed_receipt` |
+| `execution-sample-2026-09-05T1830Z.json` | `destinationPreTradeUid` | documented rule (8 Sep) | UNVERIFIABLE / `malformed_receipt` |
+| `execution-sample-attestation-2026-09-02T1546Z.json` | `destinationPreTradeUid` | documented rule (8 Sep) | VALID / `verified` |
+
+The three `UNVERIFIABLE / malformed_receipt` rows are the **wrapper** documents as served by the
+sample endpoint; the adapter is handed a `{data: {attestation, note, isSample}}` envelope it does not
+claim, which is the same measured fact F2's H8 control records. The fourth row is `data.attestation`
+extracted from the first, which is what the adapter grades. In all four, the signed hash reproduces
+under the named rule and under none of the four diagnostics.
+
+The two package fixtures that reach the `preTradeUidsHash` check
+(`execution-receipt-bytes-2026-09-02-repaired.headless.json` and
+`execution-receipt-bytes-2026-09-02-v4.json`) carry two non-zero uids, so their signed digests are
+**unchanged** — `0x2b0a3d06…6dbb` and `0x9ca1002f…ac29` — and only the construction's *name* moved.
+Both are asserted as digests and not only as names, so the rename cannot hide a value change.
+
+### F14. What F10–F13 do not establish
+
+**That Insight's implementation ever matched its 5 September prose.** F11 shows one receipt of theirs,
+from 2 September, hashed under the newer rule. It does not show what their code did before that date,
+and it cannot: no artefact here predates 2 September and the registry publishes no history.
+
+**That any receipt was ever issued under the superseded prose.** Nothing observed here distinguishes
+"the prose was always wrong" from "the prose was right and the code changed on or before 2 September".
+Both are consistent with everything in this block.
+
+**That this adapter checks `preTradeUidsHash` on the artefacts Insight actually serves.** It does not.
+The check runs only on the package path, and the document Insight's own execution sample endpoint
+returns is not a package. The rule is now correct where it runs; where it does not run, this change
+did not make it run. That gap is stated in the report for this work and is not closed here.
+
+**When, inside the eighty-two minutes, the change was published.** No response header dates the body,
+and both observations that bound the window are ours.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`
