@@ -4,11 +4,21 @@ name: drift
 # refs/ is a dated snapshot; fixtures/upstreams.json records which upstream each
 # one came from, and `npm run drift` asks whether that upstream has moved since.
 #
-# Weekly rather than on push, because the question is about someone ELSE's
-# repository and nothing in a push to this one can change the answer. A red here
-# does not mean this repository is broken: it means a finding that cites a pin
-# may now be describing a superseded upstream, which is the thing that has to be
-# loud rather than discovered by a run that happened to be scheduled.
+# Daily, and on a schedule rather than on push, because the question is about
+# someone ELSE's repository and nothing in a push to this one can change the
+# answer. A red here does not mean this repository is broken: it means a finding
+# that cites a pin may now be describing a superseded upstream, which is the
+# thing that has to be loud rather than discovered by a run that happened to be
+# scheduled.
+#
+# Daily rather than weekly since 2026-09-08. The first scheduled run under the
+# weekly cron -- Monday 2026-09-07 06:00Z -- went red on both of the two things
+# it could go red on: the asqav-sdk corpus had moved with both pinned paths
+# changed, and CPB -02 had been superseded by -03 published on 5 September. The
+# -03 revision was therefore two days old before anything here noticed, and the
+# asqav tip had moved a further nine commits by the time the finding was worked.
+# A window in which every finding citing a pin may already be describing a
+# superseded upstream should be a day wide, not a week.
 #
 # It reads. It does not commit, tag or push, and it never runs with --record:
 # recording an observation into fixtures/upstreams.json is a change to make
@@ -16,7 +26,7 @@ name: drift
 
 on:
   schedule:
-    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+    - cron: "0 6 * * *" # daily, 06:00 UTC
   workflow_dispatch:
 
 permissions:

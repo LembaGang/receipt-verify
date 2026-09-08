@@ -884,6 +884,159 @@
         "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       }
+    },
+    {
+      "id": "x402-specification-v2",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/coinbase/x402",
+      "ref": "main",
+      "ref_source": "`git ls-remote https://github.com/coinbase/x402 main` printed dd927a26cfefc98c24b3ec38b3a8f204dad0c60d at 2026-09-08T09:39Z; the GitHub commits API returned the same sha for the same ref, which is the two-source agreement this pin rests on.",
+      "pinned_commit": "dd927a26cfefc98c24b3ec38b3a8f204dad0c60d",
+      "paths": [
+        {
+          "path": "specs/x402-specification-v2.md",
+          "pinned_blob": "b7eaea66f2743eac7ce2d0e1886f29e950e06988",
+          "sha256": "aa6dc5e8ccc7758689945fc7502674f51cd0f21f09ec886aa1dbc4cd86bc81b6"
+        }
+      ],
+      "identification": "Identified as the v2 specification by the file's own path and name: `specs/` carries exactly two numbered specification documents, `x402-specification-v1.md` and `x402-specification-v2.md`, beside `transports-v1/` and `transports-v2/` directories. No inference was needed and none was made.",
+      "watch_only": "Nothing under fixtures/ or refs/ holds a copy. This entry watches a path in someone else’s repository by blob id; it does not pin bytes this repository can serve. The pinned blob id is what a moved tip is compared against.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "x402-core-dist-tags",
+      "kind": "http",
+      "role": "current",
+      "url": "https://registry.npmjs.org/-/package/@x402%2fcore/dist-tags",
+      "sha256": "3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60",
+      "retrieved": "2026-09-08T09:46:52Z",
+      "pinned_file": "refs/x402-core-dist-tags-2026-09-08.json",
+      "body_note": "The whole body is {\"latest\":\"2.25.0\"}, 19 bytes. Both packages are at the same version, so both entries carry the same digest; that is a fact about the two packages, not a copy-paste.",
+      "why_this_url_and_not_the_packument": "The dist-tags endpoint, NOT https://registry.npmjs.org/@x402/core. The packument changes on every publish and on metadata churn, and is megabytes; this document changes exactly when `latest` moves, which is the release signal worth a `changed` outcome. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "x402-fetch-dist-tags",
+      "kind": "http",
+      "role": "current",
+      "url": "https://registry.npmjs.org/-/package/@x402%2ffetch/dist-tags",
+      "sha256": "3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60",
+      "retrieved": "2026-09-08T09:46:52Z",
+      "pinned_file": "refs/x402-fetch-dist-tags-2026-09-08.json",
+      "body_note": "The whole body is {\"latest\":\"2.25.0\"}, 19 bytes. Both packages are at the same version, so both entries carry the same digest; that is a fact about the two packages, not a copy-paste.",
+      "why_this_url_and_not_the_packument": "The dist-tags endpoint, NOT https://registry.npmjs.org/@x402/core. The packument changes on every publish and on metadata churn, and is megabytes; this document changes exactly when `latest` moves, which is the release signal worth a `changed` outcome. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "verifiable-intent-changelog",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/agent-intent/verifiable-intent",
+      "ref": "main",
+      "ref_source": "`git ls-remote https://github.com/agent-intent/verifiable-intent main` printed 356c29635f1c44df7de02edb58699ca9f29bece6 at 2026-09-08T09:39Z; the GitHub commits API returned the same sha.",
+      "pinned_commit": "356c29635f1c44df7de02edb58699ca9f29bece6",
+      "paths": [
+        {
+          "path": "CHANGELOG.md",
+          "pinned_blob": "5305c0e9297442629b3b506dd723e5e8ed3de974",
+          "sha256": "005676981b6858f0d1613e85b6136e32cb6da707070067d89538db0d98f34983"
+        }
+      ],
+      "identification": "The repository does carry a file named CHANGELOG.md at its root (1874 bytes), so no substitute had to be found and named.",
+      "watch_only": "Nothing under fixtures/ or refs/ holds a copy; this entry watches a path by blob id.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "mcp-specification-changelog",
+      "kind": "http",
+      "role": "current",
+      "url": "https://modelcontextprotocol.io/specification/latest/changelog",
+      "sha256": "c1496005be9752775e25f46d7459cc7d56e7e9e1f44b7842fd875793d17fe6f6",
+      "retrieved": "2026-09-08T09:59:01Z",
+      "url_source": "Resolved from https://modelcontextprotocol.io, which redirects to /docs/2026-07-28/getting-started/intro, naming 2026-07-28 as the current specification version. /specification/changelog is 404; /specification/latest/changelog is 200 and redirects to /specification/2026-07-28/changelog. The `latest` URL is pinned rather than the dated one because the dated URL can never change and would be a check that cannot fail, while `latest` goes `changed` exactly when a new specification version is published.",
+      "no_pinned_file": "294168 bytes of rendered HTML. Not copied into refs/: the sha256 in this entry IS the check, and a quarter-megabyte of stale site markup is ballast rather than evidence. Measured with the SAME client tools/drift.ts uses -- node global fetch, redirect: \"follow\", body read as an arrayBuffer -- four times over 45 seconds, all four byte-identical. That instrument matters and is not a detail: the first attempt at this pin measured with python urllib and recorded a digest node fetch never reproduces, because the two negotiate content encoding differently and this host transcodes on negotiation. A digest in an http entry is only meaningful as the digest the checker computes.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "draft-hillier-scitt-arp-03",
+      "kind": "ietf-draft",
+      "role": "current",
+      "name": "draft-hillier-scitt-arp",
+      "pinned_rev": "03",
+      "url": "https://www.ietf.org/archive/id/draft-hillier-scitt-arp-03.txt",
+      "sha256": "fe7ba656ef07842c365ce93938610cd874668c29f0fa06031d37d0e4e72b395d",
+      "retrieved": "2026-09-08T09:40:26Z",
+      "pinned_file": "refs/draft-hillier-scitt-arp-03.txt",
+      "rev_source": "The datatracker document API (https://datatracker.ietf.org/api/v1/doc/document/?name=draft-hillier-scitt-arp) reported rev \"03\", time 2026-08-14T04:24:24Z, title \"Attestation Reconciliation Protocol\".",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "draft-sirkkavaara-vaara-receipt-10",
+      "kind": "ietf-draft",
+      "role": "current",
+      "name": "draft-sirkkavaara-vaara-receipt",
+      "pinned_rev": "10",
+      "url": "https://www.ietf.org/archive/id/draft-sirkkavaara-vaara-receipt-10.txt",
+      "sha256": "5c8090f6244a2cb8c618f8c5a74ceaf0f1c4a7b49cb44a5cec19fedb69ffe0b1",
+      "retrieved": "2026-09-08T09:40:26Z",
+      "pinned_file": "refs/draft-sirkkavaara-vaara-receipt-10.txt",
+      "rev_source": "The datatracker document API reported rev \"10\", time 2026-09-04T13:20:56Z, title \"The Vaara Receipt: A Recomputable Receipt Format for Decisions About A...\".",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "draft-vauban-x402-consolidated-00",
+      "kind": "ietf-draft",
+      "role": "current",
+      "name": "draft-vauban-x402-consolidated",
+      "pinned_rev": "00",
+      "url": "https://www.ietf.org/archive/id/draft-vauban-x402-consolidated-00.txt",
+      "sha256": "8e695f312ac66b2b12ad73976367f69c3ad3e7033c27c7298b91b4100a9d19e1",
+      "retrieved": "2026-09-08T09:40:26Z",
+      "pinned_file": "refs/draft-vauban-x402-consolidated-00.txt",
+      "rev_source": "The strategy names -00 and the datatracker document API confirms it: rev \"00\", time 2026-09-03T17:14:32Z, title \"x402 Cryptographic Receipts: Format, Post-Quantum Discipline, and Star...\". Confirmed rather than assumed.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "rfc9964-info",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.rfc-editor.org/info/rfc9964",
+      "sha256": "abc75d74bf90f97356b9c6348c4a62e85cb341c8af7f556e76010325ff5eeb7c",
+      "retrieved": "2026-09-08T09:59:01Z",
+      "redirect_note": "The URL as written answers HTTP 302 with Location: /info/rfc9964/; the trailing-slash form answers 200 text/html. tools/drift.ts fetches with redirect: \"follow\", so the digest above is of the 200 body at the redirect target, and the URL is recorded as the strategy names it rather than silently rewritten.",
+      "no_pinned_file": "731071 bytes of rendered HTML, the largest of the three surviving page pins; the sha256 here is the check. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical. This host and docs.dapr.io served the same bytes to python urllib as to node fetch; modelcontextprotocol.io and c2pa.org did not, which is why every digest here is now recorded from the checking client only. c2pa.org was subsequently dropped from the registry altogether: its body carries a per-render CSP nonce and cannot be pinned by digest at all.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "obsigna-receipt-spec",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/agent-receipts/obsigna",
+      "ref": "main",
+      "ref_source": "`git ls-remote https://github.com/agent-receipts/obsigna main` printed a53ffae1268cf2a9dda0a7796a641618543fe657 at 2026-09-08T09:45Z; the GitHub commits API returned the same sha.",
+      "pinned_commit": "a53ffae1268cf2a9dda0a7796a641618543fe657",
+      "paths": [
+        {
+          "path": "spec/v0.5.0/spec.md",
+          "pinned_blob": "70c763fe491c5259107c8d2ffea4b6da595e353c",
+          "sha256": "0535555d74ac5c7588b909ec6503332fed46449a3fb5210a64c4e5571d69fe79"
+        }
+      ],
+      "identification": "agent-receipts/obsigna is the repository whose description reads \"Agent Receipts — cryptographically signed audit trails for AI agent actions\"; the sibling agent-receipts/obsigna-site describes Obsigna as \"the reference implementation of the Agent Receipts\" specification, which is what ties the two names the strategy uses to one repository. spec/ carries versioned directories v0.4.0 and v0.5.0; v0.5.0/spec.md (58204 bytes) is the highest, and is the pinned path.",
+      "watch_only": "Nothing under fixtures/ or refs/ holds a copy; this entry watches a path by blob id.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
+    },
+    {
+      "id": "dapr-workflow-history-signing",
+      "kind": "http",
+      "role": "current",
+      "url": "https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-history-signing/",
+      "sha256": "7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b",
+      "retrieved": "2026-09-08T09:59:01Z",
+      "url_source": "Resolved from https://docs.dapr.io by reading the workflow building-block index (/developing-applications/building-blocks/workflow/), which lists workflow-history-signing/ beside workflow-history-propagation/ and workflow-history-retention-policy/. The prose that names the feature is on workflow-features-concepts/: \"When this is combined with workflow history signing, you can further cryptographically confirm or attest this.\" /operations/security/workflow-history-signing/ is 404; the building-block path is the page.",
+      "no_pinned_file": "72326 bytes of rendered HTML; the sha256 here is the check. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical.",
+      "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift"
     }
   ]
 }

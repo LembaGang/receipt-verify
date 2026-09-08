@@ -1006,3 +1006,179 @@ report it `superseded` the moment `-04` appears. It says nothing about whether t
 `cpb/algorithm.ts` (one of them a difference in what the code returns), none in
 `cpb/canonical-digest.ts`, and fixes none of them. It also records that `-03` answers three questions
 `cpb/AMBIGUITY_LOG.md` had left open against `-02` (A19, A20, A21).
+
+## Appended 2026-09-08 — twelve upstreams for the daily drift
+
+The drift job moves from weekly to daily in the same session, and the registry it reads widens from the
+corpora this repository already held to the twelve upstreams the strategy names. Ten of the twelve
+are pinned below as eleven entries in `fixtures/upstreams.json` — item 2 is two npm endpoints and item
+12 is two artefacts, and one of the twelve was already present. **Two are not pinned, and the reason
+for each is recorded here rather than left as a gap.**
+
+Every URL below was resolved in this session and every digest computed here from the response body or
+the object store. No identifier is carried over from the strategy document; where the strategy named a
+thing rather than a URL, the sentence that justified the choice is in the entry's own
+`identification`, `url_source` or `rev_source` member.
+
+### The `http` pins were measured for determinism before being pinned — with the checker's own client
+
+A pin whose body changes on every fetch reports `changed` on every run forever, and a check that always
+fails says no more than one that cannot fail — the standard this file already applies to the
+`insight-endpoint-samples` row. So every candidate was fetched repeatedly and the bodies compared.
+
+**The instrument turned out to be part of the measurement, and getting it wrong cost a round.** The
+first pass fetched with Python `urllib`; six candidates came back byte-identical across two fetches
+twenty seconds apart, and their digests were written into `fixtures/upstreams.json`. The very next
+`npm run drift` reported **two of them `changed` within minutes** —
+`mcp-specification-changelog` and `c2pa-conformance-trust-list`. The pages had not moved. `tools/drift.ts`
+fetches with node's global `fetch` and `redirect: "follow"`, which negotiates content encoding
+differently from `urllib`, and both of those hosts transcode on negotiation; `www.rfc-editor.org` and
+`docs.dapr.io` happen not to, which is why four of the six digests were right by luck rather than by
+method. A `sha256` in an `http` entry is not a property of the URL. **It is the digest the checker
+computes, and it has to be measured with the checker's client.**
+
+Every digest below was therefore re-measured with node `fetch` — four rounds, fifteen seconds apart,
+forty-five seconds end to end — and every one was byte-identical across all four.
+
+**That was still not enough for one of them, and the next `drift` run said so.** With the corrected
+digests in place, `c2pa-conformance-trust-list` came back `changed` again — a *third* digest, then a
+fourth, at the same 91314 bytes each time, from the same client minutes apart. A 45-second burst had
+called it stable because it is stable *within a page-cache generation*; it is the regeneration that
+moves it. See below. The remaining five hold.
+
+| id | URL | http | bytes | sha256 (node `fetch`) | 4 rounds |
+|---|---|---|---|---|---|
+| `x402-core-dist-tags` | `https://registry.npmjs.org/-/package/@x402%2fcore/dist-tags` | 200 `application/json` | 19 | `3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60` | identical |
+| `x402-fetch-dist-tags` | `https://registry.npmjs.org/-/package/@x402%2ffetch/dist-tags` | 200 `application/json` | 19 | `3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60` | identical |
+| `mcp-specification-changelog` | `https://modelcontextprotocol.io/specification/latest/changelog` | 200 `text/html` | 294168 | `c1496005be9752775e25f46d7459cc7d56e7e9e1f44b7842fd875793d17fe6f6` | identical |
+| — **not pinned** — | `https://c2pa.org/conformance/` | 200 `text/html` | 91314 | **five distinct digests today** | **varies per cache generation** |
+| `rfc9964-info` | `https://www.rfc-editor.org/info/rfc9964` | 302 → 200 `text/html` | 731071 | `abc75d74bf90f97356b9c6348c4a62e85cb341c8af7f556e76010325ff5eeb7c` | identical |
+| `dapr-workflow-history-signing` | `https://docs.dapr.io/…/workflow/workflow-history-signing/` | 200 `text/html` | 72326 | `7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b` | identical |
+| — **not pinned** — | `https://datatracker.ietf.org/wg/scitt/documents/` | 200 `text/html` | 71257 | **four fetches, four different digests** | **differs every time** |
+
+The `urllib` pass was not wasted: it is what surfaced the SCITT page below, and both instruments agree
+about that one.
+
+**Why the C2PA conformance page is not pinned either.** It survived every burst test and failed the
+only test that matched the job's actual cadence: two `npm run drift` runs from the same node client,
+minutes apart, read `6c80e2e2…` and then `085a1414…`; across the session five distinct digests were
+observed (`00220127…` under urllib, `e8e0461c…` under curl, then `6c80e2e2…`, `085a1414…`,
+`8ec0cea8…` under node), every one of them at exactly **91314 bytes**. Constant length with a changing
+digest is the signature of fixed-width substitution, and diffing two captures located it precisely —
+three independent varying elements:
+
+* a per-render Content-Security-Policy nonce, repeated throughout the document
+  (`nonce="6c0a88aa6076ba974220abbcddaf3c9e"` in one capture, `nonce="c0cfc1f3f253ab66250513a60d186dab"`
+  in another);
+* asset cache-busting query strings that are Unix timestamps
+  (`templates.css?ver=1788821065` vs `?ver=1788806593`);
+* random page-builder element ids (`<div id="fws_6a9fdbb3c618e" …>`).
+
+The page is served from a cache, so all three hold still for minutes at a time and then change
+together — which is exactly why a burst test passes it and a daily job would not. A pin whose digest is
+a nonce is a check that always fails.
+
+The C2PA trust list itself is not abandoned as a question; it is only not answerable by digesting this
+page. A pin that would work is the trust-list **artefact** the page links rather than the marketing
+page around it, and finding and pinning that is a task this session did not take on.
+
+Both rejected candidates are the `nondeterministic_endpoint` kind — the `reason_code` added to the
+`unmapped` vocabulary in the same session, for exactly this shape of absence. Neither gets an `unmapped`
+row: those rows account for paths on disk, and neither URL has one.
+
+**Why the SCITT working-group document list is not pinned.** Under `urllib`, two GETs twenty seconds
+apart returned 71257 bytes each and **two different sha256 values**
+(`f6457bd6…8873e3` and `a939b63b…58ce2`). Under node `fetch` — the checker's own client — **four
+consecutive fetches produced four distinct digests**
+(`c8f6f410…`, `fa8b6644…`, `b7a8e571…`, `88384907…`), all at 71257 bytes. Both instruments agree, which
+is what makes this the one candidate rejected on evidence rather than on a client artefact. The
+difference was located rather than assumed: the responses are identical except for one injected line,
+
+```
+window.__CF$cv$params={r:'a37d061f0c50dde1',t:'MTc4ODg2MDc2NA=='}
+```
+
+versus `r:'a37d06394fbc73ee',t:'MTc4ODg2MDc2OA=='`. That is Cloudflare's challenge script, and `t`
+base64-decodes to `1788860764` and `1788860768` — a **per-response Unix timestamp**. The body therefore
+cannot digest to a stable value at any interval, and an `http` entry against it would report `changed`
+on every run of a job that now runs daily. It is left unpinned deliberately. It gets no `unmapped` row
+either: those rows account for paths on disk, this URL has none, and a row matching nothing on disk is
+what `test/upstream-coverage.test.ts` calls a dead row.
+
+The SCITT documents this list exists to surface are watched individually instead — `draft-hillier-scitt-arp`
+is pinned below, and `draft-mih-sokolov-scitt-payload-binding` was re-pinned at `-03` earlier the same
+day — so the loss of coverage is the appearance of a *new* SCITT draft nobody here has named yet.
+
+### The three `ietf-draft` pins
+
+Each revision was resolved from the datatracker document API, not guessed from a URL that happened to
+answer, and each `.txt` was fetched from the archive as the response body byte-exact.
+
+| path | source URL | retrieved (UTC) | bytes | sha256 |
+|---|---|---|---|---|
+| `refs/draft-hillier-scitt-arp-03.txt` | `https://www.ietf.org/archive/id/draft-hillier-scitt-arp-03.txt` | 2026-09-08T09:40:26Z | 339537 | `fe7ba656ef07842c365ce93938610cd874668c29f0fa06031d37d0e4e72b395d` |
+| `refs/draft-sirkkavaara-vaara-receipt-10.txt` | `https://www.ietf.org/archive/id/draft-sirkkavaara-vaara-receipt-10.txt` | 2026-09-08T09:40:26Z | 71802 | `5c8090f6244a2cb8c618f8c5a74ceaf0f1c4a7b49cb44a5cec19fedb69ffe0b1` |
+| `refs/draft-vauban-x402-consolidated-00.txt` | `https://www.ietf.org/archive/id/draft-vauban-x402-consolidated-00.txt` | 2026-09-08T09:40:26Z | 96774 | `8e695f312ac66b2b12ad73976367f69c3ad3e7033c27c7298b91b4100a9d19e1` |
+
+All three answered `200 text/plain; charset=utf-8` and all three carry **0 CR bytes**. The revisions the
+datatracker reported: `draft-hillier-scitt-arp` rev `03` (2026-08-14, "Attestation Reconciliation
+Protocol"); `draft-sirkkavaara-vaara-receipt` rev `10` (2026-09-04); `draft-vauban-x402-consolidated`
+rev `00` (2026-09-03) — which **confirms** the `-00` the strategy names rather than assuming it.
+
+### The two npm endpoint pins
+
+| path | source URL | retrieved (UTC) | bytes | sha256 |
+|---|---|---|---|---|
+| `refs/x402-core-dist-tags-2026-09-08.json` | `https://registry.npmjs.org/-/package/@x402%2fcore/dist-tags` | 2026-09-08T09:46:52Z | 19 | `3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60` |
+| `refs/x402-fetch-dist-tags-2026-09-08.json` | `https://registry.npmjs.org/-/package/@x402%2ffetch/dist-tags` | 2026-09-08T09:46:52Z | 19 | `3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60` |
+
+Both bodies are `{"latest":"2.25.0"}` in full, which is why both rows carry the same digest — a fact
+about the two packages, not a copied cell. This confirms the `2.25.0` the Lead observed at 08:47Z on the
+same day, from bytes now held here.
+
+**The packument is deliberately not pinned.** `https://registry.npmjs.org/@x402/core` changes on every
+publish and on metadata churn and is megabytes; the dist-tags document changes exactly when `latest`
+moves, which is the release signal worth a `changed` outcome.
+
+### The three `git` pins are watch-only
+
+`x402-specification-v2`, `verifiable-intent-changelog` and `obsigna-receipt-spec` pin a **path in
+someone else's repository by blob id**, and nothing under `fixtures/` or `refs/` holds a copy of any of
+them. That is a different kind of pin from every git entry this file carried before, all of which pin
+paths that were also copied into `fixtures/`. It is deliberate: the question these three answer is "has
+it moved", and answering it needs the blob id, not the bytes. A later session that wants to *cite* any
+of these three has to copy the file in and give it a provenance row of its own first.
+
+| id | repository | commit | path | blob | bytes | sha256 |
+|---|---|---|---|---|---|---|
+| `x402-specification-v2` | `coinbase/x402` | `dd927a26cfefc98c24b3ec38b3a8f204dad0c60d` | `specs/x402-specification-v2.md` | `b7eaea66f2743eac7ce2d0e1886f29e950e06988` | 31299 | `aa6dc5e8ccc7758689945fc7502674f51cd0f21f09ec886aa1dbc4cd86bc81b6` |
+| `verifiable-intent-changelog` | `agent-intent/verifiable-intent` | `356c29635f1c44df7de02edb58699ca9f29bece6` | `CHANGELOG.md` | `5305c0e9297442629b3b506dd723e5e8ed3de974` | 1874 | `005676981b6858f0d1613e85b6136e32cb6da707070067d89538db0d98f34983` |
+| `obsigna-receipt-spec` | `agent-receipts/obsigna` | `a53ffae1268cf2a9dda0a7796a641618543fe657` | `spec/v0.5.0/spec.md` | `70c763fe491c5259107c8d2ffea4b6da595e353c` | 58204 | `0535555d74ac5c7588b909ec6503332fed46449a3fb5210a64c4e5571d69fe79` |
+
+Each tip was resolved **twice, by two mechanisms that can disagree** — `git ls-remote <repo> main`, which
+is what `tools/drift.ts` itself uses, and the GitHub commits API — and the two agreed in all three cases.
+Each blob id was likewise **recomputed here** as `sha1("blob " + len + "\0" + bytes)` over the decoded
+body and compared to the id the API reported; all three matched, which is what makes the `sha256` column
+a measurement rather than a transcription. All three files carry 0 CR bytes.
+
+### Item 7 was already present
+
+`draft-marques-asqav-compliance-receipts` is pinned at `-08` with `role: current`, from the
+2026-09-01 append. It is **not duplicated**; it is counted as one of the twelve and is checked on the
+row it already has.
+
+### What these pins do not do
+
+They watch. Not one of the twelve is a corpus this repository grades, and no rule in
+`walker/scopes.json` reads any of them — `npm run walk` is unchanged by this section. A `current`
+outcome on any row below says the upstream has not moved since 2026-09-08, and nothing at all about
+whether what it says is true, whether this repository implements it, or whether it agrees with any
+finding here. The three surviving HTML page pins are the weakest of them: they digest a *rendered page*,
+so a site-wide template change will report `changed` with no change to the content anyone cares about,
+and the run that goes red will have to be read rather than believed.
+
+They are weak in a second way this section learned the hard way. One of the three digests differently
+depending on which HTTP client asks, so its pin is valid **for node `fetch`** and for nothing else.
+A second checker — a different runtime, a proxy that strips or adds `Accept-Encoding`, a CI runner
+behind a transcoding CDN — could read `changed` off an unmoved page. The `git` and `ietf-draft` pins
+have no such property: a blob id and an archived `.txt` are the same bytes to every client that asks.
