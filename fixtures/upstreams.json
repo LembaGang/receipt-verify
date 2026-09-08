@@ -135,7 +135,7 @@
       "provenance_section": "Appended 2026-09-08 — the asqav-sdk tip `22a970d`, pinned after the first scheduled drift finding",
       "last_observed": {
         "tip": "a21d0608b0ff949c583138f2987eba3b6c15749f",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "moved_changed"
       }
     },
@@ -536,7 +536,7 @@
       "provenance_section": "the main snapshot table, rows 44-86",
       "last_observed": {
         "tip": "ac33ad1dd660ea8473123ab8a3371934255926e9",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "moved_untouched"
       }
     },
@@ -627,7 +627,7 @@
       "provenance_section": "the main snapshot table rows 100-113, and the flag at line 231",
       "last_observed": {
         "tip": "a320f24a9400e2386f04483132bda4556f10c085",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "moved_untouched"
       }
     },
@@ -642,7 +642,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -659,7 +659,7 @@
       "role_note": "The URL is the digest, so this body cannot change without the URL changing. What the check can still turn red is disappearance: a 404 or a DNS failure is `unreachable`, and a content-addressed mapping that stops resolving is the thing worth knowing about here.",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -675,7 +675,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -692,7 +692,7 @@
       "role_note": "The newest of the five pins of this URL, and therefore the one a drift check is about. Moved here from the 2026-09-02T17:41Z pin on 2026-09-05, after the first `changed` outcome this tool has reported: the registry published a third key, `insight-oracle-safety-sample`.",
       "last_observed": {
         "tip": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -756,7 +756,7 @@
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-08.txt",
       "last_observed": {
         "tip": "draft-marques-asqav-compliance-receipts-08",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -786,7 +786,7 @@
       "pinned_file": "refs/draft-farley-acta-signed-receipts-03.txt",
       "last_observed": {
         "tip": "draft-farley-acta-signed-receipts-03",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -816,26 +816,38 @@
       "pinned_file": "refs/draft-krausz-verification-state-01.txt",
       "last_observed": {
         "tip": "draft-krausz-verification-state-01",
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       },
       "provenance_section": "the main snapshot table (this draft was in the original table)",
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
-      "id": "draft-mih-sokolov-scitt-payload-binding-02",
+      "id": "draft-mih-sokolov-scitt-payload-binding-03",
       "kind": "ietf-draft",
       "role": "current",
+      "name": "draft-mih-sokolov-scitt-payload-binding",
+      "pinned_rev": "03",
+      "url": "https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-03.txt",
+      "sha256": "d303e6e4ec4c4bf3b9c483bcabbd720309f952a5e77d912968bef39c1f245d13",
+      "pinned_file": "refs/draft-mih-sokolov-scitt-payload-binding-03.txt",
+      "provenance_section": "Appended 2026-09-08 — CPB `-03`, pinned after the first scheduled drift finding",
+      "last_observed": {
+        "tip": "draft-mih-sokolov-scitt-payload-binding-03",
+        "at": "2026-09-08T09:37:29.728Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "draft-mih-sokolov-scitt-payload-binding-02",
+      "kind": "ietf-draft",
+      "role": "historical",
       "name": "draft-mih-sokolov-scitt-payload-binding",
       "pinned_rev": "02",
       "url": "https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-02.txt",
       "sha256": "47ab675797d7edfe905c13b8482735239d9c5ceb318accbc33e4a5a51e5ec875",
       "pinned_file": "refs/draft-mih-sokolov-scitt-payload-binding-02.txt",
-      "last_observed": {
-        "tip": "draft-mih-sokolov-scitt-payload-binding-03",
-        "at": "2026-09-08T09:27:50.343Z",
-        "outcome": "superseded"
-      },
+      "role_reason": "Superseded in this repository by draft-mih-sokolov-scitt-payload-binding-03, which is pinned beside it and carries role current. The first scheduled drift run of 2026-09-07 06:00Z reported this entry `superseded`; -03 was published 2026-09-05 and fetched 2026-09-08. Kept, and still the revision cpb/*.ts and test/cpb/*.ts were written from and cite by section, but a revision this repository already knows is superseded is not a freshness question.",
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
@@ -869,7 +881,7 @@
       "provenance_section": "Appended 2026-09-06 -- the delivery corpus, which had no provenance row at all",
       "last_observed": {
         "tip": null,
-        "at": "2026-09-08T09:27:50.343Z",
+        "at": "2026-09-08T09:37:29.728Z",
         "outcome": "current"
       }
     }

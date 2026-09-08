@@ -965,3 +965,44 @@ not the tip: the pin was made two days and nine commits behind `main`. It says n
 the six changed vectors are *correct* — only about what they are. Whether this repository's verdicts
 move with them is `FINDINGS-rerun-2026-09-08.md`, and those verdicts are ours over Joao's bytes, not
 his.
+
+## Appended 2026-09-08 — CPB `-03`, pinned after the first scheduled drift finding
+
+The same scheduled run of 2026-09-07 06:00Z that found the asqav corpus moved also reported
+`draft-mih-sokolov-scitt-payload-binding-02` **superseded**: `-03` exists at the IETF archive. It was
+fetched over HTTPS and saved as the response body byte-exact, with no re-serialisation. No other host
+was contacted for it, and nothing under `keys/` was touched.
+
+| path | source URL | retrieved (UTC) | bytes | sha256 |
+|---|---|---|---|---|
+| `refs/draft-mih-sokolov-scitt-payload-binding-03.txt` | `https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-03.txt` | 2026-09-08T09:28:55Z | 108056 | `d303e6e4ec4c4bf3b9c483bcabbd720309f952a5e77d912968bef39c1f245d13` |
+
+`HTTP 200`, `content-type: text/plain; charset=utf-8`. The file carries **0 CR bytes** (2520 LF, 44
+form feeds — the ordinary Internet-Draft pagination). `-02`, pinned 2026-08-30, is 92428 bytes: `-03`
+is 15,628 bytes longer. Its front matter dates it **5 September 2026** and its `Expires` line 9 March
+2027.
+
+`refs/draft-mih-sokolov-scitt-payload-binding-02.txt` stays in the tree and its entry moves to
+`role: historical`. It is not decoration: every file under `cpb/` and `test/cpb/` was written from the
+`-02` bytes alone and cites `-02` section and line numbers throughout, and
+`cpb/AMBIGUITY_LOG.md` records where that text admitted more than one reading. A re-read of the
+implementation against `-03` is `cpb/REREAD_-03_2026-09-08.md`; **no code changed in the session that
+pinned this file**, so `cpb/*.ts` remains a `-02` implementation with its divergences from `-03`
+written down rather than fixed.
+
+**What `-03` changes, from the bytes.** Sections were compared after stripping page headers, footers
+and form feeds. Of the 37 sections in `-02`, **7 are byte-identical in `-03`** — among them **§4.1
+Algorithm jcs**, which is the construction this repository implements — 27 changed, 3 were replaced or
+renamed, and `-03` adds 11 sections that `-02` does not have (§6.1, §6.2, §8.2–§8.5, §14.1.1, §14.2,
+Appendix D, and its own §2 "Changes from -02"). The largest structural move is the one C-2 summarised
+and it holds against the bytes: `-03` §8 becomes an abstract four-member information model that "does
+not fix a payload serialization", and the wire form moves into §8.3 as an **optional COSE protected
+header parameter `cpb-refs`**, registered in the new §14.2, with a normative CDDL and a
+`MUST NOT occur in the unprotected header`.
+
+**What this pin does not do.** It fixes the bytes of one revision on one day, and `npm run drift` will
+report it `superseded` the moment `-04` appears. It says nothing about whether the implementation under
+`cpb/` is correct against `-03` — that is the re-read document, which finds six divergences in
+`cpb/algorithm.ts` (one of them a difference in what the code returns), none in
+`cpb/canonical-digest.ts`, and fixes none of them. It also records that `-03` answers three questions
+`cpb/AMBIGUITY_LOG.md` had left open against `-02` (A19, A20, A21).
