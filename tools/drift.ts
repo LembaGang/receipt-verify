@@ -16,8 +16,8 @@
  * outcome per upstream, each a first-class row rather than a pass/fail:
  *
  *   current          the tip / body / revision is exactly what was pinned
- *   moved_untouched  git: the tip moved, every pinned path is byte-unchanged
- *   moved_changed    git: at least one pinned path differs; each is listed
+ *   moved_untouched  git: the tip moved, every `check: fail` path is unchanged
+ *   moved_changed    git: at least one `check: fail` path differs; each is listed
  *   changed          http: the body's sha256 differs; both digests printed
  *   superseded       ietf-draft: a higher revision exists; it is named
  *   unreachable      the check could not be made, with the error text
@@ -33,6 +33,26 @@
  * corpus with no entry looked exactly like a corpus that was fine.
  * `test/upstream-coverage.test.ts` is what makes it impossible to add one; this
  * row is what gives it a NAME when `--corpus` asks.
+ *
+ * Each pinned path carries an optional `check`:
+ *
+ *   fail   THE DEFAULT, and what every path without the attribute means: a
+ *          difference at the tip makes the entry `moved_changed` and fails the run
+ *   note   a difference at the tip is REPORTED -- named in the detail line as
+ *          `noted: <path> <old blob> -> <new blob>`, and in `noted_paths` for a
+ *          reader that is not a person -- and does not by itself make the entry
+ *          `moved_changed`
+ *
+ * `note` is for a path pinned for PROVENANCE rather than as graded data.
+ * `asqav-sdk`'s `conformance/manifest.lock.json` is the author's own bookkeeping
+ * about the corpus -- a corpus_version, a licence row, a notice row -- and it
+ * moves whenever they touch any file in that directory, including files this
+ * repository does not pin. B-123: the daily check read `moved_changed` every
+ * morning for a path no finding depends on, and a red the reader learns to
+ * ignore is worse than no check at all. `fail` is the default and `note` is
+ * written per path and never inferred, because the failure mode of this
+ * attribute is a corpus file marked `note` by mistake -- which would hide
+ * exactly the change the tool exists to make loud.
  *
  * Exit 0 only when every `role: current` upstream is `current` or
  * `moved_untouched`. `unreachable` is never silently a 0: a check that could not
@@ -89,6 +109,11 @@ export interface PathPin {
   /** The upstream blob id, where the provenance row gives one. Null when it gives only a sha256. */
   pinned_blob: string | null;
   sha256: string;
+  /**
+   * What a difference at the tip MEANS for this path. Absent is `fail`, so every
+   * pin written before this attribute existed keeps its meaning exactly.
+   */
+  check?: "fail" | "note";
 }
 
 export interface Upstream {
@@ -132,6 +157,12 @@ export interface Result {
   tip: string | null;
   detail: string;
   changed_paths?: PathChange[];
+  /**
+   * `check: "note"` paths that differ at the tip. Present only when there are
+   * some. They are NEVER in `changed_paths`: that array is what turned the row
+   * red, and a note did not.
+   */
+  noted_paths?: PathChange[];
 }
 
 /**
@@ -204,18 +235,24 @@ function checkGit(u: Upstream): Result {
     }
     const raced = head !== tip ? ` (the clone landed on ${head}, not the ${tip} ls-remote reported; the ref moved mid-run and the blobs below are ${head}'s)` : "";
 
+    // Two buckets, decided per path before anything is compared. `fail` is the
+    // default: a pin that says nothing about `check` is judged, exactly as every
+    // pin was judged before the attribute existed.
     const changed: PathChange[] = [];
+    const noted: PathChange[] = [];
+    const failCount = pins.filter((p) => p.check !== "note").length;
     for (const p of pins) {
+      const sink = p.check === "note" ? noted : changed;
       let blob: string | null = null;
       try {
         blob = git(["rev-parse", `HEAD:${p.path}`], dir);
       } catch {
-        changed.push({ path: p.path, old_blob: p.pinned_blob, new_blob: null, new_sha256: null });
+        sink.push({ path: p.path, old_blob: p.pinned_blob, new_blob: null, new_sha256: null });
         continue;
       }
       if (p.pinned_blob) {
         if (blob !== p.pinned_blob) {
-          changed.push({ path: p.path, old_blob: p.pinned_blob, new_blob: blob, new_sha256: blobSha(dir, blob) });
+          sink.push({ path: p.path, old_blob: p.pinned_blob, new_blob: blob, new_sha256: blobSha(dir, blob) });
         }
         continue;
       }
@@ -223,25 +260,37 @@ function checkGit(u: Upstream): Result {
       // store and compare that. Still never a worktree file.
       const now = blobSha(dir, blob);
       if (now !== p.sha256) {
-        changed.push({ path: p.path, old_blob: null, new_blob: blob, new_sha256: now });
+        sink.push({ path: p.path, old_blob: null, new_blob: blob, new_sha256: now });
       }
     }
 
     const pinned = u.pinned_commit ? `pinned ${u.pinned_commit}` : "no commit was ever pinned for this source";
+    // Every noted move, with both blob ids, in the detail line itself -- so a row
+    // that is green BECAUSE of a note still says out loud what moved.
+    const notes = noted
+      .map((n) => `; noted: ${n.path} ${n.old_blob ?? "(the pin gave a sha256 only)"} -> ${n.new_blob ?? "(the path does not exist at the tip)"}`)
+      .join("");
+    const notedOut = noted.length > 0 ? { noted_paths: noted } : {};
     if (changed.length === 0) {
+      // The count is over every pin when nothing was noted -- today's wording,
+      // unchanged -- and over the `fail` pins when something was, because "all N
+      // pinned paths unchanged" would then be a false claim about the noted one.
+      const total = noted.length === 0 ? pins.length : failCount;
       return {
         ...base,
         outcome: "moved_untouched",
         tip: head,
-        detail: `${ref} is ${head} (${pinned}); all ${pins.length} pinned path${pins.length === 1 ? "" : "s"} unchanged at the tip${raced}`,
+        detail: `${ref} is ${head} (${pinned}); all ${total} pinned path${total === 1 ? "" : "s"} unchanged at the tip${raced}${notes}`,
+        ...notedOut,
       };
     }
     return {
       ...base,
       outcome: "moved_changed",
       tip: head,
-      detail: `${ref} is ${head} (${pinned}); ${changed.length} of ${pins.length} pinned paths differ at the tip${raced}`,
+      detail: `${ref} is ${head} (${pinned}); ${changed.length} of ${failCount} pinned paths differ at the tip${raced}${notes}`,
       changed_paths: changed,
+      ...notedOut,
     };
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -510,6 +559,14 @@ export function render(run: DriftRun): string[] {
       out.push(`          old blob : ${c.old_blob ?? "(not recorded; the pin gave a sha256 only)"}`);
       out.push(`          new blob : ${c.new_blob ?? "(the path does not exist at the tip)"}`);
       out.push(`          new sha256: ${c.new_sha256 ?? "n/a"}`);
+    }
+    for (const n of r.noted_paths ?? []) {
+      // Marked in the block, not only by which array it came from: printed under a
+      // green row, an unlabelled path reads as a change that was let through.
+      out.push(`      ${n.path}   [check: note -- reported, does not fail the run]`);
+      out.push(`          old blob : ${n.old_blob ?? "(not recorded; the pin gave a sha256 only)"}`);
+      out.push(`          new blob : ${n.new_blob ?? "(the path does not exist at the tip)"}`);
+      out.push(`          new sha256: ${n.new_sha256 ?? "n/a"}`);
     }
   }
   out.push("");

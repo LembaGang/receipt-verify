@@ -207,6 +207,133 @@ describe("drift — git", () => {
 });
 
 // ---------------------------------------------------------------------------
+// check: fail | note, per pinned path
+// ---------------------------------------------------------------------------
+
+// The shape B-123 found. `asqav-sdk` pins two paths: `conformance/vectors.json`,
+// which IS the graded corpus, and `conformance/manifest.lock.json`, which is the
+// author's own bookkeeping about it -- a corpus_version, a licence row, a notice
+// row. The manifest moves whenever the author touches anything in the corpus
+// directory, including files this repository does not pin, so the daily check
+// read `moved_changed` every morning for a path no finding depends on. A red the
+// reader learns to ignore is worse than no check.
+//
+// `check: "note"` says: watch this path, print what it did, do not fail on it.
+// `fail` is the DEFAULT and is never written implicitly by anything -- an entry
+// that says nothing keeps today's meaning exactly, which is what (c) controls.
+describe("drift - check: note per path", () => {
+  const VECTORS = "conformance/vectors.json";
+  const MANIFEST = "conformance/manifest.lock.json";
+
+  /** A repo pinning two paths, with the pin at the tip. */
+  function twoPath(): { r: ReturnType<typeof repo>; commit: string; vectors: string; manifest: string } {
+    const r = repo();
+    r.write(VECTORS, '{"vectors":[1,2,3]}\n');
+    r.write(MANIFEST, '{"corpus_version":6}\n');
+    const commit = r.commit("seed");
+    return { r, commit, vectors: r.run("rev-parse", `HEAD:${VECTORS}`), manifest: r.run("rev-parse", `HEAD:${MANIFEST}`) };
+  }
+
+  const sha = (r: ReturnType<typeof repo>, blob: string): string =>
+    createHash("sha256").update(execFileSync("git", ["cat-file", "blob", blob], { cwd: r.dir, stdio: ["ignore", "pipe", "pipe"] })).digest("hex");
+
+  /** An absent `check` means the attribute is absent, not `fail` written out. */
+  const twoPathEntry = (p: ReturnType<typeof twoPath>, checks: { vectors?: "fail" | "note"; manifest?: "fail" | "note" }): Upstream => ({
+    id: "u", kind: "git", role: "current", repo: p.r.url, ref: "main",
+    pinned_commit: p.commit,
+    paths: [
+      { path: VECTORS, pinned_blob: p.vectors, sha256: sha(p.r, p.vectors), ...(checks.vectors ? { check: checks.vectors } : {}) },
+      { path: MANIFEST, pinned_blob: p.manifest, sha256: sha(p.r, p.manifest), ...(checks.manifest ? { check: checks.manifest } : {}) },
+    ],
+  });
+
+  it("(a) a note path moved and a fail path unmoved is moved_untouched, with the move carried in detail", async () => {
+    const p = twoPath();
+    p.r.write(MANIFEST, '{"corpus_version":7}\n');
+    const tip = p.r.commit("the author's manifest moved; the vectors did not");
+    const newManifest = p.r.run("rev-parse", `HEAD:${MANIFEST}`);
+    expect(newManifest).not.toBe(p.manifest);
+
+    const run = await runDrift([twoPathEntry(p, { vectors: "fail", manifest: "note" })], never);
+    const res = run.results[0]!;
+    // The whole point: a differing path that is only noted does not turn the row red.
+    expect(res.outcome).toBe("moved_untouched");
+    expect(res.tip).toBe(tip);
+    expect(run.code).toBe(0);
+    // ...and is not silent about it. Named, with both blob ids, in the detail line.
+    expect(res.detail).toContain(`noted: ${MANIFEST} ${p.manifest} -> ${newManifest}`);
+    // Machine-readable beside the prose: walker/drift.json is consumed, and an
+    // agent must not have to parse a sentence to learn which path moved.
+    expect(res.noted_paths).toEqual([
+      { path: MANIFEST, old_blob: p.manifest, new_blob: newManifest, new_sha256: expect.stringMatching(/^[0-9a-f]{64}$/) },
+    ]);
+    // A noted path is NOT a changed path. changed_paths is what render() prints
+    // under a red row, and a note must never appear there.
+    expect(res.changed_paths).toBeUndefined();
+  });
+
+  it("(b) the same two paths with the FAIL path moved too is moved_changed, and the note is still carried", async () => {
+    const p = twoPath();
+    p.r.write(MANIFEST, '{"corpus_version":7}\n');
+    p.r.write(VECTORS, '{"vectors":[1,2,3,4]}\n');
+    const tip = p.r.commit("both moved");
+    const newManifest = p.r.run("rev-parse", `HEAD:${MANIFEST}`);
+    const newVectors = p.r.run("rev-parse", `HEAD:${VECTORS}`);
+
+    const run = await runDrift([twoPathEntry(p, { vectors: "fail", manifest: "note" })], never);
+    const res = run.results[0]!;
+    expect(res.outcome).toBe("moved_changed");
+    expect(res.tip).toBe(tip);
+    expect(run.code).toBe(1);
+    // The fail path, and ONLY the fail path, is the change. The denominator is the
+    // fail paths, not every pin: "1 of 2" here would claim the manifest was judged.
+    expect(res.changed_paths).toEqual([
+      { path: VECTORS, old_blob: p.vectors, new_blob: newVectors, new_sha256: expect.stringMatching(/^[0-9a-f]{64}$/) },
+    ]);
+    expect(res.detail).toContain("1 of 1 pinned paths differ at the tip");
+    // The note survives a red row: an agent reading only changed_paths would
+    // otherwise conclude the manifest was unchanged, which is false.
+    expect(res.detail).toContain(`noted: ${MANIFEST} ${p.manifest} -> ${newManifest}`);
+    expect(res.noted_paths).toHaveLength(1);
+  });
+
+  it("(c) regression: an entry with NO check attributes behaves exactly as it did before the attribute existed", async () => {
+    const p = twoPath();
+    p.r.write(MANIFEST, '{"corpus_version":7}\n');
+    const tip = p.r.commit("the author's manifest moved; the vectors did not");
+    const newManifest = p.r.run("rev-parse", `HEAD:${MANIFEST}`);
+
+    const run = await runDrift([twoPathEntry(p, {})], never);
+    const res = run.results[0]!;
+    // The P0 row of B-123, reproduced: same fixture, same two paths, no `check`
+    // anywhere -- and it is still red, with the manifest as a CHANGE.
+    expect(res.outcome).toBe("moved_changed");
+    expect(res.tip).toBe(tip);
+    expect(run.code).toBe(1);
+    expect(res.changed_paths).toEqual([
+      { path: MANIFEST, old_blob: p.manifest, new_blob: newManifest, new_sha256: expect.stringMatching(/^[0-9a-f]{64}$/) },
+    ]);
+    // Byte-for-byte the wording the tool printed before this attribute existed.
+    expect(res.detail).toBe(`main is ${tip} (pinned ${p.commit}); 1 of 2 pinned paths differ at the tip`);
+    expect(res.detail).not.toContain("noted:");
+    expect(res.noted_paths).toBeUndefined();
+  });
+
+  it("an unchanged note path adds nothing at all: the moved_untouched wording is the old one", async () => {
+    // The negative control for (a). If `noted:` appeared whenever a note path
+    // merely EXISTED, (a) would pass without the tool having compared anything.
+    const p = twoPath();
+    p.r.write("README.md", "unrelated\n");
+    const tip = p.r.commit("touch something neither path pins");
+
+    const res = (await runDrift([twoPathEntry(p, { vectors: "fail", manifest: "note" })], never)).results[0]!;
+    expect(res.outcome).toBe("moved_untouched");
+    expect(res.detail).toBe(`main is ${tip} (pinned ${p.commit}); all 2 pinned paths unchanged at the tip`);
+    expect(res.noted_paths).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // http and ietf-draft, through the injected fetch
 // ---------------------------------------------------------------------------
 
