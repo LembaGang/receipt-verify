@@ -18,7 +18,9 @@
 //   * a corpus directory in `walker/scopes.json` that is missing, empty, or
 //     holds one unaccounted file;
 //   * an `unmapped` row with no `paths`, a blank or multi-line reason, or that
-//     accounts for nothing that exists any more.
+//     accounts for nothing that exists any more;
+//   * an `unmapped` row whose `reason_code` is missing or outside the closed
+//     vocabulary — asserted by its own negative control over synthetic rows.
 // What it does NOT observe: whether an entry is CORRECT. A `corpus_dirs` value
 // pointing at the wrong upstream still resolves every file under it and this
 // file stays silent. That is `tools/drift.ts`'s question, not this one's.
@@ -41,7 +43,42 @@ interface UnmappedRow {
   id: string;
   paths: string[];
   rows: string;
+  /** Which KIND of absence this is, from the closed vocabulary in upstreams.json's how_to_read. */
+  reason_code?: string;
   reason: string;
+}
+
+/**
+ * The closed vocabulary, transcribed from `fixtures/upstreams.json`'s
+ * `how_to_read.unmapped_reason_codes`. Transcribed rather than read from that
+ * object on purpose: a test that took its list of valid values from the same
+ * file it is checking would accept any new code the moment someone added it to
+ * the key list, which is a check that cannot fail. Widening the vocabulary has
+ * to be a deliberate edit in two places.
+ */
+const REASON_CODES = [
+  "generated_here",
+  "local_clone_no_remote",
+  "nondeterministic_endpoint",
+  "past_capture",
+  "repository_record",
+] as const;
+
+/**
+ * Rows whose `reason_code` is absent, empty, or not in the vocabulary, each
+ * described. Exported so the negative control can run THE SAME function over
+ * synthetic rows — a control exercising a different code path would say nothing
+ * about the green result.
+ */
+export function badReasonCodes(rows: UnmappedRow[]): string[] {
+  const valid = new Set<string>(REASON_CODES);
+  return rows
+    .filter((r) => !valid.has(r.reason_code ?? ""))
+    .map((r) =>
+      r.reason_code === undefined
+        ? `${r.id}: no reason_code`
+        : `${r.id}: reason_code ${JSON.stringify(r.reason_code)} is not one of ${REASON_CODES.join(", ")}`,
+    );
 }
 
 interface Entry {
@@ -152,6 +189,34 @@ describe("upstream coverage — every corpus on disk is accounted for in fixture
       expect(row.reason?.trim() ?? "", `unmapped row ${row.id} has a blank reason`).not.toBe("");
       expect(row.reason ?? "", `unmapped row ${row.id}: the reason must be one line`).not.toMatch(/\n/);
     }
+  });
+
+  it("every unmapped row carries a reason_code from the closed vocabulary", () => {
+    const bad = badReasonCodes(DOC.unmapped.rows);
+    expect(
+      bad,
+      `${bad.length} unmapped row${bad.length === 1 ? "" : "s"} cannot be acted on by a machine: the prose reason\n` +
+        `says why THIS row, and only the code says which KIND of absence it is.\n\n` +
+        bad.map((b) => `  ${b}`).join("\n") +
+        `\n\nPick one of: ${REASON_CODES.join(", ")}. If none fits, the vocabulary is what needs widening —\n` +
+        `in fixtures/upstreams.json's how_to_read AND in this file, deliberately, in the same commit.`,
+    ).toEqual([]);
+  });
+
+  // The control for the rule above. `[]` is also what a validator that validated
+  // nothing would return; these are the rows that separate the two.
+  it("negative control: an unmapped row with a missing or unknown reason_code is reported", () => {
+    const good: UnmappedRow = { id: "fixture-good", paths: ["fixtures/nowhere/*"], rows: "n/a", reason_code: "generated_here", reason: "a valid row" };
+    const missing = { id: "fixture-missing", paths: ["fixtures/nowhere/*"], rows: "n/a", reason: "no code at all" } as UnmappedRow;
+    const unknown: UnmappedRow = { id: "fixture-unknown", paths: ["fixtures/nowhere/*"], rows: "n/a", reason_code: "because_i_said_so", reason: "a code nobody defined" };
+    const empty: UnmappedRow = { id: "fixture-empty", paths: ["fixtures/nowhere/*"], rows: "n/a", reason_code: "", reason: "a blank code" };
+
+    expect(badReasonCodes([good])).toEqual([]);
+    expect(badReasonCodes([missing])).toEqual(["fixture-missing: no reason_code"]);
+    expect(badReasonCodes([unknown])[0]).toContain("fixture-unknown");
+    expect(badReasonCodes([empty])[0]).toContain("fixture-empty");
+    // And a real row mixed in with a bad one still leaves exactly the bad one.
+    expect(badReasonCodes([...DOC.unmapped.rows, missing])).toEqual(["fixture-missing: no reason_code"]);
   });
 
   it("no unmapped row is dead: each one accounts for at least one path that exists", () => {

@@ -1086,6 +1086,18 @@ Both rejected candidates are the `nondeterministic_endpoint` kind — the `reaso
 `unmapped` vocabulary in the same session, for exactly this shape of absence. Neither gets an `unmapped`
 row: those rows account for paths on disk, and neither URL has one.
 
+**Appended the same day — the counter-evidence, which is weaker than the mechanism but is not nothing.**
+After the C2PA entry was removed, a controlled run measured all four page candidates **five times over
+twelve minutes, three minutes apart, each round a fresh request** — and `c2pa.org/conformance/` was
+**stable across all five** (`8ec0cea8…` every time), as were the other three. So the rejection does not
+rest on a controlled experiment that reproduced the change; that window did not reproduce it. It rests
+on two other things: the five distinct digests actually observed across the session, two of them from
+consecutive `npm run drift` runs minutes apart on the same client; and the mechanism located in the
+bytes, a Content-Security-Policy nonce, which is by construction regenerated per render. A cache delays
+that regeneration, it does not remove it — which is exactly why a twelve-minute window can look stable
+and a daily job would not be. Recorded here so a later session weighing whether to re-pin the page has
+the evidence that points the other way as well as the evidence that decided it.
+
 **Why the SCITT working-group document list is not pinned.** Under `urllib`, two GETs twenty seconds
 apart returned 71257 bytes each and **two different sha256 values**
 (`f6457bd6…8873e3` and `a939b63b…58ce2`). Under node `fetch` — the checker's own client — **four

@@ -27,7 +27,15 @@
       "local": "A corpus THIS repository authors -- no upstream exists, so there is no tip, no URL and no revision to resolve. Checked for nothing but existence and digest: every path in `files` must be present and must still digest to the recorded sha256, read from the object store like every other comparison here. It reports `current` when they all do and `changed` when one does not, and it never touches the network. A `local` entry is not a claim that the bytes are correct -- only that they are still the bytes this file recorded."
     },
     "corpus_dirs": "Directories the entry's upstream produced WHOLE. A single pinned file is named by `pinned_file` and a `local` corpus by `files`, and neither is written as a directory: test/upstream-coverage.test.ts resolves every path under fixtures/ and refs/ through this file, and a `corpus_dirs` value broader than its upstream actually produced silently resolves paths that came from somewhere else. `refs` was such a value on all eleven single-file pins until 2026-09-06, and it made that test's own negative control resolve a draft nobody had pinned.",
-    "unmapped_rows": "Each `unmapped` row carries an `id`, the `paths` it accounts for (globs; only `*` is special) and a one-line `reason`. The paths are what make the row machine-checkable: test/upstream-coverage.test.ts requires every path under fixtures/ and refs/, and every file of every corpus walker/scopes.json names, to resolve to an entry or to one of these rows, and requires every row to still account for something that exists."
+    "unmapped_rows": "Each `unmapped` row carries an `id`, the `paths` it accounts for (globs; only `*` is special) and a one-line `reason`. The paths are what make the row machine-checkable: test/upstream-coverage.test.ts requires every path under fixtures/ and refs/, and every file of every corpus walker/scopes.json names, to resolve to an entry or to one of these rows, and requires every row to still account for something that exists.",
+    "unmapped_reason_codes": {
+      "_": "A CLOSED vocabulary. Every `unmapped` row carries exactly one `reason_code` beside its prose `reason`, and test/upstream-coverage.test.ts fails on a row whose code is missing or is not one of the five below. The prose says why THIS row; the code says which KIND of absence it is, so an agent can decide what to do about it without parsing a sentence — which is the whole difference between a row a machine can act on and a row it can only display.",
+      "generated_here": "Produced in this repository — by a generator under tools/, or written by hand — so it is not a copy of any published artifact and has no upstream by construction. Nothing external can move.",
+      "local_clone_no_remote": "Copied from a git repository on this machine that has no remote: `git remote -v` prints nothing, so there is no ref whose tip could be resolved and none of the three fetchable kinds fits.",
+      "nondeterministic_endpoint": "A live endpoint whose body differs between two immediate requests — a fresh signature, a per-response nonce or timestamp. An `http` entry against it would report `changed` on every run forever, and a check that always fails says no more than one that cannot fail.",
+      "past_capture": "A record of a past event rather than a snapshot of something still being served: a signed capture, an emailed package. It has no tip, no URL and no revision, so no kind here can drift-check it, and re-fetching it is not a thing that can be done.",
+      "repository_record": "This repository's own bookkeeping about the corpora rather than corpus data. It was never fetched from anywhere and there is nothing upstream of it."
+    }
   },
   "unmapped": {
     "note": "Paths under fixtures/ and refs/ that map to no upstream entry, each named, each carrying the paths it accounts for and a one-line reason, so the absence is a statement rather than an oversight. test/upstream-coverage.test.ts reads this block; nothing here is an exclusion the drift tool cannot see.",
@@ -38,6 +46,7 @@
           "fixtures/evidence-action/*"
         ],
         "rows": "the 10 `fixtures/evidence-action/*` rows, source `file://C:/Users/User/agent-action-receipt-vectors/...`",
+        "reason_code": "local_clone_no_remote",
         "reason": "A local directory, not a network upstream: it is a git repository on this machine (HEAD 4fac3017d2fe19c46b108b012f03abbb77354da1) but `git remote -v` prints nothing, so there is no remote whose tip could be resolved, and none of the three fetchable kinds fits."
       },
       {
@@ -50,6 +59,7 @@
           "fixtures/keys/*"
         ],
         "rows": "the 81 rows of the 'Generated here, not snapshotted' table",
+        "reason_code": "generated_here",
         "reason": "Produced by tools/make-throwaway-fixtures.mjs, tools/make-acta-fixtures.mjs and by hand (the mapping documents); that table's own heading says they are not copies of any published artifact, so they have no upstream by construction."
       },
       {
@@ -60,6 +70,7 @@
           "fixtures/insight/execution-receipt-bytes-2026-09-02-v4.json"
         ],
         "rows": "the `fixtures/insight/execution-receipt-bytes-*.json` package rows",
+        "reason_code": "past_capture",
         "reason": "Email attachments (2026-09-02), copied from cc-output: fixtures/provenance.md records no URL for them and no endpoint served them."
       },
       {
@@ -71,6 +82,7 @@
           "fixtures/insight/safety-sample-2026-09-05T1830Z.json"
         ],
         "rows": "the 4 `fixtures/insight/*-sample-*.json` endpoint-response rows",
+        "reason_code": "nondeterministic_endpoint",
         "reason": "Both sample endpoints mint a fresh signature per call -- the two execution pins 116 minutes apart are both 4675 bytes with different sha256 -- so an http entry against either would report `changed` on every run forever, and a check that always fails says no more than one that cannot fail."
       },
       {
@@ -79,6 +91,7 @@
           "fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json"
         ],
         "rows": "`fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json`",
+        "reason_code": "generated_here",
         "reason": "Derived, not fetched: data.attestation re-serialised from the row above, and test/insight.test.ts asserts it deep-equals its parent, which is a tighter relation than a drift check would be."
       },
       {
@@ -87,6 +100,7 @@
           "fixtures/delivery/pilot-exa-contents/*"
         ],
         "rows": "`fixtures/delivery/pilot-exa-contents/chain.jsonl` and its `jwks.json`",
+        "reason_code": "past_capture",
         "reason": "A signed mainnet capture, not a snapshot of anything fetchable: session 864b7d23, Exa /contents, 2026-08-16T18:33:45Z, written by delivery-incidence-study/x402-capture-rig 0.5.0 -- a past event has no tip, no URL and no revision, so no kind here can drift-check it."
       },
       {
@@ -95,6 +109,7 @@
           "cpb/*"
         ],
         "rows": "`cpb/`",
+        "reason_code": "generated_here",
         "reason": "TypeScript sources and Markdown result tables written in this repository; walker/scopes.json registers the directory as a corpus with no rules, and there is nothing upstream of it."
       },
       {
@@ -104,6 +119,7 @@
           "fixtures/upstreams.json"
         ],
         "rows": "`fixtures/provenance.md` and this file",
+        "reason_code": "repository_record",
         "reason": "This repository's own records of the corpora rather than corpus data: provenance.md is the record of WHAT was pinned and why, this file the liveness relation, and neither was ever fetched from anywhere."
       }
     ]
