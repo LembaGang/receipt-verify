@@ -5,7 +5,7 @@
   "how_to_read": {
     "rules": "Each rule names ONE scope, taken from a document by line number, and the walker expands it deterministically over the corpus bytes. A rule is one entry per (corpus, field kind) rather than per concrete field: the concrete fields are an enumeration of bytes, the scope is the claim, and only the claim can be reviewed against a document. Every concrete field a rule expands to appears as its own row in walker/report.json.",
     "unregistered": "Concrete digest-shaped fields no rule covers, listed by JSON pointer with the reason. They are counted and printed, never silently skipped, and they do not fail the run: an unrecomputable field is not a wrong field.",
-    "declared_opaque": "A concrete digest-shaped field whose value the FORMAT'S AUTHOR states no third party holding only the receipt can recompute. Like `unregistered` it is counted and printed by JSON pointer, never silently skipped, and it does not fail the run; unlike `unregistered` it is not graded and never will be. It is NOT `unregistered`, and the difference is the point of the status: `unregistered` says no rule in THIS registry covers the field, which is a fact about our coverage and is repaired by writing a rule, while `declared_opaque` says the pre-image cannot be rebuilt from what the format publishes, which is a fact about the format, is stated by the person who defines it, and no rule we could write would repair. Filing the second under the first would have this registry standing report a gap in its own coverage that it can never close. Every entry carries `pointer`, `declared_by`, `source`, `quote` and `until`, and the walker REFUSES to run (exit 2) on an entry missing any of them: the whole weight of the status is `the author said so, and here is where`, and an entry that cannot say where still reads as though it could. `pointer` is an exact JSON pointer -- this walker has no glob matching for pointers, only for a rule's `file` -- and the entries are one per member for the same reason `applies_to` is an explicit list: a member nobody named is censused as before and still prints green. An entry matching zero pointers in its corpus is reported as a row with pointer null and counted, the `rule_idle` pattern, so a declaration cannot silently outlive the member it names. A declaration cannot pull a field OUT of the grade either: matching happens on the census, after the rules have consumed their pointers, so a field some rule covers stays graded and its declaration reports unmatched. `until` records the condition on which the entry is to be revisited.",
+    "declared_opaque": "A concrete digest-shaped field whose value the FORMAT'S AUTHOR states no third party holding only the receipt can recompute. Like `unregistered` it is counted and printed by JSON pointer, never silently skipped, and it does not fail the run; unlike `unregistered` it is not graded and never will be. It is NOT `unregistered`, and the difference is the point of the status: `unregistered` says no rule in THIS registry covers the field, which is a fact about our coverage and is repaired by writing a rule, while `declared_opaque` says the pre-image cannot be rebuilt from what the format publishes, which is a fact about the format, is stated by the person who defines it, and no rule we could write would repair. Filing the second under the first would have this registry standing report a gap in its own coverage that it can never close. Every entry carries `pointer`, `declared_by`, `source`, `quote` and `until`, and the walker REFUSES to run (exit 2) on an entry missing any of them: the whole weight of the status is `the author said so, and here is where`, and an entry that cannot say where still reads as though it could. `pointer` is an exact JSON pointer -- this walker has no glob matching for pointers, only for a rule's `file` -- and the entries are one per member for the same reason `applies_to` is an explicit list: a member nobody named is censused as before and still prints green. An entry matching zero pointers in its corpus is reported as a row with pointer null and counted, the `rule_idle` pattern, so a declaration cannot silently outlive the member it names. A declaration cannot pull a field OUT of the grade either: matching happens on the census, after the rules have consumed their pointers, so a field some rule covers stays graded and its declaration reports unmatched. `until` records the condition on which the entry is to be revisited, and `revisit_when` is that same condition in a form the walker evaluates against fixtures/upstreams.json -- exactly one of `upstream_repin` {upstream_id, pinned_value}, LIVE while that entry is still `role: current` and still carries the value the declaration was written against, or `upstream_appears` {id_prefix}, EXPIRED as soon as any entry whose id starts with that prefix is `role: current` -- required on every entry and refusing the run (exit 2) like the other five when it is missing or malformed, with no network, no clock and no dates in the verdict. `until` stays as the human form of that same sentence, and an EXPIRED declaration still grades nothing: its rows report `declared_opaque_expired` instead of `declared_opaque`, carry the condition that fired in words, and are subtracted from `registered` exactly as `declared_opaque` rows are, while the walk's exit code does not move -- a stale declaration is a bookkeeping condition and not a wrong measurement, so the re-review is bought by a test in test/walker.test.ts that fails while any declaration is expired rather than by a red on `npm run walk` that would block an unrelated push.",
     "status": {
       "declared": "the cited document states this scope for this field",
       "inferred": "the document is silent; the scope is taken from the corpus's own self-description (a header member, a description string, or the fixture generator) and that source is named",
@@ -233,7 +233,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -241,7 +246,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -249,7 +259,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -257,7 +272,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -265,7 +285,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -273,7 +298,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -281,7 +311,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "NOT one of the six the author named, and separated from them for that reason. /vectors/20/input/action_ref, on the receipt_v2_signer_canary vector, already carried the `sha256:<64 hex>` form at asqav/3b88156, asqav/05c1c49 and both history pins, so it predates #484 and is not part of the rework he called mid-flight -- his \"six values you hit\" are vectors 14-19. It is recorded here on his first sentence, `On action_ref, record it as declared opaque`, and on the reason he gives for it, which is a property of the field in the format and not of those six vectors. If that reading is wrong this is the entry that is wrong, and it can be withdrawn without touching the six."
         }
       ]
@@ -300,7 +335,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -308,7 +348,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -316,7 +361,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -324,7 +374,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -332,7 +387,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -340,7 +400,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "One of the six the author named. This member took the `sha256:<64 hex>` wire form in upstream 0b5fa1e (#484); at asqav/3b88156 and every earlier pin it read `act_01HVZA_ORIGINATOR_0001`, which is not digest-shaped and never entered the census. It is one of the six he called mid-rework."
         },
         {
@@ -348,7 +413,12 @@
           "declared_by": "the author, Joao Marques",
           "source": "Gmail 1a080c1f84f6d1a1, 2026-09-08T11:23:07Z, in reply to the Lead's question of 10:57Z",
           "quote": "On action_ref, record it as declared opaque. -09 points at the upstream canonical Action representation, and ACTA -03 computes that over agentId, actionType, scopeRequired and timestamp. A Compliance Receipt carries no scopeRequired, and a hash-mode receipt carries no action_type either, so nobody holding only the receipt can rebuild the pre-image.",
-          "until": "the corpus settles; revisit at the -09 re-pin",
+          "until": "the corpus settles; revisit at the -09 re-pin -- `revisit_when` below is that same sentence in the form the walker evaluates.",
+          "revisit_when": {
+            "upstream_appears": {
+              "id_prefix": "draft-marques-asqav-compliance-receipts-09"
+            }
+          },
           "note": "NOT one of the six the author named, and separated from them for that reason. /vectors/20/input/action_ref, on the receipt_v2_signer_canary vector, already carried the `sha256:<64 hex>` form at asqav/3b88156, asqav/05c1c49 and both history pins, so it predates #484 and is not part of the rework he called mid-flight -- his \"six values you hit\" are vectors 14-19. It is recorded here on his first sentence, `On action_ref, record it as declared opaque`, and on the reason he gives for it, which is a property of the field in the format and not of those six vectors. If that reading is wrong this is the entry that is wrong, and it can be withdrawn without touching the six."
         }
       ]

@@ -48,10 +48,11 @@ interface Report {
 }
 
 /** Run the walker. Returns its report and exit code; a non-zero exit is expected on the pinned corpora. */
-function walk(opts: { root?: string; report: string; scopes?: string }): { report: Report; code: number } {
+function walk(opts: { root?: string; report: string; scopes?: string; upstreams?: string }): { report: Report; code: number } {
   const args = ["tsx", join(ROOT, "tools", "walk-digests.ts"), "--report", opts.report];
   if (opts.root) args.push("--root", opts.root);
   if (opts.scopes) args.push("--scopes", opts.scopes);
+  if (opts.upstreams) args.push("--upstreams", opts.upstreams);
   let code = 0;
   try {
     execFileSync("npx", args, { cwd: ROOT, stdio: "pipe", shell: process.platform === "win32" });
@@ -70,10 +71,11 @@ const tmp = () => mkdtempSync(join(tmpdir(), "walker-"));
  * to run at all -- in which case no report is written and parsing one would
  * throw over the failure being asserted.
  */
-function walkRaw(opts: { root?: string; report: string; scopes?: string }): { code: number; stdout: string; stderr: string } {
+function walkRaw(opts: { root?: string; report: string; scopes?: string; upstreams?: string }): { code: number; stdout: string; stderr: string } {
   const args = ["tsx", join(ROOT, "tools", "walk-digests.ts"), "--report", opts.report];
   if (opts.root) args.push("--root", opts.root);
   if (opts.scopes) args.push("--scopes", opts.scopes);
+  if (opts.upstreams) args.push("--upstreams", opts.upstreams);
   try {
     const stdout = execFileSync("npx", args, {
       cwd: ROOT, stdio: "pipe", shell: process.platform === "win32", encoding: "utf8",
@@ -702,6 +704,186 @@ describe("digest walker — declared_opaque", () => {
       expect(line, `a per-corpus line for ${corpus}`).toBeTruthy();
       expect(line).toContain(`declared_opaque=${OPAQUE.length}`);
       expect(line).toContain(`unregistered=${String(BEFORE.unregistered - OPAQUE.length).padStart(4)}`);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// revisit_when: a declaration expires by measurement rather than by prose.
+//
+// `until` is a sentence the walker never reads. When the condition it names
+// passes, the entry keeps matching, keeps printing green, and keeps saying
+// "mid-rework" about a corpus that has settled -- and the row that most needs
+// re-reading is the one that looks most satisfied. `revisit_when` is the same
+// sentence in a form the tool evaluates against fixtures/upstreams.json, which
+// it already reads for drift. No network, no clock, no dates.
+//
+// The teeth are (a): it fails at HEAD while ANY declaration in the committed
+// registry is expired, which buys a five-minute re-review before the next push
+// rather than a red on `npm run walk` that blocks an unrelated one.
+// ---------------------------------------------------------------------------
+describe("digest walker — revisit_when: a declaration expires by measurement", () => {
+  const OPAQUE_PER_CORPUS = 7;
+  const CORPORA = ["asqav/22a970d", "asqav/a21d060"];
+  // The -09 prefix the fourteen entries name. The current entry is -08; the
+  // -09 pin will enter under this prefix, and that is the condition the author
+  // actually stated ("revisit at the -09 re-pin").
+  const PREFIX = "draft-marques-asqav-compliance-receipts-09";
+  const UPSTREAMS = join(ROOT, "fixtures", "upstreams.json");
+  // Shape (a)'s control needs the pin `asqav-sdk/a21d060` carries today, and
+  // one value that is not it.
+  const A21D060 = "a21d0608b0ff949c583138f2987eba3b6c15749f";
+  const NOT_A21D060 = "0000000000000000000000000000000000000000";
+
+  /** The committed registry, parsed, for a test to mutate into a throwaway copy. */
+  const scopesCopy = () =>
+    JSON.parse(readFileSync(join(ROOT, "walker", "scopes.json"), "utf8")) as {
+      corpora: Array<{ id: string; declared_opaque?: Array<Record<string, unknown>> }>;
+    };
+  const writeTmp = (name: string, v: unknown): string => {
+    const p = join(tmp(), name);
+    writeFileSync(p, JSON.stringify(v, null, 2));
+    return p;
+  };
+
+  it("(a) every declaration in walker/scopes.json is LIVE — a failure here means a revisit_when has fired: re-read that entry against its source, then rewrite or withdraw it", () => {
+    const report = join(tmp(), "live.json");
+    const run = walkRaw({ report });
+    const body = (JSON.parse(readFileSync(report, "utf8")) as Report).body;
+
+    // Nothing expired anywhere: not a row, not a count, not a printed column.
+    expect(body.rows.filter((r) => r.outcome === "declared_opaque_expired")).toEqual([]);
+    expect(body.totals["declared_opaque_expired"] ?? 0).toBe(0);
+    expect(readFileSync(report, "utf8")).not.toContain("declared_opaque_expired");
+    expect(run.stdout).not.toContain("declared_opaque_expired");
+
+    // And today's counts are exactly today's.
+    expect(body.totals["declared_opaque"]).toBe(OPAQUE_PER_CORPUS * CORPORA.length);
+    for (const corpus of CORPORA) {
+      const c = body.per_corpus[corpus]!;
+      expect(c["declared_opaque"], `${corpus} declared_opaque`).toBe(OPAQUE_PER_CORPUS);
+      expect(c["registered"], `${corpus} registered`).toBe(60);
+      expect(c["match"], `${corpus} match`).toBe(59);
+      expect(c["mismatch"], `${corpus} mismatch`).toBe(0);
+      expect(c["unregistered"], `${corpus} unregistered`).toBe(31);
+    }
+  });
+
+  it("(b) upstream_appears: a -09 entry that is `current` expires all fourteen, prints the condition, and moves nothing that is measured", () => {
+    // The red case for (a). The registry is unchanged; only the world it names
+    // moves, which is the whole point of putting the condition in a file the
+    // tool already reads.
+    const ups = JSON.parse(readFileSync(UPSTREAMS, "utf8")) as { upstreams: Array<Record<string, unknown>> };
+    ups.upstreams.push({
+      id: PREFIX,
+      kind: "ietf-draft",
+      role: "current",
+      name: "draft-marques-asqav-compliance-receipts",
+      pinned_rev: "09",
+      url: `https://www.ietf.org/archive/id/${PREFIX}.txt`,
+      sha256: "1111111111111111111111111111111111111111111111111111111111111111",
+      pinned_file: `refs/${PREFIX}.txt`,
+    });
+    const altUps = writeTmp("upstreams.json", ups);
+
+    const report = join(tmp(), "expired.json");
+    const run = walkRaw({ report, upstreams: altUps });
+    const body = (JSON.parse(readFileSync(report, "utf8")) as Report).body;
+
+    const expired = body.rows.filter((r) => r.outcome === "declared_opaque_expired");
+    expect(expired.length).toBe(OPAQUE_PER_CORPUS * CORPORA.length);
+    expect(body.rows.filter((r) => r.outcome === "declared_opaque")).toEqual([]);
+    expect(body.totals["declared_opaque_expired"]).toBe(OPAQUE_PER_CORPUS * CORPORA.length);
+    expect(body.totals["declared_opaque"]).toBe(0);
+
+    // The row still cites the declaration AND says, in words, what fired.
+    for (const r of expired) {
+      expect(String(r.source)).toContain("1a080c1f84f6d1a1");
+      expect(String(r.note)).toContain("declared opaque by");
+      expect(String(r.note)).toContain(`expired: an entry with id prefix \`${PREFIX}\` is now current`);
+      expect(String(r.note)).toContain("rewrite or withdraw it");
+    }
+
+    // Counted and printed, per corpus and on the SUMMARY.
+    for (const corpus of CORPORA) {
+      const c = body.per_corpus[corpus]!;
+      expect(c["declared_opaque_expired"], `${corpus} expired count`).toBe(OPAQUE_PER_CORPUS);
+      expect(c["declared_opaque"], `${corpus} live count`).toBe(0);
+      // `registered` subtracts an expired row exactly as it subtracts a live one.
+      expect(c["registered"], `${corpus} registered`).toBe(60);
+      expect(c["unregistered"], `${corpus} unregistered`).toBe(31);
+      const line = run.stdout.split("\n").find((l) => l.includes(corpus) && l.includes("registered="));
+      expect(line, `a per-corpus line for ${corpus}`).toBeTruthy();
+      expect(line).toContain(`declared_opaque_expired=${OPAQUE_PER_CORPUS}`);
+    }
+    expect(run.stdout).toContain(`declared_opaque_expired=${OPAQUE_PER_CORPUS * CORPORA.length};`);
+
+    // Nothing that is MEASURED moved, and the exit contract is untouched: a
+    // stale declaration is a bookkeeping condition, not a wrong digest.
+    expect(body.totals["match"]).toBe(baseline.report.body.totals["match"]);
+    expect(body.totals["mismatch"]).toBe(baseline.report.body.totals["mismatch"]);
+    expect(body.totals["unregistered"]).toBe(baseline.report.body.totals["unregistered"]);
+    expect(run.code).toBe(baseline.code);
+  });
+
+  it("(c) upstream_repin: the live pin of asqav-sdk/a21d060 keeps a declaration LIVE, and any other value expires it", () => {
+    // Control beside case, in one test, because "the entry is live" proves
+    // nothing unless the same assertion can be made to read expired.
+    const runWith = (pinned: string) => {
+      const scopes = scopesCopy();
+      const c = scopes.corpora.find((x) => x.id === "asqav/a21d060")!;
+      for (const d of c.declared_opaque!) {
+        d["revisit_when"] = { upstream_repin: { upstream_id: "asqav-sdk/a21d060", pinned_value: pinned } };
+      }
+      const report = join(tmp(), "repin.json");
+      const raw = walkRaw({ report, scopes: writeTmp("scopes.json", scopes) });
+      return { raw, body: (JSON.parse(readFileSync(report, "utf8")) as Report).body };
+    };
+
+    const live = runWith(A21D060);
+    const liveRows = live.body.rows.filter((r) => r.corpus === "asqav/a21d060");
+    expect(liveRows.filter((r) => r.outcome === "declared_opaque").length).toBe(OPAQUE_PER_CORPUS);
+    expect(liveRows.filter((r) => r.outcome === "declared_opaque_expired")).toEqual([]);
+
+    const stale = runWith(NOT_A21D060);
+    const staleRows = stale.body.rows.filter((r) => r.corpus === "asqav/a21d060");
+    expect(staleRows.filter((r) => r.outcome === "declared_opaque")).toEqual([]);
+    expect(staleRows.filter((r) => r.outcome === "declared_opaque_expired").length).toBe(OPAQUE_PER_CORPUS);
+    for (const r of staleRows.filter((x) => x.outcome === "declared_opaque_expired")) {
+      expect(String(r.note)).toContain("expired: `asqav-sdk/a21d060`");
+      expect(String(r.note)).toContain(A21D060);
+    }
+    // The other corpus, whose entries were not touched, is unmoved in both runs.
+    for (const b of [live.body, stale.body]) {
+      expect(b.per_corpus["asqav/22a970d"]!["declared_opaque"]).toBe(OPAQUE_PER_CORPUS);
+      expect(b.per_corpus["asqav/22a970d"]!["declared_opaque_expired"] ?? 0).toBe(0);
+    }
+    expect(live.raw.code).toBe(baseline.code);
+    expect(stale.raw.code).toBe(baseline.code);
+  });
+
+  it("(d) refuses to run (exit 2) on a declaration with no revisit_when, and on one carrying both shapes at once, naming the entry", () => {
+    const cases: Array<[string, unknown]> = [
+      ["missing", undefined],
+      ["both", {
+        upstream_repin: { upstream_id: "asqav-sdk/a21d060", pinned_value: A21D060 },
+        upstream_appears: { id_prefix: PREFIX },
+      }],
+    ];
+    for (const [name, value] of cases) {
+      const scopes = scopesCopy();
+      const c = scopes.corpora.find((x) => x.id === "asqav/a21d060")!;
+      const first = c.declared_opaque![0]!;
+      if (value === undefined) delete first["revisit_when"];
+      else first["revisit_when"] = value;
+
+      const run = walkRaw({ report: join(tmp(), `bad-${name}.json`), scopes: writeTmp("scopes.json", scopes) });
+      // Not 0 and not 1 (the exit the corpora earn): a refusal to run.
+      expect(run.code, `${name} revisit_when must refuse the run`).toBe(2);
+      expect(run.stderr).toContain("revisit_when");
+      // Named, so the reader does not have to go looking: corpus, index, pointer.
+      expect(run.stderr).toContain("asqav/a21d060");
+      expect(run.stderr).toContain("/vectors/14/input/action_ref");
     }
   });
 });

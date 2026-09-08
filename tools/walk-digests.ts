@@ -60,10 +60,17 @@ const REPORT = resolve(argOf("--report") ?? join(REPO, "walker", "report.json"))
 // into the committed registry to test it would be the mistake the row exists to
 // catch. Reading only: nothing is written back here.
 const SCOPES = resolve(argOf("--scopes") ?? join(REPO, "walker", "scopes.json"));
+// --upstreams reads the liveness file a declaration's `revisit_when` is
+// evaluated against. Same argument as --scopes: the control for an EXPIRED
+// declaration needs an upstreams file carrying an entry that fires one, and
+// writing that entry into the committed file to test it would be the mistake
+// the expired row exists to catch. Reading only: nothing is written back here.
+const UPSTREAMS = resolve(argOf("--upstreams") ?? join(REPO, "fixtures", "upstreams.json"));
+const UPSTREAMS_LABEL = relative(REPO, UPSTREAMS).split("\\").join("/") || UPSTREAMS;
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
-type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle" | "declared_opaque";
+type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle" | "declared_opaque" | "declared_opaque_expired";
 
 interface Row {
   corpus: string;
@@ -419,7 +426,10 @@ function matchRefusal(corpus: string, file: string, pointer: string, refusal: st
  * author said so, and here is where" -- an entry that cannot say where still
  * reads as though it could, which is worse than no entry. `until` records the
  * condition under which the entry is to be revisited, so a declaration made
- * about a corpus mid-rework does not quietly become permanent.
+ * about a corpus mid-rework does not quietly become permanent -- and
+ * `revisit_when` is that same condition in a form this tool evaluates, because
+ * `until` is prose the tool cannot read and a declaration nobody re-reads keeps
+ * printing green about a corpus that has settled.
  */
 interface Declaration {
   pointer: string;
@@ -427,11 +437,40 @@ interface Declaration {
   source: string;
   quote: string;
   until: string;
+  revisit_when: RevisitWhen;
   note?: string;
+}
+
+/**
+ * The condition on which a declaration is to be re-read, in a form the tool
+ * evaluates. `until` is the same sentence written for a person.
+ *
+ * Exactly one of two shapes, and both are answered by reading
+ * fixtures/upstreams.json at run time -- no network, no clock, no dates -- so
+ * the verdict is a function of the tree and two runs over one tree agree.
+ *
+ *   upstream_repin    LIVE while that entry is still `role: current` and still
+ *                     carries the value the declaration was written against;
+ *                     EXPIRED when the value moved, the entry went historical,
+ *                     or the id is gone. For "revisit when this pin is re-pinned".
+ *   upstream_appears  EXPIRED as soon as ANY entry whose id starts with the
+ *                     prefix is `role: current`. For "revisit when the next
+ *                     revision lands", where the id does not exist yet and so
+ *                     cannot be named exactly.
+ */
+interface RevisitWhen {
+  upstream_repin?: { upstream_id: string; pinned_value: string };
+  upstream_appears?: { id_prefix: string };
 }
 
 /** Every member the status rests on. Missing any of these refuses the run (exit 2). */
 const DECLARATION_REQUIRED = ["pointer", "declared_by", "source", "quote", "until"] as const;
+
+/** The one shape each `revisit_when` may take, and the members that shape requires. */
+const REVISIT_SHAPES = {
+  upstream_repin: ["upstream_id", "pinned_value"],
+  upstream_appears: ["id_prefix"],
+} as const;
 
 function validateDeclarations(corpus: string, decls: Declaration[]) {
   decls.forEach((d, i) => {
@@ -446,8 +485,127 @@ function validateDeclarations(corpus: string, decls: Declaration[]) {
         );
       }
     }
+    validateRevisitWhen(corpus, i, d);
   });
 }
+
+/**
+ * `revisit_when` is required, and is exactly one shape carrying exactly its own
+ * members. Refused at the same gate and for the same reason as an unsourced
+ * entry: an entry whose expiry condition the tool cannot evaluate expires only
+ * by someone remembering to re-read a sentence, and the row that most needs
+ * re-reading is the one that looks most satisfied.
+ */
+function validateRevisitWhen(corpus: string, i: number, d: Declaration) {
+  const where = `walker/scopes.json: declared_opaque[${i}] on corpus ${corpus}, pointer ${d.pointer},`;
+  const why =
+    " A `revisit_when` carries EXACTLY ONE of `upstream_repin` {upstream_id, pinned_value} or " +
+    "`upstream_appears` {id_prefix}, and is evaluated against " + UPSTREAMS_LABEL + ". It is the machine " +
+    "form of `until`: without it the declaration expires only when a person remembers to re-read the " +
+    "prose, and until they do it keeps matching, keeps printing green and keeps describing a corpus " +
+    "that may have settled. Refusing to run.";
+  const rw: unknown = (d as unknown as Record<string, unknown>)["revisit_when"];
+  if (rw === null || typeof rw !== "object" || Array.isArray(rw)) {
+    throw new Error(`${where} has no \`revisit_when\` object.${why}`);
+  }
+  const keys = Object.keys(rw as object);
+  const named = keys.filter((k) => k in REVISIT_SHAPES);
+  if (keys.length !== 1 || named.length !== 1) {
+    throw new Error(
+      `${where} has a \`revisit_when\` naming ${keys.length === 0 ? "no shape at all" : "`" + keys.join("`, `") + "`"}.${why}`,
+    );
+  }
+  const shape = named[0] as keyof typeof REVISIT_SHAPES;
+  const inner: unknown = (rw as Record<string, unknown>)[shape];
+  if (inner === null || typeof inner !== "object" || Array.isArray(inner)) {
+    throw new Error(`${where} has a \`revisit_when.${shape}\` that is not an object.${why}`);
+  }
+  const required: readonly string[] = REVISIT_SHAPES[shape];
+  for (const k of required) {
+    const v = (inner as Record<string, unknown>)[k];
+    if (typeof v !== "string" || v.trim() === "") {
+      throw new Error(`${where} has a \`revisit_when.${shape}\` missing a non-empty \`${k}\`.${why}`);
+    }
+  }
+  for (const k of Object.keys(inner as object)) {
+    if (!required.includes(k)) {
+      throw new Error(`${where} has a \`revisit_when.${shape}\` carrying an unknown member \`${k}\`.${why}`);
+    }
+  }
+}
+
+interface UpstreamEntry {
+  id: string;
+  kind?: string;
+  role?: string;
+  pinned_commit?: string | null;
+  sha256?: string | null;
+}
+
+let upstreamsCache: UpstreamEntry[] | null = null;
+
+/**
+ * The liveness file, read once and only when a declaration needs it.
+ *
+ * Unreadable is a REFUSAL and never an empty list: an empty list would make
+ * every `upstream_appears` read LIVE forever, which is a check that cannot fail
+ * and therefore worse than no check -- it consumes the attention that would
+ * have noticed the gap.
+ */
+function upstreamEntries(): UpstreamEntry[] {
+  if (upstreamsCache) return upstreamsCache;
+  let doc: Json;
+  try {
+    doc = readJson(UPSTREAMS);
+  } catch (e) {
+    throw new Error(
+      `walker/scopes.json carries declared_opaque entries, whose \`revisit_when\` is evaluated against ` +
+        `${UPSTREAMS_LABEL}, and that file could not be read: ${(e as Error).message}. Reading it as empty ` +
+        `would make every declaration report LIVE forever. Refusing to run.`,
+    );
+  }
+  const rows = (doc as { upstreams?: Json }).upstreams;
+  if (!Array.isArray(rows)) {
+    throw new Error(`${UPSTREAMS_LABEL} carries no \`upstreams\` array, so no \`revisit_when\` can be evaluated. Refusing to run.`);
+  }
+  upstreamsCache = rows as unknown as UpstreamEntry[];
+  return upstreamsCache;
+}
+
+/** The value an entry pins: the commit for a git entry, the body digest otherwise. */
+function pinnedValueOf(e: UpstreamEntry): string | null {
+  return (e.kind === "git" ? e.pinned_commit : e.sha256) ?? null;
+}
+
+/**
+ * Null while the declaration is LIVE. Otherwise the condition that fired, in
+ * words, for the row to carry -- the row has to say what changed, or a reader
+ * has to re-derive it from two files to know what to re-read.
+ */
+function expiryOf(d: Declaration): string | null {
+  const ups = upstreamEntries();
+  if (d.revisit_when.upstream_appears) {
+    const prefix = d.revisit_when.upstream_appears.id_prefix;
+    const hit = ups.find((e) => e.id.startsWith(prefix) && e.role === "current");
+    return hit
+      ? `expired: an entry with id prefix \`${prefix}\` is now current in ${UPSTREAMS_LABEL} (\`${hit.id}\`).`
+      : null;
+  }
+  const { upstream_id: id, pinned_value: pinned } = d.revisit_when.upstream_repin!;
+  const e = ups.find((x) => x.id === id);
+  if (!e) return `expired: \`${id}\` is no longer an entry of ${UPSTREAMS_LABEL}; the declaration was written against it.`;
+  if (e.role !== "current") {
+    return `expired: \`${id}\` is \`role: ${String(e.role)}\` in ${UPSTREAMS_LABEL}, not \`current\`; the declaration was written against it as the current pin.`;
+  }
+  const now = pinnedValueOf(e);
+  if (now !== pinned) {
+    return `expired: \`${id}\` now pins ${now ?? "a value this tool cannot read"}, where the declaration was written against ${pinned}.`;
+  }
+  return null;
+}
+
+/** What the reader is to do about an expired declaration, on every expired row. */
+const REVISIT_INSTRUCTION = "Re-read this declaration against its source, then rewrite or withdraw it.";
 
 /** A canonicalization that failed: a registered refusal, or a disagreement that fails the run. */
 function pushCanonFailure(ctx: Ctx, r: Rule, file: string, pointer: string, declared: string | null, c: Canon) {
@@ -886,7 +1044,7 @@ async function ruleEvidenceChain(ctx: Ctx, rules: Rule[], filePath: string) {
 // The census: every digest-shaped field a rule did not consume.
 // ---------------------------------------------------------------------------
 
-function census(ctx: Ctx, files: string[], reasons: Map<string, string>, decls: Declaration[], matched: Set<number>) {
+function census(ctx: Ctx, files: string[], reasons: Map<string, string>, decls: Declaration[], expiredBy: Array<string | null>, matched: Set<number>) {
   for (const p of files) {
     const r = rel(p);
     const lower = p.toLowerCase();
@@ -933,8 +1091,10 @@ function census(ctx: Ctx, files: string[], reasons: Map<string, string>, decls: 
           encoding: shape,
           declared: val,
           recomputed: null,
-          outcome: "declared_opaque",
-          note: `declared opaque by ${d.declared_by}: "${d.quote}" Not graded and not counted unregistered; until: ${d.until}.${d.note ? " " + d.note : ""}`,
+          // An expired declaration still grades nothing -- the walker cannot
+          // recompute the value either way -- so only the outcome moves.
+          outcome: expiredBy[di] ? "declared_opaque_expired" : "declared_opaque",
+          note: `declared opaque by ${d.declared_by}: "${d.quote}" Not graded and not counted unregistered; until: ${d.until}.${d.note ? " " + d.note : ""}${expiredBy[di] ? ` ${expiredBy[di]} ${REVISIT_INSTRUCTION}` : ""}`,
           source: d.source,
         });
         continue;
@@ -1067,8 +1227,11 @@ async function main(): Promise<number> {
     }
 
     const decls = c.declared_opaque ?? [];
+    // One verdict per declaration, read from fixtures/upstreams.json once, and
+    // carried onto every row the declaration produces.
+    const expiredBy = decls.map((d) => expiryOf(d));
     const matchedDecls = new Set<number>();
-    census(ctx, files.filter((p) => wanted(rel(p))), reasons, decls, matchedDecls);
+    census(ctx, files.filter((p) => wanted(rel(p))), reasons, decls, expiredBy, matchedDecls);
 
     // Every declaration that matched no pointer here. Same argument as rule_idle,
     // one level over: an upstream that settles the rework and drops or renames the
@@ -1090,8 +1253,8 @@ async function main(): Promise<number> {
           encoding: null,
           declared: null,
           recomputed: null,
-          outcome: "declared_opaque",
-          note: `this declaration names ${d.pointer}, which is not a digest-shaped field of ${c.id}: it was consumed by a rule, or it is no longer in the corpus. Declared by ${d.declared_by}; until: ${d.until}.`,
+          outcome: expiredBy[i] ? "declared_opaque_expired" : "declared_opaque",
+          note: `this declaration names ${d.pointer}, which is not a digest-shaped field of ${c.id}: it was consumed by a rule, or it is no longer in the corpus. Declared by ${d.declared_by}; until: ${d.until}.${expiredBy[i] ? ` ${expiredBy[i]} ${REVISIT_INSTRUCTION}` : ""}`,
           source: d.source,
         });
       });
@@ -1128,10 +1291,10 @@ async function main(): Promise<number> {
       }
     }
 
-    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared: 0, inferred: 0 };
+    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0, declared: 0, inferred: 0 };
     for (const row of ctx.rows) {
       counts[row.outcome] = (counts[row.outcome] ?? 0) + 1;
-      if (row.outcome === "rule_idle" || row.outcome === "declared_opaque") continue;
+      if (row.outcome === "rule_idle" || row.outcome === "declared_opaque" || row.outcome === "declared_opaque_expired") continue;
       if (row.outcome !== "unregistered" && row.status === "declared") counts["declared"]!++;
       if (row.outcome !== "unregistered" && row.status === "inferred") counts["inferred"]!++;
     }
@@ -1142,7 +1305,12 @@ async function main(): Promise<number> {
     // does a declared_opaque one -- the point of the status is that the value is not
     // graded -- so both are excluded, which is what keeps every count at every pinned
     // corpus identical to what it was before either column existed.
-    counts["registered"] = ctx.rows.length - counts["unregistered"]! - counts["rule_idle"]! - counts["declared_opaque"]!;
+    counts["registered"] =
+      ctx.rows.length - counts["unregistered"]! - counts["rule_idle"]! - counts["declared_opaque"]! - counts["declared_opaque_expired"]!;
+    // A permanent zero column is the thing that stops a column being read, which
+    // is the `rule_idle` argument about rows applied to counts. The expired count
+    // appears -- in the report and on the printed lines -- only when it is not zero.
+    if (counts["declared_opaque_expired"] === 0) delete counts["declared_opaque_expired"];
     perCorpus[c.id] = counts;
     rows.push(...ctx.rows);
   }
@@ -1156,7 +1324,7 @@ async function main(): Promise<number> {
   // its source and note, which carry the declaration's own pointer.
   const sortPtr = (r: Row): string =>
     r.pointer !== null ? r.pointer
-      : r.outcome === "declared_opaque" ? ` ${r.source ?? ""}${r.note ?? ""}`
+      : r.outcome === "declared_opaque" || r.outcome === "declared_opaque_expired" ? ` ${r.source ?? ""}${r.note ?? ""}`
       : ` ${r.rule ?? ""}`;
   rows.sort((a, b) =>
     a.corpus < b.corpus ? -1 : a.corpus > b.corpus ? 1
@@ -1173,10 +1341,12 @@ async function main(): Promise<number> {
     return v;
   };
 
-  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0 };
+  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0 };
   for (const r of rows) totals[r.outcome]++;
+  const reported: Record<string, number> = { ...totals };
+  if (totals.declared_opaque_expired === 0) delete reported["declared_opaque_expired"];
 
-  const body = sortKeys({ per_corpus: perCorpus, rows, totals });
+  const body = sortKeys({ per_corpus: perCorpus, rows, totals: reported });
   const report = { header: { tool: "tools/walk-digests.ts", run_at: new Date().toISOString(), scopes: "walker/scopes.json" }, body };
   writeFileSync(REPORT, JSON.stringify(report, null, 2) + "\n", "utf8");
 
@@ -1188,13 +1358,14 @@ async function main(): Promise<number> {
         `  mismatch=${String(c["mismatch"]).padStart(3)}  unregistered=${String(c["unregistered"]).padStart(4)}` +
         `  serializer_disagreement=${c["serializer_disagreement"]}  expected_refusal=${c["expected_refusal"]}` +
         `  rule_idle=${c["rule_idle"]}  declared_opaque=${c["declared_opaque"]}` +
+        (c["declared_opaque_expired"] ? `  declared_opaque_expired=${c["declared_opaque_expired"]}` : "") +
         `  (declared=${c["declared"]} inferred=${c["inferred"]})`,
     );
   }
   console.log("");
   for (const r of rows) {
-    if (r.outcome === "declared_opaque") {
-      console.log(`  DECLARED_OPAQUE  ${r.corpus}  ${r.pointer ?? "(matched no pointer in this corpus)"}`);
+    if (r.outcome === "declared_opaque" || r.outcome === "declared_opaque_expired") {
+      console.log(`  ${r.outcome.toUpperCase()}  ${r.corpus}  ${r.pointer ?? "(matched no pointer in this corpus)"}`);
       console.log(`      source     : ${r.source}`);
       if (r.note) console.log(`      note       : ${r.note}`);
       continue;
@@ -1216,7 +1387,9 @@ async function main(): Promise<number> {
   console.log(
     `SUMMARY match=${totals.match} mismatch=${totals.mismatch} unregistered=${totals.unregistered} ` +
       `serializer_disagreement=${totals.serializer_disagreement} expected_refusal=${totals.expected_refusal} ` +
-      `rule_idle=${totals.rule_idle} declared_opaque=${totals.declared_opaque}; report walker/report.json`,
+      `rule_idle=${totals.rule_idle} declared_opaque=${totals.declared_opaque}` +
+      (totals.declared_opaque_expired ? ` declared_opaque_expired=${totals.declared_opaque_expired}` : "") +
+      `; report walker/report.json`,
   );
   return totals.mismatch > 0 || totals.serializer_disagreement > 0 ? 1 : 0;
 }
