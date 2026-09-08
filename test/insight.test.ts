@@ -35,6 +35,7 @@ import {
   parseRegistry,
   recoverAddress,
   resolveRegistryKey,
+  uidsHashCandidates,
   FORMAT,
 } from "../src/adapters/insight.js";
 import type { Attestation, RegistryKey } from "../src/adapters/insight.js";
@@ -119,6 +120,9 @@ const verifyV4 = (v: unknown, extra: Partial<VerifyOptions> = {}): Promise<Verif
   insightAdapter.verify(bytesOf(v), { ...v4base, ...extra });
 /** A deep copy, so a mutation in one test cannot leak into another. */
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
+
+/** The zero `bytes32`. The registry rule of 2026-09-08 omits a uid equal to it. */
+const ZERO32 = `0x${"0".repeat(64)}`;
 
 // --------------------------------------------------------------------------
 
@@ -602,18 +606,37 @@ describe("insight v3 — independent agreement with the Lead's recheck", () => {
     expect(r.annotations?.["domain_extra_fields_signed"]).toBeUndefined();
   });
 
-  // A7: the 32-byte packed concatenation, source first. The other three
-  // constructions are computed too, and the annotation names them, so a signer
-  // who changes the ordering is told which one they used.
-  it("preTradeUidsHash is keccak(preTradeUid || destinationPreTradeUid), packed, in that order", async () => {
+  // A7. Both uids in this package are non-zero, so the rule the registry
+  // documented on 2026-09-08 (omit a zero bytes32 before hashing) and the packed
+  // `keccak(src || dst)` this test asserted before it produce the SAME 32 bytes.
+  // The named construction therefore changes and the value must not: the digest
+  // is asserted explicitly below so the rename cannot hide a value change, and
+  // the coincidence is asserted too, because a diagnostic listed as an "other
+  // construction" while equal to the signed hash would otherwise read as a
+  // contradiction.
+  it("preTradeUidsHash is named as the registry's documented rule, and its value is unchanged", async () => {
     const r = await verifyV3(v3);
     expect(r.annotations?.["pre_trade_uids_hash"]).toBe(
-      "keccak(src || dst), packed — reproduced from preTradeUid and destinationPreTradeUid",
+      "keccak(non-zero uids in route order, packed) [registry 2026-09-08] — reproduced from preTradeUid and destinationPreTradeUid",
     );
+    // The value, stated as bytes and not as a name.
+    const signed = String(v3["receipt"].data.preTradeUidsHash);
+    const src = String(v3["receipt"].data.preTradeUid);
+    const dst = String(v3["receipt"].data.destinationPreTradeUid);
+    expect(src).not.toBe(ZERO32);
+    expect(dst).not.toBe(ZERO32);
+    const c = uidsHashCandidates(src, dst);
+    expect(c["keccak(non-zero uids in route order, packed) [registry 2026-09-08]"]).toBe(signed.toLowerCase());
+    expect(c["keccak(src || dst), packed"]).toBe(signed.toLowerCase());
+    // The four diagnostics are still computed and still reported.
     const others = String(r.annotations?.["pre_trade_uids_hash_other_constructions"]);
-    expect(others).not.toContain(String(v3["receipt"].data.preTradeUidsHash));
+    expect(others).toContain("keccak(src || dst), packed = ");
     expect(others).toContain("keccak(dst || src), packed = ");
     expect(others).toContain("keccak(abi.encode(bytes32[2])) = ");
+    // The one that coincides is marked as coinciding, not left to be read as a
+    // second, unexplained construction that also produces the signed value.
+    expect(others).toContain(`keccak(src || dst), packed = ${signed.toLowerCase()} [same digest as the named construction]`);
+    expect(others).not.toContain(`keccak(dst || src), packed = ${signed.toLowerCase()}`);
   });
 
   it("binds BOTH gates, and says the destination gate's requestHash differs by design (A5, A6, H5)", async () => {
@@ -1068,7 +1091,16 @@ describe("insight v4 — through the adapter", () => {
   it("binds both gates, so no gate is reported unbound", async () => {
     const r = await verifyV4(v4);
     expect(Object.keys(r.annotations ?? {}).filter((k) => k.includes("unbound_gates"))).toEqual([]);
-    expect(r.annotations?.["pre_trade_uids_hash"]).toContain("keccak(src || dst)");
+    // Both uids are non-zero here too, so the named construction moved to the
+    // registry rule of 2026-09-08 and the DIGEST did not. Asserted as bytes, not
+    // only as a name, for the same reason as the v3 case above.
+    expect(r.annotations?.["pre_trade_uids_hash"]).toContain(
+      "keccak(non-zero uids in route order, packed) [registry 2026-09-08]",
+    );
+    const signed = String(v4["receipt"].data.preTradeUidsHash);
+    const c = uidsHashCandidates(String(v4["receipt"].data.preTradeUid), String(v4["receipt"].data.destinationPreTradeUid));
+    expect(c["keccak(non-zero uids in route order, packed) [registry 2026-09-08]"]).toBe(signed.toLowerCase());
+    expect(c["keccak(src || dst), packed"]).toBe(signed.toLowerCase());
   });
 
   it("reports the two flows and the realised price as exact strings", async () => {
@@ -1188,6 +1220,95 @@ describe("insight v4 — the production sample", () => {
       now: INSIGHT_V4_NOW,
     });
     expect(r.verdict).not.toBe("VALID");
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * The registry rule of 2026-09-08, and the 2 September receipt that already
+ * satisfied it.
+ *
+ * `refs/insight-oracle-keys-2026-09-08T1218Z.json` states
+ * `preTradeUidsHash: keccak256(concat(non-zero uids in route order, 32 raw
+ * bytes each, no separator)); zero bytes32 is omitted; empty after omission ->
+ * keccak256("")`. The 5 September pin said the same without `non-zero` and
+ * without the omission clause; `schemaVersion` is 4 in both.
+ *
+ * WHY THESE ARE UNIT TESTS AND NOT A GRADED PACKAGE. The handoff asked for the
+ * attestation sample to be graded through the entry point the execution-receipt
+ * tests use, and it cannot be: `asPackage` (src/adapters/insight.ts l.480-486)
+ * requires `receipt`, `preTrade` and one of `onchain` / `publishedKeys`, and the
+ * 15:46Z sample is a BARE attestation with none of them. Handed to the adapter
+ * it verifies and returns VALID -- asserted below, so this claim is measured and
+ * not asserted from reading -- but it never reaches the package branch where the
+ * `preTradeUidsHash` check lives, so it carries no `pre_trade_uids_hash`
+ * annotation at all. Wrapping it in a synthesised `preTrade`/`onchain` envelope
+ * would be grading bytes Insight never issued. So the rule is unit-tested on the
+ * sample's own two uids instead, against digests computed from the signed bytes.
+ *
+ * What turns this red: any change to the construction that moves the digest for
+ * (uid, zero32), for (zero32, uid) or for (zero32, zero32); a change that stops
+ * the documented construction being the FIRST candidate, which is what makes it
+ * the named hit when several coincide; or the sample's signed bytes changing.
+ * What it does NOT observe: whether Insight's own implementation computes this,
+ * for any receipt other than this one.
+ */
+describe("insight — preTradeUidsHash under the registry rule of 2026-09-08", () => {
+  const src = String(sampleAtt.data.preTradeUid);
+  const dst = String(sampleAtt.data.destinationPreTradeUid);
+  const signed = String(sampleAtt.data.preTradeUidsHash);
+  const DOCUMENTED = "keccak(non-zero uids in route order, packed) [registry 2026-09-08]";
+
+  it("the sample is the shape this section claims: one non-zero uid, one zero uid", () => {
+    expect(src).toBe("0x0000000000000000000000000000000000000000000000000000000000000001");
+    expect(dst).toBe(ZERO32);
+    expect(signed).toBe("0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6");
+  });
+
+  it("a zero destination uid is omitted: the documented construction reproduces the signed hash", () => {
+    const c = uidsHashCandidates(src, dst);
+    expect(c[DOCUMENTED]).toBe(signed.toLowerCase());
+  });
+
+  it("and none of the four diagnostics does — the controls, so the green above is not free", () => {
+    const c = uidsHashCandidates(src, dst);
+    // The three digests the Lead computed independently, recomputed here from
+    // the sample's own bytes through this repository's keccak.
+    expect(c["keccak(src || dst), packed"]).toBe("0xada5013122d395ba3c54772283fb069b10426056ef8ca54750cb9bb552a59e7d");
+    expect(c["keccak(dst || src), packed"]).toBe("0xa6eef7e35abe7026729641147f7915573c7e97b47efa546f5f6e3230263bcb49");
+    for (const [name, v] of Object.entries(c)) {
+      if (name === DOCUMENTED) continue;
+      expect(v).not.toBe(signed.toLowerCase());
+    }
+  });
+
+  it("the documented construction is the FIRST candidate, so it is the one named when several coincide", () => {
+    expect(Object.keys(uidsHashCandidates(src, dst))[0]).toBe(DOCUMENTED);
+  });
+
+  it("a zero SOURCE uid is omitted the same way: keccak of the destination alone", () => {
+    const c = uidsHashCandidates(ZERO32, src);
+    expect(c[DOCUMENTED]).toBe("0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6");
+  });
+
+  it("both uids zero: keccak256 of the empty string", () => {
+    const c = uidsHashCandidates(ZERO32, ZERO32);
+    expect(c[DOCUMENTED]).toBe("0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470");
+  });
+
+  it("the sample verifies as a bare attestation and carries NO pre_trade_uids_hash annotation", async () => {
+    // The measurement behind the WHY note above: the sample is gradable, the
+    // verdict is VALID, and the commitment field is simply never checked,
+    // because the check lives on the package branch this document never enters.
+    const r = await insightAdapter.verify(bytesOf(sampleAtt), {
+      registry: REG_1545_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      now: INSIGHT_V4_NOW,
+    });
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["pre_trade_uids_hash"]).toBeUndefined();
+    expect(r.annotations?.["pre_trade_uids_hash_other_constructions"]).toBeUndefined();
   });
 });
 

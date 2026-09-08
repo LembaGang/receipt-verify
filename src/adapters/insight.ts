@@ -1519,19 +1519,59 @@ function checkBinding(receipt: Attestation, gate: Attestation, role: "source" | 
   return { ok: true, ann };
 }
 
+/** The zero `bytes32`. A uid equal to it is omitted before hashing. */
+const ZERO_BYTES32 = `0x${"0".repeat(64)}`;
+
 /**
- * `preTradeUidsHash` over the two gate uids. The package derives it as the
- * keccak-256 of the two 32-byte values concatenated, source first — the packed
- * encoding, not `abi.encode` of a `bytes32[]`, and not sorted. Three other
- * orderings and encodings are computed here and reported when none matches, so
- * a mismatch says which construction WOULD have produced the signed value
- * rather than only that the signed value is unexplained.
+ * `preTradeUidsHash` over the gate uids.
+ *
+ * THE DOCUMENTED RULE, and where it is documented. Insight's key registry
+ * (`https://www.oracleinsight.xyz/.well-known/oracle-keys.json`, pinned here as
+ * `refs/insight-oracle-keys-2026-09-08T1218Z.json`) states, at
+ * `schemas.ExecutionReceipt.commitments.preTradeUidsHash`:
+ *
+ *   keccak256(concat(non-zero uids in route order, 32 raw bytes each, no
+ *   separator)); zero bytes32 is omitted; empty after omission -> keccak256("")
+ *
+ * So: a zero DESTINATION uid means keccak-256 of the source uid alone; a zero
+ * source with a non-zero destination means keccak-256 of the destination alone;
+ * both zero means keccak-256 of the empty string; and two non-zero uids mean the
+ * packed concatenation, source first, which is what this function computed and
+ * named before 2026-09-08. That is the first candidate below and it is the one
+ * the annotation names when several coincide.
+ *
+ * WHY THE DATE IS IN THE NAME. The 2026-09-05 pin
+ * (`refs/insight-oracle-keys-2026-09-05T1829Z.json`) stated the same rule
+ * WITHOUT the `non-zero` clause and without the omission, and
+ * `schemas.ExecutionReceipt.schemaVersion` is 4 in both documents: the issuer
+ * changed a commitment rule and did not version it. Naming the construction
+ * after the registry date is what lets a reader of an annotation tell which of
+ * the two prose rules a verdict was reached under. `FINDINGS.md`, section of
+ * 2026-09-08, carries the diff and the evidence that Insight's own 2 September
+ * receipt already hashed under the newer rule.
+ *
+ * The four constructions below the documented one are DIAGNOSTICS, kept from
+ * before this change and reported only in `pre_trade_uids_hash_other_
+ * constructions` — so a receipt whose signed value matches none of the five
+ * says which encoding WOULD have produced it rather than only that it is
+ * unexplained. One of them, `keccak(src || dst), packed`, coincides with the
+ * documented rule whenever both uids are non-zero; the annotation marks that
+ * coincidence rather than listing a second construction that silently equals
+ * the signed value.
  */
-function uidsHashCandidates(src: string, dst: string): Record<string, string> {
+export function uidsHashCandidates(src: string, dst: string): Record<string, string> {
   const a = hexToBytes(src.slice(2));
   const b = hexToBytes(dst.slice(2));
   const arrayEncoded = concatBytes(word(32n), word(2n), a, b);
+  const nonZero = [
+    [src, a] as const,
+    [dst, b] as const,
+  ]
+    .filter(([h]) => h.toLowerCase() !== ZERO_BYTES32)
+    .map(([, bytes]) => bytes);
   return {
+    // The rule the registry documents, in route order, zero uids omitted.
+    "keccak(non-zero uids in route order, packed) [registry 2026-09-08]": hex(keccak(concatBytes(...nonZero))),
     "keccak(src || dst), packed": hex(keccak(concatBytes(a, b))),
     "keccak(dst || src), packed": hex(keccak(concatBytes(b, a))),
     "keccak(sorted, packed)": hex(keccak(src.toLowerCase() <= dst.toLowerCase() ? concatBytes(a, b) : concatBytes(b, a))),
@@ -2270,9 +2310,10 @@ export const insightAdapter: Adapter = {
       ann["destination_gate_binding"] = `not_checked (the receipt names destinationPreTradeUid ${dstUid} and the package ships no destination gate)`;
     }
 
-    // `preTradeUidsHash` over the two uids. Four constructions are computed and
-    // the matching one is named, so a mismatch reports which encoding WOULD
-    // have produced the signed value rather than only that it is unexplained.
+    // `preTradeUidsHash` over the two uids. The rule the registry documents is
+    // tried FIRST and is the one named; four older constructions are computed as
+    // diagnostics, so a mismatch reports which encoding WOULD have produced the
+    // signed value rather than only that it is unexplained.
     const uidsHash = str(pkg.receipt.data["preTradeUidsHash"]);
     if (uidsHash !== null && srcUid !== null && dstUid !== null) {
       const candidates = uidsHashCandidates(srcUid, dstUid);
@@ -2281,7 +2322,7 @@ export const insightAdapter: Adapter = {
         return invalid(
           FORMAT,
           "content_commitment_mismatch",
-          `the receipt signs preTradeUidsHash ${uidsHash}, which is not the keccak of its two gate uids under any construction tried: ` +
+          `the receipt signs preTradeUidsHash ${uidsHash}, which is not the keccak of its gate uids under the rule the registry documents nor under any diagnostic construction tried: ` +
             Object.entries(candidates)
               .map(([k, v]) => `${k} = ${v}`)
               .join("; "),
@@ -2290,9 +2331,14 @@ export const insightAdapter: Adapter = {
         );
       }
       ann["pre_trade_uids_hash"] = `${hit[0]} — reproduced from preTradeUid and destinationPreTradeUid`;
+      // A diagnostic that produces the SAME digest as the named construction is
+      // marked as such. The documented rule and `keccak(src || dst), packed`
+      // coincide whenever both uids are non-zero, and an unmarked line reading
+      // `<other construction> = <the signed value>` would say the signed value
+      // has two unexplained explanations rather than one rule and a coincidence.
       ann["pre_trade_uids_hash_other_constructions"] = Object.entries(candidates)
         .filter(([k]) => k !== hit[0])
-        .map(([k, v]) => `${k} = ${v}`)
+        .map(([k, v]) => (sameAddress(v, hit[1]) ? `${k} = ${v} [same digest as the named construction]` : `${k} = ${v}`))
         .join("; ");
     }
 

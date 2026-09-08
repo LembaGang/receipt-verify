@@ -433,10 +433,10 @@ const insight: FormatCoverage = {
     {
       id: "binding",
       order: 8,
-      title: "The receipt binds to every gate it names, both uids hash to the signed preTradeUidsHash, and each requestHash is the digest of its canonical request",
+      title: "The receipt binds to every gate it names, the non-zero uids hash to the signed preTradeUidsHash, and each requestHash is the digest of its canonical request",
       source: "the receipt's preTradeUid / destinationPreTradeUid / preTradeUidsHash / requestHash and the gates' canonicalRequest* types",
       status: "conditional",
-      note: "Runs when a package supplies gates. Each uid field is checked against the gate filling that role: the source gate carries the receipt's own request, and the destination gate carries the MIRROR request, so its requestHash differs from the receipt's by design and equality is reported rather than required — what must hold there is that its two asset ids are the receipt's, reversed. `preTradeUidsHash` is reproduced as keccak of the two 32-byte uids concatenated, source first, and three other constructions are computed so a mismatch says which encoding would have produced the signed value. A gate that neither uid field names is reported in `unbound_gates` and does not move the verdict — it is not a fault, it is unfinished scope.",
+      note: "Runs when a package supplies gates. Each uid field is checked against the gate filling that role: the source gate carries the receipt's own request, and the destination gate carries the MIRROR request, so its requestHash differs from the receipt's by design and equality is reported rather than required — what must hold there is that its two asset ids are the receipt's, reversed. `preTradeUidsHash` is reproduced under the rule Insight's key registry documents as of 2026-09-08 (`refs/insight-oracle-keys-2026-09-08T1218Z.json`): keccak of the NON-ZERO uids in route order, 32 raw bytes each, no separator, a zero bytes32 omitted, and keccak256(\"\") if nothing is left. Two non-zero uids therefore give the packed source-first concatenation this row described before that date, unchanged byte for byte. Four older constructions are computed as diagnostics so a mismatch says which encoding would have produced the signed value, and one that coincides with the named rule is marked as coinciding. A gate that neither uid field names is reported in `unbound_gates` and does not move the verdict — it is not a fault, it is unfinished scope.",
     },
     {
       id: "swap",
