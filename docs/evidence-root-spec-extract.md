@@ -181,3 +181,247 @@ whose roots **differ**.
 root from a receipt never performs that step. Vector `evi-content-mismatch-unknown` supplies the
 verifier's recomputed digest directly rather than any content bytes, which is consistent with
 that reading.
+
+---
+
+# Rev 6 — the section added 2026-09-09 (CC_HANDOFF_2026-09-09, step S1)
+
+Source: `drafts/evidence-pinning-02-amendments-rev6-2026-09-08.md`, sha256
+`d62ded37dcf63f541e5b670b0cc0f7876e04a182064eb06a32af0037effaf026`, 21,968 bytes, at
+`TKCollective/agentoracle-receipt-spec` commit
+`7f0b0cd1a709aa9ba6a3419b14656340f6526f0c`. Digest re-derived from the git blob at that
+commit, not from the checkout: this machine has `core.autocrlf=true` and every working-tree
+copy hashes differently.
+
+**Precedence.** Rev 6 l.5-7 replaces rev 5 by filename, digest and byte count, and
+"**Everything in rev 5 stands except where this document says otherwise.**" Rev 6 l.8-12
+lists what it explicitly leaves standing: rev 5's Findings 24-26 and its distinctness
+prohibition, and rev 4's Findings 15-23, the four-member preimage, the
+`ao-evidence-leaf-v2` prefix, the four-term sort key and Finding 20's empty-set
+prohibition. Every section 1-9 above therefore continues to govern except where a rev 6
+entry below displaces it.
+
+Rev 6 carries **seven** normative amendment blocks and nothing else that binds an
+implementation. They are at l.93, l.119, l.153, l.169, l.191, l.212 and l.240; the sweep
+that establishes the count is a grep for an `Amend`/`Add` block head over the blob. Each is
+taken in turn, with our status at commit `5ffb455` — the state in which
+`tools/evidence-root.ts`, `test/evidence-root.test.ts` and the four other evidence-root files
+were left on 7 September, all last written by `80ca6a6` and untouched since.
+
+## R6-1. Finding 27 — the interior node's children are raw octets
+
+**Amends base l.119-122.** Rev 6 l.101-104:
+
+> In the interior node, `left` and `right` are the 32 raw octets of the child digests, not
+> their hexadecimal form. This differs from the leaf preimage deliberately: a leaf's members
+> are values carried in the receipt as strings and enter as their UTF-8 bytes, whereas a
+> node's children are outputs of this function and enter as the octets the function produced.
+
+**Status: already satisfied. This was our choice on 7 September and is now compelled by the
+text.** Section 2 above records the choice and the two grounds we reasoned from; `nodeHash` in
+`tools/evidence-root.ts` concatenates `Buffer.from(left)` and `Buffer.from(right)` with no
+hex conversion. The reasoning rev 6 gives is the reasoning section 2 gives, in the same two
+parts — that a digest's value is its octets, and that rev 2's hex carve-out is scoped to
+members carried in the receipt as strings.
+
+**How we know it is now compelled rather than shared.** Rev 5 and its four predecessors
+contain no sentence on the encoding of `left` and `right` (section 2 above; the Lead's own
+search of the five texts for `left`, `right`, `octet`, `raw bytes` and `concaten` returned
+none). Rev 6 l.75-77 states the gap in the same terms — "**Nothing in any of the five texts
+states the encoding of `left` and `right`** ... Both readings are defensible from the text as
+it stands" — and l.101-104 closes it. A third implementer reading rev 6 cannot reach hex
+without contradicting a sentence. That is the difference between rev 5 and rev 6, and it is
+the whole point of this run.
+
+## R6-2. Finding 27's second clause — the `0x00` argument scopes to leaf members
+
+**Adds after the amended interior-node paragraph.** Rev 6 l.121-126:
+
+> The `0x00` separators in the node preimage are retained for consistency with the leaf form.
+> Unlike the leaf, they are not what makes this preimage unambiguous: both children are
+> fixed-length 32-octet digests and their boundaries follow from position. A child digest may
+> itself contain `0x00` octets, and this is harmless. The leaf preimage's
+> no-embedded-`0x00` property, relied on at base l.106-109, is a property of leaf members and
+> is not claimed for node children.
+
+**Status: already satisfied, and non-behavioural.** The clause asserts a property of the
+preimage and states why it holds; it does not ask an implementation to do anything. Our
+`nodeHash` retains both `0x00` separators (from base l.121, which rev 6 does not change), and
+places no constraint on the octets of a child digest — under raw children it cannot, since it
+never inspects them. Section 1 above cites rev 4 l.106-109 for the leaf separator and had
+already scoped that argument to bound members by quoting it in the leaf entry only.
+
+The clause matters to this run for a different reason: it removes the one argument by which a
+reader might have inferred hex children from rev 5. A reader who took the `0x00` delimiter to
+require delimiter-free operands would have been pushed toward hex, since a raw digest may
+contain `0x00`. Rev 6 blocks that inference explicitly.
+
+## R6-3. Finding 28 — termination
+
+**Adds after the odd-node paragraph.** Rev 6 l.155-157:
+
+> **Termination.** When the pinned set contains exactly one item, `evidence_root` is that
+> item's leaf. No interior node is formed. Applying the node function to a single leaf paired
+> with itself is forbidden, for the same second-preimage reason the odd-node rule gives.
+
+**Status: already satisfied; unstated-but-forced on 7 September, stated now.** Section 3 above
+records termination as "not stated in any of the five texts and forced by the construction",
+and `computeRoot` does not enter its `while (level.length > 1)` loop at all for a one-element
+level, returning that leaf as the root with no node hashing. The self-pairing prohibition is
+satisfied vacuously: nothing in `computeRoot` can pair a value with itself, because the
+pairing loop consumes two distinct indices and the odd tail is pushed unchanged.
+
+Rev 6 l.145-149 confirms our section 3 reading of the risk — that `node(leaf, leaf)` "also
+satisfies every sentence in the section" of rev 5 — so this too moves from choice to
+compulsion.
+
+## R6-4. Finding 29 — the affirmative step-resolution token is `resolved`
+
+**Amends §4.3.** Rev 6 l.171-174:
+
+> A step resolves to exactly one of two values: `resolved`, when the step's evidence
+> requirements are met, or `unknown`, under the conditions this section states. An
+> implementation MUST emit one of these two tokens and MUST NOT emit any other value for a
+> step's resolution.
+
+**Status: NOT satisfied at `5ffb455`. Implemented in S2 from this sentence.** Our
+`Resolution.resolution` member is typed `"unknown" | "recomputed"` (`tools/evidence-root.ts`
+l.409) and its comment says in terms that `"recomputed"` is "our name for the affirmative
+case, which the texts never name". Rev 6 now names it, and the second sentence is a
+prohibition: `recomputed` is "any other value". We emit the token rev 6 forbids.
+
+The fix is the token, not the condition. Rev 6 says `resolved` is emitted "when the step's
+evidence requirements are met", which is the condition our code already computes — not
+`fully_pinned` false (rev 2 l.190-193, step (c)) and no per-item reason outstanding (rev 4
+l.184-191, step (d)). Only the string changes.
+
+## R6-5. Finding 30 — `content_kind` on an unpinned entry
+
+**Amends §4.1.1.** Rev 6 l.193-196:
+
+> On an unpinned entry, `content_kind` MUST be absent or `null`; the two are equivalent and
+> both mean no retrieved content is described. An implementation MUST NOT treat a `null`
+> `content_kind` on an unpinned entry as a malformation. On a pinned entry, `content_kind`
+> MUST be present and MUST be one of the defined values.
+
+**Status: already satisfied in both limbs; the first limb was our choice and is now
+compelled.**
+
+- *Unpinned.* `validateEvidenceSet` branches on `e.pinned === false` and `continue`s after the
+  two `unpinned_reason` checks, so the `content_kind` check at check 9 is never reached for an
+  unpinned entry and a `null` cannot halt. Section 6 above records this as a reading we took
+  and carried to E6 — "no sentence anywhere states a consequence for an explicit `null`. We
+  read `null` as absent." Rev 6 l.187-189 quotes that reading back and adopts it.
+- *Pinned.* Check 9 halts with `content_kind_absent_when_pinned` when the member is absent,
+  `null`, or outside `CONTENT_KINDS`, which is exactly "MUST be present and MUST be one of the
+  defined values".
+
+**One scoping decision, made from the text and recorded.** The first limb reads "MUST be
+absent or `null`", which on its face makes an unpinned entry carrying `content_kind:
+"snippet"` a MUST violation. We do **not** add a halt for it, on rev 6's own l.249-250:
+"**This is the only amendment in this revision that adds a rejection condition to input
+validation**", said of Finding 32. Finding 30 therefore adds none, and the sentence's
+operative clause is the prohibition on halting, not a new halt. Recorded as a place two
+readers could still differ.
+
+## R6-6. Finding 31 — diagnostic precedence under coexisting malformations
+
+**Adds to §4.3.** Rev 6 l.214-218:
+
+> When a receipt violates more than one condition of this section, an implementation MUST halt
+> and MAY name any one of the violated conditions in its diagnostic, except where a precedence
+> is stated explicitly (18b, 18c). Conformance is determined by the halt, not by which
+> condition is named. A conformance vector that injects more than one condition MUST state
+> which diagnostics are acceptable.
+
+**Status: already satisfied; no code change.** `validateEvidenceSet` returns on the first
+condition it meets, so it halts and names exactly one — which "MAY name any one" permits. The
+two stated precedences are honoured and were honoured before rev 6 asked: section 6 above
+records that the empty-set check precedes `fully_pinned` (rev 4 18b, l.215-218) and that the
+`content_kind` check precedes step (b) (rev 4 18c, l.235-239), and the code's numbered order
+implements both.
+
+What this sentence changes is not our code but **the rubric for S4**: on a MALFORMED vector,
+agreement now means we halt, and the diagnostic we name need only be one of the conditions the
+input violates. It is the sentence that makes "agree" well-defined on the twelve MALFORMED
+rows without a value on Joe's side to compare against.
+
+## R6-7. Finding 32 — `retrieved_at` canonical form, and the bytewise correction
+
+Two parts.
+
+**(a) The wording correction.** Rev 6 l.240-241: replace rev 5's Finding 12 "earliest
+`retrieved_at`" with "**first `retrieved_at` in the canonical bytewise order.**"
+
+**Status: already satisfied; our reading is now the text's.** Check 6 in section 6 above
+selects the minimum per-item `retrieved_at` under `compareUtf8`, which is bytewise over UTF-8,
+and the code comment says why: "Compared as carried bytes: the members are RFC 3339 timestamps
+and the texts define no parse." Rev 6 l.237-238 rules the same way — "**The bytewise rule
+stands** — it is what makes the root computable without a date library — and Finding 12's
+wording is corrected to match it." A reader who took "earliest" temporally would have needed a
+date library and could have differed from us; rev 6 removes that reading.
+
+**(b) The new rejection condition.** Rev 6 l.243-247, added to §4.1.1:
+
+> `retrieved_at` MUST be an RFC 3339 timestamp in UTC with the `Z` designator and exactly
+> three fractional-second digits. This canonical form is required because the sort at
+> §4.1.2 is bytewise: two spellings of one instant would otherwise order differently and
+> produce different roots for the same evidence. An implementation MUST reject a
+> `retrieved_at` that is not in this form.
+
+**Status: NOT satisfied at `5ffb455`. Implemented in S2 from this sentence.** No check in
+`validateEvidenceSet` inspects the form of any `retrieved_at`; section 6's table has fourteen
+conditions and none is about timestamp shape. Rev 6 l.249-250 calls this "the only amendment
+in this revision that adds a rejection condition to input validation", so it is the one
+sentence in rev 6 that adds a halt.
+
+**Scope, decided from the sentence and recorded.** The amendment is directed at **§4.1.1**,
+which base l.83-103 defines as the `sources` **entries** section. We therefore apply it to
+every entry's `retrieved_at`, pinned and unpinned alike — the member is required on every
+entry at base l.91, and §4.1.1 is not scoped to pinned entries. We do **not** apply it to the
+**set-level** `retrieved_at`, which base l.71 defines in §4.1, a different section that rev 6
+does not amend. Recorded as a gap rather than closed by us: the rule's own stated reason —
+that two spellings of one instant sort differently — bears on the set-level member too,
+because check 6 compares it bytewise against the entries, yet the sentence's placement does
+not reach it. A non-canonical set-level `retrieved_at` therefore fails closed under our
+implementation but by the wrong diagnostic (`set_retrieved_at_not_earliest`, not a form
+rejection).
+
+**Diagnostic and placement.** `retrieved_at_not_canonical`, evaluated at the top of the
+per-entry loop, which leaves checks 1-6 in the argued order section 6 fixes and cannot perturb
+any existing vector. Under R6-6 the placement is free in any case.
+
+**The form, exactly.** "RFC 3339 timestamp in UTC with the `Z` designator and exactly three
+fractional-second digits" is implemented as
+`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$`, with the date and time fields additionally
+required to be in range (month 01-12, day 01-31, hour 00-23, minute and second 00-59, second
+60 admitted for the leap second RFC 3339 permits). Uppercase `T` and `Z` are taken as written:
+rev 6 names "the `Z` designator" specifically, and RFC 3339's lowercase variants would give
+one instant two spellings, which is the defect the sentence exists to remove.
+
+## R6-8. What rev 6 changes that is not an amendment
+
+Rev 6 also carries three errata (l.259-292) and a vector changelog (l.296-335). None binds an
+implementation. Two bear on the record and are checked in this run rather than taken:
+
+- **E-3** moves `correct_root` out of `evi-root-mismatch-rejects`'s `input` and into
+  `computed`, which closes the airlock disclosure the 7 September run made. Re-derived at P0
+  from our own extract, not taken from the text: zero vectors carry `correct_root` under
+  `input`, and twelve carry a `computed` member.
+- The changelog at l.309-329 states that the rev 6 categories **overlap** — twelve
+  root-bearing vectors and twelve MALFORMED, with `evi-root-mismatch-rejects` in both — so
+  12 + 12 + 5 is not a partition of 29. The S4 accounting states the overlap.
+
+## R6-9. Summary of status
+
+| Rev 6 rule | Line | Our status at `5ffb455` | Was it a choice? |
+|---|---|---|---|
+| F27 node children = raw octets | l.101-104 | satisfied | **choice on 7 Sep, now compelled** |
+| F27b `0x00` scopes to leaf members | l.121-126 | satisfied, non-behavioural | n/a — no behaviour |
+| F28 termination, one-item root is the leaf | l.155-157 | satisfied | **forced but unstated, now stated** |
+| F29 affirmative token is `resolved` | l.171-174 | **NOT satisfied** — we emit `recomputed` | implemented in S2 |
+| F30 `content_kind` null == absent (unpinned) | l.193-196 | satisfied | **choice on 7 Sep, now compelled** |
+| F30 `content_kind` required on pinned | l.193-196 | satisfied | already compelled by rev 4 18c |
+| F31 halt is conformance; naming free | l.214-218 | satisfied, no code change | n/a |
+| F32a "first in bytewise order" | l.240-241 | satisfied | **choice on 7 Sep, now compelled** |
+| F32b `retrieved_at` canonical form MUST | l.243-247 | **NOT satisfied** | implemented in S2 |

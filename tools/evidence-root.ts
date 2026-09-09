@@ -66,6 +66,7 @@ export type Diagnostic =
   | "content_kind_absent_when_pinned"
   | "resource_sha256_with_full_resource"
   | "duplicate_bound_tuple"
+  | "retrieved_at_not_canonical"
   | "root_present_with_zero_pinned"
   | "root_absent_with_pinned_items"
   | "root_mismatch";
@@ -130,6 +131,45 @@ export function nodeHash(left: Uint8Array, right: Uint8Array): Uint8Array {
 /** rev5 l.98-99: "bytewise over the UTF-8 encoding of the member as carried". */
 function compareUtf8(a: string, b: string): number {
   return Buffer.compare(utf8(a), utf8(b));
+}
+
+/**
+ * rev6 l.243-247 (Finding 32), added to §4.1.1: "`retrieved_at` MUST be an RFC
+ * 3339 timestamp in UTC with the `Z` designator and exactly three
+ * fractional-second digits ... An implementation MUST reject a `retrieved_at`
+ * that is not in this form."
+ *
+ * rev6 l.249-250 names this "the only amendment in this revision that adds a
+ * rejection condition to input validation", so it is the one rev 6 sentence that
+ * adds a halt.
+ *
+ * Scope: §4.1.1 is the `sources` entries section (base l.83-103), so this runs on
+ * every entry's retrieved_at, pinned and unpinned alike — the member is required
+ * on every entry at base l.91. It does NOT run on the set-level retrieved_at,
+ * which base l.71 defines in §4.1, a section rev 6 does not amend. See the extract
+ * at R6-7.
+ *
+ * Case is taken as written: rev 6 names "the `Z` designator", and admitting RFC
+ * 3339's lowercase variants would give one instant two spellings, which is the
+ * defect this sentence exists to remove. Second 60 is admitted because RFC 3339
+ * permits it for a leap second and the form rule does not exclude it.
+ */
+const RETRIEVED_AT_CANONICAL = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+export function isCanonicalRetrievedAt(value: string): boolean {
+  if (!RETRIEVED_AT_CANONICAL.test(value)) return false;
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const hour = Number(value.slice(11, 13));
+  const minute = Number(value.slice(14, 16));
+  const second = Number(value.slice(17, 19));
+  return (
+    month >= 1 && month <= 12 &&
+    day >= 1 && day <= 31 &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 60
+  );
 }
 
 /**
@@ -295,6 +335,19 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
   }
 
   for (const e of sources) {
+    // 6a. rev6 l.243-247 (Finding 32). Placed at the top of the per-entry loop so
+    // that checks 1-6 keep the order rev4 18b and 18c argue for; under rev6 l.214-218
+    // the placement is free in any case, since conformance is the halt and not the
+    // name. No fixture vector exercises this: both retrieved_at literals in the rev 6
+    // set are already canonical.
+    if (!isCanonicalRetrievedAt(e.retrieved_at)) {
+      return {
+        ok: false,
+        diagnostic: "retrieved_at_not_canonical",
+        detail: `entry ${e.url} carries retrieved_at ${e.retrieved_at}, which is not RFC 3339 UTC with the Z designator and exactly three fractional-second digits`,
+      };
+    }
+
     if (e.pinned === false) {
       // 7. rev3 l.75-76.
       if (e.unpinned_reason === undefined || e.unpinned_reason === null) {
@@ -404,9 +457,18 @@ export interface Resolution {
   diagnostic?: Diagnostic;
   detail?: string;
   evidence_root: string | null;
-  /** rev2 l.190-193 (c) and rev2 l.204-205 (e); "recomputed" is our name for the
-   * affirmative case, which the texts never name. */
-  resolution: "unknown" | "recomputed";
+  /**
+   * rev6 l.171-174 (Finding 29): "A step resolves to exactly one of two values:
+   * `resolved`, when the step's evidence requirements are met, or `unknown` ...
+   * An implementation MUST emit one of these two tokens and MUST NOT emit any
+   * other value for a step's resolution."
+   *
+   * Until rev 6 the affirmative case had no name and this member carried our own
+   * token, `recomputed`. Rev 6 names it and forbids any other value, so the token
+   * changed and the condition did not: `unknown` still comes from rev2 l.190-193
+   * (c), rev2 l.204-205 (e) and rev4 l.184-191 (d).
+   */
+  resolution: "unknown" | "resolved";
   /** rev2 l.190-193: false whenever fully_pinned is false. */
   offline_recompute_claim: boolean;
   item_reasons: ItemReason[];
@@ -468,7 +530,10 @@ export function resolveEvidenceSet(
 
   // (c) rev2 l.190-193, and (f) rev2 l.207-214: a declared partial set resolves
   // unknown and is neither invalid nor malformed.
-  const resolution = !fullyPinned || item_reasons.length > 0 ? "unknown" : "recomputed";
+  // rev6 l.171-174 (F29): `resolved` is emitted "when the step's evidence
+  // requirements are met" — fully_pinned true (rev2 l.190-193) with no per-item
+  // reason outstanding (rev4 l.184-191). Otherwise `unknown`. No third value.
+  const resolution = !fullyPinned || item_reasons.length > 0 ? "unknown" : "resolved";
 
   return {
     halt: false,

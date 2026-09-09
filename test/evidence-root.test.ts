@@ -497,3 +497,271 @@ describe("step resolutions (rev2 l.190-214, rev4 l.184-191)", () => {
     expect(r.halt).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Rev 6 (CC_HANDOFF_2026-09-09, step S2).
+//
+// Source: drafts/evidence-pinning-02-amendments-rev6-2026-09-08.md, sha256
+// d62ded37dcf63f54…, at agentoracle-receipt-spec 7f0b0cd. Short name rev6.
+// Every test below names the rev 6 sentence it exercises, by line, against the
+// "Rev 6" section of docs/evidence-root-spec-extract.md.
+//
+// The two describe blocks are deliberately separated:
+//   - "rev 6 — rules unimplemented at 5ffb455" were RED before the tool changed.
+//   - "rev 6 — rules already satisfied at 5ffb455" were GREEN from the start and
+//     pin a rule that was our own choice on 7 September and is now compelled.
+// ---------------------------------------------------------------------------
+
+describe("rev 6 — rules unimplemented at 5ffb455", () => {
+  // F29, rev6 l.171-174: "A step resolves to exactly one of two values:
+  // `resolved` ... or `unknown` ... An implementation MUST emit one of these two
+  // tokens and MUST NOT emit any other value for a step's resolution."
+
+  it("emits `resolved` for the affirmative case (rev6 l.171-174, F29)", () => {
+    const r = resolveEvidenceSet(
+      {
+        source_count: 1,
+        pinned_count: 1,
+        fully_pinned: true,
+        sources: [pinned("https://example.org/a", D1)],
+      },
+      { "https://example.org/a": D1 },
+    );
+    expect(r.halt).toBe(false);
+    expect(r.resolution).toBe("resolved");
+  });
+
+  it("MUST NOT emit any token but `resolved` or `unknown` (rev6 l.173-174, F29)", () => {
+    const cases = [
+      resolveEvidenceSet(undefined),
+      resolveEvidenceSet(
+        { source_count: 1, pinned_count: 1, fully_pinned: true, sources: [pinned("https://example.org/a", D1)] },
+        { "https://example.org/a": D1 },
+      ),
+      resolveEvidenceSet({
+        source_count: 2,
+        pinned_count: 1,
+        fully_pinned: false,
+        sources: [pinned("https://example.org/a", D1), unpinned("https://example.org/b")],
+      }),
+      resolveEvidenceSet({
+        source_count: 1,
+        pinned_count: 0,
+        fully_pinned: false,
+        sources: [unpinned("https://example.org/a")],
+      }),
+      resolveEvidenceSet({ source_count: 0, pinned_count: 0, fully_pinned: false, sources: [] }),
+    ];
+    for (const r of cases) {
+      expect(["resolved", "unknown"]).toContain(r.resolution);
+    }
+    // The token rev 6 forbids, and the one this implementation emitted at 5ffb455.
+    expect(cases.map((r) => r.resolution)).not.toContain("recomputed");
+  });
+
+  // F32b, rev6 l.243-247: "`retrieved_at` MUST be an RFC 3339 timestamp in UTC
+  // with the `Z` designator and exactly three fractional-second digits ... An
+  // implementation MUST reject a `retrieved_at` that is not in this form."
+
+  const withRetrievedAt = (at: string) => ({
+    source_count: 1,
+    pinned_count: 1,
+    fully_pinned: true,
+    sources: [pinned("https://example.org/a", D1, { retrieved_at: at })],
+  });
+
+  it("rejects a retrieved_at with no fractional-second digits (rev6 l.243-247, F32)", () => {
+    const r = validateEvidenceSet(withRetrievedAt("2026-09-01T12:00:00Z"));
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.diagnostic).toBe("retrieved_at_not_canonical");
+  });
+
+  it("rejects a retrieved_at carrying a numeric offset rather than Z (rev6 l.243-247, F32)", () => {
+    const r = validateEvidenceSet(withRetrievedAt("2026-09-01T12:00:00.000+00:00"));
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.diagnostic).toBe("retrieved_at_not_canonical");
+  });
+
+  it("rejects two and four fractional-second digits; exactly three (rev6 l.243-247, F32)", () => {
+    for (const at of ["2026-09-01T12:00:00.00Z", "2026-09-01T12:00:00.0000Z"]) {
+      const r = validateEvidenceSet(withRetrievedAt(at));
+      expect(r.ok).toBe(false);
+      expect(r.ok === false && r.diagnostic).toBe("retrieved_at_not_canonical");
+    }
+  });
+
+  it("rejects lowercase t and z, which would give one instant two spellings (rev6 l.243-247, F32)", () => {
+    for (const at of ["2026-09-01t12:00:00.000Z", "2026-09-01T12:00:00.000z"]) {
+      const r = validateEvidenceSet(withRetrievedAt(at));
+      expect(r.ok).toBe(false);
+      expect(r.ok === false && r.diagnostic).toBe("retrieved_at_not_canonical");
+    }
+  });
+
+  it("rejects an out-of-range field even in the right shape (rev6 l.243-247, F32)", () => {
+    for (const at of ["2026-13-01T12:00:00.000Z", "2026-09-01T25:00:00.000Z"]) {
+      const r = validateEvidenceSet(withRetrievedAt(at));
+      expect(r.ok).toBe(false);
+      expect(r.ok === false && r.diagnostic).toBe("retrieved_at_not_canonical");
+    }
+  });
+
+  it("accepts the canonical form — the control that fails a too-strict rule (rev6 l.243-247, F32)", () => {
+    expect(validateEvidenceSet(withRetrievedAt("2026-09-01T12:00:00.000Z")).ok).toBe(true);
+    // RFC 3339 admits second 60 for a leap second; the form rule does not exclude it.
+    expect(validateEvidenceSet(withRetrievedAt("2026-06-30T23:59:60.000Z")).ok).toBe(true);
+  });
+
+  it("applies the form rule to an unpinned entry too — §4.1.1 is not scoped to pinned (rev6 l.243-247, base l.83-91)", () => {
+    const r = validateEvidenceSet({
+      source_count: 2,
+      pinned_count: 1,
+      fully_pinned: false,
+      sources: [
+        pinned("https://example.org/a", D1),
+        { ...unpinned("https://example.org/b"), retrieved_at: "2026-09-01T12:00:00Z" },
+      ],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.diagnostic).toBe("retrieved_at_not_canonical");
+  });
+
+  it("does NOT apply the form rule to the set-level retrieved_at, which lives in §4.1 not §4.1.1 (rev6 l.241-247, base l.71)", () => {
+    // Scoping decision recorded in the extract at R6-7: rev 6 amends §4.1.1, the
+    // sources-entries section (base l.83-103). The set-level member is base l.71,
+    // in §4.1. A non-canonical set-level value therefore still fails closed, but
+    // by the earliest-comparison diagnostic rather than by a form rejection.
+    const r = validateEvidenceSet({
+      retrieved_at: "2026-09-01T12:00:00Z",
+      source_count: 1,
+      pinned_count: 1,
+      fully_pinned: true,
+      sources: [pinned("https://example.org/a", D1)],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.diagnostic).toBe("set_retrieved_at_not_earliest");
+  });
+});
+
+describe("rev 6 — rules already satisfied at 5ffb455, pinned now that the text compels them", () => {
+  // These were GREEN before any change in this session. Each was a choice we made
+  // on 7 September where rev 5 was silent; rev 6 states it, so each is pinned here
+  // against a regression that rev 5 could not have caught.
+
+  it("interior node children are the 32 raw octets, not their hex form (rev6 l.101-104, F27)", () => {
+    const a = leafHash(pinned("https://example.org/a", D1));
+    const b = leafHash(pinned("https://example.org/b", D2));
+
+    // Assembled here rather than taken from nodeHash: the expectation must be
+    // independent of the function under test.
+    const rawChildren = createHash("sha256")
+      .update(Buffer.concat([u8(NODE_PREFIX), NUL, Buffer.from(a), NUL, Buffer.from(b)]))
+      .digest("hex");
+    const hexChildren = createHash("sha256")
+      .update(
+        Buffer.concat([
+          u8(NODE_PREFIX),
+          NUL,
+          u8(Buffer.from(a).toString("hex")),
+          NUL,
+          u8(Buffer.from(b).toString("hex")),
+        ]),
+      )
+      .digest("hex");
+
+    expect(rawChildren).not.toBe(hexChildren);
+
+    const root = computeRoot([
+      pinned("https://example.org/a", D1),
+      pinned("https://example.org/b", D2),
+    ]);
+    expect(root).toBe(rawChildren);
+    expect(root).not.toBe(hexChildren);
+  });
+
+  it("a one-item pinned set roots to that item's leaf, with no node formed (rev6 l.155-157, F28)", () => {
+    const only = pinned("https://example.org/a", D1);
+    const leaf = Buffer.from(leafHash(only)).toString("hex");
+    expect(computeRoot([only])).toBe(leaf);
+
+    // The forbidden alternative: node(leaf, leaf). Assembled independently.
+    const selfPaired = createHash("sha256")
+      .update(
+        Buffer.concat([u8(NODE_PREFIX), NUL, Buffer.from(leafHash(only)), NUL, Buffer.from(leafHash(only))]),
+      )
+      .digest("hex");
+    expect(computeRoot([only])).not.toBe(selfPaired);
+  });
+
+  it("a null content_kind on an unpinned entry is not a malformation (rev6 l.193-196, F30)", () => {
+    const r = validateEvidenceSet({
+      source_count: 2,
+      pinned_count: 1,
+      fully_pinned: false,
+      sources: [pinned("https://example.org/a", D1), unpinned("https://example.org/b")],
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it("content_kind is required and enumerated on a pinned entry (rev6 l.195-196, F30)", () => {
+    for (const kind of [undefined, null, "transcript"]) {
+      const r = validateEvidenceSet({
+        source_count: 1,
+        pinned_count: 1,
+        fully_pinned: true,
+        sources: [pinned("https://example.org/a", D1, { content_kind: kind as never })],
+      });
+      expect(r.ok).toBe(false);
+      expect(r.ok === false && r.diagnostic).toBe("content_kind_absent_when_pinned");
+    }
+  });
+
+  it("halts on a receipt violating two conditions, naming one of them (rev6 l.214-218, F31)", () => {
+    // source_count wrong AND an unpinned entry with no reason: two conditions.
+    const r = validateEvidenceSet({
+      source_count: 9,
+      pinned_count: 1,
+      fully_pinned: false,
+      sources: [
+        pinned("https://example.org/a", D1),
+        { url: "https://example.org/b", snippet_sha256: null, retrieved_at: AT, pinned: false },
+      ],
+    });
+    expect(r.ok).toBe(false);
+    // "Conformance is determined by the halt, not by which condition is named."
+    expect(["source_count_mismatch", "unpinned_reason_absent"]).toContain(
+      r.ok === false ? r.diagnostic : "",
+    );
+  });
+
+  it("the set-level retrieved_at comparison is bytewise, not temporal (rev6 l.240-241, F32a)", () => {
+    // Two spellings whose bytewise and temporal orders disagree would break a
+    // temporal reader; under the bytewise rule the first in byte order governs.
+    const early = "2026-09-01T12:00:00.000Z";
+    const late = "2026-09-02T12:00:00.000Z";
+    const ok = validateEvidenceSet({
+      retrieved_at: early,
+      source_count: 2,
+      pinned_count: 2,
+      fully_pinned: true,
+      sources: [
+        pinned("https://example.org/a", D1, { retrieved_at: late }),
+        pinned("https://example.org/b", D2, { retrieved_at: early }),
+      ],
+    });
+    expect(ok.ok).toBe(true);
+
+    const bad = validateEvidenceSet({
+      retrieved_at: late,
+      source_count: 2,
+      pinned_count: 2,
+      fully_pinned: true,
+      sources: [
+        pinned("https://example.org/a", D1, { retrieved_at: late }),
+        pinned("https://example.org/b", D2, { retrieved_at: early }),
+      ],
+    });
+    expect(bad.ok).toBe(false);
+    expect(bad.ok === false && bad.diagnostic).toBe("set_retrieved_at_not_earliest");
+  });
+});
