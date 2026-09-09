@@ -568,6 +568,22 @@ interface RegistrySchema {
   fields: string[];
   /** The count, whether it came from the field list or from a bare `fields: n`. */
   fieldCount?: number;
+  /**
+   * The immutable semantic profile this layout commits to, where the registry
+   * publishes one (`semanticProfile`, from 2026-09-09). `schemaVersion` names the
+   * EIP-712 field layout and nothing else; the profile is what fixes the
+   * commitment constructions, the sentinels, the scales and the verdict rules —
+   * the material that changed under an unchanged `schemaVersion` on 8 September
+   * and is the reason FINDINGS F10 exists.
+   *
+   * `signedField` is the artefact member the registry says carries the profile
+   * id. It is read rather than hardcoded to `profileId`, because a hardcoded name
+   * would keep matching after the registry renamed it and would then compare the
+   * wrong member, silently.
+   */
+  semanticProfileId?: string;
+  semanticProfileSignedField?: string;
+  semanticProfileUrl?: string;
 }
 export interface Registry {
   keys: RegistryKey[];
@@ -669,6 +685,15 @@ export function parseRegistry(bytes: Uint8Array, origin: string): Registry | { e
       else continue; // neither a field list nor a count: nothing to compare against
       const sv = num(s["schemaVersion"]);
       if (sv !== null) entry.schemaVersion = sv;
+      const sp = obj(s["semanticProfile"]);
+      if (sp !== null) {
+        const pid = str(sp["profileId"]);
+        const sf = str(sp["signedField"]);
+        const url = str(sp["immutable"]);
+        if (pid !== null) entry.semanticProfileId = pid;
+        if (sf !== null) entry.semanticProfileSignedField = sf;
+        if (url !== null) entry.semanticProfileUrl = url;
+      }
       const dom = (e === null ? null : obj(e["domain"])) ?? obj(s["domain"]);
       const dv = dom === null ? null : str(dom["version"]);
       if (dv !== null) entry.domainVersion = dv;
@@ -912,6 +937,78 @@ function fieldDiff(mine: string[], published: RegistrySchema): string[] {
     parts.push("same names in a different order");
   }
   return parts;
+}
+
+/**
+ * The registry entry for the artefact's own primaryType AND its own
+ * `schemaVersion`, or `undefined`. The same lookup `compareRegistrySchema`
+ * makes, factored out so the profile observation cannot silently resolve to a
+ * different entry than the type comparison did.
+ */
+function registryEntryForArtefact(art: Attestation, reg: Registry): RegistrySchema | undefined {
+  const myVersion = num(art.data["schemaVersion"]);
+  if (myVersion === null) return undefined;
+  return reg.schemas.find((s) => s.primaryType === art.primaryType && s.schemaVersion === myVersion);
+}
+
+/**
+ * THE SEMANTIC PROFILE, reported on every result whose signer resolved against a
+ * registry — never a verdict.
+ *
+ * `schemaVersion` identifies the EIP-712 field layout and nothing else. What a
+ * `preTradeUidsHash` MEANS, what a zero uid means, what scale a price is at and
+ * which verdict follows from which fields live in a content-addressed profile
+ * from ExecutionReceipt v5 onward, and v5 signs its id as `profileId`. On
+ * 2026-09-08 this repository found the issuer had rewritten a commitment rule
+ * with the layout version unchanged (FINDINGS F10); the profile is the fix, and
+ * a verdict that does not say WHICH profile a receipt committed to leaves the
+ * reader exactly where F10 found them.
+ *
+ * WHY THIS DOES NOT MOVE THE VERDICT, and what that costs. The issuer states
+ * that an unknown or missing v5 profile fails closed even under a valid
+ * signature. That is a rule about a verifier's policy, and this tool verifies
+ * receipts under formats: turning an unrecognised profile into a refusal changes
+ * the reason vocabulary consumers depend on and needs the Lead's call, not this
+ * function's. What is closed here is the SILENCE — `profile_unrecognised` is
+ * printed in so many words on a VALID result, so no consumer has to infer from
+ * an absent annotation that the semantics went unchecked. The remaining step is
+ * recorded in the report of 2026-09-09 and in FINDINGS.
+ */
+function profileObservation(art: Attestation, reg: Registry): string | null {
+  const hit = registryEntryForArtefact(art, reg);
+  const v = num(art.data["schemaVersion"]);
+  const where = `${art.primaryType}${v === null ? "" : ` v${v}`}`;
+  if (hit === undefined) return null;
+
+  const field = hit.semanticProfileSignedField;
+  if (hit.semanticProfileId === undefined || field === undefined) {
+    // The layout predates profile ids. Saying so is the point: an absent
+    // annotation and "this layout carries no profile" are different facts, and
+    // the first is what let the 8 September change go unremarked.
+    const mine = str(art.data["profileId"]);
+    if (mine !== null) {
+      return `signed profileId ${mine}, but ${reg.origin} publishes no semanticProfile for ${where}, so nothing here establishes what it commits to`;
+    }
+    return `not_published — ${reg.origin} declares no semanticProfile for ${where}; this layout does not sign one, and its semantics resolve through the registry snapshot pinned with the receipt`;
+  }
+
+  const signedHere = (art.types[art.primaryType] ?? []).some((f) => f.name === field);
+  const mine = str(art.data[field]);
+  if (mine === null) {
+    return `MISSING — ${reg.origin} publishes semanticProfile ${hit.semanticProfileId} for ${where} and names \`${field}\` as the member that carries it; this artefact signs no such member`;
+  }
+  const inBytes = signedHere
+    ? `inside the signed bytes (the encodeType above names it)`
+    : `NOT in the signed bytes — the member is present in \`data\` but absent from the declared type, so it is carried beside the signature rather than by it`;
+  if (!sameAddress(mine, hit.semanticProfileId)) {
+    return (
+      `profile_unrecognised — the receipt signs ${field} ${mine}, ${inBytes}, and ${reg.origin} publishes ` +
+      `${hit.semanticProfileId} for ${where}. The commitment, sentinel, scale and verdict semantics this receipt ` +
+      `names are NOT established by this registry. The verdict does not move on it: this tool reports what the ` +
+      `registry says and the issuer's own rule is that an unrecognised profile fails closed, which is the caller's policy`
+    );
+  }
+  return `${mine} — ${inBytes}; equals the semanticProfile ${reg.origin} publishes for ${where}${hit.semanticProfileUrl === undefined ? "" : ` (${hit.semanticProfileUrl})`}`;
 }
 
 function compareRegistrySchema(art: Attestation, reg: Registry): { line: string; domainLine: string | null } {
@@ -1170,6 +1267,9 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
     const cmp = compareRegistrySchema(art, ctx.registry);
     ann[p("registry_schema")] = cmp.line;
     if (cmp.domainLine !== null) ann[p("registry_domain_version")] = cmp.domainLine;
+    // Which semantics these bytes committed to, beside which layout they used.
+    const profile = profileObservation(art, ctx.registry);
+    if (profile !== null) ann[p("semantic_profile")] = profile;
 
     // THE KEY'S ROLE, on every result whose signer resolved to a registry entry
     // — including each refusal below. A reader must not have to reach VALID to

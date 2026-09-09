@@ -165,6 +165,41 @@ export const INSIGHT_SAFETY_SAMPLE_0905 = join(INSIGHT, "safety-sample-2026-09-0
 export const INSIGHT_KEY_SAMPLE = "0xa41d5Ee795d95B87B3AA988150fC2d5e5fE5A534";
 
 /**
+ * The 2026-09-09 pins: the seventh copy of the key registry, and the FIRST
+ * `ExecutionReceipt` sample at schemaVersion 5.
+ *
+ * v5 appends one signed field, `profileId: bytes32`, naming the immutable
+ * content-addressed semantic profile the receipt commits to; `schemaVersion`
+ * continues to identify only the EIP-712 field layout. That split is the
+ * issuer's answer to FINDINGS F10, where a commitment rule was rewritten with
+ * `schemaVersion` unchanged. The registry copy pinned here is the first that
+ * carries a `semanticProfile` block, and the first from which the commitment
+ * prose is ABSENT: it now lives in the profile object, pinned in `refs/` beside
+ * the two releases.
+ *
+ * The sample is one observation and can never be re-fetched — the endpoint mints
+ * a fresh signature, `signedAt` and `requestId` per call, and answers
+ * `Cache-Control: private, no-store`.
+ */
+export const INSIGHT_REGISTRY_0909 = join(dirname(FIX), "refs", "insight-oracle-keys-2026-09-09T1440Z.json");
+export const INSIGHT_EXEC_SAMPLE_V5 = join(INSIGHT, "execution-sample-v5-2026-09-09T1443Z.json");
+export const INSIGHT_PROFILE_0909 = join(
+  dirname(FIX),
+  "refs",
+  "insight-oracle-registry-profile-0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e.json",
+);
+
+/** The immutable ExecutionReceipt semantic profile v5 signs, by id. */
+export const INSIGHT_PROFILE_ID = "0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e";
+
+/**
+ * The v5 sample's own `signedAt`, to the second (2026-09-09T14:43:43.078Z).
+ * Pinned so nothing here depends on the wall clock: the receipt's 600-second
+ * window closed long before these bytes were next read.
+ */
+export const INSIGHT_NOW_V5 = 1788965023;
+
+/**
  * The instant the 18:29Z registry was fetched (2026-09-05T18:29:05Z, the
  * response's own `Date` header). Inside the sample key's window, which opens
  * 2026-09-03, and 2,614,409 s past `insight-oracle-safety-v2`'s validUntil.

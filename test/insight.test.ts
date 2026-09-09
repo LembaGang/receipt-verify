@@ -66,6 +66,12 @@ import {
   INSIGHT_SAFETY_SAMPLE_0905,
   INSIGHT_KEY_SAMPLE,
   INSIGHT_NOW_0905,
+  INSIGHT_REGISTRY_0909,
+  INSIGHT_EXEC_SAMPLE_V5,
+  INSIGHT_PROFILE_0909,
+  INSIGHT_PROFILE_ID,
+  INSIGHT_NOW_V5,
+  REFS,
   INSIGHT_V3_NOW,
   INSIGHT_V4_NOW,
   read,
@@ -495,8 +501,9 @@ describe("insight — detection", () => {
     // found and repaired packages); round 3 added the v4 package, the production
     // sample as the endpoint returned it, and the attestation extracted from it;
     // B-29 added the post-rotation sample pinned at 17:41Z; B-70 added the two
-    // 2026-09-05T18:30Z endpoint responses, execution and safety.
-    expect(insightFixtures.length).toBe(8);
+    // 2026-09-05T18:30Z endpoint responses, execution and safety; B-141 added
+    // the v5 sample pinned at 2026-09-09T14:43Z.
+    expect(insightFixtures.length).toBe(9);
   });
 });
 
@@ -2318,5 +2325,394 @@ describe("insight — the 18:30Z samples, and H8", () => {
       expect(at(200)).toBe("inside");
       expect(at(201)).toBe("after");
     });
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * B-141. ExecutionReceipt v5, confirmed from the sample's own bytes.
+ *
+ * YuTao's mail of 2026-09-08 ~17:56Z answered FINDINGS F10 — a commitment rule
+ * rewritten under an unchanged `schemaVersion` — with a protocol change rather
+ * than a wording change: v5 appends a signed `profileId: bytes32` naming an
+ * immutable, content-addressed semantic profile, and `schemaVersion` goes back to
+ * meaning only "which EIP-712 field layout". He kept H9 open until this
+ * repository independently re-pinned the immutable objects and confirmed the v5
+ * sample from bytes. The re-pin is `fixtures/provenance.md`, section of
+ * 2026-09-09. This is the sample half.
+ *
+ * Five things are established here, each from the pinned response and none from
+ * the response's own say-so, and each with a control that can fail:
+ *
+ *   (a) the signature recovers the stated attester from a digest recomputed HERE;
+ *   (b) the receipt carries `profileId`, it equals the profile we pinned, and it
+ *       is INSIDE the signed bytes rather than beside them;
+ *   (c) `schemaVersion` is 5, and 1-5 are the published layouts;
+ *   (d) the recovered signer is the key the registry labels role `sample`;
+ *   (e) `preTradeUidsHash` reproduces under the profile's own words, with the
+ *       zero destination uid omitted.
+ *
+ * These bytes are ONE observation. The endpoint mints a fresh signature per call
+ * and answers `Cache-Control: private, no-store`, so a failure here can never be
+ * investigated by re-fetching: it has to be read out of the fixture.
+ */
+describe("insight v5 — the 2026-09-09 sample, confirmed from its own bytes", () => {
+  const V5_BYTES = read(INSIGHT_EXEC_SAMPLE_V5);
+  const REG_0909 = read(INSIGHT_REGISTRY_0909);
+  const wrapper = JSON.parse(V5_BYTES.toString("utf8")) as Record<string, any>;
+  const att = wrapper["data"]["attestation"];
+  const v5base = (extra: Partial<VerifyOptions> = {}): VerifyOptions => ({
+    registry: REG_0909,
+    registryOrigin: "refs/insight-oracle-keys-2026-09-09T1440Z.json",
+    now: INSIGHT_NOW_V5,
+    ...extra,
+  });
+  const profile = JSON.parse(read(INSIGHT_PROFILE_0909).toString("utf8")) as Record<string, any>;
+
+  it("the pin is the endpoint response byte-exact, and is not a copy of any earlier sample", () => {
+    expect(V5_BYTES.length).toBe(5015);
+    expect(sha256Hex(V5_BYTES)).toBe("f5d32828cfac672e3bffdc96da188f8cfd3681a7281a22ef0bddedff81bc3336");
+    for (const other of [INSIGHT_EXEC_SAMPLE_0905, INSIGHT_SAMPLE_1546, INSIGHT_SAMPLE_1741]) {
+      expect(V5_BYTES.equals(read(other))).toBe(false);
+    }
+  });
+
+  // (a) ------------------------------------------------------------------
+  it("(a) the EIP-712 digest recomputes here, equals the uid, and recovery returns the stated attester", () => {
+    const d = eip712Digest(att.eip712.domain, att.eip712.primaryType, att.eip712.types, att.data);
+    const dhex = `0x${Buffer.from(d).toString("hex")}`;
+    expect(dhex).toBe("0xbe2234e5810bc4cec139f0194260ae5dc6eb5e871fe5eb1acd73f568a93ee345");
+    expect(dhex).toBe(att.uid);
+    expect(recoverAddress(d, att.signature)?.toLowerCase()).toBe(String(att.attester).toLowerCase());
+    // The response carries no `cryptographicValid` member of its own to be
+    // believed or disbelieved: the endpoint returns the artefact, and this
+    // repository's answer is the recomputation above.
+    expect("cryptographicValid" in wrapper["data"]).toBe(false);
+    expect(JSON.stringify(wrapper).includes("cryptographicValid")).toBe(false);
+  });
+
+  it("(a) RED: two tampered fields move the recovered address to two SPECIFIC others", () => {
+    // A recovery that returned the attester whatever the bytes said would pass
+    // the test above and fail this one.
+    const t1 = clone(att);
+    t1.data.environment = "nonproduction";
+    expect(recoverAddress(eip712Digest(t1.eip712.domain, t1.eip712.primaryType, t1.eip712.types, t1.data), t1.signature)).toBe(
+      "0xf8d0a5419baa5424f18f300359d766b6d91eb430",
+    );
+    const t2 = clone(att);
+    t2.data.executedPrice = t2.data.executedPrice + 1;
+    expect(recoverAddress(eip712Digest(t2.eip712.domain, t2.eip712.primaryType, t2.eip712.types, t2.data), t2.signature)).toBe(
+      "0x93af55ff7910264645f8ca93b8b0535ca7d84816",
+    );
+    expect(recoverAddress(eip712Digest(t1.eip712.domain, t1.eip712.primaryType, t1.eip712.types, t1.data), t1.signature)).not.toBe(
+      String(att.attester).toLowerCase(),
+    );
+  });
+
+  // (b) ------------------------------------------------------------------
+  it("(b) profileId equals the profile we pinned, and it is IN the signed bytes, not beside them", () => {
+    expect(att.data.profileId).toBe(INSIGHT_PROFILE_ID);
+    // The profile object pinned in refs/ is the one this id names — the id IS
+    // its content address, and refs/ holds the bytes that address resolves to.
+    expect(profile["profileId"]).toBe(INSIGHT_PROFILE_ID);
+    // "In the signed bytes" means: named in the declared type, so it is inside
+    // encodeType and therefore inside hashStruct. Asserted at the type list AND
+    // at the encodeType string the adapter reports.
+    const fields = att.eip712.types.ExecutionReceipt as Array<{ name: string; type: string }>;
+    expect(fields.at(-1)).toEqual({ name: "profileId", type: "bytes32" });
+    expect(fields.filter((f) => f.name === "profileId")).toHaveLength(1);
+  });
+
+  it("(b) RED: changing profileId alone moves the digest and the recovered signer — so it IS signed", () => {
+    // The control that separates "carried in the signed struct" from "carried
+    // beside it": if profileId were metadata, this mutation would change nothing.
+    const m = clone(att);
+    m.data.profileId = `0x${"ab".repeat(32)}`;
+    const before = eip712Digest(att.eip712.domain, att.eip712.primaryType, att.eip712.types, att.data);
+    const after = eip712Digest(m.eip712.domain, m.eip712.primaryType, m.eip712.types, m.data);
+    expect(`0x${Buffer.from(after).toString("hex")}`).not.toBe(`0x${Buffer.from(before).toString("hex")}`);
+    expect(recoverAddress(after, m.signature)).not.toBe(String(att.attester).toLowerCase());
+  });
+
+  // (c) ------------------------------------------------------------------
+  it("(c) schemaVersion is 5 in the signed data and beside it, and the published layouts are 1,2,3,4,5", () => {
+    expect(att.data.schemaVersion).toBe(5);
+    expect(att.schemaVersion).toBe(5);
+    expect(wrapper["data"]["signedSchemaVersion"]).toBe(5);
+    expect(String(wrapper["data"]["layoutsAvailable"])).toContain("1,2,3,4,5");
+    const reg = parseRegistry(REG_0909, "refs/insight-oracle-keys-2026-09-09T1440Z.json");
+    if ("error" in reg) throw new Error(reg.error);
+    const ers = reg.schemas.filter((s) => s.primaryType === "ExecutionReceipt");
+    expect(ers.map((s) => s.schemaVersion).sort((a, b) => Number(a) - Number(b))).toEqual([1, 2, 3, 4, 5]);
+    // Only v5 is still open for signing; v1-v4 remain published and frozen,
+    // which is exactly what his mail said about the legacy layouts.
+    expect(ers.filter((s) => !s.retiredForSigning).map((s) => s.schemaVersion)).toEqual([5]);
+    expect(ers.find((s) => s.schemaVersion === 5)?.fields).toHaveLength(45);
+    expect(ers.find((s) => s.schemaVersion === 4)?.fields).toHaveLength(44);
+  });
+
+  // (d) ------------------------------------------------------------------
+  it('(d) the recovered signer is the key the registry labels role "sample", and the tool says so on the result', async () => {
+    const r = await insightAdapter.verify(bytesOf(att), v5base());
+    expect(r.verdict).toBe("VALID");
+    expect(r.resolvedKey?.kid).toBe("insight-oracle-safety-sample");
+    expect(r.annotations?.["recovered_signer"]).toBe(INSIGHT_KEY_SAMPLE.toLowerCase());
+    expect(r.annotations?.["identity_key_role"]).toBe("sample");
+    expect(r.annotations?.["identity"]).toBe("signer_in_registry (insight-oracle-safety-sample, role sample)");
+    expect(String(r.annotations?.["identity_role_observation"])).toContain("the signed fields do not say so");
+    // The registry is what says it, and the entry is read from the pinned bytes.
+    const entry = (JSON.parse(REG_0909.toString("utf8")) as Record<string, any>)["public_keys"].find(
+      (k: Record<string, unknown>) => String(k["public_key"]).toLowerCase() === INSIGHT_KEY_SAMPLE.toLowerCase(),
+    );
+    expect(entry["role"]).toBe("sample");
+  });
+
+  it("(d) what that does and does not do: the role is REPORTED, and the verdict does not move on it", async () => {
+    // The rule H8 established (FINDINGS.md section F, F2-F3; src/coverage.ts row
+    // `identity`) is that the issuer signs samples with a key the registry labels
+    // non-production, and that this tool prints that label on every result whose
+    // signer resolved. It is NOT that the tool refuses the artefact: a good
+    // signature by a published key is VALID whatever the registry calls the key,
+    // because what a role is good for is the caller's policy. A consumer that
+    // treats role `sample` as production evidence is refusing to read an
+    // annotation that is right there, in the same words on every result.
+    const r = await insightAdapter.verify(bytesOf(att), v5base());
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["identity_key_role"]).toBe("sample");
+    // And the signed fields STILL carry no mark of their own — unchanged from
+    // 2 and 5 September, now over 45 fields instead of 44.
+    const signed = JSON.stringify(att.data);
+    for (const mark of ["SYNTHETIC", "synthetic", "SAMPLE", "Sample", "demo", "DEMO", "fake", "mock"]) {
+      expect(signed.includes(mark)).toBe(false);
+    }
+    expect(att.data.environment).toBe("production");
+    expect(String(wrapper["data"]["note"])).toContain('role "sample"');
+  });
+
+  // (e) ------------------------------------------------------------------
+  it("(e) preTradeUidsHash reproduces under the PROFILE's own words, with the zero destination uid omitted", () => {
+    // The construction is quoted from the immutable profile pinned in refs/,
+    // read here rather than restated, so a change to the profile bytes would
+    // change what this test claims the rule is.
+    const c = profile["profile"]["commitments"]["preTradeUidsHash"];
+    expect(c["algorithm"]).toBe("keccak256");
+    expect(c["inclusion"]).toBe("omit entries equal to zero bytes32");
+    expect(c["ordering"]).toBe("route order, source first");
+    expect(c["encoding"]).toBe("concatenate each retained uid as 32 raw bytes without separators");
+    expect(c["emptyInput"]).toBe("keccak256 of empty bytes");
+
+    // The sample's shape: one non-zero uid, one zero uid. WHICH uid was omitted,
+    // named rather than implied.
+    expect(att.data.preTradeUid).toBe("0x0000000000000000000000000000000000000000000000000000000000000001");
+    expect(att.data.destinationPreTradeUid).toBe(ZERO32);
+    expect(att.data.preTradeUid).not.toBe(ZERO32);
+
+    const cands = uidsHashCandidates(att.data.preTradeUid, att.data.destinationPreTradeUid);
+    const named = "keccak(non-zero uids in route order, packed) [registry 2026-09-08]";
+    expect(cands[named]).toBe(att.data.preTradeUidsHash);
+    expect(att.data.preTradeUidsHash).toBe("0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6");
+  });
+
+  it("(e) RED: none of the four diagnostic constructions reproduces it — the omission is what does", () => {
+    const cands = uidsHashCandidates(att.data.preTradeUid, att.data.destinationPreTradeUid);
+    const named = "keccak(non-zero uids in route order, packed) [registry 2026-09-08]";
+    for (const [k, v] of Object.entries(cands)) {
+      if (k === named) continue;
+      expect(v).not.toBe(att.data.preTradeUidsHash);
+    }
+    // Including, specifically, the construction that does NOT omit the zero uid.
+    expect(cands["keccak(src || dst), packed"]).toBe("0xada5013122d395ba3c54772283fb069b10426056ef8ca54750cb9bb552a59e7d");
+  });
+
+  it("(e) the rule the profile states is byte-identical to the one the 8 Sep registry stated", () => {
+    // The prose moved out of the mutable document into the immutable one. If it
+    // had also CHANGED on the way, this repository would have implemented one
+    // rule and confirmed another, and only a comparison says which happened.
+    const eightSep = JSON.parse(read(join(REFS, "insight-oracle-keys-2026-09-08T1218Z.json")).toString("utf8")) as Record<string, any>;
+    const prose = String(eightSep["schemas"]["ExecutionReceipt"]["commitments"]["preTradeUidsHash"]);
+    expect(prose).toContain("non-zero uids in route order");
+    expect(prose).toContain("zero bytes32 is omitted");
+    expect(prose).toContain('empty after omission -> keccak256("")');
+    const c = profile["profile"]["commitments"]["preTradeUidsHash"];
+    expect(c["inclusion"]).toBe("omit entries equal to zero bytes32");
+    expect(c["ordering"]).toBe("route order, source first");
+    expect(c["emptyInput"]).toBe("keccak256 of empty bytes");
+    // And the same document no longer states the rule at all.
+    const nineSep = JSON.parse(REG_0909.toString("utf8")) as Record<string, any>;
+    expect("commitments" in nineSep["schemas"]["ExecutionReceipt"]).toBe(false);
+    expect("sentinels" in nineSep["schemas"]["ExecutionReceipt"]).toBe(false);
+    expect(nineSep["schemas"]["ExecutionReceipt"]["semanticProfile"]["profileId"]).toBe(INSIGHT_PROFILE_ID);
+    expect(nineSep["schemas"]["ExecutionReceipt"]["semanticProfile"]["signedField"]).toBe("profileId");
+  });
+
+  // The adapter's own code path, which is where the handoff asked for (b).
+  it("the adapter names the semantic profile on the result, beside the layout version", async () => {
+    const r = await insightAdapter.verify(bytesOf(att), v5base());
+    expect(r.annotations?.["registry_schema"]).toBe("match (v5)");
+    const line = String(r.annotations?.["semantic_profile"]);
+    expect(line).toContain(INSIGHT_PROFILE_ID);
+    expect(line).toContain("inside the signed bytes");
+    expect(line).toContain("equals the semanticProfile");
+    expect(line).not.toContain("profile_unrecognised");
+  });
+
+  it("a v4 receipt against a registry that publishes no profile says so, rather than saying nothing", async () => {
+    // The absent annotation is what let 8 September happen quietly. A layout
+    // that does not sign a profile now says that in words.
+    const r = await verifyV4(v4["receipt"]);
+    expect(r.verdict).toBe("VALID");
+    const line = String(r.annotations?.["semantic_profile"]);
+    expect(line).toContain("not_published");
+    expect(line).toContain("ExecutionReceipt v4");
+    expect(line).toContain("registry snapshot pinned with the receipt");
+  });
+});
+
+// --------------------------------------------------------------------------
+
+/**
+ * B-141 S3. "An unknown or missing v5 profile fails closed even if the EIP-712
+ * signature is valid" — his words. Tested rather than accepted.
+ *
+ * The two mutations the handoff specified are below, and BOTH fail closed. But
+ * neither of them tests the sentence, and saying which check catches them is
+ * what shows why: `profileId` is inside the signed bytes, so removing it or
+ * changing it breaks the signature, and the artefact is refused long before any
+ * profile could be looked up. His claim is about a receipt whose signature is
+ * GOOD. The third case below constructs that, and it is the one that finds
+ * something.
+ */
+describe("insight v5 — the fail-closed claim, and what our adapter actually does", () => {
+  const REG_0909 = read(INSIGHT_REGISTRY_0909);
+  const wrapper = JSON.parse(read(INSIGHT_EXEC_SAMPLE_V5).toString("utf8")) as Record<string, any>;
+  const att = wrapper["data"]["attestation"];
+  const opts: VerifyOptions = {
+    registry: REG_0909,
+    registryOrigin: "refs/insight-oracle-keys-2026-09-09T1440Z.json",
+    now: INSIGHT_NOW_V5,
+  };
+
+  it("mutation 1 — profileId REMOVED from the signed data and from the declared type: INVALID/signature_invalid", async () => {
+    const m = clone(att);
+    delete m.data.profileId;
+    m.eip712.types.ExecutionReceipt = m.eip712.types.ExecutionReceipt.filter((f: any) => f.name !== "profileId");
+    const r = await insightAdapter.verify(bytesOf(m), opts);
+    expect(r.verdict).toBe("INVALID");
+    expect(r.reason).toBe("signature_invalid");
+    // Caught by check 4, the signature: the 44-field struct hashes to a
+    // different digest and recovery lands on one specific other address.
+    expect(String(r.detail)).toContain("0x6cec97c784771facee10b50c9197899719b0da8f9baecc9f4c7f2b77f7090e83");
+    expect(String(r.detail)).toContain("recovers 0xb61809d58795019800b2f90393f89cf14e07c1b1");
+  });
+
+  it("mutation 1b — profileId removed from `data` only: UNVERIFIABLE/malformed_member, one check earlier", async () => {
+    // The declared type still names it. Check 2 refuses before a digest is even
+    // computed, which is the earlier and stricter of the two refusals.
+    const m = clone(att);
+    delete m.data.profileId;
+    const r = await insightAdapter.verify(bytesOf(m), opts);
+    expect(r.verdict).toBe("UNVERIFIABLE");
+    expect(r.reason).toBe("malformed_member");
+    expect(String(r.detail)).toContain("missing profileId");
+  });
+
+  it("mutation 2 — a profileId that is NOT the pinned profile: INVALID/signature_invalid", async () => {
+    const m = clone(att);
+    m.data.profileId = `0x${"ab".repeat(32)}`;
+    const r = await insightAdapter.verify(bytesOf(m), opts);
+    expect(r.verdict).toBe("INVALID");
+    expect(r.reason).toBe("signature_invalid");
+    expect(String(r.detail)).toContain("recovers 0x8914b9d7a333b618b6826b32a97f3c0a29d2fad8");
+  });
+
+  it("WHY those two prove less than they look: both break the signature, and his claim is about a good one", async () => {
+    // Stated as a measurement rather than as a remark. Each mutation moves the
+    // digest, so each is refused at the signature or before it, and no profile
+    // comparison is reached in either.
+    for (const build of [
+      () => {
+        const m = clone(att);
+        m.data.profileId = `0x${"ab".repeat(32)}`;
+        return m;
+      },
+      () => {
+        const m = clone(att);
+        delete m.data.profileId;
+        m.eip712.types.ExecutionReceipt = m.eip712.types.ExecutionReceipt.filter((f: any) => f.name !== "profileId");
+        return m;
+      },
+    ]) {
+      const m = build();
+      const d = eip712Digest(m.eip712.domain, m.eip712.primaryType, m.eip712.types, m.data);
+      expect(recoverAddress(d, m.signature)).not.toBe(String(att.attester).toLowerCase());
+      const r = await insightAdapter.verify(bytesOf(m), opts);
+      expect(r.verdict).not.toBe("VALID");
+      // An INVALID carries no annotations under the tri-state contract, so the
+      // profile line cannot even be present to have been consulted.
+      expect(r.annotations?.["semantic_profile"]).toBeUndefined();
+    }
+  });
+
+  /**
+   * THE GAP, measured so the claim cannot rot.
+   *
+   * A receipt whose signature recovers its stated attester, whose attester is a
+   * published registry key, and whose `profileId` is one nobody published, is
+   * VALID today. The semantics it commits to are unestablished and the verdict
+   * does not say so — it is reported in `semantic_profile` and nowhere else.
+   *
+   * The registry here is SYNTHETIC and built in memory: the only way to reach
+   * this state is a signature that recovers to an address the registry lists,
+   * and nobody outside Insight can produce one against the real document. That
+   * is the point — the case cannot be reached with the bytes we hold, which is
+   * exactly why it needs constructing rather than waiting for.
+   *
+   * WHEN THE FIX LANDS this test is rewritten, not deleted: the verdict becomes
+   * a refusal and the assertion below becomes the wrong one. It is written to be
+   * rewritten.
+   */
+  it("THE GAP: valid signature + published key + UNKNOWN profileId is VALID today, and only an annotation says otherwise", async () => {
+    const m = clone(att);
+    m.data.profileId = `0x${"ab".repeat(32)}`;
+    const d = eip712Digest(m.eip712.domain, m.eip712.primaryType, m.eip712.types, m.data);
+    const recovered = recoverAddress(d, m.signature);
+    expect(recovered).toBe("0x8914b9d7a333b618b6826b32a97f3c0a29d2fad8");
+    m.attester = recovered;
+    m.uid = `0x${Buffer.from(d).toString("hex")}`;
+
+    const doc = JSON.parse(REG_0909.toString("utf8")) as Record<string, any>;
+    doc["public_keys"] = [
+      ...doc["public_keys"],
+      {
+        key_id: "synthetic-test-key-not-published-anywhere",
+        public_key: recovered,
+        algorithm: "secp256k1",
+        valid_from: "2026-09-01T00:00:00Z",
+        valid_until: null,
+      },
+    ];
+
+    const r = await insightAdapter.verify(bytesOf(m), {
+      registry: Buffer.from(JSON.stringify(doc), "utf8"),
+      registryOrigin: "SYNTHETIC registry built in this test",
+      now: INSIGHT_NOW_V5,
+    });
+    expect(r.verdict).toBe("VALID");
+    expect(r.reason).toBe("verified");
+    const line = String(r.annotations?.["semantic_profile"]);
+    expect(line).toContain("profile_unrecognised");
+    expect(line).toContain("0xabababababababababababababababababababababababababababababababab");
+    expect(line).toContain(INSIGHT_PROFILE_ID);
+
+    // The control: the SAME construction with the real profileId is not flagged,
+    // so the line above is a comparison and not a constant.
+    const ok = clone(att);
+    const r2 = await insightAdapter.verify(bytesOf(ok), {
+      registry: REG_0909,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-09T1440Z.json",
+      now: INSIGHT_NOW_V5,
+    });
+    expect(String(r2.annotations?.["semantic_profile"])).not.toContain("profile_unrecognised");
   });
 });
