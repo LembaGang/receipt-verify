@@ -1470,3 +1470,257 @@ byte counts, and the instant lives here. The byte counts are in the table above,
   mechanism here is inferred from the timing and the source, not located in the bytes.
 - **It does not say the tip is still the tip.** It is one observation of `origin/main` at 14:27:51Z.
   The next scheduled run is what will say whether `main` moved after.
+
+## Appended 2026-09-09 — Insight's v5 protocol fix: the two immutable registry objects re-pinned, the release chain, and the v5 sample
+
+On 2026-09-08 this repository found that Insight had rewritten the `preTradeUidsHash` commitment rule
+inside `.well-known/oracle-keys.json` under an **unchanged** `schemaVersion` 4 (FINDINGS F10–F14, and
+the provenance section above). The founder told YuTao the same day. He answered at ~17:56Z with a
+protocol-level fix rather than a wording fix, and closed: *"I consider the issuer-side remediation
+complete. I am keeping H9 open in my record until you independently repin the immutable objects and
+confirm the v5 sample from bytes in receipt-verify."* This section is that re-pin.
+
+### The five documents, fetched once each with `tools/drift.ts`'s own client
+
+node `fetch(url, { method: "GET", redirect: "follow" })`, no added headers (`tools/drift.ts`
+l.177–181), through a one-off script. Bodies written to `refs/` and `fixtures/insight/` byte-exact,
+with no re-serialisation.
+
+| path | URL | retrieved (response `Date`) | bytes | sha256 |
+|---|---|---|---|---|
+| `refs/insight-oracle-registry-release-0xd240af8f16adb282cbbbb9feb695f5bfb8cccde074af046fb7d4ca4c2d4c5c2e.json` | `…/.well-known/oracle-registry/releases/0xd240af8f…` | 2026-09-09T14:43:16Z | 20488 | `cab85b239d53ac336c018a18ba26a487e76e2c86b4d5e416fbd76b891dd14785` |
+| `refs/insight-oracle-registry-profile-0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e.json` | `…/.well-known/oracle-registry/profiles/0xe7513b05…` | 2026-09-09T14:43:17Z | 2372 | `284056499d0e779f7c168edd11dd716e64acf173bcb43df0bc58cc7bb7287ace` |
+| `refs/insight-oracle-registry-current-2026-09-09T1443Z.json` | `…/.well-known/oracle-registry/current.json` | 2026-09-09T14:43:18Z | 1017 | `cc824ff29bc46eec198b5ea7679f35eaa72fcb2ffb0b1cdd34d912d3e96f4a17` |
+| `refs/insight-oracle-registry-release-0xf45d4c0272300f8132dba75c49b337557cf6fd7975b32fd14a8b4e13f430a8f7.json` | `…/.well-known/oracle-registry/releases/0xf45d4c02…` | 2026-09-09T14:43:40Z | 21212 | `f85381e271869daa6bfa53956441cd3b2641b9c53d326e4e2e59f8498f822fd7` |
+| `refs/insight-oracle-keys-2026-09-09T1440Z.json` | `…/.well-known/oracle-keys.json` | 2026-09-09T14:40:02Z | 21836 | `dbcf0929615b59aba2cb70f0f45cc246807cab2109b1cb316cee2fd70c01fd57` |
+| `fixtures/insight/execution-sample-v5-2026-09-09T1443Z.json` | `…/api/v1/execution/attestation/sample?schemaVersion=5` | 2026-09-09T14:43:43Z | 5015 | `f5d32828cfac672e3bffdc96da188f8cfd3681a7281a22ef0bddedff81bc3336` |
+
+Response headers, for each: **no `ETag` and no `Last-Modified`**, as on every earlier fetch of this
+origin. The three `oracle-registry` objects and the sample returned `Age: 0` with
+`x-vercel-cache: MISS`; `oracle-keys.json` returned `Age: 219` on a `HIT`, so its body was generated
+at the origin at **2026-09-09T14:36:23Z**. `Cache-Control` separates the three kinds cleanly and the
+issuer's own headers say what this section says in prose:
+
+| document | `Cache-Control` |
+|---|---|
+| the two releases and the profile | `public, max-age=31536000, immutable` |
+| `current.json` | `public, max-age=60, must-revalidate` |
+| `oracle-keys.json` | `public, max-age=300` |
+| the v5 sample | `private, no-store, max-age=0` |
+
+Every response carried `Content-Encoding: br`; node's `fetch` decompresses transparently, so the
+digests above are over the decompressed bodies. That is not taken on trust: the Lead fetched the same
+objects at ~09:3xZ today with `Accept-Encoding: identity` and reported the identical digests for the
+release, the profile and `current.json`, which is an independent decode path arriving at the same
+bytes.
+
+**On "each object once".** The handoff asked for one fetch each and that is what was made, so the
+four-GET control B-128 ran on `oracle-keys.json` was not repeated here. Two of the six digests have a
+second independent observation anyway: `oracle-keys.json` was fetched by `npm run drift` at this
+session's P0 (~14:37Z) and reported `dbcf0929…fd57`, the same bytes; and the release, the profile and
+`current.json` match the Lead's own fetches of ~09:3xZ. The v5 sample deliberately has **no** second
+observation and cannot have one — see the sample subsection below.
+
+### The two immutable objects are what YuTao said they are
+
+| object | our sha256 | his stated pin | verdict |
+|---|---|---|---|
+| release `0xd240af8f…` | `cab85b239d53ac336c018a18ba26a487e76e2c86b4d5e416fbd76b891dd14785` | the same | **equal** |
+| profile `0xe7513b05…` | `284056499d0e779f7c168edd11dd716e64acf173bcb43df0bc58cc7bb7287ace` | the same | **equal** |
+
+A byte digest is the weaker half of that statement. Both objects are **content-addressed**: each
+carries a `digest` member declaring `keccak256` over the *RFC 8785 JSON Canonicalization Scheme* form
+of its single payload member, and the id in the URL is supposed to be that value. This session
+recomputed it from the pinned bytes:
+
+```
+profile 0xe7513b05…  JCS(profile) = 2139 bytes   keccak256 -> 0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e   EQUAL
+release 0xd240af8f…  JCS(release) = 20255 bytes  keccak256 -> 0xd240af8f16adb282cbbbb9feb695f5bfb8cccde074af046fb7d4ca4c2d4c5c2e   EQUAL
+release 0xf45d4c02…  JCS(release) = 20979 bytes  keccak256 -> 0xf45d4c0272300f8132dba75c49b337557cf6fd7975b32fd14a8b4e13f430a8f7   EQUAL
+```
+
+**Two independent canonicalisers, because one agreeing with itself proves nothing.** The bytes above
+were produced by a JCS serialiser written for this check in TypeScript-style JavaScript, and
+re-produced by the **Python** implementation in `tools/asqav_envelope_hash.py` that
+`tools/jcs-cross-check.py` drives — the second-opinion serialiser this repository already keeps for
+the walker, which shares no code with the first. The two canonical strings are **byte-identical** for
+all three objects (2139 / 20255 / 20979 bytes each side), and keccak-256 over either reproduces the
+stated id.
+
+**The controls, so the green above is not free.** Changing one byte of the canonical form moves the
+address to `0x6396ee98…` (profile), `0x394eb31c…` (release `0xd240af8f`) and `0xf38a2cda…` (release
+`0xf45d4c02`) — none equal to the stated id, and the script asserts that the mutation actually
+happened before reporting the result. A first attempt at this control replaced a substring that turns
+out not to occur in the two release objects, so it recomputed the unmodified digest and "passed"; that
+run is discarded and named here because it is precisely the check-that-cannot-fail this repository's
+own rules are about. The JCS-equivalence assumption is measured too: the serialiser reports any
+non-integer number and any number outside the IEEE-754 safe-integer range, which are the two
+conditions under which key-sorted `JSON.stringify` would stop being JCS. It reported **none** for all
+three objects.
+
+### The release chain, and the release he has not written to us about
+
+`current.json` at 14:43:18Z names `registryRevision` **2026-09-09.1**, `effectiveFrom`
+**2026-09-09** and `releaseId` **`0xf45d4c02…`** — one revision past the release YuTao described. That
+release was fetched and pinned as well. Structural diff, leaf by leaf, against `0xd240af8f…`:
+
+```
+A refs/…release-0xd240af8f….json   872 leaves
+B refs/…release-0xf45d4c02….json   878 leaves
+only-in-A = 0   only-in-B = 6   differing leaves present in both = 7
+
+ONLY IN B  .release.predecessorReleaseId = "0xd240af8f16adb282cbbbb9feb695f5bfb8cccde074af046fb7d4ca4c2d4c5c2e"
+ONLY IN B  .release.mainlineIntegrationIsolation.activationSetId = "0xe125edc38c0e89a4368203c0831728116a4430c329204fe4cc5db6144f8f4469"
+ONLY IN B  .release.mainlineIntegrationIsolation.activationRule = "repository presence never activates an integration; only its policy id does"
+ONLY IN B  .release.mainlineIntegrationIsolation.currentPath = "/.well-known/oracle-registry/integrations/current.json"
+ONLY IN B  .release.mainlineIntegrationIsolation.immutablePolicyPathTemplate = "/.well-known/oracle-registry/integrations/{policyId}"
+ONLY IN B  .release.mainlineIntegrationIsolation.immutableSetPath = "/.well-known/oracle-registry/integration-sets/0xe125edc3…"
+
+DIFFERS  .releaseId                 0xd240af8f… -> 0xf45d4c02…
+DIFFERS  .release.registryRevision  "2026-09-08.1" -> "2026-09-09.1"
+DIFFERS  .release.effectiveFrom     "2026-09-08" -> "2026-09-09"
+DIFFERS  .release.changes[0..3]     the v5/profile/schemaVersion/legacy-layout lines -> four partner-isolation lines
+```
+
+**The releases chain and the semantics did not move with them.** `predecessorReleaseId` is exactly the
+release he named, and `release.executionReceipt.currentProfileId` is the **same** `0xe7513b05…` in
+both, with `supportedSchemaVersions` `[1,2,3,4,5]` in both. So the only registry-wide change between
+8 and 9 September is partner-integration isolation, and no commitment, sentinel, scale or verdict rule
+moved. This reproduces the Lead's own diff of ~09:3xZ (878 against 872, six added, none removed, seven
+changed) independently.
+
+Both releases also carry, in `release.predecessorSnapshots`, **this repository's own two pins**:
+`{"label": "5 Sep copy reported by Headless", "digestPrefix": "7cc00b95", "bytes": 17958}` and
+`{"label": "8 Sep copy reported by Headless", "digestPrefix": "a45b5d0a", "bytes": 18003}`. Those are
+the digests and byte counts recorded in the two provenance sections above, quoted back by the issuer.
+
+### What the profile says, and why it settles the 8 September finding
+
+`profile.commitments.preTradeUidsHash`, read from the pinned bytes:
+
+```
+algorithm      keccak256
+inclusion      omit entries equal to zero bytes32
+ordering       route order, source first
+encoding       concatenate each retained uid as 32 raw bytes without separators
+emptyInput     keccak256 of empty bytes
+```
+
+That is, clause for clause, the construction `src/adapters/insight.ts` implemented on 8 September
+(`uidsHashCandidates`, the candidate named `keccak(non-zero uids in route order, packed) [registry
+2026-09-08]`) — now stated in an object that cannot be edited without changing its own name. The
+profile also carries `receipt.profileIdSignedInSchemaVersions` `[5]` and
+`receipt.legacyImplicitSchemaVersions` `[3, 4]`, `measuredFieldsHash` and `reasonCodesHash`
+constructions, two sentinels, eight scales, four enumerations and nine ordered `verdictRules`.
+
+### `oracle-keys.json` moved again — and this time the issuer versioned it
+
+Structural diff, `refs/insight-oracle-keys-2026-09-08T1218Z.json` against
+`refs/insight-oracle-keys-2026-09-09T1440Z.json`:
+
+```
+leaves: A=701  B=815   only-in-A=4   only-in-B=118
+differing leaves present in both: 1
+  DIFFERS  .schemas.ExecutionReceipt.schemaVersion    A: 4   B: 5
+
+ONLY IN A  .schemas.ExecutionReceipt.commitments.preTradeUidsHash
+ONLY IN A  .schemas.ExecutionReceipt.commitments.measuredFieldsHash
+ONLY IN A  .schemas.ExecutionReceipt.sentinels.attestationAgeAtExecSeconds.value
+ONLY IN A  .schemas.ExecutionReceipt.sentinels.attestationAgeAtExecSeconds.meaning
+```
+
+The four leaves that left are the commitment and sentinel prose; they are now in the immutable
+profile. Of the 118 that arrived, the load-bearing ones are
+`.schemas.ExecutionReceipt.semanticProfile.{profileId, immutable, signedField}`, the 45th signed
+EIP-712 field `profileId: bytes32`, a frozen `schemas.ExecutionReceiptV4` preserving the retired
+layout (44 fields, `schemaVersion` 4), and the top-level `registryRelease`, `registryRevision`,
+`effectiveFrom` and `partnerIntegrations` members. **The one leaf that changed in place is the version
+number.** On 8 September a commitment rule changed under an unchanged `schemaVersion`; on 9 September
+the layout changed and the version moved with it. That is the difference F10 was raised about.
+
+`current.json` now calls this URL the **`stableRegistry`**, which is the name the upstream entry's
+`role_note` records.
+
+### The two-day movement history of the mutable document, as one table
+
+| pinned at | bytes | sha256 | what the next move was |
+|---|---|---|---|
+| 2026-09-05T18:29:05Z | 17958 | `7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330` | the `preTradeUidsHash` prose rewritten under an unchanged `schemaVersion` 4 (F10) |
+| 2026-09-08T12:18:10Z | 18003 | `a45b5d0a8e3b432c1e827310bc4caa7b67ad440133ee32900d8520615a0f9003` | the v5 protocol fix: commitments out to the profile, `schemaVersion` 5 |
+| 2026-09-09T14:40:02Z | 21836 | `dbcf0929615b59aba2cb70f0f45cc246807cab2109b1cb316cee2fd70c01fd57` | — the pin as of this section |
+
+Twice in two days. That is the reason the registry bookkeeping below moves the weight off this
+document.
+
+### The v5 sample
+
+Pinned as `fixtures/insight/execution-sample-v5-2026-09-09T1443Z.json`, 5015 bytes, sha256
+`f5d32828cfac672e3bffdc96da188f8cfd3681a7281a22ef0bddedff81bc3336`, response `Date`
+2026-09-09T14:43:43Z. **It is one observation and it cannot be re-fetched**: the endpoint mints a
+fresh signature, `signedAt` and `requestId` per call, and `Cache-Control: private, no-store` says so.
+The Lead read the same endpoint at ~09:3xZ today and got **5015 bytes** at
+`8c15d9e0ae0c6055eefb34bb9128bdb4fe7591055cbb698984bc53aad1f4b052` — the same length, a different
+digest, which is this repository's `nondeterministic_endpoint` claim re-measured on the v5 layout
+rather than assumed to carry over from v4. What is done with these bytes is in the report and in
+`test/insight.test.ts`; this section records only where they came from.
+
+### Registry bookkeeping
+
+`fixtures/upstreams.json`:
+
+- **Three new `current` http entries** — `insight-oracle-registry-release/0xd240af8f`,
+  `insight-oracle-registry-profile/0xe7513b05` and `insight-oracle-registry-release/0xf45d4c02`. Their
+  `ref_source` states what such a pin can and cannot detect: because the id is the digest of the
+  content, a `changed` outcome cannot mean "the document was updated" — it can only mean the issuer
+  served different bytes under an identifier that is supposed to be their digest. There is no benign
+  reading of that, which is what makes these the strongest pins in the file and the load-bearing ones
+  for Insight's commitment semantics from today.
+- **`insight-oracle-registry-current/2026-09-09T1443Z`**, `role: historical`. The role is chosen for
+  its mechanical meaning in `tools/drift.ts` — `not_checked`, never counted, never fetched again — and
+  not because the document is superseded. See the gap below.
+- **`insight-oracle-keys`** re-pinned at the 14:40:02Z bytes, with a `role_note` recording the
+  `stableRegistry` naming and the structural diff, and a `role_reason` recording the two moves in two
+  days and that the immutable objects now carry the weight. Its `last_observed` was dropped rather
+  than left contradicting the new `sha256`; `npm run drift -- --record` rewrites it in the same
+  session.
+- **`insight-oracle-keys/2026-09-08T1218Z`** added, `role: historical`, carrying the previous entry's
+  fields unchanged plus a `role_reason` and a `last_observed_note` — the `asqav-sdk/22a970d` pattern,
+  and its frozen `last_observed` (`current` at 2026-09-08T14:36:33.405Z) is kept because it is a true
+  record of the last check ever made of that entry.
+- The v5 sample joins the existing `insight-endpoint-samples` `unmapped` row
+  (`reason_code: nondeterministic_endpoint`), whose reason now carries today's two-digest measurement.
+
+As with every Insight entry before them, **no `bytes` member and no `pinned_at` member** were written
+into `fixtures/upstreams.json`: its own `what_this_file_is_not` says it carries no byte counts, and
+the instant is already `retrieved`. Both facts live in the table at the top of this section, which is
+what `test/upstreams-provenance.test.ts` reads.
+
+`.gitattributes`: `git check-attr text eol` reports `text: set, eol: lf` for all six new paths,
+because `*.json text eol=lf` sorts after `refs/** -text` and `fixtures/** -text` and the last matching
+line wins — the same pre-existing ordering flaw every earlier Insight pin records. Harmless here for
+the same measured reason: **each of the six files contains zero CR bytes and zero LF bytes** (each is
+one unterminated JSON line), so there is no line ending for a filter to rewrite, and
+`git cat-file blob :<path>` over each staged blob reproduces the digest in the table above.
+
+### What this pin does not do
+
+- **It does not establish that the profile's prose is what the issuer's code does.** Only a signed
+  receipt that reproduces under a rule shows that, and the v5 sample shows it for `preTradeUidsHash`
+  alone. `measuredFieldsHash` and `reasonCodesHash` are stated in the profile and **not** reproduced
+  from any artefact this repository holds — their pre-images are not published.
+- **It does not watch the pointer.** `current.json` is `historical`, so nothing here will notice the
+  next time `registryRevision` advances. Today's advance was found because the Lead read the pointer
+  by hand this morning; the next one will need the same hand. The tool has no vocabulary for "an http
+  upstream expected to move, whose movement should be reported and not fail the run" — `check: note`
+  exists only for paths inside a `git` entry (`tools/drift.ts` l.116, l.243–245). Adding it for `http`
+  entries is the smallest change that would close this, and it is not made here.
+- **It does not establish when the pointer moved.** No `ETag`, no `Last-Modified`; the only bounds are
+  our own reads.
+- **It does not say anything about `partnerIntegrations`.** Four URLs and an `activationSetId` are
+  named in the documents pinned here; none of them was fetched, and the integration set
+  `0xe125edc3…` is unpinned.
+- **It does not make the two retained v4 snapshots verifiable by a stranger.** The release's
+  `legacyProfileResolution.rule` says v1–v4 layouts "did not sign profileId" and must be read against
+  "the registry snapshot pinned by the verifier". That snapshot is a private artefact of whoever
+  pinned it; two verifiers holding different snapshots can disagree about the same v4 receipt and
+  neither is checkable against the other.

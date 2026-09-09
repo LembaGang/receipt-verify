@@ -80,11 +80,12 @@
           "fixtures/insight/execution-sample-2026-09-02T1546Z.json",
           "fixtures/insight/execution-sample-2026-09-02T1741Z.json",
           "fixtures/insight/execution-sample-2026-09-05T1830Z.json",
-          "fixtures/insight/safety-sample-2026-09-05T1830Z.json"
+          "fixtures/insight/safety-sample-2026-09-05T1830Z.json",
+          "fixtures/insight/execution-sample-v5-2026-09-09T1443Z.json"
         ],
         "rows": "the 4 `fixtures/insight/*-sample-*.json` endpoint-response rows",
         "reason_code": "nondeterministic_endpoint",
-        "reason": "Both sample endpoints mint a fresh signature per call -- the two execution pins 116 minutes apart are both 4675 bytes with different sha256 -- so an http entry against either would report `changed` on every run forever, and a check that always fails says no more than one that cannot fail."
+        "reason": "Both sample endpoints mint a fresh signature per call -- the two execution pins 116 minutes apart are both 4675 bytes with different sha256 -- so an http entry against either would report `changed` on every run forever, and a check that always fails says no more than one that cannot fail. Re-measured 2026-09-09 on the v5 sample and the claim held: the Lead read 5015 bytes at sha256 8c15d9e0ae0c6055eefb34bb9128bdb4fe7591055cbb698984bc53aad1f4b052 at ~09:3xZ and this session read 5015 bytes at f5d32828cfac672e3bffdc96da188f8cfd3681a7281a22ef0bddedff81bc3336 at 14:43:43Z -- the same length, a different digest, because signedAt, the signature and the requestId are minted per call."
       },
       {
         "id": "insight-derived-attestation",
@@ -734,9 +735,72 @@
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
+      "id": "insight-oracle-registry-release/0xd240af8f",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0xd240af8f16adb282cbbbb9feb695f5bfb8cccde074af046fb7d4ca4c2d4c5c2e",
+      "sha256": "cab85b239d53ac336c018a18ba26a487e76e2c86b4d5e416fbd76b891dd14785",
+      "retrieved": "2026-09-09T14:43:16Z",
+      "pinned_file": "refs/insight-oracle-registry-release-0xd240af8f16adb282cbbbb9feb695f5bfb8cccde074af046fb7d4ca4c2d4c5c2e.json",
+      "provenance_section": "Appended 2026-09-09 — Insight's v5 protocol fix: the two immutable registry objects re-pinned, the release chain, and the v5 sample",
+      "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers (tools/drift.ts l.177-181) -- and written to refs/ as the response body byte-exact, with no re-serialisation. Output: `status=200 bytes=20488 sha256=cab85b239d53ac336c018a18ba26a487e76e2c86b4d5e416fbd76b891dd14785`, response `Date: Wed, 09 Sep 2026 14:43:16 GMT`, `Cache-Control: public, max-age=31536000, immutable`, `Age: 0`, `x-vercel-cache: MISS`, no ETag and no Last-Modified. WHAT THIS PIN CAN DETECT, and it is the only thing it can: the object is content-addressed. Its id IS keccak256 over the RFC 8785 canonicalisation of the single object member below it, and this session recomputed that address from the pinned bytes with two independent JCS implementations -- the repository's own TypeScript one and the Python one in tools/asqav_envelope_hash.py that tools/jcs-cross-check.py drives -- which agreed byte for byte and reproduced the stated id. So a `changed` outcome on this row does NOT mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes, and there is no benign reading of that. This is the strongest pin in this file for exactly that reason, and it is why these entries and not oracle-keys.json are now the load-bearing ones for the Insight commitment semantics.",
+      "role_note": "Registry revision 2026-09-08.1, effectiveFrom 2026-09-08: the release YuTao named to us on 2026-09-08 at ~17:56Z as the one carrying the ExecutionReceipt v5 protocol fix. Our digest of the bytes served today equals the digest he stated. It names currentProfileId 0xe7513b05... and supportedSchemaVersions [1,2,3,4,5], and its predecessorSnapshots member quotes this repository's own 5 Sep and 8 Sep oracle-keys.json pins by digest prefix and byte count."
+    },
+    {
+      "id": "insight-oracle-registry-profile/0xe7513b05",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/profiles/0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e",
+      "sha256": "284056499d0e779f7c168edd11dd716e64acf173bcb43df0bc58cc7bb7287ace",
+      "retrieved": "2026-09-09T14:43:17Z",
+      "pinned_file": "refs/insight-oracle-registry-profile-0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e.json",
+      "provenance_section": "Appended 2026-09-09 — Insight's v5 protocol fix: the two immutable registry objects re-pinned, the release chain, and the v5 sample",
+      "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers (tools/drift.ts l.177-181) -- and written to refs/ as the response body byte-exact, with no re-serialisation. Output: `status=200 bytes=2372 sha256=284056499d0e779f7c168edd11dd716e64acf173bcb43df0bc58cc7bb7287ace`, response `Date: Wed, 09 Sep 2026 14:43:17 GMT`, `Cache-Control: public, max-age=31536000, immutable`, `Age: 0`, `x-vercel-cache: MISS`, no ETag and no Last-Modified. WHAT THIS PIN CAN DETECT, and it is the only thing it can: the object is content-addressed. Its id IS keccak256 over the RFC 8785 canonicalisation of the single object member below it, and this session recomputed that address from the pinned bytes with two independent JCS implementations -- the repository's own TypeScript one and the Python one in tools/asqav_envelope_hash.py that tools/jcs-cross-check.py drives -- which agreed byte for byte and reproduced the stated id. So a `changed` outcome on this row does NOT mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes, and there is no benign reading of that. This is the strongest pin in this file for exactly that reason, and it is why these entries and not oracle-keys.json are now the load-bearing ones for the Insight commitment semantics.",
+      "role_note": "The ExecutionReceiptSemanticProfile that ExecutionReceipt v5 signs as `profileId`. It is where the `preTradeUidsHash` construction now lives -- inclusion \"omit entries equal to zero bytes32\", ordering \"route order, source first\", encoding \"concatenate each retained uid as 32 raw bytes without separators\", empty input keccak256 of empty bytes -- which is the rule src/adapters/insight.ts implemented on 2026-09-08 from the mutable oracle-keys.json prose, now stated in an object that cannot change without changing its own name. The same prose is no longer in oracle-keys.json at all: `schemas.ExecutionReceipt.commitments` and `.sentinels` are absent from the 9 Sep copy, and that is the protocol-level fix rather than a wording change. It also carries profileIdSignedInSchemaVersions [5] and legacyImplicitSchemaVersions [3,4]."
+    },
+    {
+      "id": "insight-oracle-registry-release/0xf45d4c02",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0xf45d4c0272300f8132dba75c49b337557cf6fd7975b32fd14a8b4e13f430a8f7",
+      "sha256": "f85381e271869daa6bfa53956441cd3b2641b9c53d326e4e2e59f8498f822fd7",
+      "retrieved": "2026-09-09T14:43:40Z",
+      "pinned_file": "refs/insight-oracle-registry-release-0xf45d4c0272300f8132dba75c49b337557cf6fd7975b32fd14a8b4e13f430a8f7.json",
+      "provenance_section": "Appended 2026-09-09 — Insight's v5 protocol fix: the two immutable registry objects re-pinned, the release chain, and the v5 sample",
+      "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers (tools/drift.ts l.177-181) -- and written to refs/ as the response body byte-exact, with no re-serialisation. Output: `status=200 bytes=21212 sha256=f85381e271869daa6bfa53956441cd3b2641b9c53d326e4e2e59f8498f822fd7`, response `Date: Wed, 09 Sep 2026 14:43:40 GMT`, `Cache-Control: public, max-age=31536000, immutable`, `Age: 0`, `x-vercel-cache: MISS`, no ETag and no Last-Modified. WHAT THIS PIN CAN DETECT, and it is the only thing it can: the object is content-addressed. Its id IS keccak256 over the RFC 8785 canonicalisation of the single object member below it, and this session recomputed that address from the pinned bytes with two independent JCS implementations -- the repository's own TypeScript one and the Python one in tools/asqav_envelope_hash.py that tools/jcs-cross-check.py drives -- which agreed byte for byte and reproduced the stated id. So a `changed` outcome on this row does NOT mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes, and there is no benign reading of that. This is the strongest pin in this file for exactly that reason, and it is why these entries and not oracle-keys.json are now the load-bearing ones for the Insight commitment semantics.",
+      "role_note": "Registry revision 2026-09-09.1, effectiveFrom 2026-09-09: the release the mutable pointer already names, which the issuer has not written to us about. It carries predecessorReleaseId 0xd240af8f..., so the two releases chain, and its currentProfileId is the SAME 0xe7513b05..., so the commitment semantics did not move with it. This session's structural diff against 0xd240af8f: 872 leaves against 878, six added, none removed, seven changed -- the release id, the revision, the effective date, and the four `changes` lines, which are now about partner-integration isolation (an activationSetId, per-policy immutable paths, and the rule that repository presence never activates an integration)."
+    },
+    {
+      "id": "insight-oracle-registry-current/2026-09-09T1443Z",
+      "kind": "http",
+      "role": "historical",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/current.json",
+      "sha256": "cc824ff29bc46eec198b5ea7679f35eaa72fcb2ffb0b1cdd34d912d3e96f4a17",
+      "retrieved": "2026-09-09T14:43:18Z",
+      "pinned_file": "refs/insight-oracle-registry-current-2026-09-09T1443Z.json",
+      "provenance_section": "Appended 2026-09-09 — Insight's v5 protocol fix: the two immutable registry objects re-pinned, the release chain, and the v5 sample",
+      "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers (tools/drift.ts l.177-181) -- and written to refs/ as the response body byte-exact, with no re-serialisation. Output: `status=200 bytes=1017 sha256=cc824ff29bc46eec198b5ea7679f35eaa72fcb2ffb0b1cdd34d912d3e96f4a17`, response `Date: Wed, 09 Sep 2026 14:43:18 GMT`, `Cache-Control: public, max-age=60, must-revalidate`, `Age: 0`, `x-vercel-cache: MISS`, no ETag and no Last-Modified. The one-minute max-age is the issuer saying in a header what this entry says in prose: this document is meant to move.",
+      "role_note": "A SNAPSHOT OF A DELIBERATELY MUTABLE POINTER, named by the instant it was read, and not a corpus tip. It is the discovery document: it names registryRevision 2026-09-09.1, effectiveFrom 2026-09-09, releaseId 0xf45d4c02..., the stableRegistry URL (oracle-keys.json), and a partnerIntegrations block. It is how this session learned that a release the issuer has not written to us about already exists.",
+      "role_reason": "`historical` is chosen for its MECHANICAL meaning in tools/drift.ts -- reported as `not_checked`, never counted as current, never fetched again -- and not because this document is superseded. A pointer whose whole job is to move must not be a `current` row: it would red the daily run on the issuer's ordinary progress, and a red that is expected is the failure mode tools/drift.ts's own header warns about (l.50: a difference routinely ignored is worse than no check at all). The three content-addressed entries above are `current` instead, and they are the rows that can say something. THE COST, stated rather than hidden: nothing in this repository will now notice the next time this pointer advances, so the next release will again be found by hand. That is a gap, named in the provenance section and in CC_REPORT_2026-09-09_insight-v5-repin.md, not a property being claimed."
+    },
+    {
       "id": "insight-oracle-keys",
       "kind": "http",
       "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
+      "sha256": "dbcf0929615b59aba2cb70f0f45cc246807cab2109b1cb316cee2fd70c01fd57",
+      "retrieved": "2026-09-09T14:40:02Z",
+      "pinned_file": "refs/insight-oracle-keys-2026-09-09T1440Z.json",
+      "provenance_section": "Appended 2026-09-09 — Insight's v5 protocol fix: the two immutable registry objects re-pinned, the release chain, and the v5 sample",
+      "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers (tools/drift.ts l.177-181) -- and written to refs/ as the response body byte-exact, with no re-serialisation. Output: `status=200 bytes=21836 sha256=dbcf0929615b59aba2cb70f0f45cc246807cab2109b1cb316cee2fd70c01fd57`, response `Date: Wed, 09 Sep 2026 14:40:02 GMT`, `Age: 219`, `Cache-Control: public, max-age=300`, `x-vercel-cache: HIT`, no ETag and no Last-Modified -- so the origin generated this body at 2026-09-09T14:36:23Z. The `retrieved` instant above is that Date header, not a local clock read, on the convention the 5 Sep provenance section states. `npm run drift` at this session's P0 (14:37Z) had already reported the same digest as `now`, which is a second independent observation of these bytes and separates a changed document from a nondeterministic endpoint. Byte count and response headers are in the provenance section this entry names, not here.",
+      "role_note": "The seventh pin of this URL. `current.json` now calls this document the stableRegistry, and the renaming is the point: the commitment prose that moved under an unchanged schemaVersion on 8 September is no longer in this file at all. Structural diff against the 8 Sep pin: 701 leaves against 815, four only in the old, 118 only in the new, and exactly ONE leaf differing in both -- `schemas.ExecutionReceipt.schemaVersion`, 4 -> 5. The four that left are `schemas.ExecutionReceipt.commitments.preTradeUidsHash`, `.commitments.measuredFieldsHash` and the two `.sentinels.attestationAgeAtExecSeconds` members; they are now in the immutable profile 0xe7513b05.... What arrived: a `semanticProfile` block naming that profile with `signedField: profileId`, a 45th signed EIP-712 field `profileId` of type bytes32, a frozen `ExecutionReceiptV4` schema preserving the retired layout, and the top-level `registryRelease`, `registryRevision`, `effectiveFrom` and `partnerIntegrations` members. This time the issuer versioned the change.",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry.",
+      "role_reason": "Re-pinned 2026-09-09 at 14:40:02Z, after the second `changed` outcome in two days on the same URL: 5 Sep -> 8 Sep (a commitment rule rewritten under an unchanged schemaVersion 4, FINDINGS F10) and 8 Sep -> 9 Sep (this one, which versions the layout to 5 and moves the commitment prose out). A document that moves twice in two days is not a thing to hang a commitment reading on, and it no longer has to be: the three content-addressed entries above are the load-bearing pins now, and this row's job has narrowed to the keys, the endpoints and the pointers into the immutable objects."
+    },
+    {
+      "id": "insight-oracle-keys/2026-09-08T1218Z",
+      "kind": "http",
+      "role": "historical",
       "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
       "sha256": "a45b5d0a8e3b432c1e827310bc4caa7b67ad440133ee32900d8520615a0f9003",
       "retrieved": "2026-09-08T12:18:10Z",
@@ -749,7 +813,9 @@
         "tip": "a45b5d0a8e3b432c1e827310bc4caa7b67ad440133ee32900d8520615a0f9003",
         "at": "2026-09-08T14:36:33.405Z",
         "outcome": "current"
-      }
+      },
+      "role_reason": "Superseded 2026-09-09 by the copy pinned at 14:40:02Z, in which ExecutionReceipt moves to schemaVersion 5, the signed field `profileId` is added, and the `commitments` and `sentinels` prose leaves this document for the immutable profile 0xe7513b05.... Kept because FINDINGS.md's 8 Sep section (F10-F14) cites it as the `after` of the preTradeUidsHash one-leaf diff and it is the `before` of this one; because it is the copy every reading of this URL in this repository between 8 and 9 September was made against; and because YuTao's own release object 0xd240af8f... names it by digest prefix and byte count in `predecessorSnapshots`, so the issuer treats it as a fixed reference too. It is one of the two retained copies his mail of 2026-09-08 means when it says historical v4 receipts must be read against the registry snapshot pinned with them.",
+      "last_observed_note": "Kept as written, not deleted, on the pattern asqav-sdk/22a970d set on 8 September and followed by insight-oracle-keys/2026-09-05T1829Z: it is a true record of the last check ever made of this entry, and tools/drift.ts never fetches a historical entry again, so it is frozen rather than stale. The `current` it records at 2026-09-08T14:36:33Z was true of these bytes at that instant; the document moved after it."
     },
     {
       "id": "insight-oracle-keys/2026-09-05T1829Z",
