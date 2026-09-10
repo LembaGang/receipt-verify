@@ -1493,6 +1493,104 @@ did not make it run. That gap is stated in the report for this work and is not c
 **When, inside the eighty-two minutes, the change was published.** No response header dates the body,
 and both observations that bound the window are ours.
 
+### F15. Insight's v5-only production admission, and two obligations this adapter does not yet meet
+
+Appended 2026-09-10. Source: YuTao's letter of 2026-09-09 ~17:31Z (held verbatim at
+`cc-output/YUTAO_INBOUND_2026-09-09_1731Z_h9-closed-and-v5-only.md`), and the registry objects
+themselves, re-pinned and independently verified in this session. Every object below was resolved by
+following a path from `current.json` or from the release object it names — never by guessing a URL —
+and every content address was recomputed from the pinned bytes.
+
+**The rule, as the deployed objects state it.** The immutable release
+`0x96d1f624…` (registryRevision 2026-09-10.1, effectiveFrom 2026-09-10) carries
+`executionReceipt.legacyProfileResolution`:
+
+> `schemaVersions` [1, 2, 3, 4]; `signingStatus` `retired`; `productionAdmission` `forbidden`;
+> `resultScope` `relative-to-exact-registry-snapshot`; `globallyCanonicalVerdict` `false`;
+> `requiredEvidence` [`registrySnapshotUtf8Bytes`, `sha256`, `byteLength`]; `rule`: "preserve and
+> verify the exact registry snapshot bytes; report its full SHA-256 and byte length with every
+> verdict; fail closed if absent or mismatched; never substitute current.json or the current
+> registry"
+
+and the promotion record `protocol/mainline/promotions/2026-09-10-headless-v5-only.json`
+(`promotionId` `0x338a53e5…`, `promotionVersion` 3) states the production admission rule as:
+
+> "Headless production accepts only ExecutionReceipt v5 with the policy-pinned signed profileId. A
+> v1–v4 verdict is historical and snapshot-relative, must report full SHA-256 and byte length for the
+> exact preserved registry bytes, and is never globally canonical."
+
+**This is an obligation on us, not only on them.** It is the answer to a question this project asked:
+whether two verifiers holding different private snapshots could disagree about the same v4 receipt
+with no way to adjudicate. The answer removes the ambiguity by making the snapshot an evidenced part
+of any legacy verdict. Anything this tool emits about an ExecutionReceipt v1–v4 is now, by the
+issuer's deployed rule, a snapshot-relative result that must carry its own snapshot evidence.
+
+#### Gap 1 — the adapter does not implement the snapshot-relative rule
+
+`src/adapters/insight.ts` does not take, carry or report a registry snapshot. It has no place to put
+the original registry UTF-8 bytes, the full SHA-256, or the byte length, and it does not fail closed
+when they are absent — it has no notion that they are required. A v1–v4 verdict it produces today is
+therefore presented without the qualification the issuer's rule requires, which is precisely what the
+rule forbids: "a legacy verdict must not be presented as globally canonical."
+
+Named, not fixed, in this session. What closing it needs, at minimum: a snapshot input on the
+adapter's options; the three evidence members on any v1–v4 result; a refusal when they are absent or
+when the supplied bytes do not digest to the supplied SHA-256; and a test whose red case is a v1–v4
+receipt verified with no snapshot.
+
+#### Gap 2 — the unknown-profile refusal (B-132)
+
+The adapter does not refuse a receipt whose `profileId` it does not recognise. Under a registry where
+production admission is defined as "carry the signed immutable profileId and satisfy the active
+Headless policy", an unknown profile is an unknown state, and an unknown state must resolve to the
+restricted default. It currently does not. YuTao's letter records the same item from our side —
+"I also noted the unknown-profile case you found in your adapter. As you described, that remains an
+adapter-side item and does not change the production policy above" — so it is acknowledged on both
+sides and owed by us.
+
+Named, not fixed, in this session.
+
+#### What this session did establish about the objects
+
+All four content addresses reproduce from the pinned bytes. Each was computed as keccak256 over the
+RFC 8785 canonical form of the scope **the object itself declares** in its `digest` member, with two
+independent JCS serialisers whose canonical forms were compared byte for byte, and with a one-byte
+mutation control that moved every address before the result was believed.
+
+| object | declared scope | address reproduces |
+|---|---|---|
+| release 2026-09-10.1 `0x96d1f624…` | the release object in this response | yes |
+| activation set v2 `0xe9512f0b…` | the activation set excluding `activationSetId` | yes |
+| Active Headless policy v2 `0xd510bd9f…` | the policy object excluding `policyId` | yes |
+| semantic profile `0xe7513b05…` | the profile object in this response | yes, and the bytes are unchanged from the 9 Sep pin |
+
+The release chains to its predecessor by `predecessorReleaseId`
+(`0xf45d4c02…`, registryRevision 2026-09-09.1), which itself names `0xd240af8f…` (2026-09-08.1), so
+the chain 2026-09-08.1 → 2026-09-09.1 → 2026-09-10.1 is complete and every link is pinned here.
+`currentProfileId` is unchanged, so the commitment semantics did not move with this release.
+
+**No discrepancy was found** — not between any recomputed address and the id in its URL, and not
+between the digests YuTao's letter states and the bytes served. His letter says no response is
+required unless the re-pin finds one. None goes.
+
+#### What F15 does not establish
+
+- **That the policy is what Insight's production gate actually enforces.** The policy is a published
+  document; nothing here observes the runtime that reads it.
+- **That the profile's prose is what their code does.** Unchanged from F14: only the
+  `preTradeUidsHash` construction has ever been reproduced from a signed artefact, and
+  `measuredFieldsHash` and `reasonCodesHash` remain unreproduced because their pre-images are not
+  published.
+- **That the Active Headless policy pins the current release.** It does not, and this is a property
+  of the design rather than a defect: `pins.oracleRegistryReleaseIds` is `[0xf45d4c02…]`, the
+  predecessor. The policy id is named inside the activation set, whose id is named inside the
+  release, so a policy cannot pin the release that transitively contains it without a cycle. The
+  consequence is worth stating plainly because it bears on anyone implementing the admission rule
+  literally: **the active policy always pins one release behind, and a verifier that follows it is
+  pinned one release behind too.**
+- **When any of these objects was published.** No `ETag` and no `Last-Modified` on the mutable
+  pointers; the only bounds are our own reads.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`

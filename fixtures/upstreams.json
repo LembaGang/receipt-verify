@@ -164,7 +164,7 @@
       "provenance_section": "Appended 2026-09-08 — the asqav-sdk tip `a21d060`, pinned after the re-pin at `22a970d` was overtaken the same day",
       "last_observed": {
         "tip": "2a1852add18c539dec8f92ac94f65dd3a56a40da",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "moved_untouched"
       }
     },
@@ -596,15 +596,15 @@
       "paths_note": "The provenance rows give sha256 and no blob id, so `pinned_blob` is null and the comparison at a moved tip is sha256(git cat-file blob <id>) against the pin. Still the object store, never a worktree.",
       "provenance_section": "the main snapshot table, rows 44-86",
       "last_observed": {
-        "tip": "7f0b0cd1a709aa9ba6a3419b14656340f6526f0c",
-        "at": "2026-09-09T15:11:11.417Z",
+        "tip": "3d0ec0e82229c1336340f0323d54904e5baf38b2",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "moved_untouched"
       }
     },
     {
-      "id": "agent-governance-testvectors/HEAD",
+      "id": "agent-governance-testvectors/HEAD-sha256-only",
       "kind": "git",
-      "role": "current",
+      "role": "historical",
       "repo": "https://github.com/ScopeBlind/agent-governance-testvectors",
       "ref": "HEAD",
       "ref_source": "The 14 provenance rows cite `.../HEAD/<path>` literally — a moving ref.",
@@ -682,14 +682,137 @@
           "sha256": "067303ce9ba9b6f417184490b9cdb6baa60534c0bbd64c50cb4fbeb26e6e847e"
         }
       ],
-      "corpus_dirs": [
-        "fixtures/acta/published"
-      ],
       "provenance_section": "the main snapshot table rows 100-113, and the flag at line 231",
       "last_observed": {
         "tip": "a320f24a9400e2386f04483132bda4556f10c085",
         "at": "2026-09-09T15:11:11.417Z",
         "outcome": "moved_untouched"
+      },
+      "role_reason": "No commit pinned; superseded by a commit-addressed entry. B-159. This entry cited the moving ref `HEAD` and recorded a sha256 per path and no commit at all, so it could never report `current` -- its own pinned_commit_note says so -- and, worse, when four of its fourteen paths went `moved_changed` on 2026-09-09 there was NOTHING in the record saying what they had moved FROM. A pin that cannot name its own baseline cannot answer the question the tool exists to ask. Superseded by `agent-governance-testvectors`, pinned at commit b82a50a375299e5edfbabea686b0e2654df75006. The fourteen sha256 values here are kept as written: they ARE the baseline the 2026-09-10 re-pin was diffed against, and deleting them would destroy the only record of what the corpus held before it moved.",
+      "role_reason_code": "superseded_by_commit_addressed_entry",
+      "last_observed_note": "Kept as written. Records `moved_untouched` at a320f24a on 2026-09-09T15:11:11Z, which is the last check made before the four paths moved; the `moved_changed` that followed on 2026-09-10 is the finding this entry was retired for and is recorded in fixtures/provenance.md rather than by overwriting this.",
+      "corpus_dirs_note": "Removed when this entry was retired. `corpus_dirs` maps a corpus directory to the entry that WATCHES it, and a historical entry is never fetched, so it watches nothing; fixtures/acta/published is claimed by `agent-governance-testvectors`. Leaving it here also made this entry assert superseded digests ABOUT paths that now hold different bytes, which test/upstreams-provenance.test.ts correctly read as a disagreement with fixtures/provenance.md. The fourteen sha256 values in `paths` are kept as the baseline record; what is removed is the claim that they describe what is on disk today."
+    },
+    {
+      "id": "agent-governance-testvectors",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/ScopeBlind/agent-governance-testvectors",
+      "ref": "HEAD",
+      "pinned_commit": "b82a50a375299e5edfbabea686b0e2654df75006",
+      "pinned_commit_source": "Resolved in this session by a full clone: `git rev-parse HEAD` = b82a50a375299e5edfbabea686b0e2654df75006, committed 2026-09-10T07:25:56Z, subject `fix: valid Cedar fixture policy; the reference driver signs the real decision; Node 20 and 22 in CI (#17)`. Every blob id and sha256 below was derived from `git cat-file blob <commit>:<path>` in that clone, never from a checkout: core.autocrlf is true on this machine.",
+      "ref_note": "`ref` is still HEAD, because the 14 provenance rows cite `.../HEAD/<path>` literally and that is where the bytes came from. What changed at B-159 is that a COMMIT is now pinned beside it, so `moved_untouched` and `moved_changed` are both measured against a named baseline and a future move can say what it moved from.",
+      "paths": [
+        {
+          "path": "README.md",
+          "pinned_blob": "63a20dd533aa060478f4266407bc326393fb1be0",
+          "sha256": "f5d8fa4293c6273cce592a3977f0608cc35d4464182c523c78f8586cead54004",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's own prose about the corpus rather than the corpus itself. Both moved between a320f24a and this tip while the graded artefacts under aps-gateway-enforcement/ did not, which is the shape this attribute exists for: under `fail` they red the daily check for ordinary editing of a README and a specification narrative that no finding here depends on. The move is still reported in the row's detail line and in noted_paths, so it is de-escalated and not hidden."
+        },
+        {
+          "path": "spec.md",
+          "pinned_blob": "2ce503bc7a40127e438cf06f9545ea9e1a5e68b9",
+          "sha256": "8f06f93022db625f35f197e24843d6ab21c694b6c6bbc4954a86992ca981d09c",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's own prose about the corpus rather than the corpus itself. Both moved between a320f24a and this tip while the graded artefacts under aps-gateway-enforcement/ did not, which is the shape this attribute exists for: under `fail` they red the daily check for ordinary editing of a README and a specification narrative that no finding here depends on. The move is still reported in the row's detail line and in noted_paths, so it is de-escalated and not hidden."
+        },
+        {
+          "path": "expected/receipt-schema.json",
+          "pinned_blob": "5b7dae2c2373c92915c1a8d45ec8116d7d9ccb2b",
+          "sha256": "184dddb4aa2ca18abedcbc1234be95d69a4de752a3d179e1009e9f68b829ad63",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "expected/chain.jsonl",
+          "pinned_blob": "3eeb2a9086af447c784a1cd206997e86e401875f",
+          "sha256": "32dfcc586c2c1f7ee8c801021ddd1a9ecd85de06a0257b62fdeabbdce63399b4",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "fixtures/keys/README.md",
+          "pinned_blob": "b0b7c586f94bf2f770c1d670766b31add9c04511",
+          "sha256": "1c35a588425ff244b3cc7b75a25247644774d731cc9253c7b2aa220b0d1e9e3f",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/README.md",
+          "pinned_blob": "66fed36b01c96e4ac267a4aef68d84bd56448a87",
+          "sha256": "2b278950c875188fc0f7014da319fea9aa16c61171860cc3a5ff049ee9b6b7d4",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/receipt.json",
+          "pinned_blob": "9e887e9e546cbe2f3dd11c59c2677c16ff370cf4",
+          "sha256": "efd8accc8d96001a6f5fcbfedec420600804486078baa778d8870625b9d9ea26",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/jwks.json",
+          "pinned_blob": "468e281850bf8b3ee24ba439bd832a74b7a67bc9",
+          "sha256": "2ce283efe6dfe792a2013c06cabd652db3e15a0785aac3885606f4fbcc6c01a3",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/canonical.txt",
+          "pinned_blob": "bfa92fe5915b89815ab5d16a62f5cf3b9ce198fa",
+          "sha256": "b7d84a8a164c8aea6d09d27c41ecbf4119dbada80cab4d9b83bfcb51fae119bc",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/expected-output.json",
+          "pinned_blob": "5d4ab9025681f7f73318e9ba9043a82f6905e9ae",
+          "sha256": "dfb67edc90c3c3e9d89475d1a50064e2bad4be2f44e117d2f54d0f3b8269a50b",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/2-external-verification/README.md",
+          "pinned_blob": "1d6fd96e720023ab2d8a133089b1287fd16c031c",
+          "sha256": "4da8d4289681c808944921035fe7b9c60c5726e06e7c6138199101234cb3a4b5",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/4-portability/receipt.json",
+          "pinned_blob": "9d6b659ea1189e223c1857dc591350f704a5b984",
+          "sha256": "1aad0e1122ba5a44896631e9e9f38cbdcb80d300362d01f46956f6d79de16719",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/4-portability/jwks.json",
+          "pinned_blob": "468e281850bf8b3ee24ba439bd832a74b7a67bc9",
+          "sha256": "2ce283efe6dfe792a2013c06cabd652db3e15a0785aac3885606f4fbcc6c01a3",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        },
+        {
+          "path": "aps-gateway-enforcement/4-portability/expected-output.json",
+          "pinned_blob": "593130e1a778a2362e5815d3d3524e9622f862c3",
+          "sha256": "067303ce9ba9b6f417184490b9cdb6baa60534c0bbd64c50cb4fbeb26e6e847e",
+          "check": "fail",
+          "check_reason": "Graded data. `fail` is the default and would be the meaning of an absent attribute; it is written out because sibling paths in this entry are `note` and a reader deciding whether those were marked deliberately should not have to infer this one."
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/acta/published"
+      ],
+      "provenance_section": "Appended 2026-09-10 - agent-governance-testvectors re-pinned at a commit, and the corpus taken to that tip",
+      "role_note": "Four of the fourteen paths moved between the a320f24a pin and this tip: README.md, spec.md, expected/receipt-schema.json and expected/chain.jsonl. The other ten reproduce their previous sha256 exactly. fixtures/acta/published was taken to the new bytes in the same commit, so the corpus and this pin agree. The walker was run before and after: no grade moved -- match=410 and mismatch=20 in both runs, and acta/published registered=1 match=1 mismatch=0 in both -- and the only difference is four NEW unregistered rows, `#1..#4/policy_digest` in expected/chain.jsonl, a field this tip adds and no rule in walker/scopes.json registers.",
+      "last_observed": {
+        "tip": "b82a50a375299e5edfbabea686b0e2654df75006",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
       }
     },
     {
@@ -703,7 +826,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -720,7 +843,7 @@
       "role_note": "The URL is the digest, so this body cannot change without the URL changing. What the check can still turn red is disappearance: a 404 or a DNS failure is `unreachable`, and a content-addressed mapping that stops resolving is the thing worth knowing about here.",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -736,7 +859,7 @@
       "provenance_section": "the main snapshot table",
       "last_observed": {
         "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       },
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
@@ -754,7 +877,7 @@
       "role_note": "Registry revision 2026-09-08.1, effectiveFrom 2026-09-08: the release YuTao named to us on 2026-09-08 at ~17:56Z as the one carrying the ExecutionReceipt v5 protocol fix. Our digest of the bytes served today equals the digest he stated. It names currentProfileId 0xe7513b05... and supportedSchemaVersions [1,2,3,4,5], and its predecessorSnapshots member quotes this repository's own 5 Sep and 8 Sep oracle-keys.json pins by digest prefix and byte count.",
       "last_observed": {
         "tip": "cab85b239d53ac336c018a18ba26a487e76e2c86b4d5e416fbd76b891dd14785",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -771,7 +894,101 @@
       "role_note": "The ExecutionReceiptSemanticProfile that ExecutionReceipt v5 signs as `profileId`. It is where the `preTradeUidsHash` construction now lives -- inclusion \"omit entries equal to zero bytes32\", ordering \"route order, source first\", encoding \"concatenate each retained uid as 32 raw bytes without separators\", empty input keccak256 of empty bytes -- which is the rule src/adapters/insight.ts implemented on 2026-09-08 from the mutable oracle-keys.json prose, now stated in an object that cannot change without changing its own name. The same prose is no longer in oracle-keys.json at all: `schemas.ExecutionReceipt.commitments` and `.sentinels` are absent from the 9 Sep copy, and that is the protocol-level fix rather than a wording change. It also carries profileIdSignedInSchemaVersions [5] and legacyImplicitSchemaVersions [3,4].",
       "last_observed": {
         "tip": "284056499d0e779f7c168edd11dd716e64acf173bcb43df0bc58cc7bb7287ace",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "insight-oracle-registry-release/0x96d1f624",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0x96d1f62460d53e68b34cb7812e8ef736cce8332754dc1284cfb7df1b2b575e2c",
+      "sha256": "9ef754b8c682e19c72c68dff71a6a836172639ee5e6a857b30307ec394ce0bf8",
+      "retrieved": "2026-09-10T13:25:00Z",
+      "check": "fail",
+      "check_reason": "Content-addressed and immutable. The id in the URL IS keccak256 over the RFC 8785 canonicalisation of the scope the object itself declares in its `digest` member, and this session recomputed that address from the pinned bytes with two independent JCS serialisers -- the repository's TypeScript one and the Python one tools/jcs-cross-check.py drives -- whose canonical forms were compared BYTE for byte, not merely by digest, and a one-byte mutation control moved the address before the result was believed. So a `changed` outcome here does not mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes. There is no benign reading, and `fail` is the only defensible setting.",
+      "pinned_file": "refs/insight-oracle-registry-release-0x96d1f624.json",
+      "role_note": "Registry revision 2026-09-10.1, effectiveFrom 2026-09-10, the release carrying v5-only Headless production admission. predecessorReleaseId 0xf45d4c0272300f8132dba75c49b337557cf6fd7975b32fd14a8b4e13f430a8f7, which is pinned here as insight-oracle-registry-release/0xf45d4c02 and itself names 0xd240af8f... as ITS predecessor, so the chain 2026-09-08.1 -> 2026-09-09.1 -> 2026-09-10.1 is complete and every link is held. executionReceipt.currentProfileId is 0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e -- UNCHANGED from the 9 Sep pin, so the commitment semantics did not move with this release. Its legacyProfileResolution member states the v1-v4 rule: signingStatus retired, productionAdmission forbidden, resultScope relative-to-exact-registry-snapshot, globallyCanonicalVerdict false, requiredEvidence [registrySnapshotUtf8Bytes, sha256, byteLength].",
+      "provenance_section": "Appended 2026-09-10 - Insight's v5-only production admission: the Headless policy, the activation set, the 2026-09-10.1 release and the two mutable pointers",
+      "last_observed": {
+        "tip": "9ef754b8c682e19c72c68dff71a6a836172639ee5e6a857b30307ec394ce0bf8",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "insight-oracle-registry-integration-set/0xe9512f0b",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/integration-sets/0xe9512f0bf2b94c9a846877187b70fd29007fa196c8bd67f7c17eb58eebc24190",
+      "sha256": "91e4fd0cc264ea2bde6ae4ff4092f090b901070376bffd24b6c16a1891e4763b",
+      "retrieved": "2026-09-10T13:26:00Z",
+      "check": "fail",
+      "check_reason": "Content-addressed and immutable. The id in the URL IS keccak256 over the RFC 8785 canonicalisation of the scope the object itself declares in its `digest` member, and this session recomputed that address from the pinned bytes with two independent JCS serialisers -- the repository's TypeScript one and the Python one tools/jcs-cross-check.py drives -- whose canonical forms were compared BYTE for byte, not merely by digest, and a one-byte mutation control moved the address before the result was believed. So a `changed` outcome here does not mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes. There is no benign reading, and `fail` is the only defensible setting.",
+      "pinned_file": "refs/insight-oracle-registry-integration-set-0xe9512f0b.json",
+      "role_note": "MainlinePartnerActivationSet, activationVersion 2, predecessorActivationSetId 0xe125edc3.... Nine partners; `headless` maps to policy id 0xd510bd9f29be0b896aed2e2b95200eab25cb9e03430a456f1bee3df7a17de158, which is how the Active Headless policy URL was RESOLVED rather than guessed. Its stated rule: `Presence on main never activates an integration. Each partner resolves only the immutable policy id named here; changing one entry cannot change another.` Digest scope is `the activation set excluding activationSetId`.",
+      "provenance_section": "Appended 2026-09-10 - Insight's v5-only production admission: the Headless policy, the activation set, the 2026-09-10.1 release and the two mutable pointers",
+      "last_observed": {
+        "tip": "91e4fd0cc264ea2bde6ae4ff4092f090b901070376bffd24b6c16a1891e4763b",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "insight-oracle-registry-integration-policy/0xd510bd9f",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/integrations/0xd510bd9f29be0b896aed2e2b95200eab25cb9e03430a456f1bee3df7a17de158",
+      "sha256": "14e29fbd050bd0d5b52cd4158d25d9fe1d0ea1ef14c8c92b397155d0c9cfc0f7",
+      "retrieved": "2026-09-10T13:27:00Z",
+      "check": "fail",
+      "check_reason": "Content-addressed and immutable. The id in the URL IS keccak256 over the RFC 8785 canonicalisation of the scope the object itself declares in its `digest` member, and this session recomputed that address from the pinned bytes with two independent JCS serialisers -- the repository's TypeScript one and the Python one tools/jcs-cross-check.py drives -- whose canonical forms were compared BYTE for byte, not merely by digest, and a one-byte mutation control moved the address before the result was believed. So a `changed` outcome here does not mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes. There is no benign reading, and `fail` is the only defensible setting.",
+      "pinned_file": "refs/insight-oracle-registry-integration-policy-0xd510bd9f.json",
+      "role_note": "THE ACTIVE HEADLESS POLICY v2 -- the object Insight's production admission rule is stated in terms of, and it is named for this project. MainlinePartnerPolicy, partnerId `headless`, lifecycle promoted, activation explicit-policy-id, productionReachability enabled, surfaces [execution-receipt, pre-trade-envelope, attester-key-role]. pins.executionSchemaVersions [5]; pins.executionProfileIds [0xe7513b05...]; pins.externalContracts [headless-market-state:v5]. NOTE, and it is a property of the design rather than a defect: pins.oracleRegistryReleaseIds is [0xf45d4c02...], the PREDECESSOR release, not the current 0x96d1f624.... That is forced by the content addressing -- the policy id is named inside the activation set, whose id is named inside the release, so a policy cannot pin the release that transitively contains it without a cycle. The consequence is that the active policy always pins one release behind, and a verifier implementing `satisfy the active Headless policy` literally is pinned one release behind with it. Digest scope is `the policy object excluding policyId`.",
+      "provenance_section": "Appended 2026-09-10 - Insight's v5-only production admission: the Headless policy, the activation set, the 2026-09-10.1 release and the two mutable pointers",
+      "last_observed": {
+        "tip": "14e29fbd050bd0d5b52cd4158d25d9fe1d0ea1ef14c8c92b397155d0c9cfc0f7",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "insight-oracle-registry-current",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/current.json",
+      "sha256": "64324114f6f3bdde079219f2d0620f7737d2c62b30a84ff897b56c47391e3602",
+      "retrieved": "2026-09-10T13:24:11Z",
+      "check": "note",
+      "check_reason_code": "mutable_pointer",
+      "check_reason": "THIS IS THE ENTRY B-151 WAS BUILT FOR. fixtures/provenance.md's 9 September section named the gap in these words: `It does not watch the pointer. current.json is historical, so nothing here will notice the next time registryRevision advances ... The tool has no vocabulary for \"an http upstream expected to move, whose movement should be reported and not fail the run\" ... Adding it for http entries is the smallest change that would close this, and it is not made here.` It is made now, and this entry is the first consumer. The pointer's whole function is to advance: it names the current release, and a release is promoted roughly daily. Under `fail` it reds for doing its job; unwatched, a registry revision passes unseen, which is what happened between 2026-09-09 and 2026-09-10 and was caught only because the Lead read it by hand.",
+      "pinned_file": "refs/insight-oracle-registry-current-2026-09-10.json",
+      "ref_source": "Fetched in this session with the same client tools/drift.ts uses -- node fetch(url, { method: \"GET\", redirect: \"follow\" }), no added headers -- and written to refs/ byte-exact. Output: status=200 bytes=1017 sha256=64324114f6f3bdde079219f2d0620f7737d2c62b30a84ff897b56c47391e3602, response Date: Thu, 10 Sep 2026 13:24:11 GMT, Cache-Control: public, max-age=60, must-revalidate, no ETag and no Last-Modified, so the only bound on when it moved is our own reads. Requested at the www. host: the bare host answers 307.",
+      "role_note": "Names registryRevision 2026-09-10.1, releaseId 0x96d1f62460d53e68b34cb7812e8ef736cce8332754dc1284cfb7df1b2b575e2c, effectiveFrom 2026-09-10, and partnerIntegrations.activationSetId 0xe9512f0bf2b94c9a846877187b70fd29007fa196c8bd67f7c17eb58eebc24190. Every immutable object pinned in this session was resolved by following a path from THIS file or from the release object it names, never by guessing a URL.",
+      "provenance_section": "Appended 2026-09-10 - Insight's v5-only production admission: the Headless policy, the activation set, the 2026-09-10.1 release and the two mutable pointers",
+      "last_observed": {
+        "tip": "64324114f6f3bdde079219f2d0620f7737d2c62b30a84ff897b56c47391e3602",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "insight-oracle-registry-integrations-current",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/integrations/current.json",
+      "sha256": "bebeac8c75fed461e778b6b7a4a965c132bf69e0bb148edd05a195f16eb7420b",
+      "retrieved": "2026-09-10T13:26:00Z",
+      "check": "note",
+      "check_reason_code": "mutable_pointer",
+      "check_reason": "The second mutable pointer, and the one that decides WHICH policy is the active Headless policy: it carries activationSetId and activationVersion, and the activation set it names is what maps `headless` to a policy id. Added in this session and NOT named in the handoff: without it, the policy pin is a pin on an object nothing says is still active, and a change of active policy would pass unseen exactly the way the registry revision did between 9 and 10 September. It moves whenever any partner's activation changes, so `note`, not `fail`.",
+      "pinned_file": "refs/insight-oracle-registry-integrations-current-2026-09-10.json",
+      "ref_source": "Fetched in this session with the same client tools/drift.ts uses. Output: status=200 bytes=825 sha256=bebeac8c75fed461e778b6b7a4a965c132bf69e0bb148edd05a195f16eb7420b, Cache-Control: public, max-age=60, must-revalidate.",
+      "role_note": "activationSetId 0xe9512f0b..., activationVersion 2. Resolved from the release object's mainlineIntegrationIsolation.currentPath, not guessed.",
+      "provenance_section": "Appended 2026-09-10 - Insight's v5-only production admission: the Headless policy, the activation set, the 2026-09-10.1 release and the two mutable pointers",
+      "last_observed": {
+        "tip": "bebeac8c75fed461e778b6b7a4a965c132bf69e0bb148edd05a195f16eb7420b",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -788,7 +1005,7 @@
       "role_note": "Registry revision 2026-09-09.1, effectiveFrom 2026-09-09: the release the mutable pointer already names, which the issuer has not written to us about. It carries predecessorReleaseId 0xd240af8f..., so the two releases chain, and its currentProfileId is the SAME 0xe7513b05..., so the commitment semantics did not move with it. This session's structural diff against 0xd240af8f: 872 leaves against 878, six added, none removed, seven changed -- the release id, the revision, the effective date, and the four `changes` lines, which are now about partner-integration isolation (an activationSetId, per-policy immutable paths, and the rule that repository presence never activates an integration).",
       "last_observed": {
         "tip": "f85381e271869daa6bfa53956441cd3b2641b9c53d326e4e2e59f8498f822fd7",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -806,9 +1023,9 @@
       "role_reason": "`historical` is chosen for its MECHANICAL meaning in tools/drift.ts -- reported as `not_checked`, never counted as current, never fetched again -- and not because this document is superseded. A pointer whose whole job is to move must not be a `current` row: it would red the daily run on the issuer's ordinary progress, and a red that is expected is the failure mode tools/drift.ts's own header warns about (l.50: a difference routinely ignored is worse than no check at all). The three content-addressed entries above are `current` instead, and they are the rows that can say something. THE COST, stated rather than hidden: nothing in this repository will now notice the next time this pointer advances, so the next release will again be found by hand. That is a gap, named in the provenance section and in CC_REPORT_2026-09-09_insight-v5-repin.md, not a property being claimed."
     },
     {
-      "id": "insight-oracle-keys",
+      "id": "insight-oracle-keys/2026-09-09T1440Z",
       "kind": "http",
-      "role": "current",
+      "role": "historical",
       "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
       "sha256": "dbcf0929615b59aba2cb70f0f45cc246807cab2109b1cb316cee2fd70c01fd57",
       "retrieved": "2026-09-09T14:40:02Z",
@@ -817,12 +1034,34 @@
       "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers (tools/drift.ts l.177-181) -- and written to refs/ as the response body byte-exact, with no re-serialisation. Output: `status=200 bytes=21836 sha256=dbcf0929615b59aba2cb70f0f45cc246807cab2109b1cb316cee2fd70c01fd57`, response `Date: Wed, 09 Sep 2026 14:40:02 GMT`, `Age: 219`, `Cache-Control: public, max-age=300`, `x-vercel-cache: HIT`, no ETag and no Last-Modified -- so the origin generated this body at 2026-09-09T14:36:23Z. The `retrieved` instant above is that Date header, not a local clock read, on the convention the 5 Sep provenance section states. `npm run drift` at this session's P0 (14:37Z) had already reported the same digest as `now`, which is a second independent observation of these bytes and separates a changed document from a nondeterministic endpoint. Byte count and response headers are in the provenance section this entry names, not here.",
       "role_note": "The seventh pin of this URL. `current.json` now calls this document the stableRegistry, and the renaming is the point: the commitment prose that moved under an unchanged schemaVersion on 8 September is no longer in this file at all. Structural diff against the 8 Sep pin: 701 leaves against 815, four only in the old, 118 only in the new, and exactly ONE leaf differing in both -- `schemas.ExecutionReceipt.schemaVersion`, 4 -> 5. The four that left are `schemas.ExecutionReceipt.commitments.preTradeUidsHash`, `.commitments.measuredFieldsHash` and the two `.sentinels.attestationAgeAtExecSeconds` members; they are now in the immutable profile 0xe7513b05.... What arrived: a `semanticProfile` block naming that profile with `signedField: profileId`, a 45th signed EIP-712 field `profileId` of type bytes32, a frozen `ExecutionReceiptV4` schema preserving the retired layout, and the top-level `registryRelease`, `registryRevision`, `effectiveFrom` and `partnerIntegrations` members. This time the issuer versioned the change.",
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry.",
-      "role_reason": "Re-pinned 2026-09-09 at 14:40:02Z, after the second `changed` outcome in two days on the same URL: 5 Sep -> 8 Sep (a commitment rule rewritten under an unchanged schemaVersion 4, FINDINGS F10) and 8 Sep -> 9 Sep (this one, which versions the layout to 5 and moves the commitment prose out). A document that moves twice in two days is not a thing to hang a commitment reading on, and it no longer has to be: the three content-addressed entries above are the load-bearing pins now, and this row's job has narrowed to the keys, the endpoints and the pointers into the immutable objects.",
+      "role_reason": "The seventh pin, superseded by the eighth on 2026-09-10. Kept because it is the copy the 9 September H9 recomputation was made over, and a finding is only meaningful against the exact bytes it was made from.",
       "last_observed": {
         "tip": "dbcf0929615b59aba2cb70f0f45cc246807cab2109b1cb316cee2fd70c01fd57",
         "at": "2026-09-09T15:11:11.417Z",
         "outcome": "current"
       }
+    },
+    {
+      "id": "insight-oracle-keys",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json",
+      "sha256": "8e430ccf89854864e327e3dc32a08d54e91f6c7807a3dbf311613fd5e854535e",
+      "retrieved": "2026-09-10T13:24:10Z",
+      "pinned_file": "refs/insight-oracle-keys-2026-09-10.json",
+      "provenance_section": "Appended 2026-09-10 - Insight's v5-only production admission: the Headless policy, the activation set, the 2026-09-10.1 release and the two mutable pointers",
+      "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node fetch(url, { method: \"GET\", redirect: \"follow\" }), no added headers (tools/drift.ts l.177-181) -- and written to refs/ byte-exact. Output: status=200 bytes=22762 sha256=8e430ccf89854864e327e3dc32a08d54e91f6c7807a3dbf311613fd5e854535e, response Date: Thu, 10 Sep 2026 13:24:10 GMT, Cache-Control: public, max-age=300, no ETag and no Last-Modified. The digest equals the one npm run drift reported as `now` at this session's P0 (13:08Z), which is a second independent observation of these bytes and separates a changed document from a nondeterministic endpoint.",
+      "role_note": "The eighth pin. Re-pinned at B-153 and de-escalated to `check: note`; the commitment semantics this file used to carry now live in the immutable profile, which is where the `fail` pins are.",
+      "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry.",
+      "role_reason": "Re-pinned 2026-09-09 at 14:40:02Z, after the second `changed` outcome in two days on the same URL: 5 Sep -> 8 Sep (a commitment rule rewritten under an unchanged schemaVersion 4, FINDINGS F10) and 8 Sep -> 9 Sep (this one, which versions the layout to 5 and moves the commitment prose out). A document that moves twice in two days is not a thing to hang a commitment reading on, and it no longer has to be: the three content-addressed entries above are the load-bearing pins now, and this row's job has narrowed to the keys, the endpoints and the pointers into the immutable objects.",
+      "last_observed": {
+        "tip": "8e430ccf89854864e327e3dc32a08d54e91f6c7807a3dbf311613fd5e854535e",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
+      },
+      "check": "note",
+      "check_reason_code": "mutable_pointer",
+      "check_reason": "B-153. The EIGHTH pin of this URL in nine days: 2 Sep (four times), 5 Sep, 8 Sep, 9 Sep, 10 Sep. It is a mutable registry document by design and the issuer has now said in writing that it will keep moving -- YuTao's letter of 2026-09-09 ~17:31Z retires ExecutionReceipt v1-v4 for new production signing, and current.json calls this file the stableRegistry while the commitment semantics it used to carry have moved OUT of it into the immutable profile 0xe7513b05.... Under `fail` this entry reds the daily check on the issuer's ordinary cadence, which is the B-123 failure mode. What it is NOT is unwatched: every move is reported with both digests and counted in the SUMMARY's noted=N, and the load-bearing pins for the commitment semantics are now the content-addressed objects, which stay `fail` and have no benign reading of a change."
     },
     {
       "id": "insight-oracle-keys/2026-09-08T1218Z",
@@ -922,7 +1161,7 @@
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-08.txt",
       "last_observed": {
         "tip": "draft-marques-asqav-compliance-receipts-08",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -952,7 +1191,7 @@
       "pinned_file": "refs/draft-farley-acta-signed-receipts-03.txt",
       "last_observed": {
         "tip": "draft-farley-acta-signed-receipts-03",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       },
       "provenance_section": "Appended 2026-09-01 — three `refs/` entries this table did not carry",
@@ -982,7 +1221,7 @@
       "pinned_file": "refs/draft-krausz-verification-state-01.txt",
       "last_observed": {
         "tip": "draft-krausz-verification-state-01",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       },
       "provenance_section": "the main snapshot table (this draft was in the original table)",
@@ -1000,7 +1239,7 @@
       "provenance_section": "Appended 2026-09-08 — CPB `-03`, pinned after the first scheduled drift finding",
       "last_observed": {
         "tip": "draft-mih-sokolov-scitt-payload-binding-03",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1047,7 +1286,7 @@
       "provenance_section": "Appended 2026-09-06 -- the delivery corpus, which had no provenance row at all",
       "last_observed": {
         "tip": null,
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1071,7 +1310,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "dd927a26cfefc98c24b3ec38b3a8f204dad0c60d",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1088,7 +1327,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1105,7 +1344,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1129,7 +1368,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "356c29635f1c44df7de02edb58699ca9f29bece6",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1163,7 +1402,7 @@
       "provenance_section": "Appended 2026-09-08 — the MCP changelog pinned at its source after the render moved with a site redeploy",
       "last_observed": {
         "tip": "aa8ce049f089f92618340190d4ece141f663310d",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1188,7 +1427,7 @@
     {
       "id": "draft-hillier-scitt-arp-03",
       "kind": "ietf-draft",
-      "role": "current",
+      "role": "historical",
       "name": "draft-hillier-scitt-arp",
       "pinned_rev": "03",
       "url": "https://www.ietf.org/archive/id/draft-hillier-scitt-arp-03.txt",
@@ -1201,6 +1440,29 @@
         "tip": "draft-hillier-scitt-arp-04",
         "at": "2026-09-09T15:11:11.417Z",
         "outcome": "superseded"
+      },
+      "role_reason": "Superseded at the archive by -04 on 2026-09-08 and re-pinned beside it, not replaced by it. B-150. This entry keeps its digest fe7ba656ef07842c365ce93938610cd874668c29f0fa06031d37d0e4e72b395d and its role: -03 is the revision every existing finding in this repository was graded against, so retiring the digest would orphan those findings from the bytes they were made over. Nothing is re-graded against -04 in this session; the methodology decision is the Lead's (B-150) and a separate handoff carries any re-grade.",
+      "role_reason_code": "superseded_revision_findings_graded_against_it",
+      "last_observed_note": "Kept as written. Records `superseded` at 2026-09-09T15:11:11Z -- the run that found -04 at the archive, which is the finding this re-pin answers."
+    },
+    {
+      "id": "draft-hillier-scitt-arp-04",
+      "kind": "ietf-draft",
+      "role": "current",
+      "name": "draft-hillier-scitt-arp",
+      "pinned_rev": "04",
+      "url": "https://www.ietf.org/archive/id/draft-hillier-scitt-arp-04.txt",
+      "sha256": "63164345921add3a6c4cebf26d6e434306e5efa4120fdf2fcec2535d59691490",
+      "retrieved": "2026-09-10T13:23:11Z",
+      "pinned_file": "refs/draft-hillier-scitt-arp-04.txt",
+      "rev_source": "The datatracker document API (https://datatracker.ietf.org/api/v1/doc/document/?name=draft-hillier-scitt-arp) reported rev \"04\", time 2026-09-08T21:14:49Z, title \"Attestation Reconciliation Protocol\", 213 pages, read in this session. `HEAD https://www.ietf.org/archive/id/draft-hillier-scitt-arp-05.txt` answers 404, which is the probe tools/drift.ts itself makes, so -04 is the highest revision published.",
+      "ref_source": "Fetched in this session with the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers -- and written to refs/ byte-exact. Output: `status=200 bytes=591005 sha256=63164345921add3a6c4cebf26d6e434306e5efa4120fdf2fcec2535d59691490`, response `Date: Thu, 10 Sep 2026 13:23:11 GMT`, `Last-Modified: Tue, 08 Sep 2026 21:03:48 GMT`, `ETag: W/\"6aa07834-9049d\"`, `Cache-Control: public, max-age=14400`. The digest was REPRODUCED from the bytes, not copied from the handoff that stated it, and it equals the value the Lead recorded on 2026-09-09 at 14:22Z.",
+      "role_note": "Pinned as the current revision. NOTHING in this repository is graded against -04 yet: every existing SCITT ARP finding was made over -03, which is retained as historical for exactly that reason. What this entry buys today is that the next revision is reported; what it does not buy is any statement about what changed between -03 and -04, which is B-150's methodology question and is the Lead's.",
+      "provenance_section": "Appended 2026-09-10 - draft-hillier-scitt-arp-04 pinned beside -03",
+      "last_observed": {
+        "tip": "draft-hillier-scitt-arp-04",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
       }
     },
     {
@@ -1217,7 +1479,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "draft-sirkkavaara-vaara-receipt-10",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1235,14 +1497,14 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "draft-vauban-x402-consolidated-00",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
     {
-      "id": "rfc9964-info",
+      "id": "rfc9964-info/render-2026-09-08T0959Z",
       "kind": "http",
-      "role": "current",
+      "role": "historical",
       "url": "https://www.rfc-editor.org/info/rfc9964",
       "sha256": "abc75d74bf90f97356b9c6348c4a62e85cb341c8af7f556e76010325ff5eeb7c",
       "retrieved": "2026-09-08T09:59:01Z",
@@ -1253,6 +1515,48 @@
         "tip": "d32dd7a5f504efdc19de751f4f4c4e01c6327e00e52966503345c4263b00cc33",
         "at": "2026-09-09T15:11:11.417Z",
         "outcome": "changed"
+      },
+      "role_reason": "Pinned as a RENDERED page rather than as the thing the page carries -- the same B-125 class as mcp-specification-changelog/render-2026-09-08T0959Z, and retired for the same reason. It read `current` at abc75d74bf90f97356b9c6348c4a62e85cb341c8af7f556e76010325ff5eeb7c on 2026-09-08T09:59:01Z, d32dd7a5f504efdc19de751f4f4c4e01c6327e00e52966503345c4263b00cc33 on 2026-09-09T15:11:11Z, and a80b9a35fcd0c1ccaf4b9e14c33c9283d3cd11f3f0df2e83f1913fb7b29e79e8 at 732965 bytes on 2026-09-10, which is the last observed value. Nothing in RFC 9964 changed -- an RFC is immutable by definition, which is what makes this entry's instability diagnostic rather than ambiguous. What moved was the site. VERIFIED IN THIS SESSION rather than relayed: the body carries `buildId:\"4e11c495-7a5b-4070-9cd7-6e58a0979cb9\"` and the site version string `1.90.1`, and two fetches 2 seconds apart within the same deploy are byte-identical at 732965 bytes, so the digest is stable WITHIN a deploy and moves ACROSS deploys. (The Lead's triage named build 1.90.0, shipped 9 Sep; the string served today reads 1.90.1. The discrepancy is recorded rather than reconciled -- the buildId is the mechanism either way.) A per-deploy identifier embedded in the body cannot be pinned by digest at all: the pin would red on every redeploy and stay green through an actual content change only by accident. Superseded by `rfc9964-text`, which pins the RFC's own bytes, and `rfc9964-status`, which pins the status document.",
+      "role_reason_code": "rendered_page_furniture",
+      "last_observed_note": "Kept as written: it is a true record of the last check made of this entry while it was current, and tools/drift.ts never touches a historical entry again, so it is frozen rather than stale. The 2026-09-10 observation above is recorded in role_reason rather than by overwriting this."
+    },
+    {
+      "id": "rfc9964-text",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.rfc-editor.org/rfc/rfc9964.txt",
+      "sha256": "8c42035b948301b197d431de8b3f40019bdaa3bb40150dc523306923948f34cf",
+      "retrieved": "2026-09-10T13:15:28Z",
+      "check": "fail",
+      "check_reason": "`fail` is the default and would be the meaning of an absent attribute; it is written out because the sibling entry rfc9964-status is `note`, and a reader deciding whether that one was marked deliberately should not have to infer this one. A published RFC is IMMUTABLE -- the RFC Editor never reissues one under the same number -- so these bytes cannot legitimately move, and a move here is either the RFC Editor breaking its own rule or this repository being served something else. There is no benign reading, which is what makes this the strongest of the three RFC 9964 pins and the one that replaces the render.",
+      "pinned_file": "refs/rfc9964.txt",
+      "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers (tools/drift.ts l.177-181) -- and written to refs/ as the response body byte-exact, with no re-serialisation. Output: `status=200 bytes=180564 sha256=8c42035b948301b197d431de8b3f40019bdaa3bb40150dc523306923948f34cf`, response `Date: Thu, 10 Sep 2026 13:15:28 GMT`, `Cache-Control: public, max-age=86400`, `ETag: \"c050e1c98197335743077ad8cda678d7\"`, `Content-Type: text/plain;charset=utf-8`, no Last-Modified. No redirect: the URL as written answers 200.",
+      "role_note": "RFC 9964, `ML-DSA for JSON Object Signing and Encryption (JOSE) and CBOR Object Signing and Encryption (COSE)`, Prorock and Steele, Proposed Standard, May 2026, from draft-ietf-cose-dilithium-11. The canonical text, which is what this repository actually cites; the /info/ page was only ever a wrapper around a link to it.",
+      "provenance_section": "Appended 2026-09-10 - RFC 9964 re-pinned at its text and its status document",
+      "last_observed": {
+        "tip": "8c42035b948301b197d431de8b3f40019bdaa3bb40150dc523306923948f34cf",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "rfc9964-status",
+      "kind": "http",
+      "role": "current",
+      "url": "https://www.rfc-editor.org/rfc/rfc9964.json",
+      "sha256": "b55af9396c131e4617944f5dc56f160ad508ba24b9ae7382f211b05f1202052a",
+      "retrieved": "2026-09-10T13:15:30Z",
+      "check": "note",
+      "check_reason_code": "mutable_pointer",
+      "check_reason": "The RFC's STATUS, not its text, and the status of a published RFC is designed to move: this document carries `errata_url` (null today -- it becomes a URL the moment anyone files an erratum), `pub_status` and `status` (`PROPOSED STANDARD` today -- these change if the RFC advances or is reclassified), and `obsoletes`, `obsoleted_by`, `updates`, `updated_by` and `see_also` (all empty today -- each fills in when a later RFC touches this one). Every one of those movements is the document doing its job. Under `fail` this entry would red the daily check the first time someone files an erratum, which is precisely the event it exists to surface. Noted, not failed: the row still prints both digests and the run carries it in `noted=N`, so the move is reported and the value it moved to is recorded -- only the escalation is dropped.",
+      "pinned_file": "refs/rfc9964-status.json",
+      "ref_source": "Fetched in this session by a one-off script using the same client tools/drift.ts uses -- node `fetch(url, { method: \"GET\", redirect: \"follow\" })`, no added headers (tools/drift.ts l.177-181) -- and written to refs/ as the response body byte-exact, with no re-serialisation. Output: `status=200 bytes=998 sha256=b55af9396c131e4617944f5dc56f160ad508ba24b9ae7382f211b05f1202052a`, response `Date: Thu, 10 Sep 2026 13:15:30 GMT`, `ETag: \"3be9f2cf258270cae0c88bf822e4b56d\"`, `Content-Type: application/json;charset=utf-8`, no Cache-Control and no Last-Modified.",
+      "role_note": "The status document for RFC 9964 as served by the RFC Editor. Pinned so that an erratum, a reclassification or an obsoleting RFC is REPORTED by the daily run: those are the only things about a published RFC that can change, and none of them is visible in the text pin, which is immutable. This is the pin that carries the question the retired render was meant to answer.",
+      "provenance_section": "Appended 2026-09-10 - RFC 9964 re-pinned at its text and its status document",
+      "last_observed": {
+        "tip": "b55af9396c131e4617944f5dc56f160ad508ba24b9ae7382f211b05f1202052a",
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
       }
     },
     {
@@ -1275,7 +1579,7 @@
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "a53ffae1268cf2a9dda0a7796a641618543fe657",
-        "at": "2026-09-09T15:11:11.417Z",
+        "at": "2026-09-10T13:35:58.339Z",
         "outcome": "current"
       }
     },
@@ -1284,16 +1588,20 @@
       "kind": "http",
       "role": "current",
       "url": "https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-history-signing/",
-      "sha256": "7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b",
-      "retrieved": "2026-09-08T09:59:01Z",
+      "sha256": "1059546c32e83a556eb6917f2c343fa6340c683bb00342fb96bff6349992327d",
+      "retrieved": "2026-09-10T13:19:00Z",
       "url_source": "Resolved from https://docs.dapr.io by reading the workflow building-block index (/developing-applications/building-blocks/workflow/), which lists workflow-history-signing/ beside workflow-history-propagation/ and workflow-history-retention-policy/. The prose that names the feature is on workflow-features-concepts/: \"When this is combined with workflow history signing, you can further cryptographically confirm or attest this.\" /operations/security/workflow-history-signing/ is 404; the building-block path is the page.",
-      "no_pinned_file": "72326 bytes of rendered HTML; the sha256 here is the check. Measured with node fetch, drift's own client, four times over 45 seconds, all four byte-identical.",
+      "no_pinned_file": "72317 bytes of rendered HTML; the sha256 here is the check. Measured with node fetch, drift's own client. NOTE, and it is the limit observation_2026-09-10 ran into: because no copy is held, this entry can report THAT it moved and can never say WHAT moved. That is what forced the 2026-09-10 triage to be done against the upstream repository instead of against a diff.",
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "1059546c32e83a556eb6917f2c343fa6340c683bb00342fb96bff6349992327d",
-        "at": "2026-09-09T15:11:11.417Z",
-        "outcome": "changed"
-      }
+        "at": "2026-09-10T13:35:58.339Z",
+        "outcome": "current"
+      },
+      "check": "fail",
+      "check_reason": "Left `fail` as the handoff directs, and NOT re-classified in this session, because the decision to de-escalate a commercial signal is the Lead's. See observation_2026-09-10 below: what this session established is that the entry cannot currently serve the purpose the `fail` is for.",
+      "observation_2026-09-10": "Read 1059546c32e83a556eb6917f2c343fa6340c683bb00342fb96bff6349992327d at 72317 bytes, `ETag: \"76527003\"`, against the pin 7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b at 72326 bytes. THE PRIOR BYTES WERE NEVER HELD (`no_pinned_file`), so the two captures cannot be diffed and nothing here is asserted from a diff. What was established instead, from the upstream and from today's body: (1) the page's own source, `daprdocs/content/en/developing-applications/building-blocks/workflow/workflow-history-signing.md`, has NO commit touching it since 2026-08-25 and is blob 57d27501ce67688f2557eb81ef183295342fde07 at 33842 bytes at the tip; (2) PR #5306, `Workflow: warn to not reuse instance IDs`, merged 2026-09-08T17:11:17Z as 78b25330358bbe68b7e0f2d704f02d0432aebb75, touched howto-manage-workflow.md, workflow-features-concepts.md and reference/api/workflow_api.md -- and NOT this page; (3) the rendered body embeds the repository's latest commit in its FOOTER, reading today `Merge pull request #5306 from JoshVanL/docs/workflow-instance-id-reuse (78b2533)`. So the Lead's 9 Sep triage names the right commit and the wrong mechanism: the page's content did not change, its footer commit stamp did, and that stamp moves on EVERY merge to dapr/docs regardless of what the merge touches. This is the rendered_page_furniture class -- the same one that retired rfc9964-info and mcp-specification-changelog/render -- and as pinned this entry will red on every merge to that repository while a real edit to the page would be indistinguishable from one. Reported to the Lead, not acted on here.",
+      "superseded_pin": "Previous pin 7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b at 72326 bytes, retrieved 2026-09-08T09:59:01Z. Kept here because observation_2026-09-10 is a comparison against it and the entry holds no copy of the old bytes."
     }
   ]
 }

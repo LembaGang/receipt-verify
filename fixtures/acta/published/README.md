@@ -49,6 +49,80 @@ implementations/
   implementations are placeholders inviting their authors to open PRs.
 - **v0.2 target**: all four drivers plus a proper cross-verification
   matrix (every implementation's output verified by every verifier).
+- **v0.3** (September 2026): the checks made to gate (see the next
+  section), four receipt shapes recognised, the chain link pinned to
+  section 6.7 of draft-farley-acta-signed-receipts-03, and a check 3 that
+  compares each receipt's outcome to the expected chain. The reference driver
+  now signs the decision protect-mcp actually makes (`sign --cedar`, 0.13.0)
+  and passes all three checks on Node 22; on Node 20 it needs protect-mcp
+  0.13.1 (see findings 9 and 10 below). CI runs on both.
+
+## What the checks found about themselves
+
+Between August and September 2026 this suite was found to report green on
+receipt sets that did not conform. Every finding below was measured from a
+clean clone, reproduced by the maintainer, and is fixed in the tree you are
+reading. They are kept here because a conformance suite whose checks did not
+check is the same failure the receipts exist to prevent, one level up.
+
+1. `run.sh` printed `NON-CONFORMANT` and exited 0, so CI was green on a
+   failing suite.
+2. The reference driver produced zero receipts against the published CLI.
+3. Check 2 never passed a key, so a missing key was reported as a tampered
+   signature.
+4. Checks 1 and 2 accepted disjoint sets. Both shapes the schema defined were
+   unknown to the verifier, and the shape the verifier accepted failed the
+   schema, including this repository's own reference receipts.
+5. Check 3 computed an expected chain hash and then discarded it. Any
+   non-empty link passed.
+6. `expected_decision` was read by no code. A driver could ignore the policy,
+   sign four receipts with arbitrary decisions, and be reported conformant.
+   The reference driver was doing exactly that.
+7. Check 2 handed the verifier a glob. It verified only the last file, so a
+   driver could forge three of four signatures and still see `PASS`.
+8. The fixture policy was not valid Cedar. Its Bash clauses used `in`, which
+   is Cedar's entity-hierarchy operator, on a string (`"git" in ["git"]`);
+   cedar-wasm reports a type error and, fail-closed, denies. A subset
+   evaluator that treats `in` as list membership accepted it and matched the
+   expected decisions, so the invalid policy was never noticed. The clauses
+   now use `.contains()`, and `spec.md` records the rule.
+9. The reference driver signed receipts whose denies were not decisions. On
+   Node 20 the published protect-mcp could not load its Cedar engine (the
+   package root's ESM entry imports a `.wasm` module, which Node 20 rejects),
+   every evaluation was a fail-closed deny with reason
+   `cedar_wasm_not_available`, and `sign` recorded each one as `cedar_deny`.
+   Check 3 caught the wrong outcomes; the log could not say why. The driver
+   now prints the evaluator's verdict per input and refuses to sign when the
+   engine or policy failed to load, and protect-mcp 0.13.1 loads the engine
+   through the package's `/nodejs` entry and records the evaluator's reason.
+10. A driver's exit 77 ("cannot run on this runner") was counted as a
+    failure, so every run was red whether or not anything failed. Skips are
+    now reported as skips; the run fails only on a failure, or when nothing
+    was verified at all.
+
+Findings 1 to 7 were reported, with position-by-position measurements, by
+[@arian-gogani](https://github.com/arian-gogani) in
+[#13](https://github.com/ScopeBlind/agent-governance-testvectors/issues/13),
+who also sent the fix for 7 ([#15](https://github.com/ScopeBlind/agent-governance-testvectors/pull/15))
+and the second implementation ([#12](https://github.com/ScopeBlind/agent-governance-testvectors/pull/12)).
+The schema half of finding 4 was independently reported through the draft's
+errata review.
+
+What changed: `run.sh` returns its verdict; check 2 loops over every receipt
+with the fixture key; check 1 recognises the four shapes actually in use and
+says which one the draft specifies; check 3 reads `expected/chain.jsonl`,
+compares each receipt's outcome to it, cross-checks it against the fixtures'
+`expected_decision`, and pins the chain link to section 6.7 of
+draft-farley-acta-signed-receipts-03, naming which convention a
+non-conformant producer actually used instead of failing with "mismatch";
+the fixture policy is valid Cedar; the reference driver signs real decisions
+and refuses to sign an engine outage; CI runs every driver on Node 20 and 22
+and reports skips as skips.
+
+The rule this leaves behind: a check that cannot fail manufactures confidence
+rather than withholding it. Each check here was rewritten so that a planted
+failure is caught, and the planted failures are recorded in the pull requests
+that closed each finding.
 
 ## Composition conformance
 
@@ -67,10 +141,17 @@ For APS, A2A, Hermes, and ACTA interop, this repo follows one rule: compose by c
 Each driver produces a `receipts/<implementation>/` directory. The
 `verify.sh` script runs three checks:
 
-1. Every receipt matches `expected/receipt-schema.json`
-2. Every receipt's Ed25519 signature verifies against the test keypair
-3. The chain of `parent_receipt_hash` values matches the canonical chain
-   in `expected/chain.jsonl`
+1. Every receipt matches one of the four shapes in `expected/receipt-schema.json`.
+   Only the Acta 2.1 envelope is the shape the draft specifies; the others are
+   recorded because real implementations emit them.
+2. Every receipt's Ed25519 signature verifies against the test keypair, one
+   verifier invocation per receipt.
+3. Each receipt's `tool_name`, `decision` and policy identity (`policy_id` for
+   the flat shapes, `policy_digest` for the envelope) match the canonical chain
+   in `expected/chain.jsonl`, and every `previousReceiptHash` reproduces as
+   `"sha256:" + hex(SHA-256(JCS(previous receipt)))` per section 6.7 of
+   draft-farley-acta-signed-receipts-03. A receipt that identifies no policy
+   fails; a decision that does not say what it rested on is not evidence.
 
 Exit 0 = all checks pass. Exit 1 = at least one check failed.
 

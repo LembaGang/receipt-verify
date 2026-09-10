@@ -236,10 +236,27 @@ describe("acta — published corpus (ScopeBlind/agent-governance-testvectors)", 
     expect(v2Required.filter((k) => !(k in receipt))).not.toHaveLength(0);
   });
 
-  // FINDINGS.md §E1: the corpus declares itself tied to -01, and carries none
-  // of the six §5.10 vector classes.
-  it("declares itself tied to draft revision -01", () => {
-    expect(read(pub("spec.md")).toString("utf8")).toContain("draft-farley-acta-signed-receipts-01");
+  // FINDINGS.md §E1 recorded that the corpus declared itself tied to -01 and
+  // carried none of the six §5.10 vector classes.
+  //
+  // CHANGED UPSTREAM 2026-09-10. At ScopeBlind/agent-governance-testvectors
+  // commit b82a50a375299e5edfbabea686b0e2654df75006 -- the tip this corpus was
+  // re-pinned to at B-159 -- spec.md no longer carries the sentence "This spec
+  // is tied to `draft-farley-acta-signed-receipts-01`." at all. It now cites
+  // -03 in its place, at l.60 and l.105, and README.md cites -03 in four
+  // places. The corpus re-based itself two revisions without changing its
+  // repository layout.
+  //
+  // This is asserted in BOTH directions on purpose. The old test would have
+  // gone green again if the upstream merely re-added the string anywhere, and
+  // an assertion that only looked for -03 would pass while a stale -01 tie
+  // sentence sat beside it saying something else. E1's premise has moved with
+  // the bytes; whether E1 itself is re-graded is a methodology decision and is
+  // not taken here.
+  it("declares itself tied to draft revision -03, and no longer to -01", () => {
+    const spec = read(pub("spec.md")).toString("utf8");
+    expect(spec).toContain("draft-farley-acta-signed-receipts-03");
+    expect(spec).not.toContain("draft-farley-acta-signed-receipts-01");
   });
 });
 

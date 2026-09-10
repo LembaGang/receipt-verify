@@ -97,10 +97,12 @@ corpus is a frozen artifact, so its own timestamp is the meaningful one.
 | `fixtures/evidence-action/vectors/tampered/chain.jsonl` | file://C:/Users/User/agent-action-receipt-vectors/vectors/tampered/chain.jsonl | 2026-06-24T17:59:29.091Z | 851 | `63ffa1b68039e82053aead192aee8216db3b7ab71427677a86bd3a3415f1b8f7` |
 | `fixtures/evidence-action/vectors/chain-multi/chain.jsonl` | file://C:/Users/User/agent-action-receipt-vectors/vectors/chain-multi/chain.jsonl | 2026-06-24T17:59:29.095Z | 1148 | `d22292ca64876e2db9fa018ac8f3307b7296f3756901c749f2ba1051f5d0d596` |
 | `fixtures/evidence-action/vectors/canonicalization-key-order/chain.jsonl` | file://C:/Users/User/agent-action-receipt-vectors/vectors/canonicalization-key-order/chain.jsonl | 2026-06-24T17:59:29.096Z | 643 | `ce4da0ce7f723360bde7e374d916a9d5aeb349c8d4f0677c5becc26ce905733b` |
-| `fixtures/acta/published/README.md` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/README.md | 2026-07-29T10:01:39.121Z | 4965 | `7914288498b3c3bb1342db81f6982b429e3f53ebd5c3250fc2b9645812d98b41` |
-| `fixtures/acta/published/spec.md` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/spec.md | 2026-07-29T10:01:39.693Z | 5703 | `b053460e8ecabd7fc7d3f0a6fe24afaafdc6606d79995306dad314943d537550` |
-| `fixtures/acta/published/expected/receipt-schema.json` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/expected/receipt-schema.json | 2026-07-29T10:01:40.415Z | 3502 | `a1ffe19d87034d61b80dceeb11287a43155daa0613a391ed85b804ace2b0923a` |
-| `fixtures/acta/published/expected/chain.jsonl` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/expected/chain.jsonl | 2026-07-29T10:01:40.865Z | 369 | `446409d03b77aa066863fef8cea850b73b5893b202f5993285c9aa3b4a77efc0` |
+| `fixtures/acta/published/README.md` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/README.md | 2026-09-10T07:25:56Z (commit `b82a50a`) | 10146 | `f5d8fa4293c6273cce592a3977f0608cc35d4464182c523c78f8586cead54004` |
+| `fixtures/acta/published/spec.md` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/spec.md | 2026-09-10T07:25:56Z (commit `b82a50a`) | 9064 | `8f06f93022db625f35f197e24843d6ab21c694b6c6bbc4954a86992ca981d09c` |
+| `fixtures/acta/published/expected/receipt-schema.json` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/expected/receipt-schema.json | 2026-09-10T07:25:56Z (commit `b82a50a`) | 7952 | `184dddb4aa2ca18abedcbc1234be95d69a4de752a3d179e1009e9f68b829ad63` |
+| `fixtures/acta/published/expected/chain.jsonl` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/expected/chain.jsonl | 2026-09-10T07:25:56Z (commit `b82a50a`) | 736 | `32dfcc586c2c1f7ee8c801021ddd1a9ecd85de06a0257b62fdeabbdce63399b4` |
+
+> **Four of these rows moved on 2026-09-10.** `README.md`, `spec.md`, `expected/receipt-schema.json` and `expected/chain.jsonl` are no longer the 2026-07-29 capture: the corpus was taken to `agent-governance-testvectors` commit `b82a50a375299e5edfbabea686b0e2654df75006` when that source was re-pinned at a commit (B-159). Their previous digests, the walker before/after, and why the other ten rows did not move are in *Appended 2026-09-10 - agent-governance-testvectors re-pinned at a commit* below.
 | `fixtures/acta/published/fixtures/keys/README.md` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/fixtures/keys/README.md | 2026-07-29T10:01:41.512Z | 1072 | `1c35a588425ff244b3cc7b75a25247644774d731cc9253c7b2aa220b0d1e9e3f` |
 | `fixtures/acta/published/aps-gateway-enforcement/README.md` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/aps-gateway-enforcement/README.md | 2026-07-29T10:01:42.138Z | 5835 | `2b278950c875188fc0f7014da319fea9aa16c61171860cc3a5ff049ee9b6b7d4` |
 | `fixtures/acta/published/aps-gateway-enforcement/2-external-verification/receipt.json` | https://raw.githubusercontent.com/ScopeBlind/agent-governance-testvectors/HEAD/aps-gateway-enforcement/2-external-verification/receipt.json | 2026-07-29T10:01:42.805Z | 828 | `efd8accc8d96001a6f5fcbfedec420600804486078baa778d8870625b9d9ea26` |
@@ -1724,3 +1726,318 @@ one unterminated JSON line), so there is no line ending for a filter to rewrite,
   "the registry snapshot pinned by the verifier". That snapshot is a private artefact of whoever
   pinned it; two verifiers holding different snapshots can disagree about the same v4 receipt and
   neither is checkable against the other.
+
+## Appended 2026-09-10 — RFC 9964 re-pinned at its text and its status document, and the render retired
+
+`rfc9964-info` was pinned on 2026-09-08 at the **rendered** `/info/rfc9964` page. It has now gone
+`changed` twice for a document that cannot change: an RFC is immutable by definition. That is what
+makes this entry diagnostic rather than ambiguous — every movement it reported was the site, and none
+of it was RFC 9964.
+
+| observed | digest | bytes |
+|---|---|---|
+| 2026-09-08T09:59:01Z (pinned) | `abc75d74bf90f97356b9c6348c4a62e85cb341c8af7f556e76010325ff5eeb7c` | 731071 |
+| 2026-09-09T15:11:11Z | `d32dd7a5f504efdc19de751f4f4c4e01c6327e00e52966503345c4263b00cc33` | — |
+| 2026-09-10T13:15Z (last) | `a80b9a35fcd0c1ccaf4b9e14c33c9283d3cd11f3f0df2e83f1913fb7b29e79e8` | 732965 |
+
+**The mechanism, verified in this session rather than relayed.** The body carries
+`buildId:"4e11c495-7a5b-4070-9cd7-6e58a0979cb9"` and the site version string `1.90.1`. Two fetches
+two seconds apart, from drift's own client, are byte-identical at 732965 bytes — so the digest is
+stable *within* a deploy and moves *across* deploys, which is the signature of a per-deploy
+identifier embedded in the body. The Lead's triage named build `1.90.0`, shipped 9 Sep; the string
+served today reads `1.90.1`. The discrepancy is recorded rather than reconciled: the `buildId` is the
+mechanism under either number, and this repository pins what it measured.
+
+A body carrying a per-deploy identifier cannot be pinned by digest at all. The pin reds on every
+redeploy and would stay green through an actual content change only by accident — the B-125 class,
+and the same disposition as `mcp-specification-changelog/render-2026-09-08T0959Z`. Retired to
+`role: historical` under the id `rfc9964-info/render-2026-09-08T0959Z`, with
+`role_reason_code: rendered_page_furniture`. Its `last_observed` is left exactly as written: it is a
+true record of the last check made while the entry was current, and `tools/drift.ts` never touches a
+historical entry again.
+
+### The two entries that replace it
+
+Fetched 2026-09-10 with the same client `tools/drift.ts` uses — node
+`fetch(url, { method: "GET", redirect: "follow" })`, no added headers — and written to `refs/`
+byte-exact, with no re-serialisation.
+
+| path | URL | http | bytes | sha256 (node `fetch`) | `check` |
+|---|---|---|---|---|---|
+| `refs/rfc9964.txt` | `https://www.rfc-editor.org/rfc/rfc9964.txt` | 200 `text/plain;charset=utf-8` | 180564 | `8c42035b948301b197d431de8b3f40019bdaa3bb40150dc523306923948f34cf` | `fail` |
+| `refs/rfc9964-status.json` | `https://www.rfc-editor.org/rfc/rfc9964.json` | 200 `application/json;charset=utf-8` | 998 | `b55af9396c131e4617944f5dc56f160ad508ba24b9ae7382f211b05f1202052a` | `note` (`mutable_pointer`) |
+
+**`rfc9964-text` is `fail`, and it is the strongest of the three pins.** A published RFC is immutable;
+the RFC Editor does not reissue one under the same number. These bytes cannot legitimately move, so a
+`changed` outcome here does not mean the document was updated — it means the RFC Editor broke its own
+rule or this repository was served something else. There is no benign reading. `ETag:
+"c050e1c98197335743077ad8cda678d7"`, `Cache-Control: public, max-age=86400`, no redirect: the URL as
+written answers 200. The text is RFC 9964, *ML-DSA for JSON Object Signing and Encryption (JOSE) and
+CBOR Object Signing and Encryption (COSE)*, Prorock and Steele, Proposed Standard, May 2026, from
+`draft-ietf-cose-dilithium-11` — which is what this repository actually cites. The `/info/` page was
+only ever a wrapper around a link to it.
+
+**`rfc9964-status` is `note` with `mutable_pointer`, and it carries the question the render was meant
+to answer.** The status of a published RFC is the only thing about it that *can* change, and this
+document is where those changes appear: `errata_url` (null today — it becomes a URL the moment anyone
+files an erratum), `pub_status` and `status` (`PROPOSED STANDARD` today), and `obsoletes`,
+`obsoleted_by`, `updates`, `updated_by`, `see_also` (all empty today, each filling in when a later RFC
+touches this one). Every one of those movements is the document doing its job, and under `fail` the
+entry would red the daily check the first time somebody filed an erratum — precisely the event it
+exists to surface. `ETag: "3be9f2cf258270cae0c88bf822e4b56d"`, no `Cache-Control`, no `Last-Modified`,
+so the only bound on when it moves is our own reads.
+
+The note does not lose the move: the row still prints both digests and the run counts it in the
+SUMMARY's `noted=N`. Only the escalation is dropped.
+
+### What this pair does not do
+
+- **It does not watch for a successor RFC by number.** `obsoleted_by` fills in only when the RFC
+  Editor records it; a successor published and not yet cross-referenced is invisible to both pins.
+- **It does not establish that the text pin will ever move, which is the point and also the limit.**
+  A pin that can only go red on misconduct is a pin that reports nothing on an ordinary day. It is
+  worth having because the failure it detects has no benign reading, not because it is informative.
+- **It does not restore what the render was watching.** The render was pinned for the /info/ page's
+  own summary block; nothing here pins the HTML, and nothing will notice if the RFC Editor changes how
+  that page presents the document.
+
+## Appended 2026-09-10 — `dapr-workflow-history-signing`: the page did not change, its footer commit stamp did
+
+`--record` was asked for, and it is recorded. What was NOT asserted is the cause, because the cause
+the triage relayed does not survive checking.
+
+The pin moved from `7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b` (72326 bytes,
+2026-09-08) to `1059546c32e83a556eb6917f2c343fa6340c683bb00342fb96bff6349992327d` (72317 bytes,
+`ETag: "76527003"`, 2026-09-10). **The prior bytes were never held** — the entry is `no_pinned_file` —
+so the two captures cannot be diffed, and nothing below comes from a diff.
+
+What was established instead, from the upstream repository and from today's body:
+
+1. The page's own source,
+   `daprdocs/content/en/developing-applications/building-blocks/workflow/workflow-history-signing.md`,
+   has **no commit touching it since 2026-08-25**. It is blob
+   `57d27501ce67688f2557eb81ef183295342fde07` at 33842 bytes at the tip.
+2. **PR #5306 did not touch it.** `Workflow: warn to not reuse instance IDs`, merged
+   2026-09-08T17:11:17Z as `78b25330358bbe68b7e0f2d704f02d0432aebb75`, changed three files:
+   `howto-manage-workflow.md`, `workflow-features-concepts.md` and `reference/api/workflow_api.md`.
+3. The rendered body embeds the repository's latest commit **in its footer**, reading today:
+   `Merge pull request #5306 from JoshVanL/docs/workflow-instance-id-reuse (78b2533)`.
+
+**So the triage names the right commit and the wrong mechanism.** The page's content did not change;
+its footer commit stamp did, and that stamp moves on *every* merge to `dapr/docs` regardless of what
+the merge touches. This is the `rendered_page_furniture` class — the same one that retired
+`rfc9964-info` above and `mcp-specification-changelog/render-2026-09-08T0959Z` on 8 September.
+
+**Left `check: fail`, deliberately, and escalated instead of acted on.** The handoff directs that it
+stay `fail` because a change to that page is a commercial signal worth seeing. The finding is that,
+as pinned, it cannot be that signal: it will red on every merge to `dapr/docs`, and a real edit to the
+page would be indistinguishable from the noise. De-escalating a commercial signal is not a decision to
+take inside a re-pin, so it is recorded in the entry's `observation_2026-09-10` and reported, not
+made. The page is a Hugo render with content-hashed asset names; pinning what the page *carries*
+rather than the page — the `.md` source in `dapr/docs` — is the shape that worked for the MCP
+changelog and is the obvious candidate.
+
+---
+
+## Appended 2026-09-10 — `agent-governance-testvectors` re-pinned at a commit, and the corpus taken to that tip
+
+**B-159.** The entry pinned fourteen paths by sha256 against the moving ref `HEAD` and **no commit at
+all**. Its own note admitted it could never report `current`; what the 2026-09-09 run exposed is
+worse than that. When four of the fourteen went `moved_changed`, nothing in the record said what they
+had moved *from*. A pin that cannot name its own baseline cannot answer the question the tool exists
+to ask.
+
+Resolved in this session by a full clone: `git rev-parse HEAD` =
+`b82a50a375299e5edfbabea686b0e2654df75006`, committed 2026-09-10T07:25:56Z, subject
+*fix: valid Cedar fixture policy; the reference driver signs the real decision; Node 20 and 22 in CI
+(#17)*. Every blob id and sha256 below is from `git cat-file blob <commit>:<path>` in that clone,
+never from a checkout: `core.autocrlf` is true here.
+
+**Four of fourteen moved. Ten reproduce their previous sha256 exactly**, which is what makes the four
+a finding rather than a wholesale replacement.
+
+| path | previous sha256 | sha256 at `b82a50a` | blob at `b82a50a` | `check` |
+|---|---|---|---|---|
+| `README.md` | `7914288498b3c3bb1342db81f6982b429e3f53ebd5c3250fc2b9645812d98b41` | `f5d8fa4293c6273cce592a3977f0608cc35d4464182c523c78f8586cead54004` | `63a20dd533aa060478f4266407bc326393fb1be0` | `note` (`author_bookkeeping`) |
+| `spec.md` | `b053460e8ecabd7fc7d3f0a6fe24afaafdc6606d79995306dad314943d537550` | `8f06f93022db625f35f197e24843d6ab21c694b6c6bbc4954a86992ca981d09c` | `2ce503bc7a40127e438cf06f9545ea9e1a5e68b9` | `note` (`author_bookkeeping`) |
+| `expected/receipt-schema.json` | `a1ffe19d87034d61b80dceeb11287a43155daa0613a391ed85b804ace2b0923a` | `184dddb4aa2ca18abedcbc1234be95d69a4de752a3d179e1009e9f68b829ad63` | `5b7dae2c2373c92915c1a8d45ec8116d7d9ccb2b` | `fail` |
+| `expected/chain.jsonl` | `446409d03b77aa066863fef8cea850b73b5893b202f5993285c9aa3b4a77efc0` | `32dfcc586c2c1f7ee8c801021ddd1a9ecd85de06a0257b62fdeabbdce63399b4` | `3eeb2a9086af447c784a1cd206997e86e401875f` | `fail` |
+
+The other ten — `fixtures/keys/README.md`, `aps-gateway-enforcement/README.md`, and the eight files
+under `2-external-verification/` and `4-portability/` — are byte-unchanged and keep their digests.
+
+`fixtures/acta/published` was taken to the new bytes in the same commit, so the corpus and the pin
+agree rather than the pin describing bytes we do not hold. Each of the four was written from
+`git cat-file blob`, and each staged blob re-digests to the value above.
+
+### The walker was run before and after, and no grade moved
+
+| | before | after |
+|---|---|---|
+| SUMMARY `match` | 410 | 410 |
+| SUMMARY `mismatch` | 20 | 20 |
+| `acta/published` registered / match / mismatch | 1 / 1 / 0 | 1 / 1 / 0 |
+| SUMMARY `unregistered` | 510 | **514** |
+
+The only difference in the entire walker output is four **new unregistered** rows:
+`#1/policy_digest`, `#2/policy_digest`, `#3/policy_digest` and `#4/policy_digest` in
+`expected/chain.jsonl` — a field this tip adds, consistent with the commit subject, and one that no
+rule in `walker/scopes.json` registers. Nothing that was graded before is graded differently now.
+
+### The corpus re-based itself from draft revision -01 to -03
+
+Not a digest observation, and the most consequential thing in this re-pin. At the previous pin,
+`spec.md` carried the sentence *"This spec is tied to `draft-farley-acta-signed-receipts-01`."* At
+`b82a50a` that sentence is **gone**. In its place the file cites
+`draft-farley-acta-signed-receipts-03` at l.60 and l.105, and `README.md` cites `-03` in four places.
+The corpus moved two draft revisions without changing its repository layout, which is exactly the
+kind of change a sha256-only pin against a moving ref could report but never explain.
+
+`FINDINGS.md` §E1 records the corpus as tied to `-01`. **That premise has moved with the bytes.**
+Whether §E1 is re-graded against `-03` is a methodology decision of the same class as B-150 and is
+not taken in this session; it is flagged in the report. This repository already pins
+`draft-farley-acta-signed-receipts-03` as `current`, so the corpus and our draft pin now agree, which
+they did not before.
+
+`test/acta.test.ts` carries the fact so it cannot be lost: the assertion now requires `-03` to be
+present **and** `-01` to be absent, so a stale tie sentence re-appearing beside the new citation is
+red rather than green.
+
+**Why `README.md` and `spec.md` are `note`.** Both moved while every graded artefact under
+`aps-gateway-enforcement/` held. They are the author's prose about the corpus, not the corpus, and
+under `fail` they red the daily check for ordinary editing that no finding here depends on. The move
+is still printed in the row's detail line and carried in `noted_paths`.
+
+The sha256-only entry is retained as `agent-governance-testvectors/HEAD-sha256-only`,
+`role: historical`, with its fourteen digests **kept as written**: they are the baseline this re-pin
+was diffed against, and deleting them would destroy the only record of what the corpus held before it
+moved.
+
+---
+
+## Appended 2026-09-10 — `draft-hillier-scitt-arp-04` pinned beside `-03`
+
+The 2026-09-09 run reported `superseded`. Pinned here; `-03` becomes `historical` and keeps its
+digest.
+
+| path | URL | http | bytes | sha256 |
+|---|---|---|---|---|
+| `refs/draft-hillier-scitt-arp-04.txt` | `https://www.ietf.org/archive/id/draft-hillier-scitt-arp-04.txt` | 200 `text/plain; charset=utf-8` | 591005 | `63164345921add3a6c4cebf26d6e434306e5efa4120fdf2fcec2535d59691490` |
+
+**The digest was reproduced, not copied.** The handoff stated the value; this session fetched the
+bytes and computed it, and the two agree. `Last-Modified: Tue, 08 Sep 2026 21:03:48 GMT`,
+`ETag: W/"6aa07834-9049d"`, `Cache-Control: public, max-age=14400`. The datatracker document API
+reports rev `04`, time 2026-09-08T21:14:49Z, title *Attestation Reconciliation Protocol*, 213 pages;
+`HEAD .../draft-hillier-scitt-arp-05.txt` answers 404, which is the probe `tools/drift.ts` itself
+makes, so `-04` is the highest revision published.
+
+**`-03` is retained deliberately and its digest is unchanged**
+(`fe7ba656ef07842c365ce93938610cd874668c29f0fa06031d37d0e4e72b395d`). Every existing SCITT ARP
+finding in this repository was graded against `-03`; retiring the digest would orphan those findings
+from the bytes they were made over. **Nothing is re-graded against `-04` in this session.** The
+methodology decision is B-150 and is the Lead's; a separate handoff carries any re-grade. The id
+convention holds for both: id equals `name` + `-` + `pinned_rev`.
+
+---
+
+## Appended 2026-09-10 — Insight's v5-only production admission: the Headless policy, the activation set, the 2026-09-10.1 release and the two mutable pointers
+
+**B-153.** YuTao's letter of 2026-09-09 ~17:31Z answered the legacy-profile question with a deployed
+protocol change and said no response is required unless an independent re-pin finds a discrepancy.
+This is the re-pin. **It found none.**
+
+Every URL below was resolved by following a path from `current.json`, or from the release object
+`current.json` names, or from the activation set that release names — never by guessing. The
+resolution order was: `current.json` → `release` → `mainlineIntegrationIsolation.currentPath` →
+`integrations/current.json` → `immutableSetPath` → the activation set → `partners.headless` → the
+policy id → `policyTemplate`. That last step is the one that matters: the Active Headless policy's
+URL was **derived from the activation set's own bytes**, so the object pinned is the one the registry
+says is active, not the one the letter happened to name.
+
+All fetched with the same client `tools/drift.ts` uses — node
+`fetch(url, { method: "GET", redirect: "follow" })`, no added headers — and written to `refs/`
+byte-exact, with no re-serialisation. Requested at the `www.` host: the bare host answers 307.
+
+| path | object | bytes | sha256 | `check` |
+|---|---|---|---|---|
+| `refs/insight-oracle-registry-release-0x96d1f624.json` | release 2026-09-10.1 | 21519 | `9ef754b8c682e19c72c68dff71a6a836172639ee5e6a857b30307ec394ce0bf8` | `fail` |
+| `refs/insight-oracle-registry-integration-set-0xe9512f0b.json` | activation set v2 | 1400 | `91e4fd0cc264ea2bde6ae4ff4092f090b901070376bffd24b6c16a1891e4763b` | `fail` |
+| `refs/insight-oracle-registry-integration-policy-0xd510bd9f.json` | Active Headless policy v2 | 1173 | `14e29fbd050bd0d5b52cd4158d25d9fe1d0ea1ef14c8c92b397155d0c9cfc0f7` | `fail` |
+| `refs/insight-oracle-registry-current-2026-09-10.json` | `current.json` | 1017 | `64324114f6f3bdde079219f2d0620f7737d2c62b30a84ff897b56c47391e3602` | `note` (`mutable_pointer`) |
+| `refs/insight-oracle-registry-integrations-current-2026-09-10.json` | `integrations/current.json` | 825 | `bebeac8c75fed461e778b6b7a4a965c132bf69e0bb148edd05a195f16eb7420b` | `note` (`mutable_pointer`) |
+| `refs/insight-oracle-keys-2026-09-10.json` | `oracle-keys.json`, the eighth pin | 22762 | `8e430ccf89854864e327e3dc32a08d54e91f6c7807a3dbf311613fd5e854535e` | `note` (`mutable_pointer`) |
+
+The semantic profile `0xe7513b05…` was re-fetched and is **byte-identical** to the 9 September pin
+(`284056499d0e779f7c168edd11dd716e64acf173bcb43df0bc58cc7bb7287ace`, 2372 bytes), so it is not
+re-pinned; it is re-verified below.
+
+### Every content address recomputed, with controls
+
+Each object declares its own digest scope. That scope was honoured rather than assumed — the three
+objects do not agree on it, and using one rule for all three would have produced three wrong
+addresses.
+
+| object | declared scope | canonical bytes | recomputed address | id in the URL | match |
+|---|---|---|---|---|---|
+| release 2026-09-10.1 | the release object in this response | 21286 | `0x96d1f624…b575e2c` | `0x96d1f624…b575e2c` | **yes** |
+| activation set v2 | the activation set excluding `activationSetId` | 1059 | `0xe9512f0b…bc24190` | `0xe9512f0b…bc24190` | **yes** |
+| Active Headless policy v2 | the policy object excluding `policyId` | 861 | `0xd510bd9f…7a17de158` | `0xd510bd9f…7a17de158` | **yes** |
+| semantic profile | the profile object in this response | 2139 | `0xe7513b05…2013cb8e` | `0xe7513b05…2013cb8e` | **yes** |
+
+Method, unchanged from `cc12c21`: keccak256 over the RFC 8785 canonical form, computed with **two
+independent JCS serialisers** — the repository's TypeScript one and the Python one in
+`tools/asqav_envelope_hash.py` that `tools/jcs-cross-check.py` drives, which shares no code with it
+and depends on no third-party package. The two canonical forms were compared **byte for byte**, not
+merely by digest: 21286/21286, 1059/1059, 861/861 and 2139/2139 bytes, with identical sha256 over
+each pair.
+
+**The control, run and printed before the result was believed.** A one-byte mutation of a string
+member of each scope moves its address: the release to `0xa3748003…`, the activation set to
+`0x40d6b8dc…`, the policy to `0x17ca765a…`, the profile to `0xffa33b67…`. Both serialisers agree on
+the mutated forms too. A recomputation that could not have failed would have established nothing.
+
+### The chain, and the profile
+
+`predecessorReleaseId` on `0x96d1f624…` is `0xf45d4c0272300f8132dba75c49b337557cf6fd7975b32fd14a8b4e13f430a8f7`
+(registryRevision 2026-09-09.1), which was already pinned here on 9 September and which itself names
+`0xd240af8f…` (2026-09-08.1) as **its** predecessor. The chain 2026-09-08.1 → 2026-09-09.1 →
+2026-09-10.1 is therefore complete and every link is held in this repository.
+`executionReceipt.currentProfileId` is `0xe7513b05…`, **unchanged**, so the commitment semantics did
+not move with this release.
+
+### What the promotion record says the production admission rule is
+
+`protocol/mainline/promotions/2026-09-10-headless-v5-only.json`, `promotionId` `0x338a53e5…`,
+`promotionVersion` 3, `effectiveFrom` 2026-09-10, `registryReleaseId` `0x96d1f624…`,
+`predecessorPromotionId` `0x5dfbc2a5…`, quoted from its `activationRule`:
+
+> "Headless production accepts only ExecutionReceipt v5 with the policy-pinned signed profileId. A
+> v1–v4 verdict is historical and snapshot-relative, must report full SHA-256 and byte length for the
+> exact preserved registry bytes, and is never globally canonical."
+
+Its `compatibilityMatrix` records nine partners; `headless` is `promoted-v5-only`, with the evidence
+line "Headless policy v2 admits schema 5 only and pins the existing immutable profile; v4 is removed
+from the production admission set while public historical verification remains available."
+
+### One observation, offered as a property of the design and not as a defect
+
+The Active Headless policy's `pins.oracleRegistryReleaseIds` is `[0xf45d4c02…]` — the **predecessor**
+release, not the current `0x96d1f624…`. This is forced by the content addressing: the policy id is
+named inside the activation set, whose id is named inside the release, so a policy cannot pin the
+release that transitively contains it without a cycle. The consequence is worth stating because it
+bears on anyone implementing the admission rule literally: **the active policy always pins one
+release behind, and a verifier that follows it is pinned one release behind with it.**
+
+### What this section does not do
+
+- **It does not pin the promotion record.** Its URL is a path on a moving branch, not a content
+  address, and its `promotionId` carries no `digest` member declaring a scope, so it cannot be
+  verified the way the four registry objects were. It is read and quoted, not pinned.
+- **It does not observe the runtime.** The policy is a published document; nothing here watches the
+  gate that reads it.
+- **It does not close the two obligations the rule creates for us.** `FINDINGS.md` F15 names them:
+  the adapter implements neither the snapshot-relative rule for v1–v4 verdicts nor the
+  unknown-profile refusal (B-132). Both are named, neither is fixed here.
+- **It does not date any of the mutable pointers.** No `ETag` and no `Last-Modified` on
+  `current.json`, `integrations/current.json` or `oracle-keys.json`; the only bounds are our own
+  reads.
