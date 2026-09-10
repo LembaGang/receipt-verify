@@ -71,9 +71,79 @@ export type Diagnostic =
   | "root_absent_with_pinned_items"
   | "root_mismatch";
 
+/**
+ * rev7 l.106-109 (Finding 33): "add a required `condition` member to every
+ * `MALFORMED` vector. The value is a stable identifier naming the single
+ * condition the input injects. An implementation reports which condition it
+ * halted on; conformance requires the reported condition to equal the vector's
+ * `condition`, not merely that a halt occurred."
+ *
+ * This is a second member beside `diagnostic`, not a rename of it: rev7
+ * l.136-137 keeps rev 6 Finding 31's disposition for diagnostic *naming*,
+ * "which remains free". What is no longer free is the condition, which must
+ * equal the vector's.
+ *
+ * Thirteen of the fifteen names below are rev 7's own, from its table at
+ * l.115-127. The two marked OURS are not in that table: rev 7 l.131-134 says
+ * the enumeration holds fifteen conditions, that thirteen are now named by
+ * vectors, and that identifying the remainder "is now a diff rather than an
+ * audit" left for rev 8. The diff resolves to exactly these two, and they are
+ * named here so that every halt this implementation can reach reports a
+ * condition rather than none.
+ */
+export type Condition =
+  | "pinned_set_empty"
+  | "source_count_disagrees_with_sources"
+  | "pinned_count_disagrees_with_pinned_entries"
+  | "pinned_count_exceeds_source_count" // OURS — no rev 7 vector
+  | "fully_pinned_inconsistent" // OURS — no rev 7 vector
+  | "set_retrieved_at_not_first_in_canonical_order"
+  | "unpinned_without_reason"
+  | "unpinned_reason_outside_domain"
+  | "content_kind_absent_when_pinned"
+  | "snippet_digest_present_for_full_resource"
+  | "duplicate_bound_tuple"
+  | "retrieved_at_not_canonical_form"
+  | "root_present_with_zero_pinned"
+  | "root_null_with_pinned_entries"
+  | "root_not_recomputable_from_sources";
+
+/**
+ * The map from our free diagnostic name to rev 7's stable condition identifier.
+ * Injective, and total over `Diagnostic`: a halt this implementation can reach
+ * with no condition to report would be a halt the set cannot check.
+ */
+export const CONDITION_FOR_DIAGNOSTIC: Record<Diagnostic, Condition> = {
+  empty_evidence_set: "pinned_set_empty",
+  source_count_mismatch: "source_count_disagrees_with_sources",
+  pinned_count_mismatch: "pinned_count_disagrees_with_pinned_entries",
+  pinned_count_exceeds_source_count: "pinned_count_exceeds_source_count",
+  fully_pinned_inconsistent: "fully_pinned_inconsistent",
+  set_retrieved_at_not_earliest: "set_retrieved_at_not_first_in_canonical_order",
+  unpinned_reason_absent: "unpinned_without_reason",
+  unpinned_reason_outside_domain: "unpinned_reason_outside_domain",
+  content_kind_absent_when_pinned: "content_kind_absent_when_pinned",
+  resource_sha256_with_full_resource: "snippet_digest_present_for_full_resource",
+  duplicate_bound_tuple: "duplicate_bound_tuple",
+  retrieved_at_not_canonical: "retrieved_at_not_canonical_form",
+  root_present_with_zero_pinned: "root_present_with_zero_pinned",
+  root_absent_with_pinned_items: "root_null_with_pinned_entries",
+  root_mismatch: "root_not_recomputable_from_sources",
+};
+
 export type ValidationResult =
   | { ok: true }
-  | { ok: false; diagnostic: Diagnostic; detail: string };
+  | { ok: false; diagnostic: Diagnostic; condition: Condition; detail: string };
+
+/**
+ * The single constructor for a halt. Every rejection below goes through it, so
+ * the rev 7 condition cannot be omitted by a check that forgets it: adding a
+ * member to `Diagnostic` without a row in CONDITION_FOR_DIAGNOSTIC does not
+ * compile.
+ */
+function fail(diagnostic: Diagnostic, detail: string): ValidationResult {
+  return { ok: false, diagnostic, condition: CONDITION_FOR_DIAGNOSTIC[diagnostic], detail };
+}
 
 const NUL = Buffer.from([0x00]);
 
@@ -263,31 +333,19 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
   // malformed, and this check precedes every other because the checks below are
   // undefined over an empty array.
   if (sources.length === 0 || set.source_count === 0) {
-    return {
-      ok: false,
-      diagnostic: "empty_evidence_set",
-      detail: "a present evidence_set MUST carry at least one entry in sources (rev4 F20)",
-    };
+    return fail("empty_evidence_set", "a present evidence_set MUST carry at least one entry in sources (rev4 F20)");
   }
 
   // 2. rev2 l.178-179 (Finding 13).
   if (set.source_count !== undefined && set.source_count !== sources.length) {
-    return {
-      ok: false,
-      diagnostic: "source_count_mismatch",
-      detail: `source_count ${set.source_count} against ${sources.length} entries`,
-    };
+    return fail("source_count_mismatch", `source_count ${set.source_count} against ${sources.length} entries`);
   }
 
   const pinnedEntries = sources.filter((e) => e.pinned === true);
 
   // 3. rev2 l.179-180.
   if (set.pinned_count !== undefined && set.pinned_count !== pinnedEntries.length) {
-    return {
-      ok: false,
-      diagnostic: "pinned_count_mismatch",
-      detail: `pinned_count ${set.pinned_count} against ${pinnedEntries.length} pinned entries`,
-    };
+    return fail("pinned_count_mismatch", `pinned_count ${set.pinned_count} against ${pinnedEntries.length} pinned entries`);
   }
 
   // 4. base l.73: pinned_count MUST be less than or equal to source_count.
@@ -296,11 +354,7 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
     set.source_count !== undefined &&
     set.pinned_count > set.source_count
   ) {
-    return {
-      ok: false,
-      diagnostic: "pinned_count_exceeds_source_count",
-      detail: `pinned_count ${set.pinned_count} exceeds source_count ${set.source_count}`,
-    };
+    return fail("pinned_count_exceeds_source_count", `pinned_count ${set.pinned_count} exceeds source_count ${set.source_count}`);
   }
 
   // 5. base l.74 and rev2 l.180-181. The source_count > 0 conjunct is retained
@@ -310,11 +364,7 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
     const declaredPinned = set.pinned_count ?? pinnedEntries.length;
     const expected = declaredPinned === declaredSources && declaredSources > 0;
     if (set.fully_pinned !== expected) {
-      return {
-        ok: false,
-        diagnostic: "fully_pinned_inconsistent",
-        detail: `fully_pinned ${set.fully_pinned} against pinned ${declaredPinned} of ${declaredSources}`,
-      };
+      return fail("fully_pinned_inconsistent", `fully_pinned ${set.fully_pinned} against pinned ${declaredPinned} of ${declaredSources}`);
     }
   }
 
@@ -326,11 +376,7 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
       if (compareUtf8(e.retrieved_at, earliest) < 0) earliest = e.retrieved_at;
     }
     if (set.retrieved_at !== earliest) {
-      return {
-        ok: false,
-        diagnostic: "set_retrieved_at_not_earliest",
-        detail: `set-level ${set.retrieved_at} against earliest per-item ${earliest}`,
-      };
+      return fail("set_retrieved_at_not_earliest", `set-level ${set.retrieved_at} against earliest per-item ${earliest}`);
     }
   }
 
@@ -341,29 +387,17 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
     // name. No fixture vector exercises this: both retrieved_at literals in the rev 6
     // set are already canonical.
     if (!isCanonicalRetrievedAt(e.retrieved_at)) {
-      return {
-        ok: false,
-        diagnostic: "retrieved_at_not_canonical",
-        detail: `entry ${e.url} carries retrieved_at ${e.retrieved_at}, which is not RFC 3339 UTC with the Z designator and exactly three fractional-second digits`,
-      };
+      return fail("retrieved_at_not_canonical", `entry ${e.url} carries retrieved_at ${e.retrieved_at}, which is not RFC 3339 UTC with the Z designator and exactly three fractional-second digits`);
     }
 
     if (e.pinned === false) {
       // 7. rev3 l.75-76.
       if (e.unpinned_reason === undefined || e.unpinned_reason === null) {
-        return {
-          ok: false,
-          diagnostic: "unpinned_reason_absent",
-          detail: `entry ${e.url} is unpinned and carries no unpinned_reason`,
-        };
+        return fail("unpinned_reason_absent", `entry ${e.url} is unpinned and carries no unpinned_reason`);
       }
       // 8. rev3 l.68-76, on the two-value domain.
       if (!(UNPINNED_REASONS as readonly string[]).includes(e.unpinned_reason)) {
-        return {
-          ok: false,
-          diagnostic: "unpinned_reason_outside_domain",
-          detail: `entry ${e.url} carries unpinned_reason ${e.unpinned_reason}`,
-        };
+        return fail("unpinned_reason_outside_domain", `entry ${e.url} carries unpinned_reason ${e.unpinned_reason}`);
       }
       continue;
     }
@@ -377,11 +411,7 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
       e.content_kind === null ||
       !(CONTENT_KINDS as readonly string[]).includes(String(e.content_kind))
     ) {
-      return {
-        ok: false,
-        diagnostic: "content_kind_absent_when_pinned",
-        detail: `entry ${e.url} is pinned and carries no content_kind from the enumeration`,
-      };
+      return fail("content_kind_absent_when_pinned", `entry ${e.url} is pinned and carries no content_kind from the enumeration`);
     }
 
     // 10. rev4 l.249-254 (Finding 19).
@@ -390,11 +420,7 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
       e.resource_sha256 !== undefined &&
       e.resource_sha256 !== null
     ) {
-      return {
-        ok: false,
-        diagnostic: "resource_sha256_with_full_resource",
-        detail: `entry ${e.url} carries content_kind full_resource together with resource_sha256`,
-      };
+      return fail("resource_sha256_with_full_resource", `entry ${e.url} carries content_kind full_resource together with resource_sha256`);
     }
   }
 
@@ -405,11 +431,7 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
   for (const e of sources) {
     const key = BOUND_TUPLE(e);
     if (seen.has(key)) {
-      return {
-        ok: false,
-        diagnostic: "duplicate_bound_tuple",
-        detail: `two entries identical across url, snippet_sha256, content_kind and retrieved_at: ${e.url}`,
-      };
+      return fail("duplicate_bound_tuple", `two entries identical across url, snippet_sha256, content_kind and retrieved_at: ${e.url}`);
     }
     seen.add(key);
   }
@@ -418,27 +440,15 @@ export function validateEvidenceSet(set: EvidenceSet): ValidationResult {
   if (set.evidence_root !== undefined) {
     const pinnedCount = set.pinned_count ?? pinnedEntries.length;
     if (set.evidence_root !== null && pinnedCount === 0) {
-      return {
-        ok: false,
-        diagnostic: "root_present_with_zero_pinned",
-        detail: "evidence_root MUST be null when pinned_count is zero",
-      };
+      return fail("root_present_with_zero_pinned", "evidence_root MUST be null when pinned_count is zero");
     }
     if (set.evidence_root === null && pinnedCount > 0) {
-      return {
-        ok: false,
-        diagnostic: "root_absent_with_pinned_items",
-        detail: "evidence_root MUST be non-null when pinned_count is greater than zero",
-      };
+      return fail("root_absent_with_pinned_items", "evidence_root MUST be non-null when pinned_count is greater than zero");
     }
     if (set.evidence_root !== null) {
       const recomputed = computeRoot(sources);
       if (recomputed !== set.evidence_root) {
-        return {
-          ok: false,
-          diagnostic: "root_mismatch",
-          detail: `carried ${set.evidence_root} against recomputed ${recomputed}`,
-        };
+        return fail("root_mismatch", `carried ${set.evidence_root} against recomputed ${recomputed}`);
       }
     }
   }
@@ -455,6 +465,14 @@ export interface Resolution {
   halt: boolean;
   malformed: boolean;
   diagnostic?: Diagnostic;
+  /**
+   * rev7 l.106-109 (Finding 33). Present exactly when the step halted: "An
+   * implementation reports which condition it halted on; conformance requires
+   * the reported condition to equal the vector's `condition`, not merely that a
+   * halt occurred." A step that does not halt injects no condition and reports
+   * none.
+   */
+  condition?: Condition;
   detail?: string;
   evidence_root: string | null;
   /**
@@ -503,6 +521,7 @@ export function resolveEvidenceSet(
       halt: true,
       malformed: true,
       diagnostic: validation.diagnostic,
+      condition: validation.condition,
       detail: validation.detail,
       evidence_root: null,
       resolution: "unknown",

@@ -14,6 +14,7 @@ import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
 
 import {
+  CONDITION_FOR_DIAGNOSTIC,
   CONTENT_KINDS,
   LEAF_PREFIX,
   NODE_PREFIX,
@@ -763,5 +764,221 @@ describe("rev 6 — rules already satisfied at 5ffb455, pinned now that the text
     });
     expect(bad.ok).toBe(false);
     expect(bad.ok === false && bad.diagnostic).toBe("set_retrieved_at_not_earliest");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// rev 7 (drafts/evidence-pinning-02-amendments-rev7-2026-09-09.md, sha256
+// 6b13f6fc35d745c2642edcb52a2754f7cd43340ded3248b5d1ba70a431d6c037, 17,732 B).
+//
+// Rev 7 carries exactly one rule that binds an implementation: Finding 33,
+// l.106-109. Findings 33a/33b/33c add vectors for rules rev 6 already stated
+// and we already implement; Finding 34 and E-4 bind the fixture set, not us.
+//
+// Every test names its sentence by line, as in the rev 6 block above.
+// ---------------------------------------------------------------------------
+
+describe("rev 7 — Finding 33: the halt must name the condition it fired on (rev7 l.106-109)", () => {
+  // rev7 l.106-109: "add a required `condition` member to every `MALFORMED`
+  // vector. The value is a stable identifier naming the single condition the
+  // input injects. An implementation reports which condition it halted on;
+  // conformance requires the reported condition to equal the vector's
+  // `condition`, not merely that a halt occurred."
+  //
+  // rev7 l.136-137 keeps diagnostic *naming* free, so our Diagnostic union is
+  // untouched and `condition` is a second, stable member beside it.
+
+  it("(a) every malformed result carries a condition from rev 7's vocabulary", () => {
+    const r = validateEvidenceSet({ source_count: 0, sources: [] });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.condition).toBe("pinned_set_empty");
+  });
+
+  it("(b) the twelve conditions rev 7 l.115-126 names, each from an input injecting it", () => {
+    // One case per row of rev 7's table, in the table's order. The thirteenth
+    // row, retrieved_at_not_canonical_form, is (c) below.
+    const cases: Array<[string, () => ReturnType<typeof validateEvidenceSet>]> = [
+      [
+        "set_retrieved_at_not_first_in_canonical_order",
+        () =>
+          validateEvidenceSet({
+            retrieved_at: "2026-09-02T12:00:00.000Z",
+            source_count: 2,
+            pinned_count: 2,
+            fully_pinned: true,
+            sources: [
+              pinned("https://example.org/a", D1, { retrieved_at: "2026-09-02T12:00:00.000Z" }),
+              pinned("https://example.org/b", D2, { retrieved_at: "2026-09-01T12:00:00.000Z" }),
+            ],
+          }),
+      ],
+      [
+        "content_kind_absent_when_pinned",
+        () =>
+          validateEvidenceSet({
+            source_count: 1,
+            pinned_count: 1,
+            fully_pinned: true,
+            sources: [pinned("https://example.org/a", D1, { content_kind: null })],
+          }),
+      ],
+      [
+        "snippet_digest_present_for_full_resource",
+        () =>
+          validateEvidenceSet({
+            source_count: 1,
+            pinned_count: 1,
+            fully_pinned: true,
+            sources: [
+              pinned("https://example.org/a", D1, {
+                content_kind: "full_resource",
+                resource_sha256: D2,
+              }),
+            ],
+          }),
+      ],
+      ["pinned_set_empty", () => validateEvidenceSet({ source_count: 0, sources: [] })],
+      [
+        "duplicate_bound_tuple",
+        () =>
+          validateEvidenceSet({
+            source_count: 2,
+            pinned_count: 2,
+            fully_pinned: true,
+            sources: [pinned("https://example.org/a", D1), pinned("https://example.org/a", D1)],
+          }),
+      ],
+      [
+        "unpinned_reason_outside_domain",
+        () =>
+          validateEvidenceSet({
+            source_count: 2,
+            pinned_count: 1,
+            fully_pinned: false,
+            sources: [
+              pinned("https://example.org/a", D1),
+              unpinned("https://example.org/b", "content_not_retained"),
+            ],
+          }),
+      ],
+      [
+        "unpinned_without_reason",
+        () =>
+          validateEvidenceSet({
+            source_count: 2,
+            pinned_count: 1,
+            fully_pinned: false,
+            sources: [
+              pinned("https://example.org/a", D1),
+              {
+                url: "https://example.org/b",
+                snippet_sha256: null,
+                retrieved_at: AT,
+                pinned: false,
+              },
+            ],
+          }),
+      ],
+      [
+        "source_count_disagrees_with_sources",
+        () =>
+          validateEvidenceSet({
+            source_count: 9,
+            pinned_count: 1,
+            fully_pinned: false,
+            sources: [pinned("https://example.org/a", D1)],
+          }),
+      ],
+      [
+        "pinned_count_disagrees_with_pinned_entries",
+        () =>
+          validateEvidenceSet({
+            source_count: 1,
+            pinned_count: 9,
+            fully_pinned: false,
+            sources: [pinned("https://example.org/a", D1)],
+          }),
+      ],
+      [
+        "root_present_with_zero_pinned",
+        () =>
+          validateEvidenceSet({
+            source_count: 1,
+            pinned_count: 0,
+            fully_pinned: false,
+            evidence_root: "aa".repeat(32),
+            sources: [unpinned("https://example.org/b")],
+          }),
+      ],
+      [
+        "root_null_with_pinned_entries",
+        () =>
+          validateEvidenceSet({
+            source_count: 1,
+            pinned_count: 1,
+            fully_pinned: true,
+            evidence_root: null,
+            sources: [pinned("https://example.org/a", D1)],
+          }),
+      ],
+      [
+        "root_not_recomputable_from_sources",
+        () =>
+          validateEvidenceSet({
+            source_count: 1,
+            pinned_count: 1,
+            fully_pinned: true,
+            evidence_root: "bb".repeat(32),
+            sources: [pinned("https://example.org/a", D1)],
+          }),
+      ],
+    ];
+
+    for (const [condition, build] of cases) {
+      const r = build();
+      expect(r.ok, `${condition}: expected a halt`).toBe(false);
+      expect(r.ok === false && r.condition, `${condition}: reported condition`).toBe(condition);
+    }
+  });
+
+  it("(c) retrieved_at_not_canonical_form, the condition rev 7 l.242-245 adds a vector for", () => {
+    // rev 7 l.243-244 chooses the zero-fractional-digit spelling of the same
+    // instant as the counter-example.
+    const r = validateEvidenceSet({
+      source_count: 1,
+      pinned_count: 1,
+      fully_pinned: true,
+      sources: [pinned("https://example.org/a", D1, { retrieved_at: "2026-09-01T12:00:00Z" })],
+    });
+    expect(r.ok).toBe(false);
+    expect(r.ok === false && r.condition).toBe("retrieved_at_not_canonical_form");
+  });
+
+  it("(d) a halting resolution surfaces the condition beside the diagnostic", () => {
+    // The vector compares against a resolution, not against a bare validation,
+    // so the member has to reach resolveEvidenceSet's return.
+    const r = resolveEvidenceSet({ source_count: 0, sources: [] });
+    expect(r.halt).toBe(true);
+    expect(r.malformed).toBe(true);
+    expect(r.condition).toBe("pinned_set_empty");
+    // rev7 l.136-137: diagnostic naming stays free, so the old member survives.
+    expect(r.diagnostic).toBe("empty_evidence_set");
+  });
+
+  it("(e) a conformant set reports no condition", () => {
+    const r = resolveEvidenceSet({
+      source_count: 1,
+      pinned_count: 1,
+      fully_pinned: true,
+      sources: [pinned("https://example.org/a", D1)],
+    });
+    expect(r.halt).toBe(false);
+    expect(r.condition).toBeUndefined();
+  });
+
+  it("(f) every diagnostic in the enumeration maps to exactly one condition, and the map is injective", () => {
+    const values = Object.values(CONDITION_FOR_DIAGNOSTIC);
+    expect(values.length).toBe(15);
+    expect(new Set(values).size).toBe(15);
   });
 });

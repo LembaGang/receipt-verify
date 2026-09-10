@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Extract ONLY the independence-permitted members of the rev 5 fixture bundle.
+// Extract ONLY the independence-permitted members of an evidence-pinning
+// fixture bundle (rev 5, rev 6, rev 7).
 //
 // The independence protocol for CC_HANDOFF_2026-09-07 rev 2 lets us take the
 // vector *inputs* from Joe's file and forbids us their *computed* values, the
@@ -20,7 +21,23 @@ if (!sourcePath || !destPath) {
 }
 
 const HEADER_KEEP = ["title", "vector_count"];
-const VECTOR_KEEP = ["id", "designation", "expect", "input"];
+
+// `condition` added 2026-09-10 for rev 7, and the protocol requires saying so.
+// CC_HANDOFF_2026-09-09 permits extending this list "only if rev 6 renames a
+// permitted member"; this is an addition, not a rename, and the ground is that
+// the member discloses nothing the airlock protects:
+//
+//   - rev 7 l.115-127 prints all thirteen `condition` values in the amendments
+//     text, which the airlock permits at any time and which is the text our
+//     implementation is written from. Excluding the member here would keep out
+//     of the extract exactly what we are required to read elsewhere.
+//   - It is an expectation, not a computed value. It states which condition the
+//     input injects, in the same way `expect` states the relation that must
+//     hold. No root, and no output of Joe's implementation, is reachable from it.
+//
+// `note` and `computed` stay excluded. `note` is prose that has carried a
+// correct root in an earlier revision, and nothing needs it.
+const VECTOR_KEEP = ["id", "designation", "expect", "input", "condition"];
 
 const raw = readFileSync(sourcePath);
 const sourceSha256 = createHash("sha256").update(raw).digest("hex");

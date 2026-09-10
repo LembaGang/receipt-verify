@@ -425,3 +425,182 @@ implementation. Two bear on the record and are checked in this run rather than t
 | F31 halt is conformance; naming free | l.214-218 | satisfied, no code change | n/a |
 | F32a "first in bytewise order" | l.240-241 | satisfied | **choice on 7 Sep, now compelled** |
 | F32b `retrieved_at` canonical form MUST | l.243-247 | **NOT satisfied** | implemented in S2 |
+
+---
+
+# Rev 7 — the section added 2026-09-10 (CC_HANDOFF_2026-09-10, Part 1 step S1)
+
+Source: `drafts/evidence-pinning-02-amendments-rev7-2026-09-09.md`, sha256
+`6b13f6fc35d745c2642edcb52a2754f7cd43340ded3248b5d1ba70a431d6c037`, 17,732 bytes, at
+`TKCollective/agentoracle-receipt-spec` commit
+`3d0ec0e82229c1336340f0323d54904e5baf38b2` ("rev 7: name the condition a malformed vector
+injects, and stop the set stating its own answers", committed 2026-09-09T21:36:35Z). Digest
+re-derived from the git blob at that commit, not from the checkout: this machine has
+`core.autocrlf=true` and every working-tree copy hashes differently. The rev 6 blob at this
+commit is byte-identical to the one the 9 September run read (`d62ded37…`, 21,968 B,
+re-derived here), so nothing under rev 6 moved.
+
+**Precedence.** Rev 7 l.5-12 replaces rev 6 by filename, digest and byte count, and
+"**Everything in rev 6 stands except where this document says otherwise.**" It then names
+what it explicitly leaves standing: rev 6's Findings 27-32 in full, rev 5's Findings 24-26,
+rev 4's Findings 15-23, the four-member preimage, the `ao-evidence-leaf-v2` prefix and the
+four-term sort key. Sections 1-9 and R6-1 to R6-9 above therefore continue to govern except
+where an R7 entry below displaces one.
+
+**Rev 7 carries one normative amendment that binds an implementation, and four items that do
+not.** The blocks are E-4 (l.46), Finding 33 (l.84), Finding 34 (l.144) and the three vector
+additions 33a/33b/33c (l.206, l.218, l.235). Only Finding 33 changes what a conformant
+implementation must emit. Our status below is against commit `8ec4ffe` — the state in which
+`tools/evidence-root.ts` and `test/evidence-root.test.ts` were left by `e2cd882` on
+9 September.
+
+## R7-1. Finding 33 — the halt must name the condition it fired on
+
+**Adds a required member to every `MALFORMED` vector, and a reporting obligation to every
+implementation.** Rev 7 l.106-109:
+
+> **Amendment — add a required `condition` member to every `MALFORMED` vector.** The value is
+> a stable identifier naming the single condition the input injects. An implementation
+> reports which condition it halted on; conformance requires the reported condition to equal
+> the vector's `condition`, not merely that a halt occurred.
+
+**Status: NOT satisfied at `8ec4ffe`. Implemented from this sentence.** At `8ec4ffe` our
+halts carried `diagnostic`, a fifteen-value union of our own naming, and nothing that could
+be compared for equality against a value on Joe's side. R6-6 above recorded exactly why that
+was sufficient under rev 6 and is not under rev 7: rev 6 l.214-218 made "conformance
+determined by the halt, not by which condition is named", so agreement on a `MALFORMED` row
+meant only that we halted. Rev 7 l.92-96 states the consequence that closes — "Two
+implementations can pass all twelve while rejecting each input on entirely different grounds,
+and nothing in the set detects it."
+
+**The reading, and why `condition` is a second member rather than a rename of `diagnostic`.**
+Rev 7 l.136-137 preserves rev 6 Finding 31 "as written for diagnostic *naming*, which remains
+free. What changes is that conformance now depends on the reported condition matching." Two
+members, two rules: the diagnostic stays ours and stays free, and the condition is fixed by
+rev 7's table. `Diagnostic` is therefore unchanged and `Condition` is new, with
+`CONDITION_FOR_DIAGNOSTIC` the total, injective map between them, and one `fail()`
+constructor through which all fifteen rejections now pass so that a future diagnostic cannot
+ship without a condition.
+
+**The thirteen identifiers are taken verbatim from rev 7 l.115-127.** Their mapping onto our
+diagnostics is not one-for-one in spelling — four coincide, nine do not — and the difference
+is recorded here because it is the whole content of the new check:
+
+| rev 7 `condition` (l.115-127) | our `diagnostic` | spelling |
+|---|---|---|
+| `set_retrieved_at_not_first_in_canonical_order` | `set_retrieved_at_not_earliest` | differs |
+| `content_kind_absent_when_pinned` | `content_kind_absent_when_pinned` | same |
+| `snippet_digest_present_for_full_resource` | `resource_sha256_with_full_resource` | differs |
+| `pinned_set_empty` | `empty_evidence_set` | differs |
+| `duplicate_bound_tuple` | `duplicate_bound_tuple` | same |
+| `unpinned_reason_outside_domain` | `unpinned_reason_outside_domain` | same |
+| `unpinned_without_reason` | `unpinned_reason_absent` | differs |
+| `source_count_disagrees_with_sources` | `source_count_mismatch` | differs |
+| `pinned_count_disagrees_with_pinned_entries` | `pinned_count_mismatch` | differs |
+| `root_present_with_zero_pinned` | `root_present_with_zero_pinned` | same |
+| `root_null_with_pinned_entries` | `root_absent_with_pinned_items` | differs |
+| `root_not_recomputable_from_sources` | `root_mismatch` | differs |
+| `retrieved_at_not_canonical_form` | `retrieved_at_not_canonical` | differs |
+
+Nine of thirteen differ, so a run that compared our old `diagnostic` against the vector's
+`condition` would have reported nine divergences that are not divergences. The map is the
+translation, and it is written once.
+
+**Tests.** `rev 7 — Finding 33` in `test/evidence-root.test.ts`: (a) a malformed result
+carries a condition; (b) the twelve table rows, one input per row injecting exactly that
+condition; (c) `retrieved_at_not_canonical_form` from rev 7 l.242-245's own counter-example;
+(d) the member reaches `resolveEvidenceSet`'s return beside the diagnostic; (e) a conformant
+set reports none; (f) the map is total over `Diagnostic` and injective. (a)-(d) and (f) were
+RED before the tool changed; (e) asserts an absence and was green from the start, which is
+recorded rather than presented as evidence.
+
+## R7-2. The two conditions rev 7's table does not name — the rev 8 diff, performed
+
+Rev 7 l.129-134 states what the `condition` member makes possible and defers it:
+
+> Once every vector names its condition, the set of named conditions can be diffed
+> mechanically against the enumeration of malformed conditions in the specification text.
+> Michael's count of that enumeration is fifteen. Thirteen conditions are now named by
+> vectors, each injecting exactly one. **The remaining conditions in the enumeration have no
+> vector**, and identifying precisely which ones is now a diff rather than an audit. That
+> diff is not performed in this revision and is the first item for rev 8.
+
+**The diff is performed here, and it resolves to exactly two.** Our `Diagnostic` union is the
+fifteen-condition enumeration rev 7 refers to (section 6 above lists fourteen; R6-7 added the
+fifteenth). Subtracting the thirteen rev 7 names leaves:
+
+| condition with no rev 7 vector | source | why no vector reaches it |
+|---|---|---|
+| `pinned_count_exceeds_source_count` | base l.73 | needs `pinned_count > source_count` while `pinned_count` still equals the pinned entries — no vector declares counts that disagree in that direction |
+| `fully_pinned_inconsistent` | base l.74, rev2 l.180-181 | needs `fully_pinned` to contradict the counts while both counts are themselves consistent |
+
+Both are reachable in our implementation and both are checked by tests predating this run.
+Neither is named by rev 7, so we name them ourselves, flagged `OURS` in `Condition`, and
+report them as rev 8's first item answered rather than leaving the identifiers undefined —
+a halt that reports no condition is a halt the set cannot check, which is Finding 33's own
+argument.
+
+## R7-3. Findings 33a, 33b and 33c — three new vectors, no new rule
+
+Each closes a gap our 9 September run reported: rev 6 stated a rule that its own set did not
+exercise. Rev 7 adds a vector for three of the four; none of the three adds a sentence.
+
+| Finding | New vector | Rule it exercises | Our status |
+|---|---|---|---|
+| 33a (l.206-216) | `evi-step-resolves-affirmatively` | rev 6 F29, the `resolved` token | satisfied at `e2cd882` — implemented in the 9 Sep run from rev 6 l.171-174 |
+| 33b (l.218-233) | `evi-unpinned-members-absent-accepted` | rev 6 F30, absent is equivalent to explicit `null` on unpinned entries | satisfied at `8ec4ffe`, and it was our reading before rev 6 compelled it (R6-5) |
+| 33c (l.235-249) | `evi-retrieved-at-noncanonical-rejects` | rev 6 F32b, the canonical `retrieved_at` form | satisfied at `e2cd882` — implemented in the 9 Sep run from rev 6 l.243-247 |
+
+**33b carries no root, by rev 7's own reasoning** (l.229-233): "Only pinned entries form
+leaves, so the root is a function of the pinned entry alone and would be equal to the
+explicit-`null` counterpart by construction. Asserting that equality would be an assertion
+about this generator rather than about the specification." Our `canonicalOrder` filters on
+`pinned === true` before sorting, so the same is true of our implementation, and the vector
+tests acceptance only.
+
+**What these three change for this run is coverage, not code.** Each of the three rules was
+implemented from a rev 6 sentence and, until rev 7, had no vector on Joe's side to be
+compared against. They are the rows where this run can say something the 9 September run
+could not, and R7-5 below states exactly what.
+
+## R7-4. Finding 34 and E-4 — the fixture set, not the implementation
+
+**Finding 34 (l.144-196)** is the airlock defect this side reported on 9 September as D2,
+taken and generalized. It renames `evi-node-raw-not-hex` to `evi-node-child-encoding` and
+`evi-leaf-hex-not-raw` to `evi-leaf-member-encoding`, renames the `computed` keys to
+`normative_root` / `counter_construction_root`, rewrites both `expect` strings, makes the
+header cite its findings instead of restating them, and adds a build-time assertion that no
+identifier or key carries a resolution token. **It binds the set, not us**, and its principle
+is stated at l.169-172:
+
+> **A conformance vector verifies a choice. The specification states it.** A vector's
+> identifier, key names, and expectation text name the *dimension* under test and the
+> *relation* that must hold. They must not name the resolution.
+
+Rev 7 l.190-196 also records what the amendment does not do: it does not restore the airlock
+for runs already completed, and **"The Finding 27 branch is therefore not available for
+independent corroboration by either of them"** — of Michael Msebenzi or Pablo Play. That
+sentence governs what this run may claim about the node-encoding branch, and R7-5 states it.
+
+**E-4 (l.46-80)** corrects rev 6's group arithmetic from `12 + 12 + 5` to `12 + 12 + 6 - 1 =
+29`. No root is affected and no implementation behaviour follows. It is recorded because it
+was this side's finding and because rev 7 l.255-264 restates the same accounting for the
+32-vector set: `13 + 13 + 7 - 1 = 32`, overlap still `evi-root-mismatch-rejects` alone.
+
+## R7-5. What rev 7 lets this run establish, and what it does not
+
+- **Finding 33 is the only rule newly implemented**, so it is the only row where a rev 7
+  divergence would be a divergence about the text rather than about coverage.
+- **The node-child and leaf-member encodings are not independently corroborated by this run,
+  and rev 7 says so at l.190-196.** We read `evi-node-raw-not-hex` at extraction on 9
+  September and recorded it as D2. The rename protects the third implementer; it cannot
+  unread what we read. Agreement on `evi-node-child-encoding` in this run is therefore
+  agreement between an implementation and a fixture whose answer that implementation's author
+  had already seen — restated in the findings file rather than counted as corroboration.
+- **This run, like the last, is confirmed-by-extension and not a cold build.** Rev 7 l.37-42
+  states the limit in this side's own words and requires that -02 "must not describe it as an
+  independent second implementation". Our implementation at `8ec4ffe` descends from the
+  7 September build; rev 7 changed one rule and we changed one function. Nothing here is a
+  second implementation of the other fourteen.
+- **Every input is still Joe's.** A malformed condition his set does not inject is still
+  invisible to this run, and R7-2 names the two we know of.
