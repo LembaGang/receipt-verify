@@ -239,3 +239,103 @@ describe("upstream coverage — every corpus on disk is accounted for in fixture
     expect(resolve("fixtures/asqav/05c1c49/conformance/vectors.json")).not.toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// B-151 / B-129: every `check: note` names WHICH KIND of expected movement.
+//
+// The failure mode of `check: note` is a pin marked `note` by mistake, which
+// hides exactly the change the tool exists to make loud. The prose `check_reason`
+// says why THIS pin; only a code from a closed vocabulary says which kind of
+// movement was expected, and only a code can be acted on by a reader that is not
+// a person.
+// ---------------------------------------------------------------------------
+
+/**
+ * The closed vocabulary, transcribed from `fixtures/upstreams.json`'s
+ * `how_to_read.check_reason_codes`. Transcribed rather than read from that
+ * object for the same reason `REASON_CODES` above is: a test that took its list
+ * of valid values from the file it is checking would accept any new code the
+ * moment someone added it to the key list, which is a check that cannot fail.
+ */
+const CHECK_REASON_CODES = [
+  "author_bookkeeping",
+  "rendered_page_furniture",
+  "upstream_generated",
+  "mutable_pointer",
+] as const;
+
+interface CheckedEntry {
+  id: string;
+  kind?: string;
+  check?: string;
+  check_reason_code?: string;
+}
+
+/**
+ * http entries marked `check: note` whose `check_reason_code` is absent, empty,
+ * or outside the vocabulary. Exported so the negative control runs THE SAME
+ * function over synthetic rows.
+ */
+export function badCheckReasonCodes(entries: CheckedEntry[]): string[] {
+  const valid = new Set<string>(CHECK_REASON_CODES);
+  return entries
+    .filter((e) => e.kind === "http" && e.check === "note")
+    .filter((e) => !valid.has(e.check_reason_code ?? ""))
+    .map((e) =>
+      e.check_reason_code === undefined
+        ? `${e.id}: check is note and there is no check_reason_code`
+        : `${e.id}: check_reason_code ${JSON.stringify(e.check_reason_code)} is not one of ${CHECK_REASON_CODES.join(", ")}`,
+    );
+}
+
+describe("upstreams — every http `check: note` names its reason code (B-151)", () => {
+  it("every http entry marked note carries a code from the closed vocabulary", () => {
+    const bad = badCheckReasonCodes(DOC.upstreams as CheckedEntry[]);
+    expect(
+      bad,
+      `${bad.length} http entr${bad.length === 1 ? "y is" : "ies are"} marked \`check: note\` without a usable code.\n` +
+        `A note suppresses the red this tool exists to raise, so the author must say which KIND of\n` +
+        `expected movement it is, not only that they expected one.\n\n` +
+        bad.map((b) => `  ${b}`).join("\n") +
+        `\n\nPick one of: ${CHECK_REASON_CODES.join(", ")}. If none fits, the vocabulary is what needs\n` +
+        `widening — in fixtures/upstreams.json's how_to_read AND in this file, in the same commit.`,
+    ).toEqual([]);
+  });
+
+  it("the vocabulary in this file and the one in upstreams.json are the same set", () => {
+    // Widening in one place only is the way this check would quietly stop
+    // checking, so the two lists are compared rather than one trusted.
+    const doc = JSON.parse(readFileSync(join(ROOT, "fixtures", "upstreams.json"), "utf8")) as {
+      how_to_read: { check_reason_codes?: Record<string, string> };
+    };
+    const inFile = Object.keys(doc.how_to_read.check_reason_codes ?? {}).sort();
+    expect(inFile, "fixtures/upstreams.json how_to_read.check_reason_codes is missing or disagrees with this file").toEqual(
+      [...CHECK_REASON_CODES].sort(),
+    );
+  });
+
+  // The control. `[]` is also what a validator that validated nothing returns.
+  it("negative control: a note with a missing, blank or unknown code is reported, and a fail entry is never asked", () => {
+    const ok: CheckedEntry = { id: "ok", kind: "http", check: "note", check_reason_code: "mutable_pointer" };
+    const missing: CheckedEntry = { id: "missing", kind: "http", check: "note" };
+    const blank: CheckedEntry = { id: "blank", kind: "http", check: "note", check_reason_code: "" };
+    const unknown: CheckedEntry = { id: "unknown", kind: "http", check: "note", check_reason_code: "because_i_said_so" };
+    // A `fail` entry — and an entry with no `check` at all — needs no code, and
+    // must not be reported: a check that flagged those would be noise, and the
+    // green above would stop meaning anything.
+    const failing: CheckedEntry = { id: "failing", kind: "http", check: "fail" };
+    const plain: CheckedEntry = { id: "plain", kind: "http" };
+    // A git entry is out of scope here: its notes are per path, not per entry.
+    const gitNote: CheckedEntry = { id: "git-note", kind: "git", check: "note" };
+
+    expect(badCheckReasonCodes([ok])).toEqual([]);
+    expect(badCheckReasonCodes([failing, plain, gitNote])).toEqual([]);
+    expect(badCheckReasonCodes([missing])).toEqual(["missing: check is note and there is no check_reason_code"]);
+    expect(badCheckReasonCodes([blank])[0]).toContain("blank");
+    expect(badCheckReasonCodes([unknown])[0]).toContain("because_i_said_so");
+    // A real file mixed with one bad row still leaves exactly the bad row.
+    expect(badCheckReasonCodes([...(DOC.upstreams as CheckedEntry[]), missing])).toEqual([
+      "missing: check is note and there is no check_reason_code",
+    ]);
+  });
+});

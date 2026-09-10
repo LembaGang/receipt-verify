@@ -43,6 +43,25 @@
  *          reader that is not a person -- and does not by itself make the entry
  *          `moved_changed`
  *
+ * B-151 gives an `http` ENTRY the same attribute, written at the entry rather
+ * than per path, because an http entry pins one body and has no `paths` array.
+ * A `note` http entry whose body moves is still `changed` -- the move happened
+ * and the row says so, with both digests -- but it is marked `noted`, counted in
+ * the SUMMARY's `noted=N`, and does not red the run. It is for a pin that is
+ * MEANT to move: a registry pointer whose whole function is to advance, a status
+ * file carrying errata, a key file whose issuer has said will keep moving. Under
+ * `fail` each of those reds the daily check for doing what it is for, which is
+ * the B-123 failure mode again. `note` never suppresses `unreachable`: a known
+ * mover that stops resolving is the upstream disappearing, not the upstream
+ * moving, and that has not passed.
+ *
+ * Every `note` -- path or entry -- requires a `check_reason_code` from the closed
+ * vocabulary in `how_to_read`, enforced by test/upstream-coverage.test.ts. The
+ * failure mode of this attribute is a pin marked `note` by mistake, which would
+ * hide exactly the change the tool exists to make loud; requiring the author to
+ * name WHICH KIND of expected movement it is makes that mistake hard to make
+ * silently.
+ *
  * `note` is for a path pinned for PROVENANCE rather than as graded data.
  * `asqav-sdk`'s `conformance/manifest.lock.json` is the author's own bookkeeping
  * about the corpus -- a corpus_version, a licence row, a notice row -- and it
@@ -129,6 +148,20 @@ export interface Upstream {
   url?: string;
   sha256?: string;
   retrieved?: string;
+  /**
+   * B-151. What a moved body MEANS for this entry. Absent is `fail`, so every
+   * http pin written before this attribute existed keeps its meaning exactly.
+   * `note` reports the move and does not red the run; it never suppresses
+   * `unreachable`, because a check that could not be made has not passed.
+   */
+  check?: "fail" | "note";
+  /**
+   * Required whenever `check` is `note`: which KIND of expected movement this
+   * is, from the closed vocabulary in upstreams.json's `how_to_read`. Enforced
+   * by test/upstream-coverage.test.ts, not here — the tool reports what the
+   * file says, and the file is what the test holds to the vocabulary.
+   */
+  check_reason_code?: string;
   // ietf-draft
   name?: string;
   pinned_rev?: string;
@@ -163,6 +196,13 @@ export interface Result {
    * red, and a note did not.
    */
   noted_paths?: PathChange[];
+  /**
+   * B-151, http entries. True when the body moved AND the entry is `check:
+   * note`, so the row is `changed` and green at once. The outcome is still
+   * `changed`: `note` decides what a move means, never whether it happened, and
+   * a row that hid the move would be the defect this attribute is accused of.
+   */
+  noted?: true;
 }
 
 /**
@@ -326,11 +366,15 @@ async function checkHttp(u: Upstream, fetchFn: DriftFetch): Promise<Result> {
   if (now === u.sha256) {
     return { ...base, outcome: "current", tip: now, detail: `${url} still digests to the pin (${res.body.length} bytes)` };
   }
+  // B-151. The body moved. Whether that reds the run is the entry's `check`.
+  const noted = u.check === "note" ? ({ noted: true } as const) : {};
+  const why = u.check === "note" ? ` [check: note (${String(u.check_reason_code ?? "NO REASON CODE")}) -- reported, does not fail the run]` : "";
   return {
     ...base,
     outcome: "changed",
+    ...noted,
     tip: now,
-    detail: `${url}: pinned ${String(u.sha256)}, now ${now} (${res.body.length} bytes)`,
+    detail: `${url}: pinned ${String(u.sha256)}, now ${now} (${res.body.length} bytes)${why}`,
   };
 }
 
@@ -494,7 +538,8 @@ export function checkCorpusDirs(upstreams: Upstream[], dirs: string[], unmapped:
 
 export interface DriftRun {
   results: Result[];
-  totals: Record<Outcome, number>;
+  /** The outcome counts, plus `noted`: how many `changed` rows were noted rather than failed (B-151). */
+  totals: Record<Outcome, number> & { noted: number };
   code: number;
 }
 
@@ -529,8 +574,11 @@ export async function runDrift(upstreams: Upstream[], fetchFn: DriftFetch = real
 
   results.push(...checkCorpusDirs(upstreams, opts.corpusDirs ?? [], opts.unmapped ?? []));
 
-  const totals = Object.fromEntries(OUTCOMES.map((o) => [o, 0])) as Record<Outcome, number>;
-  for (const r of results) totals[r.outcome]++;
+  const totals = { ...(Object.fromEntries(OUTCOMES.map((o) => [o, 0])) as Record<Outcome, number>), noted: 0 };
+  for (const r of results) {
+    totals[r.outcome]++;
+    if (r.noted === true) totals.noted++;
+  }
 
   // Exit 0 ONLY when every current-role upstream is current or moved_untouched.
   // unreachable is a failure, not a shrug: a check that could not be made has not
@@ -539,13 +587,24 @@ export async function runDrift(upstreams: Upstream[], fetchFn: DriftFetch = real
   // further out: a corpus nothing watches has not passed a freshness check, it
   // was never given one.
   const bad = results.filter(
-    (r) => r.outcome === "no_entry" || (r.role === "current" && r.outcome !== "current" && r.outcome !== "moved_untouched" && r.outcome !== "not_checked"),
+    (r) =>
+      r.outcome === "no_entry" ||
+      (r.role === "current" &&
+        r.noted !== true &&
+        r.outcome !== "current" &&
+        r.outcome !== "moved_untouched" &&
+        r.outcome !== "not_checked"),
   );
   return { results, totals, code: bad.length > 0 ? 1 : 0 };
 }
 
-export function summaryLine(totals: Record<Outcome, number>): string {
-  return "drift: " + OUTCOMES.map((o) => `${o}=${totals[o]}`).join(" ");
+export function summaryLine(totals: Record<Outcome, number> & { noted?: number }): string {
+  // `noted` sits after the outcome counts, not among them: it is not an outcome
+  // but a fact ABOUT the `changed` count -- of the N bodies that moved, this
+  // many were reported rather than failed, so failing = changed - noted.
+  return (
+    "drift: " + OUTCOMES.map((o) => `${o}=${totals[o]}`).join(" ") + ` noted=${totals.noted ?? 0}`
+  );
 }
 
 /** Print one line per upstream, then the SUMMARY. Returns the lines, for the tests. */
@@ -553,7 +612,8 @@ export function render(run: DriftRun): string[] {
   const out: string[] = ["== corpus drift =="];
   const w = Math.max(...run.results.map((r) => r.id.length));
   for (const r of run.results) {
-    out.push(`  ${r.outcome.toUpperCase().padEnd(16)} ${r.id.padEnd(w)}  ${r.detail}`);
+    const label = r.noted === true ? `${r.outcome.toUpperCase()} (NOTE)` : r.outcome.toUpperCase();
+    out.push(`  ${label.padEnd(16)} ${r.id.padEnd(w)}  ${r.detail}`);
     for (const c of r.changed_paths ?? []) {
       out.push(`      ${c.path}`);
       out.push(`          old blob : ${c.old_blob ?? "(not recorded; the pin gave a sha256 only)"}`);

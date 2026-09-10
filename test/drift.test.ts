@@ -28,7 +28,7 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { ROOT } from "./helpers.js";
-import { type DriftFetch, type Upstream, checkCorpusDirs, runDrift, summaryLine } from "../tools/drift.js";
+import { type DriftFetch, type Upstream, checkCorpusDirs, render, runDrift, summaryLine } from "../tools/drift.js";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "drift-test-"));
 
@@ -457,7 +457,7 @@ describe("drift — role, exit code and summary", () => {
     expect(run.results.map((r) => r.outcome)).toEqual(["current", "current", "current", "not_checked"]);
     expect(run.code).toBe(0);
     expect(summaryLine(run.totals)).toBe(
-      "drift: current=3 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=1 no_entry=0",
+      "drift: current=3 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=1 no_entry=0 noted=0",
     );
   });
 
@@ -484,10 +484,10 @@ describe("drift — role, exit code and summary", () => {
     expect(run.totals.not_checked).toBe(1);
   });
 
-  it("the SUMMARY line names all eight outcomes, always", async () => {
+  it("the SUMMARY line names all eight outcomes and the noted count, always", async () => {
     const run = await runDrift([], never);
     expect(summaryLine(run.totals)).toBe(
-      "drift: current=0 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=0 no_entry=0",
+      "drift: current=0 moved_untouched=0 moved_changed=0 changed=0 superseded=0 unreachable=0 not_checked=0 no_entry=0 noted=0",
     );
   });
 });
@@ -765,5 +765,107 @@ describe("drift — --record writes last_observed and nothing else", () => {
     const second = JSON.parse(readFileSync(f.path, "utf8")) as { upstreams: Upstream[] };
     expect(second.upstreams[0]!.last_observed!.tip).toBe(first.upstreams[0]!.last_observed!.tip);
     expect(second.upstreams[0]!.last_observed!.outcome).toBe("current");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// B-151: `check: note` on an http entry.
+//
+// The per-path attribute has existed for git entries since aa6e7b6. An http
+// entry pins one body and has no `paths` array, so until now every http pin was
+// `fail` with no way to say otherwise — and three of the pins this repository
+// needs are mutable BY DESIGN: a registry pointer that is meant to move, a
+// status file carrying errata, and a key file the issuer has said will keep
+// moving. Under `fail` each of them reds the daily check for doing what it is
+// for, which is the failure mode B-123 recorded: a red the reader learns to
+// ignore is worse than no check at all.
+//
+// Both directions are tested, because both are the failure mode. A noted entry
+// that silently fails would make the attribute useless; a failing entry that
+// silently notes would hide exactly the change the tool exists to make loud.
+// ---------------------------------------------------------------------------
+
+const URL_B = "https://example.invalid/other.json";
+
+describe("drift - check: note on an http entry (B-151)", () => {
+  it("(a) default and explicit `fail`: a moved body is `changed`, is not noted, and reds the run", async () => {
+    for (const over of [{}, { check: "fail" as const }]) {
+      const run = await runDrift(
+        [httpEntry(over)],
+        canned({ [URL_A]: { status: 200, body: '{"public_keys":[1]}' } }),
+      );
+      const res = run.results[0]!;
+      expect(res.outcome).toBe("changed");
+      expect(res.noted).not.toBe(true);
+      expect(run.totals.noted).toBe(0);
+      expect(run.code).toBe(1);
+    }
+  });
+
+  it("(b) `note`: a moved body is still `changed`, is marked noted, and does NOT red the run", async () => {
+    const run = await runDrift(
+      [httpEntry({ check: "note", check_reason_code: "mutable_pointer" })],
+      canned({ [URL_A]: { status: 200, body: '{"public_keys":[1]}' } }),
+    );
+    const res = run.results[0]!;
+    // The body DID change and the row says so: `note` decides what the change
+    // means, never whether it happened.
+    expect(res.outcome).toBe("changed");
+    expect(res.noted).toBe(true);
+    expect(res.detail).toContain(SHA_BODY);
+    expect(res.tip).not.toBe(SHA_BODY);
+    expect(run.totals.noted).toBe(1);
+    expect(run.code).toBe(0);
+  });
+
+  it("(c) `note` changes nothing when the body has not moved", async () => {
+    const run = await runDrift(
+      [httpEntry({ check: "note", check_reason_code: "mutable_pointer" })],
+      canned({ [URL_A]: { status: 200, body: BODY } }),
+    );
+    expect(run.results[0]!.outcome).toBe("current");
+    expect(run.results[0]!.noted).not.toBe(true);
+    expect(run.totals.noted).toBe(0);
+    expect(run.code).toBe(0);
+  });
+
+  it("(d) `note` does not swallow `unreachable`: a check that could not be made has not passed", async () => {
+    // The whole point of the attribute is that a KNOWN mover is not a failure.
+    // A 404 is not a known mover; it is the upstream disappearing.
+    const run = await runDrift(
+      [httpEntry({ check: "note", check_reason_code: "mutable_pointer" })],
+      canned({ [URL_A]: { status: 404 } }),
+    );
+    expect(run.results[0]!.outcome).toBe("unreachable");
+    expect(run.code).toBe(1);
+  });
+
+  it("(e) the SUMMARY line carries noted=N after the outcome counts", async () => {
+    const run = await runDrift(
+      [
+        httpEntry({ id: "noted-one", check: "note", check_reason_code: "mutable_pointer" }),
+        httpEntry({ id: "failing-one", url: URL_B, sha256: SHA_BODY }),
+      ],
+      canned({
+        [URL_A]: { status: 200, body: '{"public_keys":[1]}' },
+        [URL_B]: { status: 200, body: '{"public_keys":[2]}' },
+      }),
+    );
+    expect(run.totals.changed).toBe(2);
+    expect(run.totals.noted).toBe(1);
+    // changed counts every body that moved; noted says how many of them were
+    // reported rather than failed. failing = changed - noted, and it is 1.
+    expect(summaryLine(run.totals)).toContain("changed=2");
+    expect(summaryLine(run.totals)).toContain("noted=1");
+    expect(run.code).toBe(1);
+  });
+
+  it("(f) the rendered row marks a noted change, so it does not read as a change let through", async () => {
+    const run = await runDrift(
+      [httpEntry({ check: "note", check_reason_code: "mutable_pointer" })],
+      canned({ [URL_A]: { status: 200, body: '{"public_keys":[1]}' } }),
+    );
+    const line = render(run).find((l) => l.includes("keys"))!;
+    expect(line).toContain("(NOTE)");
   });
 });
