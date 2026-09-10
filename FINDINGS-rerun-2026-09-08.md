@@ -248,6 +248,58 @@ the reason he gives, both of which are about the field rather than about those s
 vectors. If that reading is wrong, that entry is the one that is wrong and it can be
 withdrawn without touching the six.
 
+**Appended 2026-09-10 — the mechanism, answered: the seven values are a fixed placeholder, and the corpus correction is still open**
+
+Asked on 8 Sep how the `sha256:<64 hex>` values are produced, the author answered on
+**2026-09-09 at 03:50Z (Gmail message `1a08449c6bf8c0f8`, thread `19fe72b99bff2f2e`)**. He
+confirmed seven is the right count and said he checked `05c1c49` himself. The mechanism, in
+substance:
+
+> The receipt generator computes `hashlib.sha256(b"").hexdigest()` **once** and reuses the
+> prefixed result as its demo `action_ref`. It is **a fixed placeholder, not a digest derived
+> from an Action and not a fallback triggered by missing inputs**, and the hash input is
+> literally zero bytes rather than an empty JSON object. The canonicalisation corpus takes a
+> separate path where the values are stored literally in the vector inputs, and its
+> regeneration helper preserves `action_ref` while recomputing the canonical bytes and their
+> digest — so regenerating the corpus leaves the placeholders in place.
+
+And the sentence that governs what this record may say, verbatim:
+
+> "That answers the mechanism question and it does not close the corpus correction. Declaring
+> the member opaque does not establish that these fixtures are correct."
+
+**What this does and does not do to the declaration above.** `declared_opaque` stands
+unchanged and every word of the 8 September entry is still true: it is a statement about the
+**member**, that no third party holding only the receipt can rebuild the pre-image, and no
+fact about a particular value bears on it. What is now also known is that the seven values are
+**placeholders rather than instances** of the construction the member names. The two facts sit
+side by side and neither replaces the other.
+
+**The trap this closes.** A reader meeting a declaration beside a value could take the pairing
+as the value having been examined and passed. It was not. Nothing in this repository grades
+these seven values, nothing here asserts they are correct, and the author — who is the only
+party who could close it — says explicitly that the corpus correction remains open. All
+fourteen `declared_opaque` entries in `walker/scopes.json` now carry a `mechanism` member with
+this answer quoted and attributed, and `how_to_read.declared_opaque` now states the rule in one
+sentence: *a declaration is about the member and never certifies a value.*
+
+**Walker counts are unchanged, and that is asserted rather than assumed.** The walk was run
+immediately before and immediately after the change and the two outputs were diffed: every
+per-corpus line and the SUMMARY are byte-identical. `match=410 mismatch=20 unregistered=514
+serializer_disagreement=0 expected_refusal=3 rule_idle=2 declared_opaque=14`, and on each asqav
+corpus `registered=60 match=59 mismatch=0 unregistered=31 declared_opaque=7`. The addition is
+documentation carried on the entries; it changes no status, no pointer and no grade.
+
+**From the same thread, the author's own correction of 2026-09-05 21:14Z, recorded so the -09
+work starts from it** [relayed from his mail, not measured here]: the corpus **already carries
+`v` in part** at his `609c1b84` — on `asqav-05` at the top level, on `asqav-06` and `asqav-24`
+inside the payload, and on `asqav-08` as `v 2` — and **not** on `asqav-01`, `-02`, `-03`,
+`-17`, `-21` or `-25`. This is his statement about his tree at that commit and is recorded as
+such: no pin in this repository is at `609c1b84`, nothing here has counted those members, and
+whether they survive into the `-09` corpus is exactly what the re-pin will show. It is written
+down because `detect()`'s `-09` work should begin from what the author says is already there
+rather than from an assumption that the member is absent throughout.
+
 ### Falsifiability of the walk itself
 
 The rule `asqav.counterparty.envelope_hash.expected` carries an **explicit**
