@@ -427,25 +427,54 @@ function checkChain(chain: ChainData, payload: Record<string, unknown> | null, a
   ann["authorization_used_topic0"] = `keccak("${AUTHORIZATION_USED_SIGNATURE}")`;
 
   const logs = logsOf(receipt);
-  // With no accepted requirement (the observation case) the token contract is
-  // taken from the receipt's own `to`, which is where a TransferWithAuthorization
-  // is submitted. Stated in the annotation rather than assumed silently.
-  const tokenContract = asset ?? str(receipt["to"]) ?? "";
+  const usedAll = logs.filter((l) => l.topics.length >= 3 && sameAddress(l.topics[0]!, usedTopic));
+
+  // Which contract is the token. With an accepted requirement it is that
+  // requirement's `asset` and there is nothing to decide. WITHOUT one — the
+  // observation case — it is the contract that emitted AuthorizationUsed, because
+  // that event is EIP-3009's and a transfer-with-authorization is exactly what
+  // emits it. It is NOT the transaction's own `to`: a facilitator that batches
+  // through Multicall sends the transaction to the aggregator, and reading the
+  // token off `to` would look at the wrong contract and then report, with
+  // conviction, that the settlement carries no transfer at all.
+  const usedEmitters = [...new Set(usedAll.map((l) => l.address.toLowerCase()))];
+  const tokenContract = asset ?? (usedEmitters.length === 1 ? usedEmitters[0]! : null);
   ann["token_contract"] =
     asset !== null
       ? `${asset} (the accepted requirement's asset)`
-      : `${tokenContract} (no accepted requirement in the envelope, so the token contract is read from the transaction's own recipient)`;
+      : tokenContract !== null
+        ? `${tokenContract} (no accepted requirement in the envelope; taken from the contract that emitted AuthorizationUsed, which is EIP-3009's own event)`
+        : `not determined — no accepted requirement in the envelope and ${usedEmitters.length} contracts emitted AuthorizationUsed, so nothing here names the token`;
+  ann["transaction_to"] = str(receipt["to"]) ?? "(none: contract creation)";
 
-  const transfers = logs.filter((l) => l.topics.length >= 3 && sameAddress(l.topics[0]!, transferTopic) && sameAddress(l.address, tokenContract));
+  const transfers = logs.filter(
+    (l) => l.topics.length >= 3 && sameAddress(l.topics[0]!, transferTopic) && (tokenContract === null || sameAddress(l.address, tokenContract)),
+  );
   ann["transfer_logs"] = transfers.length;
+  // "Exactly one" is a claim about THIS authorization's settlement, so it is a
+  // contradiction only when there is an authorization to contradict. In the
+  // observation case a batched transaction legitimately carries several, and the
+  // ones that are not this settlement's are not this package's business: the
+  // count is recorded and the relation says what it did instead of comparing.
   if (transfers.length !== 1) {
-    return {
-      ok: false,
-      kind: "contradiction",
-      detail: `the receipt carries ${transfers.length} Transfer logs emitted by ${tokenContract}, and exactly one is what a single exact-scheme settlement means`,
-      ann,
-      stoppedAt: "chain_transfer_matches_authorization",
-    };
+    if (a !== null || transfers.length === 0) {
+      return {
+        ok: false,
+        kind: "contradiction",
+        detail:
+          transfers.length === 0
+            ? `the receipt carries no Transfer log from ${tokenContract ?? "any contract that emitted AuthorizationUsed"}, so no money moved that these bytes can point at`
+            : `the receipt carries ${transfers.length} Transfer logs emitted by ${tokenContract}, and exactly one is what a single exact-scheme settlement means`,
+        ann,
+        stoppedAt: "chain_transfer_matches_authorization",
+      };
+    }
+    ann["transfer"] = transfers
+      .map((l) => `${addressFromTopic(l.topics[1]!)} -> ${addressFromTopic(l.topics[2]!)}, ${String(quantity(l.data) ?? 0n)} atomic units (log index ${l.index})`)
+      .join("; ");
+    ann["transfer_note"] =
+      `${transfers.length} transfers of this token in one transaction, and no authorization in the envelope to say which is the settlement being observed; ` +
+      `all are listed and none is singled out`;
   }
   const t = transfers[0]!;
   const tFrom = addressFromTopic(t.topics[1]!);
@@ -454,16 +483,19 @@ function checkChain(chain: ChainData, payload: Record<string, unknown> | null, a
   if (tValue === null) {
     return { ok: false, kind: "malformed", detail: `the Transfer log's data ${JSON.stringify(t.data)} is not a hex quantity`, ann, stoppedAt: "chain_transfer_matches_authorization" };
   }
-  ann["transfer"] = `${tFrom} -> ${tTo}, ${tValue.toString()} atomic units of ${t.address} (log index ${t.index})`;
+  if (transfers.length === 1) {
+    ann["transfer"] = `${tFrom} -> ${tTo}, ${tValue.toString()} atomic units of ${t.address} (log index ${t.index})`;
+  }
 
-  const used = logs.filter((l) => l.topics.length >= 3 && sameAddress(l.topics[0]!, usedTopic) && sameAddress(l.address, tokenContract));
+  const used = tokenContract === null ? usedAll : usedAll.filter((l) => sameAddress(l.address, tokenContract));
   if (used.length === 0) {
     // Not a failure. Whether a token contract emits this event is a fact about
     // that contract, and the receipts this repository pins are what establish it.
     ann["authorization_used"] = "absent — this receipt carries no AuthorizationUsed log from the token contract";
   } else {
-    const u = used[0]!;
-    ann["authorization_used"] = `authorizer ${addressFromTopic(u.topics[1]!)}, nonce ${u.topics[2]!} (log index ${u.index})`;
+    ann["authorization_used"] = used
+      .map((u) => `authorizer ${addressFromTopic(u.topics[1]!)}, nonce ${u.topics[2]!} (log index ${u.index})`)
+      .join("; ");
   }
 
   if (a === null) {

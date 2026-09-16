@@ -99,6 +99,29 @@ push({
   ],
 });
 
+push({
+  id: "x402-base-payai-0x9ecf68be",
+  dir: "packages/x402-base-payai-0x9ecf68be",
+  title: "Observation: one PayAI-submitted settlement on Base, chain side only",
+  transaction: "0x9ecf68be92ca279e6e8874f4ff7bb882da7da05fe8de362967be5ab4d4f6f835",
+  envelope: "fixtures/x402/observations/payai-2026-09-16-0x9ecf68be.envelope.json",
+  chain: "packages/x402-base-payai-0x9ecf68be/chain.json",
+  statement: "packages/x402-base-payai-0x9ecf68be/statement.md",
+  // No artefacts. That is the whole point of this package: nobody here holds the
+  // 402, the payload or the settle answer for this settlement, and the package
+  // is built out of public bytes and says where that stops.
+  artefacts: [
+    { name: "payai-facilitator-supported_2026-09-10T1254Z.json", from: `${PINS}/payai-facilitator-supported_2026-09-10T1254Z.json`, role: "PayAI's published /supported, as fetched 2026-09-10T12:54Z: the fifteen eip155:* signer addresses this package compares the submitter against. UNSIGNED, and the supplier's word as of that fetch" },
+    { name: "payai-facilitator-openapi_2026-09-10T1412Z.json", from: `${PINS}/payai-facilitator-openapi_2026-09-10T1412Z.json`, role: "PayAI's published OpenAPI, as fetched 2026-09-10T14:12Z: its SettleResponse requires success, transaction, network and payer, and has no signature member" },
+    { name: "discovery/README.txt", from: `${PINS}/payai-chain-2026-09-16/README.txt`, role: "how this settlement was found, from the pin directory, unedited" },
+    { name: "discovery/scan.mjs", from: `${PINS}/payai-chain-2026-09-16/scan.mjs`, role: "the scanner exactly as run: eth_getLogs for AuthorizationUsed on USDC, then eth_getTransactionByHash per candidate" },
+    { name: "discovery/scan-log.json", from: `${PINS}/payai-chain-2026-09-16/scan-log_2026-09-16T1023Z.json`, role: "every JSON-RPC call the scan made, with endpoint, time, HTTP status and the sha256 of each response body" },
+    { name: "discovery/eth_getLogs_51381946-51382346.json", from: `${PINS}/payai-chain-2026-09-16/eth_getLogs_51381946-51382346.json`, role: "the discovery response whole, re-fetched at 10:25:29Z and byte-identical to the digest the scan log recorded at 10:22:49Z" },
+    { name: "discovery/eth_getTransactionByHash_0x9ecf68be.json", from: `${PINS}/payai-chain-2026-09-16/eth_getTransactionByHash_0x9ecf68be.json`, role: "the sender lookup that decided the match, whole" },
+    { name: "discovery/SHA256SUMS.txt", from: `${PINS}/payai-chain-2026-09-16/SHA256SUMS.txt`, role: "the pin directory's own digest list, copied so this package carries the same statement the pins do" },
+  ],
+});
+
 interface ManifestFile {
   path: string;
   bytes: number;
@@ -113,7 +136,11 @@ export function buildManifest(recipe: Recipe, extra: ManifestFile[]): Record<str
   mkdirSync(join(outDir, "artefacts"), { recursive: true });
   for (const a of recipe.artefacts) {
     if (!existsSync(a.from)) throw new Error(`artefact source missing: ${a.from}`);
-    const dest = join(outDir, "artefacts", a.name);
+    const dest = join(outDir, "artefacts", ...a.name.split("/"));
+    // An artefact name may carry a directory: the PayAI package keeps its
+    // discovery record in one, so the bytes that FOUND the settlement sit apart
+    // from the bytes that describe the facilitator.
+    mkdirSync(dirname(dest), { recursive: true });
     copyFileSync(a.from, dest);
     const bytes = readFileSync(dest);
     files.push({

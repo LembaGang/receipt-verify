@@ -9,10 +9,13 @@
 // relations are the only thing separating "some money moved" from "this money
 // moved for this authorization".
 //
-// The two envelopes are the 7 September 2026 settlements on Base, assembled from
-// the artefacts pinned in cc-output (the 402, the payment payload and the settle
-// answer, exactly as the wire carried them) and a chain read taken here. Nothing
-// in this file reaches the network: the chain data is in the fixture.
+// Two of the three envelopes are the 7 September 2026 settlements on Base,
+// assembled from the artefacts pinned in cc-output (the 402, the payment payload
+// and the settle answer, exactly as the wire carried them) and a chain read taken
+// here. The third is somebody else's settlement, chain side only, with all three
+// artefacts absent — the case this format has to handle without pretending it
+// verified anything. Nothing in this file reaches the network: every chain
+// reading is in the fixture.
 //
 // Three constants that could be pasted wrong are RECOMPUTED instead: the EIP-3009
 // typehash and the two event topic0 values. A pasted constant that is wrong makes
@@ -40,6 +43,7 @@ import { FIX, ROOT } from "./helpers.js";
 const SETTLEMENTS = join(FIX, "x402", "settlements");
 const ONE = join(SETTLEMENTS, "settlement-2026-09-07-0x46db8fc8.envelope.json");
 const TWO = join(SETTLEMENTS, "settlement-2026-09-07-0x94bfba79.envelope.json");
+const PAYAI = join(FIX, "x402", "observations", "payai-2026-09-16-0x9ecf68be.envelope.json");
 
 type Doc = Record<string, unknown>;
 
@@ -495,6 +499,76 @@ describe("x402.settlement/2 — chain_unavailable and artefacts_absent", () => {
     const r = await x402SettlementAdapter.verify(Buffer.from(text, "utf8"), {});
     expect(`${r.verdict}/${r.reason}`).toBe("UNVERIFIABLE/malformed_member");
     expect(r.detail).toContain("duplicate member name");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// the observation case over a real third-party settlement: a batched
+// transaction submitted through Multicall, with no artefacts at all
+// ---------------------------------------------------------------------------
+
+describe("x402.settlement/2 — a chain-side observation of someone else's settlement", () => {
+  it("is UNVERIFIABLE/artefacts_absent, with the chain half recorded and the three relations that did not run named", async () => {
+    const r = await run(load(PAYAI));
+    expect(`${r.verdict}/${r.reason}`).toBe("UNVERIFIABLE/artefacts_absent");
+    expect(r.resolvedKey).toBeUndefined();
+    expect(ann(r, "authorization_signature")).toContain("not_evaluated");
+    expect(ann(r, "authorization_matches_requirements")).toContain("not_evaluated");
+    expect(ann(r, "settle_names_authorization")).toContain("not_evaluated");
+    expect(ann(r, "chain_block_number")).toBe("51382192");
+    expect(ann(r, "settlement_instant")).toContain("2026-09-16T10:15:31.000Z");
+    expect(ann(r, "transfer")).toContain("100000 atomic units");
+    expect(ann(r, "authorization_used")).toContain("0xf214f06bdbc8dc3e48f73b6596879e01957b9c20cf0513fab6dcf464a15e19e3");
+    expect(ann(r, "block_at_height")).toContain("has the receipt's blockHash");
+  });
+
+  it("the submitter is in the supplied list, and the annotation still refuses to call that an identification", async () => {
+    const r = await run(load(PAYAI));
+    expect(ann(r, "submitter").toLowerCase()).toBe("0xb2bd29925cbbcea7628279c91945ca5b98bf371b");
+    expect(ann(r, "submitter_list")).toBe("submitter_in_supplied_list");
+    expect(ann(r, "submitter_list_source")).toContain("15 addresses");
+    expect(ann(r, "submitter_list_source")).toContain("a match is not an identification");
+  });
+
+  // THE CONTROL FOR THE TOKEN-CONTRACT RULE, and the reason it exists.
+  //
+  // This transaction's `to` is Multicall3 (0xca11bde0...), not USDC: the
+  // facilitator batches. An earlier version of this adapter read the token
+  // contract off the transaction's `to` when no accepted requirement was
+  // present, which on these exact bytes found ZERO Transfer logs and reported,
+  // with conviction, that a settlement carrying one plainly visible transfer
+  // carried none. The token is now taken from the contract that emitted
+  // AuthorizationUsed, which is EIP-3009's own event.
+  it("takes the token from the AuthorizationUsed emitter, not from a batching transaction's own `to`", async () => {
+    const r = await run(load(PAYAI));
+    expect(ann(r, "transaction_to").toLowerCase()).toBe("0xca11bde05977b3631167028862be2a173976ca11");
+    expect(ann(r, "token_contract").toLowerCase()).toContain("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913");
+    expect(ann(r, "token_contract")).toContain("EIP-3009's own event");
+    expect(ann(r, "transfer_logs")).toBe("1");
+  });
+
+  it("RED: with no AuthorizationUsed and no requirement, nothing names the token and the relation says so", async () => {
+    const bad = clone(load(PAYAI));
+    const receipt = (bad["chain"] as Doc)["receipt"] as Doc;
+    receipt["logs"] = (receipt["logs"] as Doc[]).filter((l) => !(l["topics"] as string[])[0]!.startsWith("0x98de5035"));
+    const r = await run(bad);
+    expect(ann(r, "token_contract")).toContain("not determined");
+    // Every Transfer in the transaction is then in scope, and with no
+    // authorization to pick one out the annotation lists them rather than
+    // choosing. This one carries exactly one, so it still resolves.
+    expect(r.reason).toBe("artefacts_absent");
+  });
+
+  it("an observation whose receipt carries no transfer at all is a contradiction, not a quiet pass", async () => {
+    const bad = clone(load(PAYAI));
+    const receipt = (bad["chain"] as Doc)["receipt"] as Doc;
+    receipt["logs"] = (receipt["logs"] as Doc[]).filter((l) => !(l["topics"] as string[])[0]!.startsWith("0xddf252ad"));
+    const r = await run(bad);
+    expect(`${r.verdict}/${r.reason}`).toBe("UNVERIFIABLE/malformed_member");
+    expect(r.detail).toContain("no money moved that these bytes can point at");
+    // No payload is present, so there is no key to name and this must not be an
+    // INVALID: what disagrees is the supplied chain data with itself.
+    expect(r.resolvedKey).toBeUndefined();
   });
 });
 

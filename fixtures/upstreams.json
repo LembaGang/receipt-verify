@@ -131,6 +131,15 @@
         "reason": "Two paid calls that happened: the 7 September 2026 settlements on Base, each assembled from the artefacts pinned in cc-output and a chain read of its own transaction — a past event has no tip, no URL and no revision, so no kind here can drift-check it."
       },
       {
+        "id": "x402-chain-observations",
+        "paths": [
+          "fixtures/x402/observations/*"
+        ],
+        "rows": "`fixtures/x402/observations/payai-2026-09-16-0x9ecf68be.envelope.json`",
+        "reason_code": "past_capture",
+        "reason": "A settled transaction on Base, read at a height from two endpoints on 2026-09-16 and built into an envelope whose three artefacts are null — a past event on someone else's chain has no tip, no URL and no revision; the bytes it was built from are pinned at cc-output/pins/payai-chain-2026-09-16/ with their own SHA256SUMS.txt."
+      },
+      {
         "id": "x402-evidence-packages",
         "paths": [
           "packages/*"

@@ -1,0 +1,97 @@
+{
+  "schema": "receipt-verify/x402-package/0",
+  "id": "x402-base-payai-0x9ecf68be",
+  "title": "Observation: one PayAI-submitted settlement on Base, chain side only",
+  "transaction": "0x9ecf68be92ca279e6e8874f4ff7bb882da7da05fe8de362967be5ab4d4f6f835",
+  "network": "eip155:8453",
+  "built_at": "2026-09-16T10:27:05.531Z",
+  "built_by": "tools/make-x402-package.ts",
+  "verifier": "@headlessoracle/receipt-verify, format x402.settlement/2",
+  "how_to_check": "sh tools/verify-package.sh <this directory> checks every digest below, that no file in the package is missing from SHA256SUMS, and that SHA256SUMS.sig verifies against the repository's SIGNING_KEYS. npm run walk recomputes every sha256 in this manifest from the file beside it. Neither says the contents are true; statement.md says what they do and do not show.",
+  "files": [
+    {
+      "path": "artefacts/payai-facilitator-supported_2026-09-10T1254Z.json",
+      "bytes": 3515,
+      "sha256": "67bfe234984ed0237af2ae281d52907ef9abff7b9d1824fa8284fd225387c072",
+      "source": "C:/Users/User/cc-output/pins/payai-facilitator-supported_2026-09-10T1254Z.json",
+      "role": "PayAI's published /supported, as fetched 2026-09-10T12:54Z: the fifteen eip155:* signer addresses this package compares the submitter against. UNSIGNED, and the supplier's word as of that fetch"
+    },
+    {
+      "path": "artefacts/payai-facilitator-openapi_2026-09-10T1412Z.json",
+      "bytes": 46124,
+      "sha256": "4865bc1c9c0903293807c69aca15d6bb33f6632a9115ed52694d89b887b1ab58",
+      "source": "C:/Users/User/cc-output/pins/payai-facilitator-openapi_2026-09-10T1412Z.json",
+      "role": "PayAI's published OpenAPI, as fetched 2026-09-10T14:12Z: its SettleResponse requires success, transaction, network and payer, and has no signature member"
+    },
+    {
+      "path": "artefacts/discovery/README.txt",
+      "bytes": 4152,
+      "sha256": "f9f8b4e746ddead6c7ba85673f29ad4cd7ee3a93db13248d3dc42172bba78dd0",
+      "source": "C:/Users/User/cc-output/pins/payai-chain-2026-09-16/README.txt",
+      "role": "how this settlement was found, from the pin directory, unedited"
+    },
+    {
+      "path": "artefacts/discovery/scan.mjs",
+      "bytes": 3469,
+      "sha256": "0025e7fc3a6e07733e6a9b236ab265fb5866b961506e13e33b14936acd435e90",
+      "source": "C:/Users/User/cc-output/pins/payai-chain-2026-09-16/scan.mjs",
+      "role": "the scanner exactly as run: eth_getLogs for AuthorizationUsed on USDC, then eth_getTransactionByHash per candidate"
+    },
+    {
+      "path": "artefacts/discovery/scan-log.json",
+      "bytes": 58049,
+      "sha256": "ceeaca30bec9d8d4ad1d23e85200b678d77361f430b8256e3eab96ffe568bf47",
+      "source": "C:/Users/User/cc-output/pins/payai-chain-2026-09-16/scan-log_2026-09-16T1023Z.json",
+      "role": "every JSON-RPC call the scan made, with endpoint, time, HTTP status and the sha256 of each response body"
+    },
+    {
+      "path": "artefacts/discovery/eth_getLogs_51381946-51382346.json",
+      "bytes": 503684,
+      "sha256": "dda4b1bfc015983d055aee993178f2b73f8f1321286daf5004abec68e962d965",
+      "source": "C:/Users/User/cc-output/pins/payai-chain-2026-09-16/eth_getLogs_51381946-51382346.json",
+      "role": "the discovery response whole, re-fetched at 10:25:29Z and byte-identical to the digest the scan log recorded at 10:22:49Z"
+    },
+    {
+      "path": "artefacts/discovery/eth_getTransactionByHash_0x9ecf68be.json",
+      "bytes": 1966,
+      "sha256": "9cfac5b13ed377e9bb864160ad8cf21d6c4e4791a5a66eeee2151b40751a4d6e",
+      "source": "C:/Users/User/cc-output/pins/payai-chain-2026-09-16/eth_getTransactionByHash_0x9ecf68be.json",
+      "role": "the sender lookup that decided the match, whole"
+    },
+    {
+      "path": "artefacts/discovery/SHA256SUMS.txt",
+      "bytes": 647,
+      "sha256": "5c04ef423930d14fec08a85ff725bc244b868474017f8839d376326773988577",
+      "source": "C:/Users/User/cc-output/pins/payai-chain-2026-09-16/SHA256SUMS.txt",
+      "role": "the pin directory's own digest list, copied so this package carries the same statement the pins do"
+    },
+    {
+      "path": "envelope.json",
+      "bytes": 22407,
+      "sha256": "2e3c0ac383ec0f17893281c22c068660b8130496fd12df6946fbc6713ac27e8d",
+      "source": "generated in packages/x402-base-payai-0x9ecf68be",
+      "role": "the x402.settlement/2 envelope the verdict was taken over: the three artefacts above plus the chain reading below, in one document"
+    },
+    {
+      "path": "verdict.json",
+      "bytes": 3069,
+      "sha256": "106f585a79b446e39ad26ff515d9921ebbf2ec4be69a51d6ffd42d8f1a4bab6f",
+      "source": "generated in packages/x402-base-payai-0x9ecf68be",
+      "role": "the verifier's full output, coverage block included, as `receipt-verify --format x402 --json` prints it"
+    },
+    {
+      "path": "chain.json",
+      "bytes": 56922,
+      "sha256": "7bc78b7078504d6c66337d2848f796ab6e2ff5f7c0580526dcb909bb10bc0f8f",
+      "source": "generated in packages/x402-base-payai-0x9ecf68be",
+      "role": "both endpoints' raw answers with URLs, read times and per-response digests, and whether they agree"
+    },
+    {
+      "path": "statement.md",
+      "bytes": 5628,
+      "sha256": "ba1b62c2284ea424982fbabd01970ab0858a110235bf6f24db73f5138664c2ae",
+      "source": "generated in packages/x402-base-payai-0x9ecf68be",
+      "role": "what this package establishes, what it does not, and the standing Interests paragraph"
+    }
+  ]
+}
