@@ -5,6 +5,76 @@ Shipped versions, newest first. Entries queued against the next release live in
 
 ## 0.1.3 (unreleased)
 
+**A fifth format, `x402.settlement/2`, and the first thing to say about it is what it cannot
+establish.** In an x402 v2 `exact` settlement on EVM there is exactly one signature and it covers six
+values — `from`, `to`, `value`, `validAfter`, `validBefore`, `nonce`. The resource being paid for is
+not among them; neither is the 402 object, the payload's own `resource` and `accepted` members, nor
+anything the facilitator answers. So a verifier holding every artefact of a paid call can prove that a
+named account authorized a transfer and that the transfer happened, and cannot prove what was bought.
+That is `limit_resource_binding: "unsigned"`, it is on **every** result of this format including
+`VALID`, and it is a `reported_only` row in the coverage block beside `facilitator_identity`
+(the submitter-to-facilitator tie rests on an unsigned list fetched at a time) and `rpc_trust` (an
+endpoint's answer is not evidence unless the block is at height and a second endpoint agrees). x402 v2
+also defines no container for what a merchant or buyer HOLDS after the exchange — the three objects
+end up in two headers, a response body and a chain — so the envelope that puts them in one document is
+this repository's, and the manifest's first check, `envelope_shape`, says so rather than letting it
+pass for the protocol's.
+
+Six relations, each with a coverage row, an annotation token, and a test that fails when the relation
+is removed: the EIP-712 signature over `TransferWithAuthorization` recovers `authorization.from`; the
+authorization pays terms the 402 actually published, found by equality of the whole requirement object
+rather than by an index nobody recorded; the settle answer names that payer, network and a 32-byte
+transaction; the receipt carries exactly one `Transfer` matching the authorization and an
+`AuthorizationUsed` carrying its nonce; the block at the receipt's height carries the receipt's block
+hash; and the submitter is recorded. Three reason codes are additive to the closed vocabulary —
+`chain_unavailable`, `artefacts_absent` and `chain_contradicts_artefacts` — and `invalid()` gains an
+optional annotations argument, because INVALID was the one verdict that could carry none and a dispute
+package built around one needs to show which relations held before the one that failed. EIP-712
+encoding and secp256k1 recovery are reused from the Insight adapter, which writes them from the EIP
+text; the EIP-3009 typehash and both event topic0 values are recomputed in the test rather than
+pasted, because a wrong constant makes every check under it vacuous **and green**.
+
+`success: false` is not a failed settlement here. The facilitator's own published `SettleResponse`
+says `settlement_pending` means the outcome is unresolved, so `errorReason` is annotated and the chain
+relations still run — the chain, not the facilitator's word, answers whether the money moved.
+`block_at_height` exists for the same reason from the other side: a sub-second preconfirmation is not a
+block at height, and a receipt is evidence only once the block it names carries the hash it claims.
+
+**Three evidence packages, under `packages/`, and the checks on them are falsifiable.** Two are this
+operator's own paid calls of 7 September 2026 on Base; both verify `VALID`. The third is somebody
+else's settlement found from public chain data — `eth_getLogs` for `AuthorizationUsed` on USDC over a
+window ending 64 blocks behind the tip, then the sender of each candidate against the fifteen signer
+addresses PayAI publishes — and it is `UNVERIFIABLE` / `artefacts_absent`, shown as it is, because a
+transfer with no 402, no payload and no settle answer beside it shows money moving and nothing about
+what was bought. `tools/verify-package.sh` needs no key but `SIGNING_KEYS` and checks every listed
+digest, that no file in the package is missing from `SHA256SUMS`, and the signature over the list; each
+of the three was driven red on the input that should break it and restored. `npm run walk` gains the
+`x402-packages` corpus and a `pkg_manifest_sha256` rule that recomputes all 35 of the packages'
+declared digests from the files beside them — the second, independent statement, because
+`verify-package.sh` checks a package against *itself* and would pass for any internally consistent
+directory, including one whose manifest was rebuilt around altered artefacts.
+
+**Two findings recorded against our own side rather than anyone else's.** The paid 200's body in the
+second package — our own signed market-state receipt — carries no settlement member: no transaction,
+no payer, no nonce. So the delivered bytes are not bound to the payment by a signature on our side
+either, and the only tie between them is that both sit in one directory with instants three seconds
+apart (B-81, open). And the PayAI transaction found the adapter wrong: that facilitator batches
+through Multicall3, so the transaction's `to` is the aggregator and not the token, and the observation
+path had been reading the token contract off `to` — on those exact bytes it found zero `Transfer` logs
+and reported, with conviction, that a settlement carrying one plainly visible transfer carried none.
+The token is now taken from the contract that emitted `AuthorizationUsed`, which is EIP-3009's own
+event, and the test asserts both halves so the wrong answer cannot come back green.
+
+The x402 v2 specification is pinned as bytes for the first time, at the commit
+`fixtures/upstreams.json` had watched by blob id since 8 September. The fetched bytes hash to the
+sha256 that entry has carried since then, so the pin was checked rather than restated — had they
+differed the pin would have been wrong for eight days with nothing in the repository saying so.
+`packages/** -text` is placed **last** in `.gitattributes`, because the last matching line wins there
+and a signed package whose line endings are rewritten on someone else's checkout is the worst shape a
+verification failure can take; `git check-attr` reports that the same ordering already overrides
+`fixtures/** -text` and `refs/** -text`, which is recorded in that file and not changed, since
+changing it rewrites bytes the pins are taken over.
+
 Nothing checked `fixtures/upstreams.json` against the corpora that actually exist, so a corpus with
 no entry was indistinguishable in a drift run's output from a corpus that was fine — and one already
 was: `fixtures/delivery/` had been graded by the walker on every run since 2 September with no

@@ -699,6 +699,53 @@ people consume these findings, there is no reader who will notice the date.
 
 ---
 
+## Evidence packages (`packages/`)
+
+A verdict is a line of output. A package is a directory someone else can be
+handed, and can check without trusting the sender and without a key of their
+own. `packages/` holds three:
+
+| package | what it is | verdict |
+|---|---|---|
+| `x402-base-2026-09-07-0x46db8fc8/` | one of this operator's own paid calls, 7 September 2026 on Base, with the artefacts as the wire carried them | `VALID` |
+| `x402-base-2026-09-07-0x94bfba79/` | the second paid call of the same day, with the delivered response beside it | `VALID` |
+| `x402-base-payai-0x9ecf68be/` | somebody else's settlement, chain side only, found from public bytes | `UNVERIFIABLE` / `artefacts_absent` |
+
+Each carries `artefacts/` (byte for byte, with the source path of every file
+recorded in `manifest.json` beside its sha256 and byte count), `envelope.json`,
+`chain.json` (both endpoints' answers, read times, and per-response digests),
+`verdict.json` (the verifier's full output including its `coverage` block),
+`statement.md`, `manifest.json`, and `SHA256SUMS` with `SHA256SUMS.sig`.
+
+```bash
+sh tools/verify-package.sh packages/x402-base-2026-09-07-0x46db8fc8
+```
+
+That needs no key but this repository's own `SIGNING_KEYS`, and it checks three
+things, each of which fails on the input that should fail it:
+
+1. **every listed digest** — one altered byte in any file exits 1;
+2. **that no file in the package is missing from `SHA256SUMS`** — otherwise the
+   list is a claim about the files someone remembered to put in it, and a file
+   added afterwards would ride inside a package whose verification passes while
+   asserting nothing about it;
+3. **the signature over the list**, under namespace `file`, so it cannot be
+   replayed as a git signature.
+
+`npm run walk` is the second, independent statement: it recomputes every
+`sha256` in every package's `manifest.json` from the file beside it. That
+matters because `verify-package.sh` checks a package against *itself* and would
+pass for any internally consistent directory, including one whose manifest was
+rebuilt around altered artefacts.
+
+**What a passing package does not establish.** That its contents are true. Each
+`statement.md` says in words what its own bytes do and do not show, and for this
+format that second half is the important one — see the three limits in Format 5.
+`tools/sign-package.sh` writes and signs the list; it is the only file in this
+repository that reads a private key.
+
+---
+
 ## Verifying the history
 
 Every commit here is SSH-signed. `SIGNING_KEYS` (repository root) is an
@@ -721,11 +768,12 @@ fingerprint above.
 
 ```bash
 npm run typecheck
-npm test                            # 260 tests, no network
+npm test                            # 750 tests, no network
 RECEIPT_VERIFY_LIVE=1 npm test      # adds the live-JWKS and live exit-contract tests
 npm run snapshot                    # re-pull remote fixtures + rewrite provenance
 npm run fixtures                    # regenerate throwaway-signed fixtures
 npm run walk                        # recompute every declared digest in the pinned corpora
+sh tools/verify-package.sh packages/<name>    # check one evidence package end to end
 ```
 
 `npm run walk` reads `walker/scopes.json` -- the byte scope each pinned corpus's
