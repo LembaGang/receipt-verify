@@ -981,11 +981,18 @@ function registryEntryForArtefact(art: Attestation, reg: Registry): RegistrySche
  * an absent annotation that the semantics went unchecked. The remaining step is
  * recorded in the report of 2026-09-09 and in FINDINGS.
  */
-function profileObservation(art: Attestation, reg: Registry): string | null {
+export type ProfileState =
+  | { state: "no_entry" }
+  | { state: "not_published"; line: string }
+  | { state: "match"; line: string }
+  | { state: "unrecognised"; line: string; observed: string; expected: string; field: string }
+  | { state: "absent"; line: string; expected: string; field: string };
+
+function profileObservation(art: Attestation, reg: Registry): ProfileState {
   const hit = registryEntryForArtefact(art, reg);
   const v = num(art.data["schemaVersion"]);
   const where = `${art.primaryType}${v === null ? "" : ` v${v}`}`;
-  if (hit === undefined) return null;
+  if (hit === undefined) return { state: "no_entry" };
 
   const field = hit.semanticProfileSignedField;
   if (hit.semanticProfileId === undefined || field === undefined) {
@@ -994,28 +1001,46 @@ function profileObservation(art: Attestation, reg: Registry): string | null {
     // the first is what let the 8 September change go unremarked.
     const mine = str(art.data["profileId"]);
     if (mine !== null) {
-      return `signed profileId ${mine}, but ${reg.origin} publishes no semanticProfile for ${where}, so nothing here establishes what it commits to`;
+      return {
+        state: "not_published",
+        line: `signed profileId ${mine}, but ${reg.origin} publishes no semanticProfile for ${where}, so nothing here establishes what it commits to`,
+      };
     }
-    return `not_published — ${reg.origin} declares no semanticProfile for ${where}; this layout does not sign one, and its semantics resolve through the registry snapshot pinned with the receipt`;
+    return {
+      state: "not_published",
+      line: `not_published — ${reg.origin} declares no semanticProfile for ${where}; this layout does not sign one, and its semantics resolve through the registry snapshot pinned with the receipt`,
+    };
   }
 
   const signedHere = (art.types[art.primaryType] ?? []).some((f) => f.name === field);
   const mine = str(art.data[field]);
   if (mine === null) {
-    return `MISSING — ${reg.origin} publishes semanticProfile ${hit.semanticProfileId} for ${where} and names \`${field}\` as the member that carries it; this artefact signs no such member`;
+    return {
+      state: "absent",
+      expected: hit.semanticProfileId,
+      field,
+      line: `MISSING — ${reg.origin} publishes semanticProfile ${hit.semanticProfileId} for ${where} and names \`${field}\` as the member that carries it; this artefact signs no such member`,
+    };
   }
   const inBytes = signedHere
     ? `inside the signed bytes (the encodeType above names it)`
     : `NOT in the signed bytes — the member is present in \`data\` but absent from the declared type, so it is carried beside the signature rather than by it`;
   if (!sameAddress(mine, hit.semanticProfileId)) {
-    return (
-      `profile_unrecognised — the receipt signs ${field} ${mine}, ${inBytes}, and ${reg.origin} publishes ` +
-      `${hit.semanticProfileId} for ${where}. The commitment, sentinel, scale and verdict semantics this receipt ` +
-      `names are NOT established by this registry. The verdict does not move on it: this tool reports what the ` +
-      `registry says and the issuer's own rule is that an unrecognised profile fails closed, which is the caller's policy`
-    );
+    return {
+      state: "unrecognised",
+      observed: mine,
+      expected: hit.semanticProfileId,
+      field,
+      line:
+        `profile_unrecognised — the receipt signs ${field} ${mine}, ${inBytes}, and ${reg.origin} publishes ` +
+        `${hit.semanticProfileId} for ${where}. The commitment, sentinel, scale and verdict semantics this receipt ` +
+        `names are NOT established by this registry`,
+    };
   }
-  return `${mine} — ${inBytes}; equals the semanticProfile ${reg.origin} publishes for ${where}${hit.semanticProfileUrl === undefined ? "" : ` (${hit.semanticProfileUrl})`}`;
+  return {
+    state: "match",
+    line: `${mine} — ${inBytes}; equals the semanticProfile ${reg.origin} publishes for ${where}${hit.semanticProfileUrl === undefined ? "" : ` (${hit.semanticProfileUrl})`}`,
+  };
 }
 
 function compareRegistrySchema(art: Attestation, reg: Registry): { line: string; domainLine: string | null } {
@@ -1093,6 +1118,13 @@ interface Ctx {
    * is discovered in the middle of the run and is needed at the end of it.
    */
   legacyTarget: boolean;
+  /**
+   * `conditional` checks whose condition the TARGET's own shape did not meet,
+   * collected as they are decided. The package-shaped ones (binding, swap,
+   * prices, chain) are added by the adapter body, which is where the package's
+   * shape is known.
+   */
+  conditionsUnmet: { id: string; condition: string }[];
 }
 
 /**
@@ -1355,6 +1387,9 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string, isTarget: boolean
 
   // ---- 5. identity -------------------------------------------------------
   let key = selfDeclaredKey(art);
+  // Computed inside the registry branch below and ACTED ON after it, never
+  // inside it: see the refusal after this block for why the order matters.
+  let profileState: ProfileState = { state: "no_entry" };
   if (ctx.registryError !== null) {
     return fail(unverifiable(FORMAT, "io_error", ctx.registryError, ann, "identity"));
   }
@@ -1378,8 +1413,8 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string, isTarget: boolean
     ann[p("registry_schema")] = cmp.line;
     if (cmp.domainLine !== null) ann[p("registry_domain_version")] = cmp.domainLine;
     // Which semantics these bytes committed to, beside which layout they used.
-    const profile = profileObservation(art, ctx.registry);
-    if (profile !== null) ann[p("semantic_profile")] = profile;
+    profileState = profileObservation(art, ctx.registry);
+    if (profileState.state !== "no_entry") ann[p("semantic_profile")] = profileState.line;
 
     // THE KEY'S ROLE, on every result whose signer resolved to a registry entry
     // — including each refusal below. A reader must not have to reach VALID to
@@ -1559,7 +1594,66 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string, isTarget: boolean
     }
   }
 
-  // ---- 6. freshness ------------------------------------------------------
+  // ---- 6. profile — what the signed numbers MEAN ---------------------------
+  //
+  // `schemaVersion` names the EIP-712 field layout and nothing more. What a
+  // `preTradeUidsHash` is built over, what a zero uid means, what scale a price
+  // is at and which verdict follows from which fields live in the immutable
+  // content-addressed profile. On 2026-09-08 this repository found the issuer had
+  // rewritten a commitment rule with the layout version unchanged (FINDINGS F10);
+  // the profile is the fix, and a receipt naming a profile the registry does not
+  // publish leaves the reader exactly where F10 found them.
+  //
+  // WHY THIS IS NOW A REFUSAL, when until 2026-09-16 it was an annotation ending
+  // "The verdict does not move on it". The old reasoning was that turning the
+  // issuer's fail-closed rule into a refusal is a caller's policy rather than
+  // this check's call. That was wrong about which rule was being applied. An
+  // unrecognised profile is an UNKNOWN STATE — the semantics of every signed
+  // number in the receipt are unestablished — and an unknown state resolving to
+  // the restricted default is this tool's own contract, not a policy borrowed
+  // from the issuer. FINDINGS F15 gap 2 records it as owed by us and YuTao's
+  // letter of 9 September acknowledges it from their side.
+  //
+  // PLACEMENT, and why it is after the identity block rather than inside it. The
+  // observation is computed above, where the registry entry is resolved; the
+  // refusal is issued here, once identity has run to completion. If it were
+  // issued inline, `stoppedAt: "profile"` would claim identity had run when the
+  // profile branch sits in the middle of it, and every identity refusal ordered
+  // after the profile lookup would become unreachable. Here, a receipt whose key
+  // is revoked still reports `key_revoked` — the stronger and earlier fact.
+  if (profileState.state === "unrecognised") {
+    ann[p("profile_observed")] = profileState.observed;
+    ann[p("profile_expected")] = profileState.expected;
+    ann[p("profile_signed_field")] = profileState.field;
+    return fail(
+      unverifiable(
+        FORMAT,
+        "profile_unrecognised",
+        `${profileState.line}. An unrecognised profile is an unknown state: the commitment constructions, sentinels, scales ` +
+          `and verdict rules this receipt commits to are not established by the registry supplied, so no verdict is stated ` +
+          `under them. The issuer's own admission rule fails closed on this, and so does the unknown-state rule of this tool`,
+        ann,
+        "profile",
+      ),
+    );
+  }
+  if (profileState.state === "absent") {
+    ann[p("profile_expected")] = profileState.expected;
+    ann[p("profile_signed_field")] = profileState.field;
+    return fail(
+      unverifiable(
+        FORMAT,
+        "profile_absent",
+        `${profileState.line}. The registry names that member as the one carrying the semantic profile id for this layout and ` +
+          `the receipt signs none, so there is nothing to compare and the semantics of its signed fields are unestablished. ` +
+          `Distinct from an unrecognised profile, where two ids disagree: here there is no id at all`,
+        ann,
+        "profile",
+      ),
+    );
+  }
+
+  // ---- 7. freshness ------------------------------------------------------
   const validUntil = num(art.data["validUntil"]);
   const checkedAt = num(art.data["checkedAt"]);
   const executedAt = num(art.data["executedAt"]);
@@ -1586,6 +1680,30 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string, isTarget: boolean
         "freshness",
       ),
     );
+  }
+
+  // The two checks this format declares conditional on the TARGET's own shape.
+  // Recorded where the shape is known and reported in `coverage`, so an agent
+  // reading that block alone can tell a v5 verdict (snapshot does not apply)
+  // from a legacy one (it applied and passed) without parsing prose.
+  if (isTarget) {
+    if (!legacy) {
+      ctx.conditionsUnmet.push({
+        id: "snapshot",
+        condition:
+          `applies to a target ExecutionReceipt with a signed schemaVersion below 5; this is ${art.primaryType}` +
+          `${schemaVersion === null ? " with no signed schemaVersion" : ` v${schemaVersion}`}`,
+      });
+    }
+    if (profileState.state === "no_entry" || profileState.state === "not_published") {
+      ctx.conditionsUnmet.push({
+        id: "profile",
+        condition:
+          ctx.registry === null
+            ? "applies when a registry publishes a semanticProfile for this layout; no registry was supplied"
+            : `applies when the registry publishes a semanticProfile for this artefact's own layout; ${ctx.registry.origin} publishes none for ${art.primaryType}${schemaVersion === null ? "" : ` v${schemaVersion}`}`,
+      });
+    }
   }
 
   return { ok: true, key, ann, digest };
@@ -2463,6 +2581,7 @@ async function verifyInsight(bytes: Uint8Array, opts: VerifyOptions, ref: { ctx:
     snapshot,
     snapshotClaim: opts.registrySha256 === undefined ? null : opts.registrySha256.toLowerCase(),
     legacyTarget: false,
+    conditionsUnmet: [],
   };
   ref.ctx = ctx;
 
@@ -2488,7 +2607,23 @@ async function verifyInsight(bytes: Uint8Array, opts: VerifyOptions, ref: { ctx:
   if (pkg === null) {
     Object.assign(ann, precedenceAnnotations(target));
     ann["observations"] = OBSERVATIONS_LINE;
-    return valid(FORMAT, `EIP-712 digest, signature and schema checks passed for a single ${target.primaryType} attestation`, stage.key, ann);
+    // A bare attestation meets NONE of the package-shaped conditions. Saying so
+    // in `coverage` is the whole of B-132's second half: without these rows this
+    // result and a full package's are identical in the one block built to say
+    // what a verdict examined.
+    ctx.conditionsUnmet.push(
+      { id: "binding", condition: "applies when a package supplies pre-trade gates; this is a single attestation, so preTradeUid, destinationPreTradeUid, preTradeUidsHash and requestHash were not examined against anything" },
+      { id: "swap", condition: "applies when a package ships an onchain block naming the swap legs; this is a single attestation, so no pool event was decoded" },
+      { id: "prices", condition: "applies when a package supplies gates to recompute the quote from; this is a single attestation" },
+      { id: "chain", condition: "applies when --rpc is given AND the package ships an onchain block; this is a single attestation" },
+    );
+    return valid(
+      FORMAT,
+      `EIP-712 digest, signature and schema checks passed for a single ${target.primaryType} attestation`,
+      stage.key,
+      ann,
+      ctx.conditionsUnmet,
+    );
   }
 
   // ---- the gates -------------------------------------------------------
@@ -2526,6 +2661,7 @@ async function verifyInsight(bytes: Uint8Array, opts: VerifyOptions, ref: { ctx:
   const dstUid = str(pkg.receipt.data["destinationPreTradeUid"]);
   if (pkg.sourceGate === null) {
     ann["binding"] = "not_checked (package carries no sourceGate)";
+    ctx.conditionsUnmet.push({ id: "binding", condition: "applies when the package supplies a sourceGate; this one carries none" });
   } else {
     const b = checkBinding(pkg.receipt, pkg.sourceGate, "source");
     if (!b.ok) {
@@ -2591,6 +2727,7 @@ async function verifyInsight(bytes: Uint8Array, opts: VerifyOptions, ref: { ctx:
   if (pkg.onchain === null) {
     ann["swap"] = "not_checked (package carries no onchain block)";
     ann["attribution"] = "not_checked (package carries no onchain block)";
+    ctx.conditionsUnmet.push({ id: "swap", condition: "applies when the package ships an onchain block; this one carries none" });
   } else {
     const sw = checkSwap(pkg.receipt, pkg.onchain, opts);
     if (sw.ok === false) {
@@ -2609,6 +2746,9 @@ async function verifyInsight(bytes: Uint8Array, opts: VerifyOptions, ref: { ctx:
     return invalid(FORMAT, "content_commitment_mismatch", `the receipt's quote does not come out of the gates it binds to: ${pr.detail}`, stage.key, "binding");
   }
   Object.assign(ann, pr.ann);
+  if (String(ann["prices"] ?? "").startsWith("not_checked")) {
+    ctx.conditionsUnmet.push({ id: "prices", condition: "applies when the receipt carries quotedPrice and executedPrice; it does not" });
+  }
 
   // ---- 9c. measuredFieldsHash -----------------------------------------
   Object.assign(ann, checkMeasuredFields(pkg.receipt, pkg.raw));
@@ -2616,8 +2756,10 @@ async function verifyInsight(bytes: Uint8Array, opts: VerifyOptions, ref: { ctx:
   // ---- 10. chain -------------------------------------------------------
   if (opts.rpc === undefined) {
     ann["chain"] = "not_checked (no rpc)";
+    ctx.conditionsUnmet.push({ id: "chain", condition: "applies when --rpc is given; it was not" });
   } else if (pkg.onchain === null) {
     ann["chain"] = "not_checked (package carries no onchain block)";
+    ctx.conditionsUnmet.push({ id: "chain", condition: "applies when the package ships an onchain block; this one carries none" });
   } else {
     const c = await checkChain(pkg.receipt, pkg.onchain, opts.rpc, facts?.recipient ?? null);
     if (c.ok === "io") {
@@ -2640,6 +2782,7 @@ async function verifyInsight(bytes: Uint8Array, opts: VerifyOptions, ref: { ctx:
     "EIP-712 digests, signatures, schema, receipt-to-gate binding and the pool fill all recompute from the bytes supplied",
     stage.key,
     ann,
+    ctx.conditionsUnmet,
   );
 }
 

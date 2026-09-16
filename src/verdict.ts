@@ -10,10 +10,15 @@ export function valid(
   detail: string,
   resolvedKey: ResolvedKey,
   annotations?: Record<string, string | number | boolean>,
+  conditionsUnmet?: { id: string; condition: string }[],
 ): VerifyResult {
-  return annotations === undefined
-    ? { verdict: "VALID", reason: "verified", detail, format, resolvedKey }
-    : { verdict: "VALID", reason: "verified", detail, format, resolvedKey, annotations };
+  const base: VerifyResult = { verdict: "VALID", reason: "verified", detail, format, resolvedKey };
+  if (annotations !== undefined) base.annotations = annotations;
+  // A VALID is exactly where this matters most: evaluation ran to the end, so
+  // `not_reached` says nothing, and without these rows a bare attestation's
+  // coverage block is indistinguishable from a full package's.
+  if (conditionsUnmet !== undefined && conditionsUnmet.length > 0) base.conditionsUnmet = conditionsUnmet;
+  return base;
 }
 
 /**
@@ -105,10 +110,16 @@ export function unverifiable(
   detail: string,
   annotations?: Record<string, string | number | boolean>,
   stoppedAt?: string,
+  conditionsUnmet?: { id: string; condition: string }[],
 ): VerifyResult {
   const base: VerifyResult = { verdict: "UNVERIFIABLE", reason, detail, format };
   if (annotations !== undefined) base.annotations = annotations;
   if (stoppedAt !== undefined) base.stoppedAt = stoppedAt;
+  // Optional here for the refusals that stop nowhere — a result whose evaluation
+  // ran to the end and still established nothing. Where `stoppedAt` is set, the
+  // precedence in `checksNotEvaluated` keeps `not_reached` ahead of these, so
+  // passing both cannot make a stopped run look merely unconditioned.
+  if (conditionsUnmet !== undefined && conditionsUnmet.length > 0) base.conditionsUnmet = conditionsUnmet;
   return base;
 }
 
@@ -254,7 +265,7 @@ export function formatResult(r: VerifyResult, opts: OutputOptions = {}): string 
   // no way to tell a check that ran and passed from one that never ran — and
   // reading a refusal as "everything before it was fine" is exactly the
   // inference that hid comp-r04's unevaluated recompute.
-  const missed = checksNotEvaluated(r.format, r.stoppedAt);
+  const missed = checksNotEvaluated(r.format, r.stoppedAt, r.conditionsUnmet);
   if (missed.length > 0) {
     if (r.stoppedAt) lines.push(`stopped at: ${r.stoppedAt}`);
     for (const m of groupByReason(missed)) lines.push(`not evaluated (${m.reason}): ${m.ids.join(", ")}`);
@@ -285,7 +296,7 @@ export function jsonResult(r: VerifyResult, opts: OutputOptions = {}): string {
       // to the end of the format's checks.
       coverage: {
         stopped_at: r.stoppedAt ?? null,
-        checks_not_evaluated: checksNotEvaluated(r.format, r.stoppedAt),
+        checks_not_evaluated: checksNotEvaluated(r.format, r.stoppedAt, r.conditionsUnmet),
       },
       // Null unless --require-delivery was passed. Without this field, a
       // `verdict: "VALID"` carrying `exit_code: 1` is unexplainable from the

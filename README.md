@@ -226,13 +226,26 @@ exist here"*. So every result carries a `coverage` block:
 ```
 
 `stopped_at` is `null` exactly when evaluation ran to the end of the format's
-checks. Two reasons are distinguished:
+checks. Three reasons are distinguished:
 
 - **`not_reached`** — implemented, but evaluation stopped before it.
 - **`not_implemented`** — declared by a normative source or by the published
   conformance corpus, and **not evaluated by this tool at all**. These are
   reported on every result, *including `VALID`* — a VALID verdict does not mean
   every declared check was evaluated, and saying so plainly is the point.
+- **`condition_unmet`** — a `conditional` check whose condition the supplied
+  shape did not meet, with a `condition` field saying which, in words: a receipt
+  with no gates to bind to, a package with no on-chain block, a caller who
+  passed no `--rpc`. **Not a gap in the tool** — a check that had nothing to run
+  against. It is reported because without it a bare attestation's coverage block
+  and a full package's are identical, and an agent would have to parse the
+  adapter's prose annotations to learn that `preTradeUidsHash` was never
+  examined.
+
+Where a row could carry more than one, the precedence is `not_implemented`, then
+`not_reached`, then `condition_unmet`: a check that is never evaluated says so
+first, and a check evaluation never reached reports the stop, which is the
+stronger and earlier fact about the run.
 
 The declarations live in `src/coverage.ts`, one manifest per format, each check
 carrying its id, its source, and its status (`implemented`, `conditional`,

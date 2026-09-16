@@ -52,6 +52,21 @@ export interface VerifyResult {
    */
   annotations?: Record<string, string | number | boolean>;
   /**
+   * Checks this format declares `conditional` whose CONDITION was not met by the
+   * shape of what was supplied — a receipt with no gates to bind to, a package
+   * with no on-chain block, a caller who passed no `--rpc`. Each carries the
+   * check id and the condition in words.
+   *
+   * These are not failures and not gaps in the tool: they are checks that had
+   * nothing to run against. They are reported because an agent reading
+   * `coverage` alone would otherwise see a bare attestation's result as
+   * indistinguishable from a full package's, and would have to parse the
+   * adapter's prose annotations to learn that `preTradeUidsHash` was never
+   * examined. `checksNotEvaluated` merges them in under
+   * `reason: "condition_unmet"`.
+   */
+  conditionsUnmet?: { id: string; condition: string }[];
+  /**
    * The `src/coverage.ts` check id at which evaluation stopped, on any result
    * that did not run the format's checks to the end. Everything ordered after
    * it was not evaluated, and the output says so rather than leaving a caller
@@ -141,6 +156,31 @@ export type ReasonCode =
    * fail-closed side of an UNVERIFIABLE.
    */
   | "registry_snapshot_mismatch"
+  /**
+   * The receipt signs a semantic profile id the registry does not publish for
+   * its layout. `schemaVersion` names the EIP-712 field layout and nothing more;
+   * the commitment constructions, the sentinels, the scales and the verdict
+   * rules live in the content-addressed profile, so a profile nobody published
+   * means the semantics of every signed number in the receipt are unestablished.
+   * The issuer's rule is that an unrecognised profile fails closed; an unknown
+   * state resolving to the restricted default is, in this tool, UNVERIFIABLE.
+   * Distinct from `key_unresolvable`, which is about who signed: this one is
+   * about what the signature means. Additive to this union — a consumer
+   * branching on the older members falls through to its default, which is the
+   * fail-closed side of an UNVERIFIABLE.
+   */
+  | "profile_unrecognised"
+  /**
+   * The registry names a member as the one that carries the semantic profile id
+   * for this layout, and the receipt signs no such member. Distinct from
+   * `profile_unrecognised`, which names two ids that disagree: here there is
+   * nothing to compare, and a consumer that could not tell them apart could not
+   * tell a receipt committing to the wrong semantics from one committing to
+   * none. Additive to this union — a consumer branching on the older members
+   * falls through to its default, which is the fail-closed side of an
+   * UNVERIFIABLE.
+   */
+  | "profile_absent"
   | "chain_unavailable"
   /**
    * The envelope carries chain data and none of the three off-chain artefacts,

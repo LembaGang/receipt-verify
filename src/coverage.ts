@@ -432,15 +432,23 @@ const insight: FormatCoverage = {
       note: "An unpublished signer is UNVERIFIABLE/key_unresolvable, never INVALID: a signature that verifies under a key nobody published is not a forgery, it is an unestablished identity. --allow-unregistered-signer continues past it and asserts nothing about identity. Being LISTED is not being vouched for: this registry retains a rotated-out key in `public_keys` with `revoked: false` and a past `validUntil` (its `key_rotation_policy` calls that overlap), so the key's `validFrom`/`validUntil` are applied against --now and a closed window is UNVERIFIABLE/expired at this check (`not_yet_valid` before `validFrom`), with no key line printed. --allow-unregistered-signer does NOT waive it — the key is registered, its window is shut — and the way to verify a receipt signed before a rotation is to pass the instant it was signed at as --now. A window member present but unreadable is UNVERIFIABLE/malformed_member rather than open-ended. The key's window is applied a SECOND time, against the ARTEFACT'S OWN instant — `signedAt`, falling back to the signed `executedAt`/`checkedAt`, with `identity_signing_instant` naming which member was taken and whether that member was signed — and an artefact whose instant falls outside the window of the key that signed it is UNVERIFIABLE/`signed_outside_key_window`, its own reason rather than `expired` because no `--now` recovers it: `expired` and `not_yet_valid` are statements about the instant the CALLER asked about and are answered differently by naming a different one, this is a statement about two documents. The `--now` comparison runs FIRST and keeps the answer it has always given, so a receipt whose own instant was never in question sees no change; both comparisons are annotated (`identity_key_window` for `--now`, `identity_key_window_at_signing` for the artefact) BEFORE either can refuse, because they answer different questions and a refusal on one must not hide what the other found. `signedAt` sits outside the signed bytes, so a party who can edit the wrapper can move what this check reads: the annotation says so on every result and prints the signed instant beside it rather than leaving the exposure implicit. The key's published `role` is reported on every result whose signer resolved to a registry entry (`identity_key_role`, and inside the `identity` line as `signer_in_registry (<key_id>, role <role>)`), reading `not declared` where the entry publishes none; a declared role other than `attester` adds `identity_role_observation` verbatim, and the entry's own `note` is carried unedited. The role NEVER moves the verdict — a good signature by a registry key is VALID whatever the registry calls that key, because this tool verifies receipts under formats and does not issue gate decisions, and it cannot say whether a role is trustworthy, only what the registry says it is. Revocation is read on BOTH channels the registry publishes — `revoked` on the `public_keys` entry and the top-level `revoked_keys` array — and either one is UNVERIFIABLE/`key_revoked`, its own reason rather than `key_unresolvable` because \"no such key\" and \"do not trust this key\" call for different actions. Revocation is checked BEFORE the window and outranks it: a withdrawn key is withdrawn at every instant, so no `--now` recovers it and the detail says so instead of suggesting a re-run. `revoked_keys` is empty in every registry pinned here, so no document says what a populated entry looks like: a bare address-or-key_id string and an object carrying `public_key` and/or `key_id` are read, and an entry in any other shape blocks EVERY key in that registry (UNVERIFIABLE/malformed_member) rather than being skipped, because an entry that cannot be read cannot be shown not to name the signer. The type comparison is looked up by primaryType AND the artefact's own schemaVersion, because the registry retains retired layouts beside the current one and comparing a v2 receipt to the v3 type would report a mismatch that is not one; a version the registry marks `retiredForSigning` is reported as such (`retired_for_signing (v2)`). The comparison is REPORTED (`registry_schema`) and never moves the verdict. From 2026-09-09 the registry also publishes a `semanticProfile` per layout, and the layout version is no longer the whole answer: `schemaVersion` names the EIP-712 field layout, while the commitment constructions, the sentinels, the scales and the verdict rules live in an immutable content-addressed profile that ExecutionReceipt v5 signs as `profileId` (`refs/insight-oracle-registry-profile-0xe7513b05....json`). `semantic_profile` reports, on every result whose signer resolved, which profile the artefact committed to and whether the registry publishes that one: a match names the id and says it is inside the signed bytes; a value the registry does not publish is `profile_unrecognised` and names both ids; a layout that signs no profile at all (v1-v4) says `not_published` in so many words rather than annotating nothing, because an absent annotation is what let the 8 September commitment change pass unremarked. The signed member is read from the registry's own `signedField` rather than hardcoded to `profileId`, so a rename cannot leave the tool comparing the wrong member. Like the role, this NEVER moves the verdict: the issuer's own rule is that an unrecognised profile fails closed under a valid signature, and turning that into a refusal is a caller policy and a reason-vocabulary change, not this check's to make. What is closed here is the silence.",
     },
     {
-      id: "freshness",
+      id: "profile",
       order: 8,
+      title: "The semantic profile the receipt signs is one the registry publishes for its layout",
+      source: "the registry's `semanticProfile` member (from 2026-09-09) and the promotion record's activation rule",
+      status: "conditional",
+      note: "Runs when the registry publishes a `semanticProfile` for the artefact's OWN layout (primaryType and schemaVersion); where it publishes none, the `not_published` annotation stays and nothing refuses. `schemaVersion` names the EIP-712 field layout and nothing more — the commitment constructions, the sentinels, the scales and the verdict rules live in the immutable content-addressed profile, and on 2026-09-08 this repository found the issuer had rewritten a commitment rule with the layout version unchanged (FINDINGS F10). A signed profile id the registry does not publish is UNVERIFIABLE/`profile_unrecognised`; a receipt that signs none where the registry names the member is UNVERIFIABLE/`profile_absent`; both stop at this check, with the observed and expected ids and the member name in annotations. Until 2026-09-16 both were annotations ending \"The verdict does not move on it\", on the reasoning that the issuer's fail-closed rule was a caller's policy. That was wrong about which rule applies: an unrecognised profile is an UNKNOWN STATE — the meaning of every signed number is unestablished — and resolving an unknown state to the restricted default is this tool's own contract. The member the profile id is read from comes from the registry's own `signedField` rather than being hardcoded to `profileId`, so a rename cannot leave this comparing the wrong member. ORDERED AFTER IDENTITY AND ISSUED AFTER IT: the observation is computed where the registry entry resolves, in the middle of the identity check, but refusing there would make `stoppedAt: profile` claim identity had run and would make every identity refusal ordered after the lookup unreachable. A receipt whose key is revoked still reports `key_revoked`.",
+    },
+    {
+      id: "freshness",
+      order: 9,
       title: "validUntil equals its anchor plus validForSeconds, and has not closed at the evaluation time",
       source: "the artefact's own validUntil / checkedAt / executedAt / validForSeconds",
       status: "implemented",
     },
     {
       id: "binding",
-      order: 9,
+      order: 10,
       title: "The receipt binds to every gate it names, the non-zero uids hash to the signed preTradeUidsHash, and each requestHash is the digest of its canonical request",
       source: "the receipt's preTradeUid / destinationPreTradeUid / preTradeUidsHash / requestHash and the gates' canonicalRequest* types",
       status: "conditional",
@@ -448,7 +456,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "swap",
-      order: 10,
+      order: 11,
       title: "The pool Swap event decodes to the signed executedPrice, and the delta against quotedPrice is recomputed",
       source: "the Uniswap V3 Swap event ABI, derived from its signature string here",
       status: "conditional",
@@ -456,7 +464,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "attribution",
-      order: 11,
+      order: 12,
       title: "Net flow per address over every Transfer log, and the price actually realised by the final beneficiary",
       source: "the ERC-20 Transfer event ABI, derived from its signature string here",
       status: "reported_only",
@@ -464,7 +472,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "prices",
-      order: 12,
+      order: 13,
       title: "Prices read at the signed `priceScale`, the quote recomputed from both gates, and the execution status recomputed",
       source: "the receipt's priceScale/quotedPrice/executedPrice and the gates' consensusPrice",
       status: "conditional",
@@ -472,7 +480,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "measured_fields",
-      order: 13,
+      order: 14,
       title: "`measuredFieldsHash` recomputed from the set of fields the package declares measured",
       source: "the receipt's signed measuredFieldsHash and the package's own `measuredFields` enumeration",
       status: "reported_only",
@@ -480,7 +488,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "chain",
-      order: 14,
+      order: 15,
       title: "Transaction status, block number, block timestamp and shipped logs corroborated against a JSON-RPC endpoint",
       source: "eth_getTransactionReceipt / eth_getBlockByNumber",
       status: "conditional",
@@ -488,7 +496,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "precedence",
-      order: 15,
+      order: 16,
       title: "That a pre-trade gate existed BEFORE the trade it gates",
       source: "the claim the package's structure invites; no source establishes it",
       status: "not_implemented",
@@ -496,7 +504,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "observations",
-      order: 16,
+      order: 17,
       title: "participantCount, sourceGroupCount, independence, consensus-price provenance and mevRiskBps",
       source: "the receipt's own signed fields",
       status: "not_implemented",
@@ -624,7 +632,7 @@ export function specStepOf(format: string, checkId: string): number | undefined 
   return coverageFor(format)?.checks.find((c) => c.id === checkId)?.specStep;
 }
 
-export type NotEvaluatedReason = "not_reached" | "not_implemented";
+export type NotEvaluatedReason = "not_reached" | "not_implemented" | "condition_unmet";
 
 export interface NotEvaluated {
   id: string;
@@ -632,25 +640,56 @@ export interface NotEvaluated {
   source: string;
   status: CheckStatus;
   reason: NotEvaluatedReason;
+  /**
+   * Present only on `condition_unmet`: WHICH condition was not met, in words,
+   * as the adapter that skipped the check states it. A row saying only that a
+   * conditional check did not run leaves a reader to guess whether the input was
+   * absent or the caller withheld it, and those need different actions.
+   */
+  condition?: string;
 }
 
 /**
- * The checks a run did not evaluate.
+ * The checks a run did not evaluate, in three kinds.
  *
  * `not_implemented` entries are returned whatever the verdict — they are never
  * evaluated, so a VALID result must disclose them too. `not_reached` entries
- * are those ordered after the check that stopped evaluation.
+ * are those ordered after the check that stopped evaluation. `condition_unmet`
+ * entries are `conditional` checks whose condition the supplied shape did not
+ * meet.
  *
- * A `conditional` check that did not run because its input was absent is NOT
- * reported here: the adapter already annotates that case on the result itself
- * (`commitment_check`, `chain_link`), and duplicating it would make a
- * deliberately-skipped optional check look like a coverage gap.
+ * THE THIRD KIND IS NEW, AND IT REVERSES A DECISION THIS FILE USED TO STATE.
+ * Until 2026-09-16 the comment here read: "A `conditional` check that did not
+ * run because its input was absent is NOT reported here: the adapter already
+ * annotates that case on the result itself, and duplicating it would make a
+ * deliberately-skipped optional check look like a coverage gap." That was right
+ * about the risk and wrong about the reader. The annotation it relied on is
+ * prose — `binding: "not_checked (package carries no sourceGate)"` — and an
+ * agent reading `coverage` to find out what a verdict examined has to parse
+ * English to learn that a bare attestation's `preTradeUidsHash` was never looked
+ * at. Two results that examined very different things were identical in the one
+ * block built to say what was examined.
+ *
+ * The original worry is answered by the reason token rather than by silence: a
+ * `condition_unmet` row is not a gap in this tool and does not read as one, it
+ * is a check that had nothing to run against, and it names what was missing.
+ *
+ * PRECEDENCE, where a row could carry more than one: `not_implemented`, then
+ * `not_reached`, then `condition_unmet`. A check that is never evaluated says so
+ * first; a check evaluation never reached is `not_reached` even if its condition
+ * was also unmet, because the stop is the stronger and earlier fact about the
+ * run.
  */
-export function checksNotEvaluated(format: string, stoppedAt?: string): NotEvaluated[] {
+export function checksNotEvaluated(
+  format: string,
+  stoppedAt?: string,
+  conditionsUnmet?: { id: string; condition: string }[],
+): NotEvaluated[] {
   const cov = coverageFor(format);
   if (cov === undefined) return [];
 
   const stop = stoppedAt === undefined ? undefined : cov.checks.find((c) => c.id === stoppedAt);
+  const unmet = new Map((conditionsUnmet ?? []).map((c) => [c.id, c.condition]));
   const out: NotEvaluated[] = [];
 
   for (const c of cov.checks) {
@@ -659,6 +698,8 @@ export function checksNotEvaluated(format: string, stoppedAt?: string): NotEvalu
       out.push({ id: c.id, title: c.title, source: c.source, status: c.status, reason: "not_implemented" });
     } else if (notReached) {
       out.push({ id: c.id, title: c.title, source: c.source, status: c.status, reason: "not_reached" });
+    } else if (unmet.has(c.id)) {
+      out.push({ id: c.id, title: c.title, source: c.source, status: c.status, reason: "condition_unmet", condition: unmet.get(c.id)! });
     }
   }
   return out;

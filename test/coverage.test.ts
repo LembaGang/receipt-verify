@@ -197,3 +197,64 @@ describe("the JSON surface", () => {
     expect(f.coverage.checks_not_evaluated.length).toBeGreaterThan(v.coverage.checks_not_evaluated.length);
   });
 });
+
+// ---------------------------------------------------------------------------
+// THE THIRD REASON (B-132): `condition_unmet`
+//
+// Added 2026-09-16. `checksNotEvaluated` used to return two kinds and omit
+// `conditional` checks whose condition was unmet, on the ground that the adapter
+// annotates those itself. The annotation is prose, so an agent reading
+// `coverage` alone could not tell a bare attestation's result from a full
+// package's in the one block built to say what a verdict examined.
+//
+// The control this section owes: the other four formats' output must be exactly
+// what it was. They pass no third argument, so the only way their output could
+// move is if the default changed — which is what the first test below pins.
+// ---------------------------------------------------------------------------
+
+describe("checksNotEvaluated — condition_unmet, and what it leaves alone", () => {
+  it("with no third argument, every row is still not_reached or not_implemented, in every format", () => {
+    for (const f of FORMATS) {
+      for (const stop of [undefined, coverageFor(f)!.checks[2]!.id]) {
+        const rows = checksNotEvaluated(f, stop);
+        expect(
+          rows.filter((c) => c.reason === "condition_unmet"),
+          `${f} (stop ${String(stop)}) produced a condition_unmet row from no input`,
+        ).toEqual([]);
+        expect(rows.every((c) => c.condition === undefined), `${f}: a row carries a condition nobody supplied`).toBe(true);
+      }
+    }
+  });
+
+  it("a supplied unmet condition appears, with its words, and only for the id named", () => {
+    const rows = checksNotEvaluated("insight.attestation/eip712", undefined, [
+      { id: "binding", condition: "applies when a package supplies pre-trade gates; this is a single attestation" },
+    ]);
+    const binding = rows.find((c) => c.id === "binding");
+    expect(binding?.reason).toBe("condition_unmet");
+    expect(binding?.condition).toContain("single attestation");
+    expect(binding?.status).toBe("conditional");
+    // Nothing else moved: `swap` is conditional too and was not named.
+    expect(rows.find((c) => c.id === "swap")).toBeUndefined();
+  });
+
+  it("precedence: not_implemented, then not_reached, then condition_unmet", () => {
+    // `precedence` is not_implemented in the insight manifest AND is ordered
+    // after `identity`; naming it as condition-unmet as well must not change what
+    // it reports.
+    const rows = checksNotEvaluated("insight.attestation/eip712", "identity", [
+      { id: "precedence", condition: "should not win" },
+      { id: "chain", condition: "should not win either" },
+    ]);
+    expect(rows.find((c) => c.id === "precedence")?.reason).toBe("not_implemented");
+    expect(rows.find((c) => c.id === "chain")?.reason).toBe("not_reached");
+    for (const id of ["precedence", "chain"]) {
+      expect(rows.find((c) => c.id === id)?.condition, `${id} must carry no condition text`).toBeUndefined();
+    }
+  });
+
+  it("an unmet condition for an id the format does not declare is dropped, not invented", () => {
+    const rows = checksNotEvaluated("insight.attestation/eip712", undefined, [{ id: "no_such_check", condition: "x" }]);
+    expect(rows.find((c) => c.id === "no_such_check")).toBeUndefined();
+  });
+});

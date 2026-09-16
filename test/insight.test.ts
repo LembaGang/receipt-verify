@@ -44,6 +44,7 @@ import { verificationStateAdapter } from "../src/adapters/verification-state.js"
 import { actaAdapter } from "../src/adapters/acta.js";
 import { detectFormat } from "../src/detect.js";
 import { jsonResult } from "../src/verdict.js";
+import { checksNotEvaluated } from "../src/coverage.js";
 import type { VerifyOptions, VerifyResult } from "../src/types.js";
 import {
   FIX,
@@ -2656,24 +2657,30 @@ describe("insight v5 — the fail-closed claim, and what our adapter actually do
   });
 
   /**
-   * THE GAP, measured so the claim cannot rot.
+   * THE GAP, CLOSED 2026-09-16 (B-132, FINDINGS F15 gap 2).
+   *
+   * This test was written to be rewritten, and its previous form said so in
+   * these words: "WHEN THE FIX LANDS this test is rewritten, not deleted: the
+   * verdict becomes a refusal and the assertion below becomes the wrong one."
+   * It has, and it is. What it asserted until today:
+   *
+   *     expect(r.verdict).toBe("VALID");
+   *     expect(r.reason).toBe("verified");
+   *     const line = String(r.annotations?.["semantic_profile"]);
+   *     expect(line).toContain("profile_unrecognised");
    *
    * A receipt whose signature recovers its stated attester, whose attester is a
-   * published registry key, and whose `profileId` is one nobody published, is
-   * VALID today. The semantics it commits to are unestablished and the verdict
-   * does not say so — it is reported in `semantic_profile` and nowhere else.
+   * published registry key, and whose `profileId` is one nobody published, was
+   * VALID, with the problem reported in an annotation and nowhere else. It is
+   * now UNVERIFIABLE/`profile_unrecognised`, stopping at `profile`.
    *
    * The registry here is SYNTHETIC and built in memory: the only way to reach
    * this state is a signature that recovers to an address the registry lists,
    * and nobody outside Insight can produce one against the real document. That
    * is the point — the case cannot be reached with the bytes we hold, which is
    * exactly why it needs constructing rather than waiting for.
-   *
-   * WHEN THE FIX LANDS this test is rewritten, not deleted: the verdict becomes
-   * a refusal and the assertion below becomes the wrong one. It is written to be
-   * rewritten.
    */
-  it("THE GAP: valid signature + published key + UNKNOWN profileId is VALID today, and only an annotation says otherwise", async () => {
+  it("CLOSED: valid signature + published key + UNKNOWN profileId is now UNVERIFIABLE/profile_unrecognised", async () => {
     const m = clone(att);
     m.data.profileId = `0x${"ab".repeat(32)}`;
     const d = eip712Digest(m.eip712.domain, m.eip712.primaryType, m.eip712.types, m.data);
@@ -2699,22 +2706,79 @@ describe("insight v5 — the fail-closed claim, and what our adapter actually do
       registryOrigin: "SYNTHETIC registry built in this test",
       now: INSIGHT_NOW_V5,
     });
-    expect(r.verdict).toBe("VALID");
-    expect(r.reason).toBe("verified");
-    const line = String(r.annotations?.["semantic_profile"]);
-    expect(line).toContain("profile_unrecognised");
-    expect(line).toContain("0xabababababababababababababababababababababababababababababababab");
-    expect(line).toContain(INSIGHT_PROFILE_ID);
+    expect(`${r.verdict}/${r.reason}`).toBe("UNVERIFIABLE/profile_unrecognised");
+    expect(r.stoppedAt).toBe("profile");
+    // UNVERIFIABLE names no key, so nothing here can read as a verdict under one.
+    expect(r.resolvedKey).toBeUndefined();
+    // Both ids on the result, machine-readably, beside the prose line.
+    expect(r.annotations?.["profile_observed"]).toBe("0xabababababababababababababababababababababababababababababababab");
+    expect(r.annotations?.["profile_expected"]).toBe(INSIGHT_PROFILE_ID);
+    expect(r.annotations?.["profile_signed_field"]).toBe("profileId");
+    expect(String(r.annotations?.["semantic_profile"])).toContain("profile_unrecognised");
+    // IDENTITY STILL RAN, and its answer is still on the result: the refusal is
+    // issued after the identity branch completes, so `stoppedAt: "profile"` never
+    // claims identity was skipped.
+    expect(String(r.annotations?.["identity"])).toContain("signer_in_registry");
 
-    // The control: the SAME construction with the real profileId is not flagged,
-    // so the line above is a comparison and not a constant.
+    // The control: the SAME construction with the real profileId reaches VALID,
+    // so the refusal above is a comparison and not a constant.
     const ok = clone(att);
     const r2 = await insightAdapter.verify(bytesOf(ok), {
       registry: REG_0909,
       registryOrigin: "refs/insight-oracle-keys-2026-09-09T1440Z.json",
       now: INSIGHT_NOW_V5,
     });
+    expect(r2.verdict).toBe("VALID");
     expect(String(r2.annotations?.["semantic_profile"])).not.toContain("profile_unrecognised");
+  });
+
+  it("CLOSED: a receipt signing NO profile where the registry names the member is UNVERIFIABLE/profile_absent", async () => {
+    // `profile_absent` is its own reason, not `profile_unrecognised`: there is no
+    // second id to disagree with, and a consumer that could not tell the two
+    // apart could not tell a receipt committing to the wrong semantics from one
+    // committing to none.
+    const m = clone(att);
+    delete m.data.profileId;
+    m.eip712.types.ExecutionReceipt = m.eip712.types.ExecutionReceipt.filter((f: { name: string }) => f.name !== "profileId");
+    const d = eip712Digest(m.eip712.domain, m.eip712.primaryType, m.eip712.types, m.data);
+    const recovered = recoverAddress(d, m.signature)!;
+    m.attester = recovered;
+    m.uid = `0x${Buffer.from(d).toString("hex")}`;
+
+    const doc = JSON.parse(REG_0909.toString("utf8")) as Record<string, any>;
+    doc["public_keys"] = [
+      ...doc["public_keys"],
+      { key_id: "synthetic-test-key-not-published-anywhere", public_key: recovered, algorithm: "secp256k1", valid_from: "2026-09-01T00:00:00Z", valid_until: null },
+    ];
+    const r = await insightAdapter.verify(bytesOf(m), {
+      registry: Buffer.from(JSON.stringify(doc), "utf8"),
+      registryOrigin: "a synthetic registry built in this test",
+      now: INSIGHT_NOW_V5,
+    });
+    expect(`${r.verdict}/${r.reason}`).toBe("UNVERIFIABLE/profile_absent");
+    expect(r.stoppedAt).toBe("profile");
+    expect(r.annotations?.["profile_expected"]).toBe(INSIGHT_PROFILE_ID);
+    expect(r.annotations?.["profile_signed_field"]).toBe("profileId");
+    expect(r.annotations?.["profile_observed"]).toBeUndefined();
+  });
+
+  it("a layout the registry publishes NO semanticProfile for still refuses nothing, and says so in coverage", async () => {
+    // The other side of the conditional: where the registry declares no profile
+    // for the layout, the `not_published` annotation stays and the verdict does
+    // not move. A refusal here would refuse every v1-v4 receipt for a member its
+    // layout never had.
+    const r = await insightAdapter.verify(PKG_BYTES, {
+      registry: REG_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02.json",
+      now: INSIGHT_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(r.verdict).toBe("VALID");
+    expect(String(r.annotations?.["semantic_profile"] ?? "")).not.toContain("profile_unrecognised");
+    const json = JSON.parse(jsonResult(r)) as { coverage: { checks_not_evaluated: Array<{ id: string; reason: string; condition?: string }> } };
+    const prof = json.coverage.checks_not_evaluated.find((c) => c.id === "profile");
+    expect(prof?.reason).toBe("condition_unmet");
+    expect(prof?.condition).toContain("publishes none for ExecutionReceipt");
   });
 });
 
@@ -2917,4 +2981,107 @@ describe("insight — a legacy verdict is snapshot-relative or it is not a verdi
     expect(gatePrefixed, `gate-prefixed snapshot annotations: ${gatePrefixed.join(", ")}`).toEqual([]);
     expect(String(r.annotations?.["source_gate_schema_encode_type"] ?? "")).toContain("OracleSafetyCheck");
   });
+});
+
+// ---------------------------------------------------------------------------
+// THE CHECKS A VERDICT DID NOT REACH, BY SHAPE (B-132, second half)
+//
+// `coverage.checks_not_evaluated` used to report two kinds, `not_implemented`
+// and `not_reached`, and deliberately omitted `conditional` checks whose input
+// was absent. src/coverage.ts said why: the adapter annotates those itself, and
+// listing them would make a deliberately-skipped optional check look like a
+// coverage gap.
+//
+// That was right about the risk and wrong about the reader. The annotation it
+// relied on is prose — `binding: "not_checked (package carries no sourceGate)"`
+// — so an agent reading `coverage` to learn what a verdict examined had to parse
+// English to find out that a bare attestation's `preTradeUidsHash` was never
+// looked at. Two results that examined very different things were identical in
+// the one block built to say what was examined. The third reason token answers
+// the original worry directly: `condition_unmet` does not read as a gap.
+// ---------------------------------------------------------------------------
+
+describe("insight — coverage names the conditional checks the shape did not meet", () => {
+  const notEvaluated = (r: VerifyResult): Array<{ id: string; reason: string; condition?: string }> =>
+    (JSON.parse(jsonResult(r)) as { coverage: { checks_not_evaluated: Array<{ id: string; reason: string; condition?: string }> } })
+      .coverage.checks_not_evaluated;
+
+  it("a bare attestation names binding, and the condition names preTradeUidsHash", async () => {
+    const r = await insightAdapter.verify(read(INSIGHT_SAMPLE_ATTESTATION_1546), {
+      registry: REG_1545_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      now: INSIGHT_V4_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(r.verdict).toBe("VALID");
+    const rows = notEvaluated(r);
+    const binding = rows.find((c) => c.id === "binding");
+    expect(binding?.reason).toBe("condition_unmet");
+    expect(binding?.condition).toContain("preTradeUidsHash");
+    // The other three package-shaped checks are named too, for the same reason.
+    for (const id of ["swap", "prices", "chain"]) {
+      expect(rows.find((c) => c.id === id)?.reason, `${id} must be condition_unmet`).toBe("condition_unmet");
+    }
+  });
+
+  it("a full package names NONE of binding, swap or prices — they ran", async () => {
+    const r = await insightAdapter.verify(V4_BYTES, {
+      registry: REG_1545_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      now: INSIGHT_V4_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(r.verdict).toBe("VALID");
+    const rows = notEvaluated(r);
+    for (const id of ["binding", "swap", "prices"]) {
+      expect(rows.find((c) => c.id === id), `${id} ran and must not be listed`).toBeUndefined();
+    }
+    // `chain` IS listed: no --rpc was passed, which is a condition the caller
+    // controls rather than one the package's shape decides.
+    expect(rows.find((c) => c.id === "chain")?.reason).toBe("condition_unmet");
+    expect(rows.find((c) => c.id === "chain")?.condition).toContain("--rpc");
+  });
+
+  it("a v5 receipt names snapshot as condition_unmet, and a legacy one does not", async () => {
+    const wrapper = JSON.parse(read(INSIGHT_EXEC_SAMPLE_V5).toString("utf8")) as Record<string, any>;
+    const v5 = await insightAdapter.verify(bytesOf(wrapper["data"]["attestation"]), {
+      registry: read(INSIGHT_REGISTRY_0909),
+      registryOrigin: "refs/insight-oracle-keys-2026-09-09T1440Z.json",
+      now: INSIGHT_NOW_V5,
+    });
+    const snap = notEvaluated(v5).find((c) => c.id === "snapshot");
+    expect(snap?.reason).toBe("condition_unmet");
+    expect(snap?.condition).toContain("below 5");
+    expect(snap?.condition).toContain("v5");
+
+    // The legacy side: the check APPLIED and passed, so it is not listed at all.
+    const legacy = await insightAdapter.verify(V4_BYTES, {
+      registry: REG_1545_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      now: INSIGHT_V4_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(notEvaluated(legacy).find((c) => c.id === "snapshot")).toBeUndefined();
+  });
+
+  it("precedence: a stopped run reports not_reached, never condition_unmet, for the same row", () => {
+    // A row that is BOTH ordered after the stop and had its condition unmet must
+    // report the stop: that is the stronger and earlier fact about the run. The
+    // function is called directly, because constructing an artefact that is both
+    // at once through the adapter would test the adapter's choices, not this
+    // rule.
+    const rows = checksNotEvaluated("insight.attestation/eip712", "identity", [
+      { id: "chain", condition: "applies when --rpc is given; it was not" },
+    ]);
+    const chain = rows.find((c) => c.id === "chain");
+    expect(chain?.reason).toBe("not_reached");
+    expect(chain?.condition).toBeUndefined();
+
+    // And with no stop, the same input reports the condition.
+    const rows2 = checksNotEvaluated("insight.attestation/eip712", undefined, [
+      { id: "chain", condition: "applies when --rpc is given; it was not" },
+    ]);
+    expect(rows2.find((c) => c.id === "chain")?.reason).toBe("condition_unmet");
+  });
+
 });
