@@ -702,6 +702,29 @@
       "dir": "cpb",
       "rules": [],
       "corpus_note": "cpb/ holds TypeScript sources and Markdown result tables, no JSON corpus data. Its digest-shaped tokens are 64-hex strings inside prose and code, not fields of a document the walker can address by JSON pointer. Counted as non-field tokens in the report, not registered."
+    },
+    {
+      "id": "x402-packages",
+      "dir": "packages",
+      "only_files": [
+        "manifest.json"
+      ],
+      "rules": [
+        {
+          "id": "pkg.manifest_file_sha256",
+          "file": "*/manifest.json",
+          "kind": "pkg_manifest_sha256",
+          "field": "/files/N/sha256, for every entry of the manifest's files array",
+          "construction": "sha256(the raw bytes of the file at the sibling path /files/N/path)",
+          "encoding": "hex",
+          "status": "declared",
+          "document": null,
+          "lines": null,
+          "scope_source": "The scope is declared by this repository, because the package schema is this repository's: tools/make-x402-package.ts writes /files/N/sha256 as the sha256 of the raw bytes at /files/N/path, and each manifest states the same thing in its own how_to_check member. There is no external document to cite and none is claimed; `document` is null rather than pointing at something that does not govern this.",
+          "quote": "npm run walk recomputes every sha256 in this manifest from the file beside it."
+        }
+      ],
+      "corpus_note": "Evidence packages this repository assembles and signs, not corpus data from anyone else. only_files scopes the census to manifest.json: a package also carries verdict.json, chain.json and the raw artefacts, whose digest-shaped values are transaction hashes, block hashes and 32-byte log topics produced by a chain — none of them SHA-256 over JCS, none with a preimage in the package, and censusing them would print several hundred unregistered rows that no rule could ever close. The digests the package DOES assert about itself are the manifest's per-file sha256 values, and pkg.manifest_file_sha256 recomputes every one of them. The package's SHA256SUMS is a plain-text digest list with no JSON pointer form, so it is not addressable by this walker at all; tools/verify-package.sh checks it and the signature over it."
     }
   ],
   "expected_refusals": [

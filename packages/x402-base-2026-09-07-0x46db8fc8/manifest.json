@@ -1,0 +1,90 @@
+{
+  "schema": "receipt-verify/x402-package/0",
+  "id": "x402-base-2026-09-07-0x46db8fc8",
+  "title": "Settlement one of 7 September 2026",
+  "transaction": "0x46db8fc8cfd79017375d76c5ad80256950f8437ff009ecbe90b6cd5ce97e9263",
+  "network": "eip155:8453",
+  "built_at": "2026-09-16T10:17:17.290Z",
+  "built_by": "tools/make-x402-package.ts",
+  "verifier": "@headlessoracle/receipt-verify, format x402.settlement/2",
+  "how_to_check": "sh tools/verify-package.sh <this directory> checks every digest below, that no file in the package is missing from SHA256SUMS, and that SHA256SUMS.sig verifies against the repository's SIGNING_KEYS. npm run walk recomputes every sha256 in this manifest from the file beside it. Neither says the contents are true; statement.md says what they do and do not show.",
+  "files": [
+    {
+      "path": "artefacts/paid-pr-header-decoded.json",
+      "bytes": 502,
+      "sha256": "a2a4219538aca031102b024a80b83489bf7ecd04b41c2abc60b703604c36170e",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07/paid-pr-header-decoded.json",
+      "role": "the 402 payment-required object, header-decoded"
+    },
+    {
+      "path": "artefacts/pr-header.b64",
+      "bytes": 672,
+      "sha256": "bb1873633886741dbcd42cd0605f9284994efc3eed72b5948570c2e2b94ba9ec",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07/pr-header.b64",
+      "role": "the base64 original of the 402 object; it decodes byte for byte to paid-pr-header-decoded.json"
+    },
+    {
+      "path": "artefacts/paid-client-x-payment.decoded.json",
+      "bytes": 889,
+      "sha256": "f37ca86cfe089030043626fc317f8d0681f3cc3f6ca08e1cdae023d1222cc8a4",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07/paid-client-x-payment.decoded.json",
+      "role": "the payment payload the client sent, decoded, whole"
+    },
+    {
+      "path": "artefacts/paid-client-x-payment.b64.txt",
+      "bytes": 1188,
+      "sha256": "6964de0b2ca57b099288a9be096b5253d263569c67f05660e3f4ef622a8ead10",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07/paid-client-x-payment.b64.txt",
+      "role": "the base64 original of the payment payload"
+    },
+    {
+      "path": "artefacts/paid-payment-response.decoded.json",
+      "bytes": 176,
+      "sha256": "8ecbb71433b0019d2fd924f87dadf9be20302660f1a848e3e7dba22670f20ca3",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07/paid-payment-response.decoded.json",
+      "role": "the settle object the server returned, decoded"
+    },
+    {
+      "path": "artefacts/paid-payment-response.b64",
+      "bytes": 236,
+      "sha256": "cb943300cd3afd8712444086b805babd2430adb43ac41d0cf117d6c711a9a607",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07/paid-payment-response.b64",
+      "role": "the base64 original of the settle object"
+    },
+    {
+      "path": "artefacts/paid-client-attempt-2.request-headers.txt",
+      "bytes": 1275,
+      "sha256": "855f06bb18f6c0c8ccc227098e5e30e45ce6668138d5e41e3730eb4079084494",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07/paid-client-attempt-2.request-headers.txt",
+      "role": "the paid request's headers as sent, which is where the header NAME the 2.20.0 client used is readable"
+    },
+    {
+      "path": "envelope.json",
+      "bytes": 23455,
+      "sha256": "48ff93f07ceb49cdc48b5c75d7b5935e025ea6b853a0841d53d036d4d0befff6",
+      "source": "generated in packages/x402-base-2026-09-07-0x46db8fc8",
+      "role": "the x402.settlement/2 envelope the verdict was taken over: the three artefacts above plus the chain reading below, in one document"
+    },
+    {
+      "path": "verdict.json",
+      "bytes": 3955,
+      "sha256": "2da63fc5cf16bcf24d91d973c2050d49aed68f3de5288a91acfcbe0ff5621738",
+      "source": "generated in packages/x402-base-2026-09-07-0x46db8fc8",
+      "role": "the verifier's full output, coverage block included, as `receipt-verify --format x402 --json` prints it"
+    },
+    {
+      "path": "chain.json",
+      "bytes": 66619,
+      "sha256": "a6365c12fd403230e70ddd07fac86f0da87fb6a0d9a91d0bae70d5e1e76fd725",
+      "source": "generated in packages/x402-base-2026-09-07-0x46db8fc8",
+      "role": "both endpoints' raw answers with URLs, read times and per-response digests, and whether they agree"
+    },
+    {
+      "path": "statement.md",
+      "bytes": 5497,
+      "sha256": "97dc9f07276cbce7ca5cd17e7164a315607a55eead44dec2abcc51f88a0e11ed",
+      "source": "generated in packages/x402-base-2026-09-07-0x46db8fc8",
+      "role": "what this package establishes, what it does not, and the standing Interests paragraph"
+    }
+  ]
+}

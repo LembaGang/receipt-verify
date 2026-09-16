@@ -12,3 +12,16 @@ refs/** -text
 *.mjs text eol=lf
 *.json text eol=lf
 *.md text eol=lf
+
+# LAST MATCHING LINE WINS in this file, so a path rule placed above the four
+# generic rules is overridden by them: `git check-attr text -- <path>` is how to
+# check what is actually in force for a path, and today it reports `text: set`
+# for `fixtures/**` and `refs/**` JSON and Markdown, which is not what the
+# comment at the top of this file says. Left as it is here and recorded rather
+# than changed, because changing it rewrites bytes the pins are taken over.
+#
+# An evidence package is byte-exact and more brittle than a fixture: its
+# SHA256SUMS is SIGNED, so a line-ending rewrite on checkout would make every
+# digest in it wrong on someone else's machine while leaving ours right — the
+# worst shape a verification failure can take. This rule is last so it holds.
+packages/** -text

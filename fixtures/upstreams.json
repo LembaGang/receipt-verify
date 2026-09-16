@@ -131,6 +131,15 @@
         "reason": "Two paid calls that happened: the 7 September 2026 settlements on Base, each assembled from the artefacts pinned in cc-output and a chain read of its own transaction — a past event has no tip, no URL and no revision, so no kind here can drift-check it."
       },
       {
+        "id": "x402-evidence-packages",
+        "paths": [
+          "packages/*"
+        ],
+        "rows": "every file under `packages/`",
+        "reason_code": "repository_record",
+        "reason": "Evidence packages this repository assembles, signs and hands to a third party — our own records of settlements that happened, not corpus data fetched from anyone; their artefacts are copies of cc-output pins whose own provenance is recorded per file in each manifest.json."
+      },
+      {
         "id": "repository-records",
         "paths": [
           "fixtures/provenance.md",

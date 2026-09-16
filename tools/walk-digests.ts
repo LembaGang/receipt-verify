@@ -974,6 +974,55 @@ async function ruleVstateMappingHash(ctx: Ctx, r: Rule, filePath: string, mappin
   }
 }
 
+/**
+ * An x402 settlement package's own manifest. Each entry of `/files` carries a
+ * `path` relative to the package directory and the `sha256` of the bytes at it;
+ * this recomputes every one of them from those bytes.
+ *
+ * Why this is worth a rule at all. A package is handed to a third party as a
+ * directory. `tools/verify-package.sh` checks its SHA256SUMS and the signature
+ * over it, but that is a check the package carries about ITSELF: it passes for
+ * any internally consistent directory, including one whose manifest was rebuilt
+ * around altered artefacts. This rule is the second, independent statement —
+ * the walker recomputing the manifest's own numbers from the files beside them,
+ * in the ordinary run, over every package in the tree. A manifest digest that
+ * drifted from its file is a MISMATCH here and fails the walk.
+ *
+ * What it does not observe: whether the artefact is the right artefact. The
+ * manifest's `source` member names the cc-output path each file was copied from,
+ * and nothing in this repository can reach those paths at walk time.
+ */
+async function rulePackageManifest(ctx: Ctx, r: Rule, manifestPath: string) {
+  const file = rel(manifestPath);
+  const doc = readJson(manifestPath) as Record<string, Json>;
+  const files = doc["files"];
+  if (!Array.isArray(files)) {
+    push(ctx, r, file, "/files", null, null, "unregistered", "the manifest carries no `files` array");
+    return;
+  }
+  files.forEach((entry, i) => {
+    const e = entry as Record<string, Json>;
+    const declared = e["sha256"];
+    const path = e["path"];
+    const ptr = `/files/${i}/sha256`;
+    if (typeof declared !== "string" || typeof path !== "string") {
+      push(ctx, r, file, ptr, typeof declared === "string" ? declared : null, null, "unregistered",
+        `entry ${i} has no string \`path\` and \`sha256\` pair`);
+      return;
+    }
+    const target = join(dirname(manifestPath), ...path.split("/"));
+    if (!existsSync(target)) {
+      push(ctx, r, file, ptr, declared, null, "unregistered",
+        `the manifest lists ${path} and there is no such file beside it`);
+      return;
+    }
+    const bytes = readFileSync(target);
+    const recomputed = sha256Hex(bytes);
+    push(ctx, r, file, ptr, declared, recomputed, recomputed === declared ? "match" : "mismatch",
+      `${path}, ${bytes.length} bytes`);
+  });
+}
+
 async function ruleEvidenceChain(ctx: Ctx, rules: Rule[], filePath: string) {
   const file = rel(filePath);
   const records = readJsonl(filePath) as Array<Record<string, Json>>;
@@ -1215,6 +1264,16 @@ async function main(): Promise<number> {
       for (const p of files) {
         if (!p.toLowerCase().endsWith(".json")) continue;
         await ruleVstateMappingHash(ctx, r, p, mappings);
+      }
+    }
+
+    // x402 settlement packages: every digest a package's own manifest declares
+    for (const r of rules) {
+      if (r.kind !== "pkg_manifest_sha256") continue;
+      for (const p of files) {
+        if (!p.replace(/\\/g, "/").endsWith("/manifest.json")) continue;
+        if (!wanted(rel(p))) continue;
+        await rulePackageManifest(ctx, r, p);
       }
     }
 

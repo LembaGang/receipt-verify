@@ -1,0 +1,97 @@
+{
+  "schema": "receipt-verify/x402-package/0",
+  "id": "x402-base-2026-09-07-0x94bfba79",
+  "title": "Settlement two of 7 September 2026",
+  "transaction": "0x94bfba79903d560e54bf0bf79c347d54d057357fb3389ab9dfd76e44d0bdbdd1",
+  "network": "eip155:8453",
+  "built_at": "2026-09-16T10:17:18.622Z",
+  "built_by": "tools/make-x402-package.ts",
+  "verifier": "@headlessoracle/receipt-verify, format x402.settlement/2",
+  "how_to_check": "sh tools/verify-package.sh <this directory> checks every digest below, that no file in the package is missing from SHA256SUMS, and that SHA256SUMS.sig verifies against the repository's SIGNING_KEYS. npm run walk recomputes every sha256 in this manifest from the file beside it. Neither says the contents are true; statement.md says what they do and do not show.",
+  "files": [
+    {
+      "path": "artefacts/paid-402-payment-required.decoded.json",
+      "bytes": 502,
+      "sha256": "a2a4219538aca031102b024a80b83489bf7ecd04b41c2abc60b703604c36170e",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07-day2/paid/paid-402-payment-required.decoded.json",
+      "role": "the 402 payment-required object, header-decoded"
+    },
+    {
+      "path": "artefacts/paid-402-payment-required.b64",
+      "bytes": 672,
+      "sha256": "bb1873633886741dbcd42cd0605f9284994efc3eed72b5948570c2e2b94ba9ec",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07-day2/paid/paid-402-payment-required.b64",
+      "role": "the base64 original of the 402 object"
+    },
+    {
+      "path": "artefacts/client-x-payment.decoded.json",
+      "bytes": 889,
+      "sha256": "5fc346ee28b6559dd3c31d01eaf8f68a3ae2a3c872da8236cd86b93d0233e27d",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07-day2/paid/client-x-payment.decoded.json",
+      "role": "the payment payload the client sent, decoded, whole -- payer, nonce and signature included"
+    },
+    {
+      "path": "artefacts/client-x-payment.b64.txt",
+      "bytes": 1188,
+      "sha256": "f8642528b516715ac20b4ac65cc0211dfb901f9b81de55ebcba04e6c8f7bb69f",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07-day2/paid/client-x-payment.b64.txt",
+      "role": "the base64 original of the payment payload"
+    },
+    {
+      "path": "artefacts/payment-response.decoded.json",
+      "bytes": 176,
+      "sha256": "f760cebcb47a1fc2817c27808c80182562d0d282d46797865e823574f12a2853",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07-day2/paid/payment-response.decoded.json",
+      "role": "the settle object the server returned, decoded"
+    },
+    {
+      "path": "artefacts/payment-response.b64",
+      "bytes": 236,
+      "sha256": "00ddf3167a1d16029402e143ab88bae2f6921cd11cbc3e51b5b4356f176b94fd",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07-day2/paid/payment-response.b64",
+      "role": "the base64 original of the settle object"
+    },
+    {
+      "path": "artefacts/paid-receipt.json",
+      "bytes": 1591,
+      "sha256": "2461878855297b52a5aa5d9f2aaeec8241c87d5455b69a577dde5683948646c0",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07-day2/paid/paid-receipt.json",
+      "role": "the paid 200's body: our own signed market-state receipt for the delivered response. Carries no settlement member -- see statement.md"
+    },
+    {
+      "path": "artefacts/README.txt",
+      "bytes": 3293,
+      "sha256": "778a8b590033ef8436098331be623c4a7ff2d2d4754b809c610e7a2a32cdb21d",
+      "source": "C:/Users/User/cc-output/pins/live-2026-09-07-day2/paid/README.txt",
+      "role": "the operator's own record of the run that produced these bytes, copied unedited"
+    },
+    {
+      "path": "envelope.json",
+      "bytes": 30009,
+      "sha256": "21fd0597192e9796d0f646b023d421d4e99a44b12778c6daa148881ee3fd6799",
+      "source": "generated in packages/x402-base-2026-09-07-0x94bfba79",
+      "role": "the x402.settlement/2 envelope the verdict was taken over: the three artefacts above plus the chain reading below, in one document"
+    },
+    {
+      "path": "verdict.json",
+      "bytes": 3955,
+      "sha256": "6c74bd458e153d46dc0655d6b60420a59f7128d6c9ffeb85b34da7ade3603449",
+      "source": "generated in packages/x402-base-2026-09-07-0x94bfba79",
+      "role": "the verifier's full output, coverage block included, as `receipt-verify --format x402 --json` prints it"
+    },
+    {
+      "path": "chain.json",
+      "bytes": 86617,
+      "sha256": "d89e598e070836dc77dff541fcaca609b2997dd8cae01b17f432e553849ac0f2",
+      "source": "generated in packages/x402-base-2026-09-07-0x94bfba79",
+      "role": "both endpoints' raw answers with URLs, read times and per-response digests, and whether they agree"
+    },
+    {
+      "path": "statement.md",
+      "bytes": 3965,
+      "sha256": "217e179fc28a0af8c720421994f51c20870d59f6182ad4ba77312203a79ce41f",
+      "source": "generated in packages/x402-base-2026-09-07-0x94bfba79",
+      "role": "what this package establishes, what it does not, and the standing Interests paragraph"
+    }
+  ]
+}
