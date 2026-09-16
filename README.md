@@ -540,6 +540,10 @@ whether a role is trustworthy, only what the registry says it is.
 | Signer's key is revoked on either channel | `UNVERIFIABLE` | `key_revoked` |
 | Key's window does not contain **`--now`** | `UNVERIFIABLE` | `expired`, `not_yet_valid` |
 | Key's window does not contain the **artefact's own instant** (`signedAt`, else the signed `executedAt`/`checkedAt`) | `UNVERIFIABLE` | `signed_outside_key_window` |
+| A target `ExecutionReceipt` v1-v4 verified with no `--registry` | `UNVERIFIABLE` | `registry_snapshot_required` |
+| `--registry-sha256` names a digest the supplied bytes do not have | `UNVERIFIABLE` | `registry_snapshot_mismatch` |
+| The receipt signs a `profileId` the registry does not publish for its layout | `UNVERIFIABLE` | `profile_unrecognised` |
+| The registry names the member carrying the profile id and the receipt signs none | `UNVERIFIABLE` | `profile_absent` |
 | Everything above passes and the signature recovers the stated attester | `VALID` | `verified` |
 
 The last two window rows are **different facts** and both are reported on every
@@ -550,6 +554,75 @@ documents — the registry was not vouching for that key when the artefact says 
 was made — and no `--now` recovers it. `identity_signing_instant` names which
 member supplied the instant and whether that member was inside the signature:
 `signedAt` is package metadata and is not.
+
+### A v1–v4 verdict is snapshot-relative, or it is not a verdict
+
+The issuer's deployed release declares, under `executionReceipt.legacyProfileResolution`:
+`schemaVersions` [1,2,3,4], `signingStatus` `retired`, `productionAdmission` `forbidden`,
+`resultScope` `relative-to-exact-registry-snapshot`, `globallyCanonicalVerdict` `false`,
+`requiredEvidence` [`registrySnapshotUtf8Bytes`, `sha256`, `byteLength`], and the rule *"preserve and
+verify the exact registry snapshot bytes; report its full SHA-256 and byte length with every verdict;
+fail closed if absent or mismatched; never substitute current.json or the current registry"*.
+
+So a legacy verdict **without** its registry snapshot is not a weaker verdict — it is one this tool
+is not entitled to state:
+
+```bash
+# no --registry: UNVERIFIABLE / registry_snapshot_required, whatever else you pass
+receipt-verify receipt.json --format insight --allow-unregistered-signer
+
+# the snapshot preserved with the receipt — never current.json, never today's registry
+receipt-verify receipt.json --format insight --registry refs/insight-oracle-keys-2026-09-02.json \
+  --registry-sha256 9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006
+```
+
+Four annotations ride on every v1–v4 result:
+
+| annotation | what it is |
+|---|---|
+| `verdict_scope` | `snapshot-relative` |
+| `registry_snapshot_sha256` | SHA-256 over `--registry`'s bytes **exactly as supplied**, before any parse |
+| `registry_snapshot_byte_length` | their length |
+| `registry_snapshot_origin` | where they came from |
+
+A `VALID` detail opens with `historical, snapshot-relative:`. An `INVALID` carries the same three
+values inside its `detail`, because the tri-state contract gives an `INVALID` no annotations.
+`--registry-sha256` is checked, not trusted: a disagreement is `UNVERIFIABLE` /
+`registry_snapshot_mismatch` and stops the run, and it is never `INVALID` — it is a fact about your
+inputs, not about the receipt.
+
+**What this does not establish, and cannot.** Whether the bytes you supplied are the ones preserved
+when the receipt was issued. The rule forbids substituting the current registry and **this tool
+cannot detect that substitution** — it reports the digest and length of what it was handed so you can
+compare them against the issuer's preserved copy. That comparison is yours.
+
+Scope: the **target receipt only**, and only `ExecutionReceipt` with a signed `schemaVersion` below
+5. The gates (`OracleSafetyCheck`, published at schemaVersion 1 to 3) are excluded by struct rather
+than by version number, so a v5 package with v3 gates carries no snapshot annotations. The check sits
+**after** the signature check: `schemaVersion` is a signed field, so on bytes whose signature does not
+verify, "this is a v2 receipt" is not a statement those bytes support.
+
+### An unrecognised semantic profile refuses
+
+`schemaVersion` names the EIP-712 field layout and nothing more. What a `preTradeUidsHash` is built
+over, what a zero uid means, what scale a price is at and which verdict follows from which fields
+live in the immutable content-addressed profile — and on 2026-09-08 this repository found the issuer
+had rewritten a commitment rule with the layout version unchanged (`FINDINGS.md` F10).
+
+Where the registry publishes a `semanticProfile` for the artefact's own layout, a receipt signing an
+id it does not publish is `UNVERIFIABLE` / `profile_unrecognised`, and one signing no such member is
+`UNVERIFIABLE` / `profile_absent`. Both carry `profile_observed`, `profile_expected` and
+`profile_signed_field`. Where the registry publishes no profile for the layout, nothing refuses.
+
+Until 2026-09-16 both were annotations ending *"The verdict does not move on it"*, on the reasoning
+that the issuer's fail-closed rule was the caller's policy. That was wrong about which rule applies:
+an unrecognised profile is an **unknown state** — the meaning of every signed number is unestablished
+— and resolving an unknown state to the restricted default is this tool's own contract. The member
+the id is read from comes from the registry's own `signedField`, so a rename cannot leave this
+comparing the wrong member.
+
+The refusal is issued **after** the identity branch completes, so a revoked key still reports
+`key_revoked` and `stopped_at: "profile"` never claims identity was skipped.
 
 ---
 

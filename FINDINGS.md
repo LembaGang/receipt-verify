@@ -1591,6 +1591,88 @@ required unless the re-pin finds one. None goes.
 - **When any of these objects was published.** No `ETag` and no `Last-Modified` on the mutable
   pointers; the only bounds are our own reads.
 
+#### Closure 2026-09-16 — both gaps closed, and what the closure does not reach
+
+Appended, not edited above: everything before this block is the record as it stood on 10 September.
+
+**Gap 1 closed at `adaa329`.** A target `ExecutionReceipt` whose signed `schemaVersion` is a number
+below 5 is now `UNVERIFIABLE` / `registry_snapshot_required` when no registry snapshot is supplied,
+and `--allow-unregistered-signer` does not waive it — that flag speaks about the signer, and this is
+about the scope of the whole result. With a snapshot, four annotations ride on every such verdict:
+`verdict_scope: "snapshot-relative"`, `registry_snapshot_sha256`, `registry_snapshot_byte_length`,
+`registry_snapshot_origin`. A VALID `detail` opens with `historical, snapshot-relative:`; an INVALID
+carries the same three values inside its `detail`, because the tri-state contract gives an INVALID no
+annotations. `--registry-sha256` lets a caller state the digest they believe they are passing, and a
+disagreement is `UNVERIFIABLE` / `registry_snapshot_mismatch` — a fact about the caller's inputs,
+never about the receipt.
+
+**What was measured before the change, so the closure is not a claim about a thing that was already
+fine:** at `324c2ef` all three 2 September packages reached `VALID` / `verified` with **no registry
+supplied at all**. That is an unqualified legacy verdict, which is precisely what the deployed rule
+forbids.
+
+**Gap 2 closed at `de29099`.** A receipt signing a `profileId` the registry does not publish for its
+own layout is `UNVERIFIABLE` / `profile_unrecognised`; one that signs no such member where the
+registry names it is `UNVERIFIABLE` / `profile_absent`. Both stop at a new `profile` check ordered
+after `identity` and **issued after the identity branch completes**, so a revoked key still reports
+`key_revoked` and `stoppedAt: "profile"` never claims identity was skipped. Where the registry
+publishes no `semanticProfile` for the layout, nothing refuses and the `not_published` annotation
+stays: refusing there would refuse every v1–v4 receipt for a member its layout never had.
+
+The reasoning that kept this an annotation until today is recorded because it was wrong in a
+specific, reusable way. It ran: the issuer's fail-closed rule is a verifier's *policy*, and this tool
+verifies receipts under formats rather than issuing policy. The error was in which rule was being
+applied. An unrecognised profile is an **unknown state** — the commitment constructions, sentinels,
+scales and verdict rules every signed number depends on are unestablished — and resolving an unknown
+state to the restricted default is this tool's own contract, not one borrowed from the issuer.
+
+**The predecessor-pin observation is answered, and the answer is in the issuer's bytes.** F15 above
+recorded, as a property of the design rather than a defect, that the Active Headless policy pins
+`[0xf45d4c02…]`, one release behind. YuTao answered on 11 September (relayed by the founder) with a
+rule name, `lineage-floor-any`: a candidate release satisfies the policy when it equals any pinned
+release **or reaches one through a complete `predecessorReleaseId` chain**; unknown releases, broken
+chains, cycles and releases outside every pinned lineage fail closed. He encoded and deployed it at
+`imokokok/Insight` commit `b348fb7cedfa32e48d94b66be3838bba1b8b2a35`, Quality Gate run 34590684671.
+
+That was `[relayed]` until this session. It is now read from bytes: the release 2026-09-11.1
+(`0x6e3bd18c…`, pinned here) carries `registryReleasePinRule: "lineage-floor-any"` in its
+`mainlineIntegrationIsolation` block, with a description in the same words, and promotion v4
+(`0x6148f427…`, also pinned) states it in its `activationRule`. As of that release the policy pins
+**two** behind rather than one — the chain is `0xf45d4c02…` → `0x96d1f624…` → `0x6e3bd18c…` — which
+under a floor rule is admitted rather than stale. **The observation stands as a property of the
+design and is closed as a question.**
+
+**This session does not implement lineage admission.** The adapter verifies registry objects by
+content address and does not evaluate policy admission at all. Whether to add a `lineage-floor-any`
+check is B-191, and it is the founder's ruling, not a session's.
+
+#### What the closure still does not reach
+
+- **Whether the snapshot supplied is the one preserved when the receipt was issued.** The rule
+  forbids substituting `current.json` or the current registry, and **this tool cannot detect that
+  substitution**: it reports the digest and byte length of whatever it was handed so a reader can
+  compare them against the issuer's preserved copy. That comparison is the reader's, and the coverage
+  manifest's `snapshot` note says so on every result.
+- **An `ExecutionReceipt` that signs no numeric `schemaVersion` at all** falls outside the rule's
+  scope as the handoff defines it (`primaryType === "ExecutionReceipt"` with `schemaVersion` numeric
+  and `< 5`) and reaches today's behaviour unqualified. No artefact in this repository has that shape,
+  and the schema check would refuse one whose declared type omits a member its `data` carries — but
+  the scope is stated by version number and not by exhaustion, and that is a fact about this
+  implementation rather than about the receipts.
+- **An INVALID reached before the snapshot check carries no snapshot evidence**, by design:
+  `schemaVersion` is a signed field, so on bytes whose signature does not verify "this is a v2
+  receipt" is not a statement those bytes support. Attaching the qualification there would qualify a
+  verdict with a version number nobody signed for. Asserted in the suite rather than left to be
+  discovered.
+- **The live promotion pointer has moved past the record this session pinned.** `current.json` read
+  at 2026-09-16T11:38:11Z names `promotionId` `0x4396f761c00eee4f37aad37e9a703bd3896ace1fee8a3bde2a5ff8ebb9dc9119`
+  at `promotionVersion` 6, while the record named in the 11 September letter and pinned here is v4
+  `0x6148f427…`. Both are true of their own instant. v6 was not fetched — the handoff scoped this
+  session's network reads — and is recorded as an open item.
+- **Nothing here observes the runtime.** Unchanged from the section above: the policy, the release
+  and the promotion are published documents, and nothing in this repository watches the gate that
+  reads them.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`

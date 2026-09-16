@@ -5,6 +5,90 @@ Shipped versions, newest first. Entries queued against the next release live in
 
 ## 0.1.3 (unreleased)
 
+**A v1–v4 `insight.attestation/eip712` verdict is now snapshot-relative or it is not a verdict, and the
+measurement that made that necessary is worth stating first: at `324c2ef` all three 2 September
+packages reached `VALID`/`verified` with no registry supplied at all.** Not an incomplete verdict — an
+unqualified one, on a legacy receipt, which is the single thing the issuer's deployed rule forbids.
+That rule, from the release's own `executionReceipt.legacyProfileResolution`: `signingStatus`
+retired, `productionAdmission` forbidden, `resultScope` `relative-to-exact-registry-snapshot`,
+`globallyCanonicalVerdict` false, `requiredEvidence` [`registrySnapshotUtf8Bytes`, `sha256`,
+`byteLength`], *"fail closed if absent or mismatched; never substitute current.json or the current
+registry"*. A target `ExecutionReceipt` with a signed `schemaVersion` below 5 and no `--registry` is
+now `UNVERIFIABLE`/`registry_snapshot_required`, and `--allow-unregistered-signer` does **not** waive
+it: that flag speaks about the signer, this is about the scope of the whole result. With the
+snapshot, four annotations ride on every such verdict (`verdict_scope`, `registry_snapshot_sha256`,
+`registry_snapshot_byte_length`, `registry_snapshot_origin`), a `VALID` detail opens with *"historical,
+snapshot-relative:"*, and an `INVALID` carries the three values in its `detail` because the tri-state
+contract gives it no annotations. New flag `--registry-sha256` checks the caller's own claim about
+the bytes they passed; a mismatch is `UNVERIFIABLE`/`registry_snapshot_mismatch` and never `INVALID`,
+because it is a fact about the inputs.
+
+The digest is taken over the registry bytes **exactly as supplied, before any parse** — the required
+evidence is about preserved UTF-8 bytes, and a digest over a reserialised object would be a digest of
+our own serialiser. A trailing-newline control asserts that. Two ordering decisions are asserted
+rather than left to be found: the check sits **after** the signature check, because `schemaVersion` is
+a signed field and on bytes whose signature fails "this is a v2 receipt" is not a statement they
+support; and the gates are excluded **by struct**, because `OracleSafetyCheck` is published at
+schemaVersion 1 to 3 and any test that looked only at the number would sweep them in. The whole
+result is qualified in one place, at the adapter boundary, which is why the adapter body moves out of
+the object literal: a rule applied at each of the ten sites that construct a result is a rule that
+will one day be applied at nine of them, and the missing one would look exactly like a verdict that
+was simply not legacy. **What none of this establishes, and cannot:** whether the snapshot supplied is
+the one preserved when the receipt was issued. The tool reports the digest and length of what it was
+handed; the comparison against the issuer's preserved copy is the reader's, and the coverage note
+says so on every result.
+
+**An unrecognised semantic profile now refuses, reversing a decision this repository had written down
+and argued for.** `schemaVersion` names the EIP-712 field layout and nothing more; the commitment
+constructions, the sentinels, the scales and the verdict rules live in the immutable
+content-addressed profile, and on 8 September this repository found the issuer had rewritten a
+commitment rule with the layout version unchanged (F10). Until now a receipt signing a `profileId`
+nobody published was `VALID`, with the problem in an annotation ending *"The verdict does not move on
+it"*. The old reasoning was that turning the issuer's fail-closed rule into a refusal is a caller's
+policy rather than this check's call; it was wrong about which rule applies. An unrecognised profile
+is an **unknown state** — the meaning of every signed number in the receipt is unestablished — and
+resolving an unknown state to the restricted default is this tool's own contract, not one borrowed
+from the issuer. Now `UNVERIFIABLE`/`profile_unrecognised`, with `profile_absent` as its own reason
+where the registry names the member and the receipt signs none: there is no second id to disagree
+with, and a consumer that could not tell those apart could not tell a receipt committing to the wrong
+semantics from one committing to none. The refusal is issued **after** the identity branch completes,
+so a revoked key still reports `key_revoked` and `stopped_at: "profile"` never claims identity was
+skipped. Where the registry publishes no profile for a layout, nothing refuses — refusing there would
+refuse every v1–v4 receipt for a member its layout never had. The test that guarded this gap was
+written to be rewritten (*"WHEN THE FIX LANDS this test is rewritten, not deleted"*) and is, with its
+old assertions quoted in the docblock so the change is legible from the file alone.
+
+**`coverage.checks_not_evaluated` gains a third reason, `condition_unmet`, with the condition in
+words.** `src/coverage.ts` used to omit `conditional` checks whose input was absent, on the ground
+that the adapter annotates them itself and listing them would make a deliberately-skipped optional
+check look like a coverage gap. Right about the risk, wrong about the reader: that annotation is
+prose — `binding: "not_checked (package carries no sourceGate)"` — so an agent reading `coverage` to
+find out what a verdict examined had to parse English to learn that a bare attestation's
+`preTradeUidsHash` was never looked at, and two results that examined very different things were
+identical in the one block built to say what was examined. The original worry is answered by the
+token rather than by silence. Precedence where a row could carry more than one: `not_implemented`,
+then `not_reached`, then `condition_unmet` — a stopped run reports the stop, the stronger and earlier
+fact. **The other four formats' output is unchanged, and that is asserted rather than assumed:** with
+no third argument every row in every format is still `not_reached` or `not_implemented`, and no row
+carries a condition nobody supplied.
+
+Four reason codes are additive to the closed vocabulary (`registry_snapshot_required`,
+`registry_snapshot_mismatch`, `profile_unrecognised`, `profile_absent`), and two manifest rows are
+new: `snapshot` before `identity`, `profile` after it.
+
+**Registry pins.** The 2026-09-11.1 release `0x6e3bd18c…` and the now content-addressed promotion v4
+`0x6148f427…` are pinned by bytes; both content addresses recompute under the scope each object
+declares, with two independent JCS serialisers agreeing **byte for byte** (21,847 and 2,631 canonical
+bytes, matching the figures the issuer's letter stated, which were `[relayed]` until this run) and a
+one-byte control moving each address. `current.json` is re-pinned. The activation set, the Active
+Headless policy and the semantic profile are byte-identical to their 10 September pins, so the
+issuer's statement that they did not change is confirmed from bytes rather than taken. The rule name
+`lineage-floor-any` is now readable in the release's own bytes rather than only in a letter; **this
+repository does not implement lineage admission** — the adapter verifies registry objects by content
+address and does not evaluate policy admission (B-191, the founder's ruling). Recorded and not
+smoothed over: `current.json` now names promotion **v6** `0x4396f761…`, not the v4 the 11 September
+letter named. Both are true of their instant; v6 is not fetched and is an open item.
+
 **A fifth format, `x402.settlement/2`, and the first thing to say about it is what it cannot
 establish.** In an x402 v2 `exact` settlement on EVM there is exactly one signature and it covers six
 values — `from`, `to`, `value`, `validAfter`, `validBefore`, `nonce`. The resource being paid for is
