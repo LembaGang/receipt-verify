@@ -24,6 +24,9 @@ Options:
   --prev <file>       predecessor receipt, for formats carrying a chain link
   --disclose <file>   disclosed {name, value, salt, proof} tuples, for committed fields
   --registry <path>   published key registry, for formats that resolve a signer from one
+  --registry-sha256 <hex>
+                      the SHA-256 you claim for --registry. Checked, not trusted: a
+                      mismatch is UNVERIFIABLE and stops the run
   --rpc <url>         JSON-RPC endpoint, for optional on-chain corroboration
   --allow-unregistered-signer
                       continue past a signer absent from the registry. Asserts NOTHING
@@ -56,6 +59,7 @@ interface Args {
   prev?: string;
   disclose?: string;
   registry?: string;
+  registrySha256?: string;
   rpc?: string;
   allowUnregisteredSigner: boolean;
   clockTolerance?: number;
@@ -94,6 +98,13 @@ export function parseArgs(argv: string[]): Args | string {
         const v = next();
         if (v === null) return "--registry needs a value";
         a.registry = v;
+        break;
+      }
+      case "--registry-sha256": {
+        const v = next();
+        if (v === null) return "--registry-sha256 needs a value";
+        if (!/^[0-9a-fA-F]{64}$/.test(v)) return "--registry-sha256 needs 64 hex characters";
+        a.registrySha256 = v.toLowerCase();
         break;
       }
       case "--rpc": {
@@ -209,6 +220,7 @@ export async function run(argv: string[]): Promise<{ result: VerifyResult | null
   if (parsed.rpc !== undefined) opts.rpc = parsed.rpc;
   if (parsed.allowUnregisteredSigner) opts.allowUnregisteredSigner = true;
   if (parsed.registry !== undefined) opts.registryOrigin = parsed.registry;
+  if (parsed.registrySha256 !== undefined) opts.registrySha256 = parsed.registrySha256;
   // The three optional byte inputs fail the same way: an unreadable companion
   // file is an io_error, never a quietly-skipped check.
   for (const [flag, path, field] of [

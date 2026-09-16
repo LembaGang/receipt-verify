@@ -116,6 +116,31 @@ export type ReasonCode =
    * union — a consumer branching on the older members falls through to its
    * default, which is the fail-closed side of an UNVERIFIABLE.
    */
+  /**
+   * An ExecutionReceipt v1-v4 was verified without the registry snapshot its
+   * verdict must be relative to. The issuer's deployed rule makes a legacy
+   * verdict historical and snapshot-relative and REQUIRES the exact preserved
+   * registry bytes, their full SHA-256 and their byte length with every such
+   * verdict; without them there is no verdict this tool is entitled to state.
+   * Distinct from `key_unresolvable`, which is about a signer that no published
+   * registry names: this one fires whether or not the signer would resolve, and
+   * `--allow-unregistered-signer` does not waive it, because that flag speaks
+   * about identity and this is about the scope of the whole result. Additive to
+   * this union — a consumer branching on the older members falls through to its
+   * default, which is the fail-closed side of an UNVERIFIABLE.
+   */
+  | "registry_snapshot_required"
+  /**
+   * The caller named a SHA-256 for the registry snapshot and the bytes supplied
+   * digest to something else. A fact about the caller's inputs, never about the
+   * receipt, so it is UNVERIFIABLE and not INVALID: nothing here says the
+   * receipt fails to bind to anything. Distinct from `malformed_member`, which
+   * says a document could not be read — both documents here read perfectly and
+   * disagree about which one was meant. Additive to this union — a consumer
+   * branching on the older members falls through to its default, which is the
+   * fail-closed side of an UNVERIFIABLE.
+   */
+  | "registry_snapshot_mismatch"
   | "chain_unavailable"
   /**
    * The envelope carries chain data and none of the three off-chain artefacts,
@@ -185,6 +210,19 @@ export interface VerifyOptions {
   registry?: Uint8Array;
   /** Where `registry` came from, for the ResolvedKey `origin` line. */
   registryOrigin?: string;
+  /**
+   * The SHA-256 the caller claims for `registry`, lowercase hex. Optional, and
+   * checked rather than trusted: when it is supplied and the bytes digest to
+   * something else the result is UNVERIFIABLE/`registry_snapshot_mismatch` and
+   * nothing after it is evaluated.
+   *
+   * It exists because a snapshot-relative verdict is only as good as the
+   * reader's ability to tell WHICH snapshot it was taken against. The digest of
+   * the supplied bytes is reported on every legacy verdict either way; this lets
+   * a caller who already knows which snapshot they mean find out, in the
+   * verdict, that they passed a different file.
+   */
+  registrySha256?: string;
   /**
    * Continue past a signer that resolves to no published key. This asserts
    * NOTHING about identity: it lets the structural checks run over an artefact

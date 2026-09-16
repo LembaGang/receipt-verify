@@ -2113,3 +2113,114 @@ whole, from its own fetch list — it does not append. Every section below the f
 including this one, would be lost by a run of it, and the x402 paths are not in its list at all. The
 sections have been maintained by hand since 2026-09-01. This is recorded as an observation, not
 repaired here: `npm run snapshot` is not safe to run against this file as it stands.
+
+---
+
+## Appended 2026-09-16 — the 2026-09-11.1 release, the content-addressed promotion v4, and current.json re-pinned
+
+**B-172.** YuTao's mail of 11 September (relayed by the founder) named a new release, a
+content-addressed promotion record, and a rule name for the predecessor pin. All three are read from
+the issuer's own bytes here. **Every figure his letter stated is reproduced, and one thing it could
+not have anticipated is recorded: the live promotion pointer has moved past the record he named.**
+
+All fetched at the `www.` host (the bare host answers 307), written to `refs/` byte-exact with no
+re-serialisation.
+
+| path | object | bytes | sha256 | `check` |
+|---|---|---|---|---|
+| `refs/insight-oracle-registry-release-0x6e3bd18c.json` | release 2026-09-11.1 | 22080 | `9171c0a2f9a029b9990c6913fb6909e78fbd265c257f797186c6812e6d079763` | `fail` |
+| `refs/insight-oracle-registry-promotion-0x6148f427.json` | promotion v4 | 2958 | `0924462061c58963082e2db2da28b17bafc576e24dfbae6a92de60671a3ce426` | `fail` |
+| `refs/insight-oracle-registry-current-2026-09-16.json` | `current.json` | 1330 | `bc20008c75c64a2acdbb07090f1b7cdd751af13205ea2c58896683ec5678c29f` | `note` (`mutable_pointer`) |
+
+### Both content addresses recomputed, with controls
+
+| object | declared scope | canonical bytes | recomputed address | id in the URL | match |
+|---|---|---|---|---|---|
+| release 2026-09-11.1 | the release object in this response | 21847 | `0x6e3bd18c…c7e69f6b` | `0x6e3bd18c…c7e69f6b` | **yes** |
+| promotion v4 | the promotion object excluding `promotionId` | 2631 | `0x6148f427…ef93a5217` | `0x6148f427…ef93a5217` | **yes** |
+
+Method unchanged from the 10 September section: keccak256 over the RFC 8785 canonical form, computed
+with **two independent JCS serialisers** — this repository's TypeScript one and the Python one in
+`tools/asqav_envelope_hash.py` that `tools/jcs-cross-check.py` drives — whose canonical forms were
+compared **byte for byte**, not merely by digest: 21847/21847 and 2631/2631 bytes, with identical
+sha256 over each pair (`7af94338a02beadf…`, `53ccd26362ea9fc4…`).
+
+**The control, run and printed before the result was believed.** A one-byte mutation of a string
+member inside each scope moves its address: the release to `0x9da31789…`, the promotion to
+`0x2d7d146f…`, and both serialisers agree on the mutated forms too. A recomputation that could not
+have failed would have established nothing.
+
+**Both canonical lengths equal the figures YuTao's letter stated** — release 21,847 B, promotion
+2,631 B — which were `[relayed]` until this run and are now measured here.
+
+### The three objects he said did not change, checked rather than taken
+
+Each was re-fetched by following a path from the release's own bytes, never by guessing a URL: the
+activation set from `mainlineIntegrationIsolation.immutableSetPath`, and the Headless policy from
+`immutablePolicyPathTemplate` with the policy id the activation set's `partners.headless` names.
+
+| object | bytes | sha256 | against the 10 September pin |
+|---|---|---|---|
+| activation set v2 `0xe9512f0b…` | 1400 | `91e4fd0cc264ea2bde6ae4ff4092f090b901070376bffd24b6c16a1891e4763b` | **byte-identical** |
+| Active Headless policy v2 `0xd510bd9f…` | 1173 | `14e29fbd050bd0d5b52cd4158d25d9fe1d0ea1ef14c8c92b397155d0c9cfc0f7` | **byte-identical** |
+| semantic profile `0xe7513b05…` | 2372 | `284056499d0e779f7c168edd11dd716e64acf173bcb43df0bc58cc7bb7287ace` | **byte-identical** |
+
+None is re-pinned: identical bytes under an identical content address need no second row. His
+statement that the activation set, the policy, the profile, the receipt wire format and the signer
+did not change is therefore confirmed for the three objects this repository can check by bytes.
+
+### `lineage-floor-any` is now in the issuer's bytes, not only in a letter
+
+The release's `mainlineIntegrationIsolation` carries `registryReleasePinRule: "lineage-floor-any"`
+and, beside it, `registryReleasePinRuleDescription`: *"A candidate release is admitted when it equals
+any policy-pinned release or reaches one through predecessorReleaseId; unknown releases, cycles, and
+releases outside every pinned lineage fail closed."* The promotion v4 `activationRule` states the
+same rule in almost the same words.
+
+That answers the observation the 10 September section left open as a property of the design. The
+Active Headless policy still pins `[0xf45d4c02…]`, which as of this release is **two** behind rather
+than one — the chain is `0xf45d4c02…` → `0x96d1f624…` → `0x6e3bd18c…` — and under a floor rule that
+is admitted rather than stale. **This repository does not implement lineage admission.** The adapter
+verifies registry objects by content address; whether to add a `lineage-floor-any` check is B-191 and
+is the founder's ruling, not this session's.
+
+### What the live pointer says, which is not what the letter said
+
+`current.json` read at 2026-09-16T11:38:11Z names `registryRevision` 2026-09-11.1 and `releaseId`
+`0x6e3bd18c…`, matching the release pinned above. It also carries a **new top-level `promotion`
+block** that the 10 September pin did not have at all — that block is the whole of the 1017 → 1330
+byte growth — and the promotion it names is **not** the one this session was sent to pin:
+
+> `promotionId` `0x4396f761c00eee4f37aad37e9a703bd3896ace1fee8a3bde2a5ff8ebb9dc9119`,
+> `promotionVersion` 6
+
+Both statements are true of their own instant. Promotion v4 `0x6148f427…` is the record the
+11 September letter named, it is pinned here, and its address recomputes; the live pointer has since
+advanced to v6. **v6 is not fetched or pinned in this session**: the handoff scoped the network reads
+to these objects and the two 404 probes, and a fourth object is scope this session does not have. It
+is recorded as an open item so the next session does not have to rediscover it.
+
+### The two 404 probes
+
+His letter states that unknown release and promotion ids answer HTTP 404 with `no-store`. Probed once
+each at 2026-09-16T11:40:12Z and 11:40:13Z, with the id
+`0x0000000000000000000000000000000000000000000000000000000000000001`:
+
+```
+GET /.well-known/oracle-registry/releases/0x000…001    HTTP/1.1 404 Not Found   Cache-Control: no-store
+GET /.well-known/oracle-registry/promotions/0x000…001  HTTP/1.1 404 Not Found   Cache-Control: no-store
+```
+
+Both carry `Content-Type: application/json`, `Age: 0`, `Server: Vercel`,
+`X-Content-Type-Options: nosniff`. The statement is reproduced. Nothing else was probed.
+`policy_not_active_for_partner` was **not** exercised: reaching it needs a partner request against a
+non-active policy, which is a call into their gate rather than a read of a published document, and
+this session makes no such call.
+
+### What this section does not do
+
+- **It does not pin promotion v6**, for the reason given above. Recorded, not fetched.
+- **It does not observe the runtime.** Unchanged from 10 September: the policy and the promotion are
+  published documents; nothing here watches the gate that reads them.
+- **It does not implement lineage admission** (B-191), and it does not encode the policy's release
+  pin anywhere in the tool.

@@ -979,18 +979,73 @@
         "outcome": "current"
       }
     },
+  {
+    "id": "insight-oracle-registry-release/0x6e3bd18c",
+    "kind": "http",
+    "role": "current",
+    "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0x6e3bd18c541cc80e326754a7743f05050df348257102b93f9a13bc82c7e69f6b",
+    "sha256": "9171c0a2f9a029b9990c6913fb6909e78fbd265c257f797186c6812e6d079763",
+    "retrieved": "2026-09-16T11:38:10Z",
+    "check": "fail",
+    "check_reason": "Content-addressed and immutable. The id in the URL IS keccak256 over the RFC 8785 canonicalisation of the scope the object itself declares in its `digest` member, and this session recomputed that address from the pinned bytes with two independent JCS serialisers — the repository's TypeScript one and the Python one tools/jcs-cross-check.py drives — whose canonical forms were compared BYTE for byte, not merely by digest, and a one-byte mutation control moved the address before the result was believed. So a `changed` outcome here does not mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes. There is no benign reading, and `fail` is the only defensible setting.",
+    "pinned_file": "refs/insight-oracle-registry-release-0x6e3bd18c.json",
+    "role_note": "Registry revision 2026-09-11.1, effectiveFrom 2026-09-11. predecessorReleaseId is 0x96d1f62460d53e68b34cb7812e8ef736cce8332754dc1284cfb7df1b2b575e2c, pinned here as insight-oracle-registry-release/0x96d1f624, so the chain 2026-09-08.1 -> 2026-09-09.1 -> 2026-09-10.1 -> 2026-09-11.1 is complete and every link is held. executionReceipt.currentProfileId is 0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e — UNCHANGED across all four, so the commitment semantics did not move with this release either. Its legacyProfileResolution is byte-identical in meaning to the 2026-09-10.1 one and is the source this repository implements: signingStatus retired, productionAdmission forbidden, resultScope relative-to-exact-registry-snapshot, globallyCanonicalVerdict false, requiredEvidence [registrySnapshotUtf8Bytes, sha256, byteLength]. NEW IN THESE BYTES, and the reason this pin matters beyond the chain: mainlineIntegrationIsolation carries registryReleasePinRule `lineage-floor-any` with its own description. The rule name reached this repository on 11 September as a [relayed] line in a letter; it is now read from the issuer's own signed-by-content bytes. This repository does NOT implement lineage admission — the adapter verifies registry objects by content address and does not evaluate policy admission; that is B-191, the founder's ruling, not this session's.",
+    "provenance_section": "Appended 2026-09-16 — the 2026-09-11.1 release, the content-addressed promotion v4, and current.json re-pinned",
+    "last_observed": {
+      "tip": "9171c0a2f9a029b9990c6913fb6909e78fbd265c257f797186c6812e6d079763",
+      "at": "2026-09-16T11:38:10Z",
+      "outcome": "current"
+    }
+  },
+  {
+    "id": "insight-oracle-registry-promotion/0x6148f427",
+    "kind": "http",
+    "role": "current",
+    "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x6148f4273e60fa702bbac5a5f0abd3461d8e46e532675aeaec6d991ef93a5217",
+    "sha256": "0924462061c58963082e2db2da28b17bafc576e24dfbae6a92de60671a3ce426",
+    "retrieved": "2026-09-16T11:38:11Z",
+    "check": "fail",
+    "check_reason": "Content-addressed and immutable. The id in the URL IS keccak256 over the RFC 8785 canonicalisation of the scope the object itself declares in its `digest` member, and this session recomputed that address from the pinned bytes with two independent JCS serialisers — the repository's TypeScript one and the Python one tools/jcs-cross-check.py drives — whose canonical forms were compared BYTE for byte, not merely by digest, and a one-byte mutation control moved the address before the result was believed. So a `changed` outcome here does not mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes. There is no benign reading, and `fail` is the only defensible setting.",
+    "pinned_file": "refs/insight-oracle-registry-promotion-0x6148f427.json",
+    "role_note": "Promotion v4, effectiveFrom 2026-09-11, registryReleaseId 0x6e3bd18c..., predecessorPromotionId 0x338a53e57055bf01820ef3880b2668bee6907307fc6e682704f868e366518220 (which is promotion v3, the branch-path record fixtures/provenance.md quoted on 10 September and could not pin). THE PROMOTION RECORD IS NOW PINNABLE, which is what changed: its predecessor was a path on a moving branch whose promotionId carried no digest scope, so it was read and quoted and never pinned; this one declares `the promotion object excluding promotionId` as its scope and the address recomputes from the pinned bytes under it. Its activationRule states the lineage-floor rule in the issuer's own words. NOT THE LIVE PROMOTION as of this pin: current.json read at the same minute names promotionId 0x4396f761c00eee4f37aad37e9a703bd3896ace1fee8a3bde2a5ff8ebb9dc9119 at promotionVersion 6. v4 is what the handoff named and what is verified here; v6 is recorded as an open item and is not fetched.",
+    "provenance_section": "Appended 2026-09-16 — the 2026-09-11.1 release, the content-addressed promotion v4, and current.json re-pinned",
+    "last_observed": {
+      "tip": "0924462061c58963082e2db2da28b17bafc576e24dfbae6a92de60671a3ce426",
+      "at": "2026-09-16T11:38:11Z",
+      "outcome": "current"
+    }
+  },
     {
       "id": "insight-oracle-registry-current",
       "kind": "http",
       "role": "current",
       "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/current.json",
-      "sha256": "64324114f6f3bdde079219f2d0620f7737d2c62b30a84ff897b56c47391e3602",
-      "retrieved": "2026-09-10T13:24:11Z",
+      "sha256": "bc20008c75c64a2acdbb07090f1b7cdd751af13205ea2c58896683ec5678c29f",
+      "retrieved": "2026-09-16T11:38:11Z",
       "check": "note",
       "check_reason_code": "mutable_pointer",
       "check_reason": "THIS IS THE ENTRY B-151 WAS BUILT FOR. fixtures/provenance.md's 9 September section named the gap in these words: `It does not watch the pointer. current.json is historical, so nothing here will notice the next time registryRevision advances ... The tool has no vocabulary for \"an http upstream expected to move, whose movement should be reported and not fail the run\" ... Adding it for http entries is the smallest change that would close this, and it is not made here.` It is made now, and this entry is the first consumer. The pointer's whole function is to advance: it names the current release, and a release is promoted roughly daily. Under `fail` it reds for doing its job; unwatched, a registry revision passes unseen, which is what happened between 2026-09-09 and 2026-09-10 and was caught only because the Lead read it by hand.",
+      "pinned_file": "refs/insight-oracle-registry-current-2026-09-16.json",
+      "ref_source": "Re-read 2026-09-16T11:38:11Z with curl at the www. host (the bare host answers 307): status=200, 1330 bytes, sha256 bc20008c75c64a2acdbb07090f1b7cdd751af13205ea2c58896683ec5678c29f, content-type application/json. The 10 September pin was 1017 bytes; the growth is one new top-level member, `promotion`, which that pin did not carry at all.",
+      "role_note": "Names registryRevision 2026-09-11.1, releaseId 0x6e3bd18c541cc80e326754a7743f05050df348257102b93f9a13bc82c7e69f6b, effectiveFrom 2026-09-11, the same partnerIntegrations.activationSetId 0xe9512f0b..., and — new since the 10 September pin — a top-level `promotion` block. THAT BLOCK DOES NOT NAME THE PROMOTION THIS SESSION WAS SENT TO PIN: it names promotionId 0x4396f761c00eee4f37aad37e9a703bd3896ace1fee8a3bde2a5ff8ebb9dc9119 at promotionVersion 6, while the handoff's addendum of 11 September names promotion v4 0x6148f427... as the content-addressed record. Both statements are true of their own instant: v4 is pinned here and its address recomputes, and the live pointer has since advanced to v6. v6 is NOT fetched or pinned in this session — the handoff scoped the network reads and this would be a fourth object — and it is recorded as an open item instead.",
+      "provenance_section": "Appended 2026-09-16 — the 2026-09-11.1 release, the content-addressed promotion v4, and current.json re-pinned",
+      "last_observed": {
+        "tip": "bc20008c75c64a2acdbb07090f1b7cdd751af13205ea2c58896683ec5678c29f",
+        "at": "2026-09-16T11:38:11Z",
+        "outcome": "current"
+      }
+    },
+    {
+      "id": "insight-oracle-registry-current/2026-09-10",
+      "kind": "http",
+      "role": "historical",
+      "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/current.json",
+      "sha256": "64324114f6f3bdde079219f2d0620f7737d2c62b30a84ff897b56c47391e3602",
+      "retrieved": "2026-09-10T13:24:11Z",
+      "check_reason": "THIS IS THE ENTRY B-151 WAS BUILT FOR. fixtures/provenance.md's 9 September section named the gap in these words: `It does not watch the pointer. current.json is historical, so nothing here will notice the next time registryRevision advances ... The tool has no vocabulary for \"an http upstream expected to move, whose movement should be reported and not fail the run\" ... Adding it for http entries is the smallest change that would close this, and it is not made here.` It is made now, and this entry is the first consumer. The pointer's whole function is to advance: it names the current release, and a release is promoted roughly daily. Under `fail` it reds for doing its job; unwatched, a registry revision passes unseen, which is what happened between 2026-09-09 and 2026-09-10 and was caught only because the Lead read it by hand.",
       "pinned_file": "refs/insight-oracle-registry-current-2026-09-10.json",
       "ref_source": "Fetched in this session with the same client tools/drift.ts uses -- node fetch(url, { method: \"GET\", redirect: \"follow\" }), no added headers -- and written to refs/ byte-exact. Output: status=200 bytes=1017 sha256=64324114f6f3bdde079219f2d0620f7737d2c62b30a84ff897b56c47391e3602, response Date: Thu, 10 Sep 2026 13:24:11 GMT, Cache-Control: public, max-age=60, must-revalidate, no ETag and no Last-Modified, so the only bound on when it moved is our own reads. Requested at the www. host: the bare host answers 307.",
+      "role_reason": "Superseded as the live pointer on 2026-09-16, when it was re-read and had advanced to registryRevision 2026-09-11.1. Retained at `historical` for its MECHANICAL meaning in tools/drift.ts — reported as not_checked, never counted as current, never fetched again — so the 2026-09-10 bytes stay quotable without a second row claiming to watch the same URL.",
       "role_note": "Names registryRevision 2026-09-10.1, releaseId 0x96d1f62460d53e68b34cb7812e8ef736cce8332754dc1284cfb7df1b2b575e2c, effectiveFrom 2026-09-10, and partnerIntegrations.activationSetId 0xe9512f0bf2b94c9a846877187b70fd29007fa196c8bd67f7c17eb58eebc24190. Every immutable object pinned in this session was resolved by following a path from THIS file or from the release object it names, never by guessing a URL.",
       "provenance_section": "Appended 2026-09-10 - Insight's v5-only production admission: the Headless policy, the activation set, the 2026-09-10.1 release and the two mutable pointers",
       "last_observed": {

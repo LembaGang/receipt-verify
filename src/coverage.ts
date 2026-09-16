@@ -416,8 +416,16 @@ const insight: FormatCoverage = {
       status: "implemented",
     },
     {
-      id: "identity",
+      id: "snapshot",
       order: 6,
+      title: "A legacy ExecutionReceipt (v1-v4) verdict carries the exact registry snapshot it is relative to, by SHA-256 and byte length",
+      source: "the issuer's immutable release 0x96d1f624 `executionReceipt.legacyProfileResolution`, and the promotion record it names; FINDINGS.md F15 gap 1",
+      status: "conditional",
+      note: "Runs on the TARGET receipt only, and only when its primaryType is ExecutionReceipt and its signed `schemaVersion` is a number below 5. The issuer's deployed rule makes such a verdict historical and snapshot-relative: `resultScope` relative-to-exact-registry-snapshot, `globallyCanonicalVerdict` false, `requiredEvidence` [registrySnapshotUtf8Bytes, sha256, byteLength], and \"fail closed if absent or mismatched; never substitute current.json or the current registry\". So a legacy receipt verified with no `--registry` is UNVERIFIABLE/`registry_snapshot_required` and `--allow-unregistered-signer` does NOT waive it: that flag speaks about the signer, and this is about the scope of the whole result. A `--registry-sha256` the supplied bytes do not digest to is UNVERIFIABLE/`registry_snapshot_mismatch`, both digests named; a fact about the caller's inputs, never INVALID. When it passes, four annotations ride on the result whatever the verdict — `verdict_scope`, `registry_snapshot_sha256`, `registry_snapshot_byte_length`, `registry_snapshot_origin` — and a VALID detail opens with `historical, snapshot-relative:`; on an INVALID, which carries the three values in its detail instead, because the tri-state contract gives an INVALID no annotations. WHAT THIS DOES NOT ESTABLISH, and the reason it is evidence rather than a check: nothing here can tell whether the snapshot supplied is the one preserved when the receipt was issued. The rule forbids substituting the current registry and this tool cannot detect that substitution — it reports the digest and length of what it was handed so a reader can compare them against the issuer's preserved copy, and that comparison is the reader's. The GATES (OracleSafetyCheck, published at schemaVersion 1 to 3) are never subject to this: the promotion record names ExecutionReceipt, not the gate structs, so a v5 package with v3 gates carries no snapshot annotations.",
+    },
+    {
+      id: "identity",
+      order: 7,
       title: "The recovered signer is a key published in the registry, not revoked on either channel, and inside its own validity window BOTH at the evaluation instant and at the artefact's own instant; the key's published role is reported; and the registry's type for this primaryType agrees with the artefact's",
       source: "refs/insight-oracle-keys-2026-09-02.json",
       status: "implemented",
@@ -425,14 +433,14 @@ const insight: FormatCoverage = {
     },
     {
       id: "freshness",
-      order: 7,
+      order: 8,
       title: "validUntil equals its anchor plus validForSeconds, and has not closed at the evaluation time",
       source: "the artefact's own validUntil / checkedAt / executedAt / validForSeconds",
       status: "implemented",
     },
     {
       id: "binding",
-      order: 8,
+      order: 9,
       title: "The receipt binds to every gate it names, the non-zero uids hash to the signed preTradeUidsHash, and each requestHash is the digest of its canonical request",
       source: "the receipt's preTradeUid / destinationPreTradeUid / preTradeUidsHash / requestHash and the gates' canonicalRequest* types",
       status: "conditional",
@@ -440,7 +448,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "swap",
-      order: 9,
+      order: 10,
       title: "The pool Swap event decodes to the signed executedPrice, and the delta against quotedPrice is recomputed",
       source: "the Uniswap V3 Swap event ABI, derived from its signature string here",
       status: "conditional",
@@ -448,7 +456,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "attribution",
-      order: 10,
+      order: 11,
       title: "Net flow per address over every Transfer log, and the price actually realised by the final beneficiary",
       source: "the ERC-20 Transfer event ABI, derived from its signature string here",
       status: "reported_only",
@@ -456,7 +464,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "prices",
-      order: 11,
+      order: 12,
       title: "Prices read at the signed `priceScale`, the quote recomputed from both gates, and the execution status recomputed",
       source: "the receipt's priceScale/quotedPrice/executedPrice and the gates' consensusPrice",
       status: "conditional",
@@ -464,7 +472,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "measured_fields",
-      order: 12,
+      order: 13,
       title: "`measuredFieldsHash` recomputed from the set of fields the package declares measured",
       source: "the receipt's signed measuredFieldsHash and the package's own `measuredFields` enumeration",
       status: "reported_only",
@@ -472,7 +480,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "chain",
-      order: 13,
+      order: 14,
       title: "Transaction status, block number, block timestamp and shipped logs corroborated against a JSON-RPC endpoint",
       source: "eth_getTransactionReceipt / eth_getBlockByNumber",
       status: "conditional",
@@ -480,7 +488,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "precedence",
-      order: 14,
+      order: 15,
       title: "That a pre-trade gate existed BEFORE the trade it gates",
       source: "the claim the package's structure invites; no source establishes it",
       status: "not_implemented",
@@ -488,7 +496,7 @@ const insight: FormatCoverage = {
     },
     {
       id: "observations",
-      order: 15,
+      order: 16,
       title: "participantCount, sourceGroupCount, independence, consensus-price provenance and mevRiskBps",
       source: "the receipt's own signed fields",
       status: "not_implemented",

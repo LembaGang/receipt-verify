@@ -83,6 +83,15 @@ export function invalid(
  *  - `expired` / `not_yet_valid` — the key's window does not contain the
  *    instant the CALLER asked about (`--now`). Naming a different instant can
  *    change the answer, and the detail says so.
+ * TWO FURTHER REASONS ARE ABOUT THE CALLER'S INPUTS, not about any key:
+ * `registry_snapshot_required` and `registry_snapshot_mismatch`. The issuer of
+ * insight.attestation/eip712 has made a v1-v4 verdict historical and
+ * snapshot-relative, so a legacy result without its registry snapshot is not a
+ * weaker verdict, it is not a verdict at all; and a snapshot whose digest is not
+ * the one the caller named is a disagreement between two of the caller's own
+ * documents. Neither is ever INVALID — nothing in either says the receipt fails
+ * to bind to anything.
+ *
  *  - `signed_outside_key_window` — the key's window does not contain the
  *    ARTEFACT'S OWN instant (`signedAt`, else the signed `executedAt`/
  *    `checkedAt`). No `--now` changes that: it is a fact about the two

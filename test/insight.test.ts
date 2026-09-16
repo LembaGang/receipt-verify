@@ -43,6 +43,7 @@ import { evidenceActionAdapter } from "../src/adapters/evidence-action.js";
 import { verificationStateAdapter } from "../src/adapters/verification-state.js";
 import { actaAdapter } from "../src/adapters/acta.js";
 import { detectFormat } from "../src/detect.js";
+import { jsonResult } from "../src/verdict.js";
 import type { VerifyOptions, VerifyResult } from "../src/types.js";
 import {
   FIX,
@@ -2714,5 +2715,206 @@ describe("insight v5 — the fail-closed claim, and what our adapter actually do
       now: INSIGHT_NOW_V5,
     });
     expect(String(r2.annotations?.["semantic_profile"])).not.toContain("profile_unrecognised");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// THE SNAPSHOT-RELATIVE RULE (B-172, FINDINGS F15 gap 1)
+//
+// The issuer's immutable release 0x96d1f624 declares a v1-v4 verdict historical
+// and snapshot-relative, requires the exact preserved registry bytes with their
+// SHA-256 and byte length on every such verdict, and says to fail closed when
+// they are absent or mismatched.
+//
+// What was red before the rule existed, measured on this tree at 324c2ef: ALL
+// THREE 2 September packages reached VALID/verified with no registry supplied at
+// all — an unqualified verdict on a legacy receipt, which is the one thing the
+// rule forbids. Those three cases are (a) below.
+//
+// WHICH PIN EACH PACKAGE IS PAIRED WITH, and why. Each package is verified
+// against the registry pin that publishes ITS OWN layout, which is the pairing
+// the rest of this file already uses: the v2 package against the 09:09Z pin, the
+// v3 against 11:54Z, the v4 against 15:45Z. The 2026-09-10 registry is never
+// substituted for any of them — the rule forbids substituting the current
+// registry, and its key windows would refuse these artefacts first anyway.
+//
+// The digests asserted below were read from the GIT OBJECT STORE, not from the
+// worktree: `git check-attr text -- refs/insight-oracle-keys-2026-09-02.json`
+// reports `text: set`, because `.gitattributes` puts `*.json text eol=lf` after
+// `refs/** -text` and the last matching line wins there. The bytes happen to be
+// identical either way on this machine (eol=lf writes what was committed), and
+// `git cat-file blob HEAD:<path> | sha256sum` was compared against the worktree
+// digest for all five pins before these literals were written.
+// ---------------------------------------------------------------------------
+
+describe("insight — a legacy verdict is snapshot-relative or it is not a verdict", () => {
+  const LEGACY = [
+    { label: "v2", bytes: PKG_BYTES, reg: REG_BYTES, origin: "refs/insight-oracle-keys-2026-09-02.json", now: INSIGHT_NOW, sha: "9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006", len: 9482 },
+    { label: "v3", bytes: V3_BYTES, reg: REG_1154_BYTES, origin: "refs/insight-oracle-keys-2026-09-02T1154Z.json", now: INSIGHT_V3_NOW, sha: "21675e382e6ead969d3b3fb823b3199327283152ab241be27d9c5b7177de23eb", len: 14854 },
+    { label: "v4", bytes: V4_BYTES, reg: REG_1545_BYTES, origin: "refs/insight-oracle-keys-2026-09-02T1545Z.json", now: INSIGHT_V4_NOW, sha: "76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2", len: 17019 },
+  ] as const;
+
+  // (a) -----------------------------------------------------------------
+  it.each(LEGACY)(
+    "(a) $label: no registry is UNVERIFIABLE/registry_snapshot_required, and --allow-unregistered-signer does not waive it",
+    async ({ bytes, now }) => {
+      for (const allow of [true, false]) {
+        const r = await insightAdapter.verify(bytes, { now, allowUnregisteredSigner: allow });
+        expect(`${r.verdict}/${r.reason}`, `allowUnregisteredSigner: ${allow}`).toBe("UNVERIFIABLE/registry_snapshot_required");
+        expect(r.stoppedAt).toBe("snapshot");
+        expect(r.resolvedKey).toBeUndefined();
+        expect(r.detail).toContain("never current.json and never the current registry");
+      }
+    },
+  );
+
+  it("(a) the refusal stops BEFORE identity, so the coverage block says identity was not reached", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, { now: INSIGHT_NOW, allowUnregisteredSigner: true });
+    const json = JSON.parse(jsonResult(r)) as { coverage: { stopped_at: string; checks_not_evaluated: Array<{ id: string; reason: string }> } };
+    expect(json.coverage.stopped_at).toBe("snapshot");
+    const notReached = json.coverage.checks_not_evaluated.filter((c) => c.reason === "not_reached").map((c) => c.id);
+    expect(notReached).toContain("identity");
+    expect(notReached).toContain("freshness");
+  });
+
+  // (b) -----------------------------------------------------------------
+  it.each(LEGACY)(
+    "(b) $label with its own 2 September pin carries the four annotations, and the digest is the pin's",
+    async ({ bytes, reg, origin, now, sha, len }) => {
+      const r = await insightAdapter.verify(bytes, { registry: reg, registryOrigin: origin, now, allowUnregisteredSigner: true });
+      expect(r.verdict).toBe("VALID");
+      expect(r.annotations?.["verdict_scope"]).toBe("snapshot-relative");
+      expect(r.annotations?.["registry_snapshot_sha256"]).toBe(sha);
+      expect(r.annotations?.["registry_snapshot_byte_length"]).toBe(len);
+      expect(r.annotations?.["registry_snapshot_origin"]).toBe(origin);
+      // The qualification opens the detail. A reader who stops at the first
+      // clause must not come away with an unqualified pass.
+      expect(r.detail.startsWith("historical, snapshot-relative: ")).toBe(true);
+    },
+  );
+
+  it("(b) the digest is over the bytes as supplied, not over a reserialised registry", async () => {
+    // The control that separates "digested the input" from "digested something
+    // we made": one trailing newline changes the answer, and it is exactly the
+    // kind of difference a reserialising digest would erase.
+    const padded = Buffer.concat([REG_BYTES, Buffer.from("\n", "utf8")]);
+    const r = await insightAdapter.verify(PKG_BYTES, {
+      registry: padded,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02.json (with a trailing newline)",
+      now: INSIGHT_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(r.annotations?.["registry_snapshot_byte_length"]).toBe(9483);
+    expect(r.annotations?.["registry_snapshot_sha256"]).not.toBe("9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006");
+    expect(r.annotations?.["registry_snapshot_sha256"]).toBe(sha256Hex(padded));
+  });
+
+  it("(b) an INVALID reached AFTER the snapshot check carries the evidence in its detail, because the contract gives it no annotations", async () => {
+    // An expiry: the receipt is intact and its window has shut, so evaluation
+    // reaches check 9 and the verdict is INVALID/expired. That is a verdict
+    // about a legacy receipt, so the issuer's required evidence must travel with
+    // it, and an INVALID has no annotations to carry it in.
+    const r = await insightAdapter.verify(PKG_BYTES, {
+      registry: REG_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02.json",
+      now: INSIGHT_NOW + 10_000_000,
+      allowUnregisteredSigner: true,
+    });
+    expect(`${r.verdict}/${r.reason}`).toBe("INVALID/expired");
+    expect(r.annotations).toBeUndefined();
+    expect(r.detail).toContain("9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006");
+    expect(r.detail).toContain("9482 bytes");
+    expect(r.detail).toContain("is NOT globally canonical");
+  });
+
+  it("(b) an INVALID reached BEFORE the snapshot check carries no snapshot evidence, and that is the right answer", async () => {
+    // THE ORDERING CONSEQUENCE, asserted rather than left to be discovered.
+    //
+    // `schemaVersion` is a SIGNED field. On bytes whose signature does not
+    // verify, its value is unauthenticated: "this is a v2 receipt" is not a
+    // statement these bytes support. So the snapshot check sits after the
+    // signature check, and an artefact that fails signature or digest is refused
+    // without ever being classified as legacy. Attaching snapshot evidence there
+    // would qualify a verdict with a version number nobody signed for.
+    const tampered = clone(pkg);
+    tampered["receipt"]["data"]["executedAt"] = Number(tampered["receipt"]["data"]["executedAt"]) + 1;
+    const r = await insightAdapter.verify(bytesOf(tampered), {
+      registry: REG_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02.json",
+      now: INSIGHT_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(`${r.verdict}/${r.reason}`).toBe("INVALID/signature_invalid");
+    expect(r.stoppedAt).toBe("signature");
+    expect(r.detail).not.toContain("snapshot-relative");
+  });
+
+  // (c) -----------------------------------------------------------------
+  it("(c) one altered hex digit in --registry-sha256 is UNVERIFIABLE/registry_snapshot_mismatch", async () => {
+    const real = "9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006";
+    const wrong = `${real[0] === "a" ? "b" : "a"}${real.slice(1)}`;
+    const r = await insightAdapter.verify(PKG_BYTES, {
+      registry: REG_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02.json",
+      registrySha256: wrong,
+      now: INSIGHT_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(`${r.verdict}/${r.reason}`).toBe("UNVERIFIABLE/registry_snapshot_mismatch");
+    expect(r.stoppedAt).toBe("snapshot");
+    expect(r.annotations?.["registry_snapshot_sha256"]).toBe(real);
+    expect(r.annotations?.["registry_snapshot_claimed_sha256"]).toBe(wrong);
+    expect(r.detail).toContain("never about the receipt");
+  });
+
+  it("(c) the control: the CORRECT --registry-sha256 changes nothing", async () => {
+    const r = await insightAdapter.verify(PKG_BYTES, {
+      registry: REG_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02.json",
+      registrySha256: "9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006",
+      now: INSIGHT_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(r.verdict).toBe("VALID");
+    expect(r.annotations?.["registry_snapshot_claimed_sha256"]).toBeUndefined();
+  });
+
+  // (d) -----------------------------------------------------------------
+  it("(d) a v5 receipt with no registry is unchanged: key_unresolvable, not the snapshot refusal", async () => {
+    const wrapper = JSON.parse(read(INSIGHT_EXEC_SAMPLE_V5).toString("utf8")) as Record<string, any>;
+    const att = wrapper["data"]["attestation"];
+    expect(att.data.schemaVersion).toBe(5);
+    const r = await insightAdapter.verify(bytesOf(att), { now: INSIGHT_NOW_V5 });
+    expect(`${r.verdict}/${r.reason}`).toBe("UNVERIFIABLE/key_unresolvable");
+    expect(r.stoppedAt).toBe("identity");
+  });
+
+  it("(d) a v5 receipt WITH a registry carries no snapshot annotations at all", async () => {
+    const wrapper = JSON.parse(read(INSIGHT_EXEC_SAMPLE_V5).toString("utf8")) as Record<string, any>;
+    const r = await insightAdapter.verify(bytesOf(wrapper["data"]["attestation"]), {
+      registry: read(INSIGHT_REGISTRY_0909),
+      registryOrigin: "refs/insight-oracle-keys-2026-09-09T1440Z.json",
+      now: INSIGHT_NOW_V5,
+    });
+    for (const k of ["verdict_scope", "registry_snapshot_sha256", "registry_snapshot_byte_length", "registry_snapshot_origin"]) {
+      expect(r.annotations?.[k], `v5 must not carry ${k}`).toBeUndefined();
+    }
+    expect(r.detail.startsWith("historical")).toBe(false);
+  });
+
+  it("(d) the GATES are never subject to the rule: no gate carries a snapshot annotation", async () => {
+    // OracleSafetyCheck is published at schemaVersion 1 to 3 and would be inside
+    // any version test that looked only at the number. The promotion record
+    // names ExecutionReceipt, so the gates are excluded by struct, not by luck.
+    const r = await insightAdapter.verify(V4_BYTES, {
+      registry: REG_1545_BYTES,
+      registryOrigin: "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      now: INSIGHT_V4_NOW,
+      allowUnregisteredSigner: true,
+    });
+    expect(r.verdict).toBe("VALID");
+    const gatePrefixed = Object.keys(r.annotations ?? {}).filter((k) => /_(verdict_scope|registry_snapshot_)/.test(k));
+    expect(gatePrefixed, `gate-prefixed snapshot annotations: ${gatePrefixed.join(", ")}`).toEqual([]);
+    expect(String(r.annotations?.["source_gate_schema_encode_type"] ?? "")).toContain("OracleSafetyCheck");
   });
 });

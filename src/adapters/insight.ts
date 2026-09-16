@@ -24,6 +24,7 @@
 // oversights; they are the two things these bytes cannot establish, and the
 // manifest prints them on every result including VALID.
 
+import { createHash } from "node:crypto";
 import { keccak_256 } from "@noble/hashes/sha3.js";
 import { bytesToHex, concatBytes, hexToBytes, utf8ToBytes } from "@noble/hashes/utils.js";
 import { secp256k1 } from "@noble/curves/secp256k1.js";
@@ -1066,11 +1067,45 @@ function compareRegistrySchema(art: Attestation, reg: Registry): { line: string;
 
 type Ann = Record<string, string | number | boolean>;
 
+/**
+ * The registry bytes AS SUPPLIED, measured. Not the registry's content, and not
+ * a claim that these are the right bytes — only what was handed in, so a reader
+ * can compare it against the issuer's preserved copy themselves.
+ */
+export interface RegistrySnapshot {
+  sha256: string;
+  byteLength: number;
+  origin: string;
+}
+
 interface Ctx {
   registry: Registry | null;
   registryError: string | null;
   now: number;
   allowUnregistered: boolean;
+  /** SHA-256 and byte length of `opts.registry` exactly as supplied, or null. */
+  snapshot: RegistrySnapshot | null;
+  /** The digest the caller claimed for those bytes, lowercase hex, or null. */
+  snapshotClaim: string | null;
+  /**
+   * Set by `verifyOne` when the TARGET receipt is an ExecutionReceipt v1-v4, so
+   * the adapter can qualify the final detail line. Mutable on purpose: the fact
+   * is discovered in the middle of the run and is needed at the end of it.
+   */
+  legacyTarget: boolean;
+}
+
+/**
+ * The issuer's required evidence, as one line, for the places that have no
+ * annotations to put it in: an INVALID carries none under the tri-state
+ * contract, and its detail is the only channel left.
+ */
+export function snapshotEvidenceLine(snap: RegistrySnapshot): string {
+  return (
+    `This verdict is historical and snapshot-relative and is NOT globally canonical: it is relative to the registry snapshot ` +
+    `supplied as ${snap.origin}, sha256 ${snap.sha256}, ${snap.byteLength} bytes. Whether those are the bytes preserved when ` +
+    `this receipt was issued is not established here and cannot be — compare them against the issuer's preserved copy`
+  );
 }
 
 type Stage = { ok: false; result: VerifyResult } | { ok: true; key: ResolvedKey; ann: Ann; digest: string };
@@ -1092,7 +1127,13 @@ function selfDeclaredKey(art: Attestation): ResolvedKey {
   };
 }
 
-function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
+/**
+ * `isTarget` is passed rather than inferred from `prefix === ""`, because the
+ * snapshot rule below turns on it and an implicit coupling between a display
+ * prefix and a verdict rule is the kind that survives a rename and stops being
+ * true.
+ */
+function verifyOne(art: Attestation, ctx: Ctx, prefix: string, isTarget: boolean): Stage {
   const ann: Ann = {};
   const fail = (r: VerifyResult): Stage => ({ ok: false, result: r });
   const p = (k: string): string => (prefix === "" ? k : `${prefix}_${k}`);
@@ -1247,6 +1288,69 @@ function verifyOne(art: Attestation, ctx: Ctx, prefix: string): Stage {
         "signature",
       ),
     );
+  }
+
+  // ---- 5. snapshot — the scope a legacy verdict is relative to ----------
+  //
+  // The issuer's immutable release 0x96d1f624 declares, under
+  // `executionReceipt.legacyProfileResolution`: schemaVersions [1,2,3,4],
+  // signingStatus retired, productionAdmission forbidden, resultScope
+  // `relative-to-exact-registry-snapshot`, globallyCanonicalVerdict false,
+  // requiredEvidence [registrySnapshotUtf8Bytes, sha256, byteLength], and the
+  // rule "preserve and verify the exact registry snapshot bytes; report its full
+  // SHA-256 and byte length with every verdict; fail closed if absent or
+  // mismatched; never substitute current.json or the current registry".
+  //
+  // So this is not an extra annotation on a verdict that was already fine. A
+  // legacy verdict WITHOUT its snapshot is a verdict this tool is not entitled
+  // to state, and until 2026-09-16 it stated one: all three 2 September packages
+  // reached VALID with no registry at all.
+  //
+  // THE GATES ARE NOT SUBJECT TO IT. The promotion record names ExecutionReceipt;
+  // OracleSafetyCheck is published at schemaVersion 1 to 3 and is a different
+  // struct, so a v5 package with v3 gates keeps exactly today's behaviour.
+  const schemaVersion = num(art.data["schemaVersion"]);
+  const legacy = isTarget && art.primaryType === "ExecutionReceipt" && schemaVersion !== null && schemaVersion < 5;
+  if (legacy) {
+    ctx.legacyTarget = true;
+    if (ctx.snapshot === null) {
+      return fail(
+        unverifiable(
+          FORMAT,
+          "registry_snapshot_required",
+          `this is an ExecutionReceipt v${schemaVersion}, and the issuer's deployed rule makes a v1-v4 verdict historical and ` +
+            `snapshot-relative: it requires the exact preserved registry snapshot bytes, their full SHA-256 and their byte length ` +
+            `with every such verdict, and says to fail closed when they are absent. No --registry was supplied, so there is no ` +
+            `snapshot for a verdict to be relative to and none is stated. --allow-unregistered-signer does NOT waive this: that ` +
+            `flag speaks about the signer, this is about the scope of the whole result. Supply the registry bytes preserved with ` +
+            `this receipt — never current.json and never the current registry, which the rule forbids substituting`,
+          ann,
+          "snapshot",
+        ),
+      );
+    }
+    if (ctx.snapshotClaim !== null && ctx.snapshotClaim !== ctx.snapshot.sha256) {
+      ann[p("registry_snapshot_sha256")] = ctx.snapshot.sha256;
+      ann[p("registry_snapshot_claimed_sha256")] = ctx.snapshotClaim;
+      ann[p("registry_snapshot_byte_length")] = ctx.snapshot.byteLength;
+      ann[p("registry_snapshot_origin")] = ctx.snapshot.origin;
+      return fail(
+        unverifiable(
+          FORMAT,
+          "registry_snapshot_mismatch",
+          `the registry snapshot supplied as ${ctx.snapshot.origin} is ${ctx.snapshot.byteLength} bytes at sha256 ` +
+            `${ctx.snapshot.sha256}, and --registry-sha256 names ${ctx.snapshotClaim}. Those are two different documents and ` +
+            `nothing here can tell which one this verdict was meant to be relative to, so no verdict is stated. This is a fact ` +
+            `about the inputs and never about the receipt: nothing in it says the receipt fails to bind to anything`,
+          ann,
+          "snapshot",
+        ),
+      );
+    }
+    ann[p("verdict_scope")] = "snapshot-relative";
+    ann[p("registry_snapshot_sha256")] = ctx.snapshot.sha256;
+    ann[p("registry_snapshot_byte_length")] = ctx.snapshot.byteLength;
+    ann[p("registry_snapshot_origin")] = ctx.snapshot.origin;
   }
 
   // ---- 5. identity -------------------------------------------------------
@@ -2316,203 +2420,252 @@ const OBSERVATIONS_LINE =
   "not_checked — participantCount, sourceGroupCount, independenceSatisfied, the consensus price's provenance " +
   "and mevRiskBps are issuer claims; nothing in these bytes tests them.";
 
+/**
+ * The body of the adapter, lifted out of the object literal so its result can be
+ * qualified in exactly ONE place. The issuer's rule says a legacy verdict must
+ * carry its snapshot evidence; a rule applied at each of the ten sites that
+ * construct a result is a rule that will one day be applied at nine of them, and
+ * the missing one would look exactly like a verdict that was simply not legacy.
+ *
+ * `ref` carries the Ctx back out, because whether the target was a v1-v4
+ * ExecutionReceipt is discovered in the middle of the run and needed at the end.
+ */
+async function verifyInsight(bytes: Uint8Array, opts: VerifyOptions, ref: { ctx: Ctx | null }): Promise<VerifyResult> {
+  // ---- 1. parse --------------------------------------------------------
+  const p = parseStrict(bytes);
+  if (!p.ok) return unverifiable(FORMAT, p.reason, p.detail, undefined, "parse");
+
+  let registry: Registry | null = null;
+  let registryError: string | null = null;
+  if (opts.registry !== undefined) {
+    const parsed = parseRegistry(opts.registry, opts.registryOrigin ?? "the supplied registry");
+    if ("error" in parsed) registryError = parsed.error;
+    else registry = parsed;
+  }
+  // The snapshot is measured over the bytes EXACTLY as supplied, before any
+  // parse: the issuer's required evidence is about the preserved UTF-8 bytes,
+  // and a digest taken over a reserialised object would be a digest of our own
+  // serialiser. Measured even when the registry fails to parse, so a caller
+  // whose snapshot is the wrong file learns which file they handed over.
+  const snapshot: RegistrySnapshot | null =
+    opts.registry === undefined
+      ? null
+      : {
+          sha256: createHash("sha256").update(opts.registry).digest("hex"),
+          byteLength: opts.registry.byteLength,
+          origin: opts.registryOrigin ?? "the supplied registry",
+        };
+  const ctx: Ctx = {
+    registry,
+    registryError,
+    now: opts.now ?? Math.floor(Date.now() / 1000),
+    allowUnregistered: opts.allowUnregisteredSigner === true,
+    snapshot,
+    snapshotClaim: opts.registrySha256 === undefined ? null : opts.registrySha256.toLowerCase(),
+    legacyTarget: false,
+  };
+  ref.ctx = ctx;
+
+  const pkg = asPackage(p.value);
+  const single = pkg === null ? asAttestation(p.value, "attestation") : null;
+  if (pkg === null && single === null) {
+    return unverifiable(
+      FORMAT,
+      "malformed_receipt",
+      "not an Insight attestation ({attester, signature, data, eip712}) and not a package ({receipt, preTrade, onchain, publishedKeys})",
+      undefined,
+      "parse",
+    );
+  }
+
+  const target = pkg === null ? single! : pkg.receipt;
+  const stage = verifyOne(target, ctx, "", true);
+  if (!stage.ok) return stage.result;
+  const ann: Ann = { ...stage.ann };
+
+  // A single attestation has no gates, no logs and no chain to check against;
+  // it stops here, and the coverage block says which checks that leaves out.
+  if (pkg === null) {
+    Object.assign(ann, precedenceAnnotations(target));
+    ann["observations"] = OBSERVATIONS_LINE;
+    return valid(FORMAT, `EIP-712 digest, signature and schema checks passed for a single ${target.primaryType} attestation`, stage.key, ann);
+  }
+
+  // ---- the gates -------------------------------------------------------
+  for (const [label, gate] of [
+    ["source_gate", pkg.sourceGate],
+    ["destination_gate", pkg.destinationGate],
+  ] as const) {
+    if (gate === null) continue;
+    const g = verifyOne(gate, ctx, label, false);
+    if (!g.ok) {
+      // A gate the receipt NAMES is part of the receipt's own claim, so its
+      // failure is the package's failure. A gate that is merely shipped
+      // alongside is reported and does not move the verdict.
+      const uid = gate.uid?.toLowerCase() ?? "";
+      const named =
+        sameAddress(str(pkg.receipt.data["preTradeUid"]) ?? "", uid) ||
+        sameAddress(str(pkg.receipt.data["destinationPreTradeUid"]) ?? "", uid) ||
+        label === "source_gate";
+      if (named) return g.result;
+      ann[`${label}_state`] = `${g.result.verdict}/${g.result.reason}: ${g.result.detail}`;
+      continue;
+    }
+    Object.assign(ann, g.ann);
+  }
+
+  // ---- 7. binding, both gates -----------------------------------------
+  //
+  // v3 names two gates: `preTradeUid` for the source asset and
+  // `destinationPreTradeUid` for the destination asset. v2 named one, and the
+  // second was shipped unbound. Each field is checked against the gate that
+  // fills that role, and a gate neither field names is reported as unbound --
+  // which is now a statement about scope the issuer has closed, not a defect
+  // this tool found.
+  const srcUid = str(pkg.receipt.data["preTradeUid"]);
+  const dstUid = str(pkg.receipt.data["destinationPreTradeUid"]);
+  if (pkg.sourceGate === null) {
+    ann["binding"] = "not_checked (package carries no sourceGate)";
+  } else {
+    const b = checkBinding(pkg.receipt, pkg.sourceGate, "source");
+    if (!b.ok) {
+      return invalid(FORMAT, "content_commitment_mismatch", `receipt does not bind to the source gate it names: ${b.detail}`, stage.key, "binding");
+    }
+    Object.assign(ann, b.ann);
+  }
+  if (dstUid !== null && pkg.destinationGate !== null) {
+    const b = checkBinding(pkg.receipt, pkg.destinationGate, "destination");
+    if (!b.ok) {
+      return invalid(FORMAT, "content_commitment_mismatch", `receipt does not bind to the destination gate it names: ${b.detail}`, stage.key, "binding");
+    }
+    Object.assign(ann, b.ann);
+  } else if (dstUid !== null) {
+    ann["destination_gate_binding"] = `not_checked (the receipt names destinationPreTradeUid ${dstUid} and the package ships no destination gate)`;
+  }
+
+  // `preTradeUidsHash` over the two uids. The rule the registry documents is
+  // tried FIRST and is the one named; four older constructions are computed as
+  // diagnostics, so a mismatch reports which encoding WOULD have produced the
+  // signed value rather than only that it is unexplained.
+  const uidsHash = str(pkg.receipt.data["preTradeUidsHash"]);
+  if (uidsHash !== null && srcUid !== null && dstUid !== null) {
+    const candidates = uidsHashCandidates(srcUid, dstUid);
+    const hit = Object.entries(candidates).find(([, v]) => sameAddress(v, uidsHash));
+    if (hit === undefined) {
+      return invalid(
+        FORMAT,
+        "content_commitment_mismatch",
+        `the receipt signs preTradeUidsHash ${uidsHash}, which is not the keccak of its gate uids under the rule the registry documents nor under any diagnostic construction tried: ` +
+          Object.entries(candidates)
+            .map(([k, v]) => `${k} = ${v}`)
+            .join("; "),
+        stage.key,
+        "binding",
+      );
+    }
+    ann["pre_trade_uids_hash"] = `${hit[0]} — reproduced from preTradeUid and destinationPreTradeUid`;
+    // A diagnostic that produces the SAME digest as the named construction is
+    // marked as such. The documented rule and `keccak(src || dst), packed`
+    // coincide whenever both uids are non-zero, and an unmarked line reading
+    // `<other construction> = <the signed value>` would say the signed value
+    // has two unexplained explanations rather than one rule and a coincidence.
+    ann["pre_trade_uids_hash_other_constructions"] = Object.entries(candidates)
+      .filter(([k]) => k !== hit[0])
+      .map(([k, v]) => (sameAddress(v, hit[1]) ? `${k} = ${v} [same digest as the named construction]` : `${k} = ${v}`))
+      .join("; ");
+  }
+
+  const referenced = new Set([srcUid?.toLowerCase(), dstUid?.toLowerCase()].filter((v) => v !== undefined));
+  const unbound = [
+    ["source", pkg.sourceGate],
+    ["destination", pkg.destinationGate],
+  ]
+    .filter(([, g]) => g !== null && (g as Attestation).uid !== undefined && !referenced.has((g as Attestation).uid!.toLowerCase()))
+    .map(([n]) => n as string);
+  if (unbound.length > 0) {
+    ann["unbound_gates"] = `[${unbound.join(", ")}] — signed, but not referenced by the receipt (evaluationScope ${String(pkg.sourceGate?.data["evaluationScope"] ?? "unstated")})`;
+  }
+
+  // ---- 8. swap ---------------------------------------------------------
+  let facts: SwapFacts | null = null;
+  if (pkg.onchain === null) {
+    ann["swap"] = "not_checked (package carries no onchain block)";
+    ann["attribution"] = "not_checked (package carries no onchain block)";
+  } else {
+    const sw = checkSwap(pkg.receipt, pkg.onchain, opts);
+    if (sw.ok === false) {
+      return invalid(FORMAT, "content_commitment_mismatch", `the receipt's signed price does not agree with the pool event it ships: ${sw.detail}`, stage.key, "swap");
+    }
+    Object.assign(ann, sw.ann);
+    if (sw.ok === true) facts = sw.facts;
+
+    // ---- 9. attribution ------------------------------------------------
+    Object.assign(ann, checkAttribution(pkg.receipt, pkg.onchain, facts, opts));
+  }
+
+  // ---- 9b. prices at the signed scale ----------------------------------
+  const pr = checkPrices(pkg.receipt, pkg.sourceGate, pkg.destinationGate, facts);
+  if (!pr.ok) {
+    return invalid(FORMAT, "content_commitment_mismatch", `the receipt's quote does not come out of the gates it binds to: ${pr.detail}`, stage.key, "binding");
+  }
+  Object.assign(ann, pr.ann);
+
+  // ---- 9c. measuredFieldsHash -----------------------------------------
+  Object.assign(ann, checkMeasuredFields(pkg.receipt, pkg.raw));
+
+  // ---- 10. chain -------------------------------------------------------
+  if (opts.rpc === undefined) {
+    ann["chain"] = "not_checked (no rpc)";
+  } else if (pkg.onchain === null) {
+    ann["chain"] = "not_checked (package carries no onchain block)";
+  } else {
+    const c = await checkChain(pkg.receipt, pkg.onchain, opts.rpc, facts?.recipient ?? null);
+    if (c.ok === "io") {
+      // --rpc was asked for and could not be completed. Fail closed rather
+      // than quietly downgrade a requested check to "not checked".
+      return unverifiable(FORMAT, "io_error", `--rpc check could not be completed: ${c.detail}`, ann, "chain");
+    }
+    if (c.ok === false) {
+      return invalid(FORMAT, "content_commitment_mismatch", `the receipt's signed chain facts disagree with the chain: ${c.detail}`, stage.key, "chain");
+    }
+    Object.assign(ann, c.ann);
+  }
+
+  // ---- 11, 12: observed where the bytes allow it, declared where they do not
+  Object.assign(ann, precedenceAnnotations(pkg.receipt));
+  ann["observations"] = OBSERVATIONS_LINE;
+
+  return valid(
+    FORMAT,
+    "EIP-712 digests, signatures, schema, receipt-to-gate binding and the pool fill all recompute from the bytes supplied",
+    stage.key,
+    ann,
+  );
+}
+
+/**
+ * The one place a legacy verdict is qualified.
+ *
+ * On VALID the detail OPENS with the qualification, because a reader who stops
+ * at the first clause must not come away with an unqualified pass. On INVALID
+ * the evidence goes into the detail as a whole sentence: the tri-state contract
+ * gives an INVALID no annotations, and the detail is the only channel left. On
+ * UNVERIFIABLE nothing is added here — the four annotations already rode out on
+ * the result, and the two refusals this rule issues say it in their own detail.
+ */
+export function scopeLegacyVerdict(r: VerifyResult, ctx: Ctx | null): VerifyResult {
+  if (ctx === null || !ctx.legacyTarget || ctx.snapshot === null) return r;
+  if (r.verdict === "VALID") return { ...r, detail: `historical, snapshot-relative: ${r.detail}` };
+  if (r.verdict === "INVALID") return { ...r, detail: `${r.detail}. ${snapshotEvidenceLine(ctx.snapshot)}` };
+  return r;
+}
+
 export const insightAdapter: Adapter = {
   format: FORMAT,
   detect,
 
   async verify(bytes: Uint8Array, opts: VerifyOptions): Promise<VerifyResult> {
-    // ---- 1. parse --------------------------------------------------------
-    const p = parseStrict(bytes);
-    if (!p.ok) return unverifiable(FORMAT, p.reason, p.detail, undefined, "parse");
-
-    let registry: Registry | null = null;
-    let registryError: string | null = null;
-    if (opts.registry !== undefined) {
-      const parsed = parseRegistry(opts.registry, opts.registryOrigin ?? "the supplied registry");
-      if ("error" in parsed) registryError = parsed.error;
-      else registry = parsed;
-    }
-    const ctx: Ctx = {
-      registry,
-      registryError,
-      now: opts.now ?? Math.floor(Date.now() / 1000),
-      allowUnregistered: opts.allowUnregisteredSigner === true,
-    };
-
-    const pkg = asPackage(p.value);
-    const single = pkg === null ? asAttestation(p.value, "attestation") : null;
-    if (pkg === null && single === null) {
-      return unverifiable(
-        FORMAT,
-        "malformed_receipt",
-        "not an Insight attestation ({attester, signature, data, eip712}) and not a package ({receipt, preTrade, onchain, publishedKeys})",
-        undefined,
-        "parse",
-      );
-    }
-
-    const target = pkg === null ? single! : pkg.receipt;
-    const stage = verifyOne(target, ctx, "");
-    if (!stage.ok) return stage.result;
-    const ann: Ann = { ...stage.ann };
-
-    // A single attestation has no gates, no logs and no chain to check against;
-    // it stops here, and the coverage block says which checks that leaves out.
-    if (pkg === null) {
-      Object.assign(ann, precedenceAnnotations(target));
-      ann["observations"] = OBSERVATIONS_LINE;
-      return valid(FORMAT, `EIP-712 digest, signature and schema checks passed for a single ${target.primaryType} attestation`, stage.key, ann);
-    }
-
-    // ---- the gates -------------------------------------------------------
-    for (const [label, gate] of [
-      ["source_gate", pkg.sourceGate],
-      ["destination_gate", pkg.destinationGate],
-    ] as const) {
-      if (gate === null) continue;
-      const g = verifyOne(gate, ctx, label);
-      if (!g.ok) {
-        // A gate the receipt NAMES is part of the receipt's own claim, so its
-        // failure is the package's failure. A gate that is merely shipped
-        // alongside is reported and does not move the verdict.
-        const uid = gate.uid?.toLowerCase() ?? "";
-        const named =
-          sameAddress(str(pkg.receipt.data["preTradeUid"]) ?? "", uid) ||
-          sameAddress(str(pkg.receipt.data["destinationPreTradeUid"]) ?? "", uid) ||
-          label === "source_gate";
-        if (named) return g.result;
-        ann[`${label}_state`] = `${g.result.verdict}/${g.result.reason}: ${g.result.detail}`;
-        continue;
-      }
-      Object.assign(ann, g.ann);
-    }
-
-    // ---- 7. binding, both gates -----------------------------------------
-    //
-    // v3 names two gates: `preTradeUid` for the source asset and
-    // `destinationPreTradeUid` for the destination asset. v2 named one, and the
-    // second was shipped unbound. Each field is checked against the gate that
-    // fills that role, and a gate neither field names is reported as unbound --
-    // which is now a statement about scope the issuer has closed, not a defect
-    // this tool found.
-    const srcUid = str(pkg.receipt.data["preTradeUid"]);
-    const dstUid = str(pkg.receipt.data["destinationPreTradeUid"]);
-    if (pkg.sourceGate === null) {
-      ann["binding"] = "not_checked (package carries no sourceGate)";
-    } else {
-      const b = checkBinding(pkg.receipt, pkg.sourceGate, "source");
-      if (!b.ok) {
-        return invalid(FORMAT, "content_commitment_mismatch", `receipt does not bind to the source gate it names: ${b.detail}`, stage.key, "binding");
-      }
-      Object.assign(ann, b.ann);
-    }
-    if (dstUid !== null && pkg.destinationGate !== null) {
-      const b = checkBinding(pkg.receipt, pkg.destinationGate, "destination");
-      if (!b.ok) {
-        return invalid(FORMAT, "content_commitment_mismatch", `receipt does not bind to the destination gate it names: ${b.detail}`, stage.key, "binding");
-      }
-      Object.assign(ann, b.ann);
-    } else if (dstUid !== null) {
-      ann["destination_gate_binding"] = `not_checked (the receipt names destinationPreTradeUid ${dstUid} and the package ships no destination gate)`;
-    }
-
-    // `preTradeUidsHash` over the two uids. The rule the registry documents is
-    // tried FIRST and is the one named; four older constructions are computed as
-    // diagnostics, so a mismatch reports which encoding WOULD have produced the
-    // signed value rather than only that it is unexplained.
-    const uidsHash = str(pkg.receipt.data["preTradeUidsHash"]);
-    if (uidsHash !== null && srcUid !== null && dstUid !== null) {
-      const candidates = uidsHashCandidates(srcUid, dstUid);
-      const hit = Object.entries(candidates).find(([, v]) => sameAddress(v, uidsHash));
-      if (hit === undefined) {
-        return invalid(
-          FORMAT,
-          "content_commitment_mismatch",
-          `the receipt signs preTradeUidsHash ${uidsHash}, which is not the keccak of its gate uids under the rule the registry documents nor under any diagnostic construction tried: ` +
-            Object.entries(candidates)
-              .map(([k, v]) => `${k} = ${v}`)
-              .join("; "),
-          stage.key,
-          "binding",
-        );
-      }
-      ann["pre_trade_uids_hash"] = `${hit[0]} — reproduced from preTradeUid and destinationPreTradeUid`;
-      // A diagnostic that produces the SAME digest as the named construction is
-      // marked as such. The documented rule and `keccak(src || dst), packed`
-      // coincide whenever both uids are non-zero, and an unmarked line reading
-      // `<other construction> = <the signed value>` would say the signed value
-      // has two unexplained explanations rather than one rule and a coincidence.
-      ann["pre_trade_uids_hash_other_constructions"] = Object.entries(candidates)
-        .filter(([k]) => k !== hit[0])
-        .map(([k, v]) => (sameAddress(v, hit[1]) ? `${k} = ${v} [same digest as the named construction]` : `${k} = ${v}`))
-        .join("; ");
-    }
-
-    const referenced = new Set([srcUid?.toLowerCase(), dstUid?.toLowerCase()].filter((v) => v !== undefined));
-    const unbound = [
-      ["source", pkg.sourceGate],
-      ["destination", pkg.destinationGate],
-    ]
-      .filter(([, g]) => g !== null && (g as Attestation).uid !== undefined && !referenced.has((g as Attestation).uid!.toLowerCase()))
-      .map(([n]) => n as string);
-    if (unbound.length > 0) {
-      ann["unbound_gates"] = `[${unbound.join(", ")}] — signed, but not referenced by the receipt (evaluationScope ${String(pkg.sourceGate?.data["evaluationScope"] ?? "unstated")})`;
-    }
-
-    // ---- 8. swap ---------------------------------------------------------
-    let facts: SwapFacts | null = null;
-    if (pkg.onchain === null) {
-      ann["swap"] = "not_checked (package carries no onchain block)";
-      ann["attribution"] = "not_checked (package carries no onchain block)";
-    } else {
-      const sw = checkSwap(pkg.receipt, pkg.onchain, opts);
-      if (sw.ok === false) {
-        return invalid(FORMAT, "content_commitment_mismatch", `the receipt's signed price does not agree with the pool event it ships: ${sw.detail}`, stage.key, "swap");
-      }
-      Object.assign(ann, sw.ann);
-      if (sw.ok === true) facts = sw.facts;
-
-      // ---- 9. attribution ------------------------------------------------
-      Object.assign(ann, checkAttribution(pkg.receipt, pkg.onchain, facts, opts));
-    }
-
-    // ---- 9b. prices at the signed scale ----------------------------------
-    const pr = checkPrices(pkg.receipt, pkg.sourceGate, pkg.destinationGate, facts);
-    if (!pr.ok) {
-      return invalid(FORMAT, "content_commitment_mismatch", `the receipt's quote does not come out of the gates it binds to: ${pr.detail}`, stage.key, "binding");
-    }
-    Object.assign(ann, pr.ann);
-
-    // ---- 9c. measuredFieldsHash -----------------------------------------
-    Object.assign(ann, checkMeasuredFields(pkg.receipt, pkg.raw));
-
-    // ---- 10. chain -------------------------------------------------------
-    if (opts.rpc === undefined) {
-      ann["chain"] = "not_checked (no rpc)";
-    } else if (pkg.onchain === null) {
-      ann["chain"] = "not_checked (package carries no onchain block)";
-    } else {
-      const c = await checkChain(pkg.receipt, pkg.onchain, opts.rpc, facts?.recipient ?? null);
-      if (c.ok === "io") {
-        // --rpc was asked for and could not be completed. Fail closed rather
-        // than quietly downgrade a requested check to "not checked".
-        return unverifiable(FORMAT, "io_error", `--rpc check could not be completed: ${c.detail}`, ann, "chain");
-      }
-      if (c.ok === false) {
-        return invalid(FORMAT, "content_commitment_mismatch", `the receipt's signed chain facts disagree with the chain: ${c.detail}`, stage.key, "chain");
-      }
-      Object.assign(ann, c.ann);
-    }
-
-    // ---- 11, 12: observed where the bytes allow it, declared where they do not
-    Object.assign(ann, precedenceAnnotations(pkg.receipt));
-    ann["observations"] = OBSERVATIONS_LINE;
-
-    return valid(
-      FORMAT,
-      "EIP-712 digests, signatures, schema, receipt-to-gate binding and the pool fill all recompute from the bytes supplied",
-      stage.key,
-      ann,
-    );
+    const ref: { ctx: Ctx | null } = { ctx: null };
+    return scopeLegacyVerdict(await verifyInsight(bytes, opts, ref), ref.ctx);
   },
 };

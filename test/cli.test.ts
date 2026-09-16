@@ -22,6 +22,19 @@ describe("argument parsing", () => {
     }
   });
 
+  it("--registry-sha256 takes 64 hex characters, lowercases them, and refuses anything else", () => {
+    const upper = "9269529E7F584DDD54D8EA0210AF9820EE082B968492FCBB25B798FAB7A88006";
+    const a = parseArgs(["r.json", "--registry-sha256", upper]);
+    expect(typeof a).not.toBe("string");
+    if (typeof a !== "string") expect(a.registrySha256).toBe(upper.toLowerCase());
+    // A digest is either the whole digest or it is not one: 63 characters, 65,
+    // and a non-hex character are all refused at the argument rather than
+    // compared and always mismatched, which would read as a tampered snapshot.
+    expect(parseArgs(["r.json", "--registry-sha256", "abc"])).toContain("needs 64 hex characters");
+    expect(parseArgs(["r.json", "--registry-sha256", "g".repeat(64)])).toContain("needs 64 hex characters");
+    expect(parseArgs(["r.json", "--registry-sha256"])).toContain("--registry-sha256 needs a value");
+  });
+
   it("rejects an unknown option instead of ignoring it", () => {
     expect(parseArgs(["r.jsonl", "--yolo"])).toContain("unknown option");
   });
