@@ -28,6 +28,14 @@ export function valid(
  * establishes rather than fails to complete. `formatResult` labels each kind,
  * so "INVALID — key-binding" keeps meaning exactly what it did.
  *
+ * `chain_contradicts_artefacts` is a third kind, added for x402.settlement/2: a
+ * fact read off a chain at a height disagrees with what the artefacts say. It is
+ * not key-binding either — the key resolved and the signature is good; what
+ * failed is the relation between the signed authorization and the money. It is
+ * INVALID rather than UNVERIFIABLE because a receipt resolved at a block whose
+ * hash matches its own is a determinate negative, and `invalidKind` labels it so
+ * the header does not claim a key-binding failure it did not establish.
+ *
  * NOTE for anyone branching on `reason`: both of those two tokens are ALSO
  * emitted by other adapters under UNVERIFIABLE, where they mean "could not
  * complete". Branch on `verdict` first, then `reason`.
@@ -42,14 +50,24 @@ export function invalid(
     | "chain_linkage_broken"
     | "expired"
     | "malformed_member"
+    | "chain_contradicts_artefacts"
   >,
   detail: string,
   resolvedKey: ResolvedKey,
   stoppedAt?: string,
+  annotations?: Record<string, string | number | boolean>,
 ): VerifyResult {
-  return stoppedAt === undefined
-    ? { verdict: "INVALID", reason, detail, format, resolvedKey }
-    : { verdict: "INVALID", reason, detail, format, resolvedKey, stoppedAt };
+  const base: VerifyResult = { verdict: "INVALID", reason, detail, format, resolvedKey };
+  if (stoppedAt !== undefined) base.stoppedAt = stoppedAt;
+  // Added for x402.settlement/2, and optional so every existing call is
+  // unchanged. INVALID was the one verdict that could carry no annotations, and
+  // for a format whose whole output is a set of relations that is exactly where
+  // they are most wanted: a dispute package built around an INVALID needs to show
+  // WHICH relations held before the one that failed, and what the format cannot
+  // establish at all. An annotation still never moves a verdict — `formatResult`
+  // and `deliveryGate` read them the same way on all three.
+  if (annotations !== undefined) base.annotations = annotations;
+  return base;
 }
 
 /**
@@ -165,6 +183,7 @@ export function exitCodeFor(r: VerifyResult, opts: OutputOptions = {}): 0 | 1 {
 function invalidKind(reason: ReasonCode): string {
   if (reason === "expired") return "validity window";
   if (reason === "malformed_member") return "self-inconsistent";
+  if (reason === "chain_contradicts_artefacts") return "chain contradicts the artefacts";
   return "key-binding";
 }
 

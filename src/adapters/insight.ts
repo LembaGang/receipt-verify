@@ -380,11 +380,17 @@ export function findDuplicateKey(text: string): string | null {
   return null;
 }
 
-type ParseOutcome =
+export type ParseOutcome =
   | { ok: true; value: Record<string, unknown> }
   | { ok: false; reason: "malformed_receipt" | "malformed_member"; detail: string };
 
-function parseStrict(bytes: Uint8Array): ParseOutcome {
+/**
+ * Exported so a second adapter gets the duplicate-member refusal rather than a
+ * second implementation of it. The scan is not specific to Insight: it is RFC
+ * 7493 section 2.3 and RFC 8785 section 3.1 applied to any JSON document whose
+ * members a verifier is about to read.
+ */
+export function parseStrict(bytes: Uint8Array): ParseOutcome {
   const text = Buffer.from(bytes).toString("utf8");
   const dup = findDuplicateKey(text);
   if (dup !== null) {

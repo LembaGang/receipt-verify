@@ -104,6 +104,43 @@ export type ReasonCode =
   | "not_yet_valid"
   | "unsupported_algorithm"
   | "empty_receipt"
+  /**
+   * The verifier holds no chain data for the transaction the artefacts name and
+   * was given no endpoint to fetch it from, or the endpoint it was given failed.
+   * Distinct from `io_error`, which says a read this tool attempted broke:
+   * `chain_unavailable` also covers the case where NO read was attempted because
+   * the caller supplied neither `chain` nor `rpc`, and a consumer that could not
+   * tell the two apart would retry a fetch nobody asked for. Added for
+   * x402.settlement/2, where every relation between the signed authorization and
+   * the money actually moved needs a chain the verifier chose. Additive to this
+   * union — a consumer branching on the older members falls through to its
+   * default, which is the fail-closed side of an UNVERIFIABLE.
+   */
+  | "chain_unavailable"
+  /**
+   * The envelope carries chain data and none of the three off-chain artefacts,
+   * so the relations that give a settlement its meaning — which resource was
+   * paid for, who authorized the transfer, what the facilitator answered — were
+   * not evaluated at all. Distinct from `malformed_receipt`: nothing here is
+   * malformed, the bytes are simply a chain-side observation and the verdict
+   * says so rather than reporting a pass on the half that was present. Added for
+   * x402.settlement/2. Additive to this union — a consumer branching on the
+   * older members falls through to its default, which is the fail-closed side of
+   * an UNVERIFIABLE.
+   */
+  | "artefacts_absent"
+  /**
+   * A chain fact, read at a height, contradicts what the artefacts say. Distinct
+   * from `content_commitment_mismatch`, which is a disagreement BETWEEN the
+   * artefacts and is decidable from them alone: this one needs a third party —
+   * the chain — and its force depends on the endpoint the verifier chose and on
+   * the block being at height, both of which the result reports. Added for
+   * x402.settlement/2. Additive to this union — a consumer branching on the
+   * older members falls through to its default, which is the fail-closed side of
+   * an UNVERIFIABLE, and this is an INVALID, so such a consumer fails closed on
+   * a determinate negative rather than passing it.
+   */
+  | "chain_contradicts_artefacts"
   | "io_error";
 
 export interface VerifyOptions {

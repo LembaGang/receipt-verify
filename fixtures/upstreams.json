@@ -122,6 +122,15 @@
         "reason": "TypeScript sources and Markdown result tables written in this repository; walker/scopes.json registers the directory as a corpus with no rules, and there is nothing upstream of it."
       },
       {
+        "id": "x402-settlement-envelopes",
+        "paths": [
+          "fixtures/x402/settlements/*"
+        ],
+        "rows": "the two `fixtures/x402/settlements/settlement-2026-09-07-*.envelope.json` files",
+        "reason_code": "past_capture",
+        "reason": "Two paid calls that happened: the 7 September 2026 settlements on Base, each assembled from the artefacts pinned in cc-output and a chain read of its own transaction — a past event has no tip, no URL and no revision, so no kind here can drift-check it."
+      },
+      {
         "id": "repository-records",
         "paths": [
           "fixtures/provenance.md",
@@ -1305,8 +1314,11 @@
           "sha256": "aa6dc5e8ccc7758689945fc7502674f51cd0f21f09ec886aa1dbc4cd86bc81b6"
         }
       ],
+      "corpus_dirs": [
+        "fixtures/x402/specs"
+      ],
       "identification": "Identified as the v2 specification by the file's own path and name: `specs/` carries exactly two numbered specification documents, `x402-specification-v1.md` and `x402-specification-v2.md`, beside `transports-v1/` and `transports-v2/` directories. No inference was needed and none was made.",
-      "watch_only": "Nothing under fixtures/ or refs/ holds a copy. This entry watches a path in someone else’s repository by blob id; it does not pin bytes this repository can serve. The pinned blob id is what a moved tip is compared against.",
+      "pins_bytes": "Snapshotted into fixtures/x402/specs/ on 2026-09-16 at 10:07:46Z from raw.githubusercontent.com at the commit this entry already pinned. The fetched bytes hash to aa6dc5e8ccc7758689945fc7502674f51cd0f21f09ec886aa1dbc4cd86bc81b6, which is the sha256 this entry has carried for that blob id since 2026-09-08 — so the copy is not a new claim, it is the standing claim made checkable from this repository. Until then this entry was watch_only and nothing under fixtures/ or refs/ held a copy; src/adapters/x402-settlement.ts cites section 6.1 of this document, and a citation nobody can read without the network is not one. corpus_dirs resolves the snapshot to this entry for test/upstream-coverage.test.ts and is scoped to specs/ rather than to fixtures/x402/, so it cannot swallow the settlement envelopes beside it, which came from somewhere else entirely.",
       "provenance_section": "Appended 2026-09-08 — twelve upstreams for the daily drift",
       "last_observed": {
         "tip": "dd927a26cfefc98c24b3ec38b3a8f204dad0c60d",

@@ -246,6 +246,12 @@ implemented:
 | `verification.*` | `inline_threshold_agreement` | Inline `v_gate_threshold` is not cross-checked against the mapping's threshold (§5.2). |
 | `acta.receipt/0` | `mldsa65_signature` | No ML-DSA implementation available; a declared ML-DSA-65 receipt is `UNVERIFIABLE`/`unsupported_algorithm`. |
 
+`x402.settlement/2` declares nothing `not_implemented` and three checks
+`reported_only` — `resource_binding`, `facilitator_identity` and `rpc_trust`.
+Those are not gaps in this tool: they are the three things the protocol's own
+bytes cannot establish at all, and they are printed on every result of that
+format including `VALID`. See Format 5.
+
 The manifest declares coverage. It does not verify anything, and no verdict is
 derived from it. It exists because a declared recompute (`action-ref-v1`) sat
 unevaluated behind an unresolvable mapping until the mapping was published —
@@ -284,15 +290,18 @@ recorded transcript is committed.
 ```
 receipt-verify <file> [options]
 
-  --format <name>        evidence.action | verification | acta   (default: auto-detect)
+  --format <name>        evidence.action | verification | acta | insight | x402   (default: auto-detect)
   --jwks <path|url>      published JWK Set: a .json file, a directory of them, or an https URL
   --mapping-dir <dir>    directory of mapping documents
   --payload <file>       detached-JWS payload: the bytes the signature covers
   --payload-jcs          canonicalize --payload with RFC 8785 JCS before verifying
   --prev <file>          predecessor receipt, for formats carrying a chain link
   --disclose <file>      disclosed {name, value, salt, proof} tuples, for committed fields
+  --registry <path>      published key registry, for formats that resolve a signer from one
+  --rpc <url>            JSON-RPC endpoint, for formats that corroborate against a chain
   --clock-tolerance <s>  clock tolerance for exp/nbf (default 60)
   --now <epoch>          evaluate time-based checks at a fixed instant
+  --require-delivery     exit 1 unless the receipt PROVES x402 delivery
   --json                 machine-readable verdict object
 ```
 
@@ -528,6 +537,96 @@ documents — the registry was not vouching for that key when the artefact says 
 was made — and no `--now` recovers it. `identity_signing_instant` names which
 member supplied the instant and whether that member was inside the signature:
 `signedAt` is package metadata and is not.
+
+---
+
+## Format 5 — `x402.settlement/2`
+
+`x402.settlement/2` is **this repository's** label for a container, not a format
+anyone publishes. x402 v2 defines three objects that cross the wire during one
+paid call — the 402 payment-required object, the payment payload the client
+sends, and the settle object the server returns — and then the exchange is over.
+Nothing defines what a merchant or a buyer *holds* afterwards, and nothing
+defines how to check it. The three objects end up in four places (two HTTP
+headers, a response body, and a chain), and until they sit in one document there
+is no relation between them to state, let alone to verify.
+
+So the envelope is ours, and the coverage manifest's first check says so. What is
+not ours is every relation it makes checkable: each one is a fact about bytes
+someone else signed or a chain someone else wrote.
+
+```json
+{
+  "schema": "x402.settlement/2",
+  "x402Version": 2,
+  "payment_required": { "…the decoded 402 object…" },
+  "payment_payload":  { "…the decoded payment header the client sent…" },
+  "payment_response": { "…the decoded settle object the server returned…" },
+  "chain": { "rpc_url": "…", "read_at": "…", "transaction": "0x…", "receipt": {}, "block": {}, "submitter_tx": {} },
+  "known_submitters": [{ "address": "0x…", "source_url": "…", "source_sha256": "…", "fetched_at": "…" }]
+}
+```
+
+`chain` may be omitted and resolved with `--rpc` instead; with neither, the
+verdict is `UNVERIFIABLE`/`chain_unavailable` and nothing about the money is
+claimed. `known_submitters` is optional and is the caller's list, not ours.
+
+```bash
+receipt-verify settlement.json --format x402 --json
+receipt-verify settlement.json --format x402 --rpc https://mainnet.base.org
+```
+
+### The six relations
+
+| id | what it establishes |
+|---|---|
+| `authorization_signature_recovers_payer` | The EIP-712 signature over `TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)`, under the domain the accepted requirement's `extra`, `network` and `asset` name, recovers `authorization.from`. This is the **only** signature in an `exact` settlement on EVM. |
+| `authorization_matches_requirements` | `to == payTo` and `value == amount`, and the requirement the payload says it accepted is one the 402 actually published — found by equality of the whole object, not by index. |
+| `settle_response_names_authorization` | The facilitator's answer names the same payer and network and a 32-byte transaction. `success: false` is **not** a failed settlement: the facilitator's own published `SettleResponse` says `settlement_pending` means unresolved, so `errorReason` is annotated and the chain relations still run. |
+| `chain_transfer_matches_authorization` | The receipt succeeded, carries exactly one `Transfer` from the token contract, and its from/to/value equal the signed authorization; an `AuthorizationUsed` with the signed nonce is checked where present and recorded as `absent` where not. |
+| `block_at_height` | The block at the receipt's `blockNumber` carries the receipt's `blockHash`, and that block's timestamp is the settlement instant. **A sub-second preconfirmation is not a block at height.** |
+| `submitter_recorded` | The transaction's sender is recorded, and compared against `known_submitters` where a list is supplied. Never "facilitator identified". |
+
+### Verdict mapping
+
+| Condition | Verdict | `reason` |
+|---|---|---|
+| The envelope is not this schema at version 2, or carries neither artefacts nor chain data | `UNVERIFIABLE` | `malformed_receipt` |
+| A member needed by a relation is absent or unreadable — a domain that cannot be built, a signature that will not parse, a chain member missing its block | `UNVERIFIABLE` | `malformed_member` |
+| No `chain` member and no `--rpc`, or the RPC read failed | `UNVERIFIABLE` | `chain_unavailable` |
+| Chain data and none of the three off-chain artefacts | `UNVERIFIABLE` | `artefacts_absent` |
+| The signature recovers an address that is not `authorization.from` | `INVALID` | `signature_invalid` |
+| The authorization pays terms the 402 did not publish, or the settle answer names another payer or network | `INVALID` | `content_commitment_mismatch` |
+| A chain fact read at a height contradicts the artefacts | `INVALID` | `chain_contradicts_artefacts` |
+| All six relations pass | `VALID` | `verified` |
+
+`artefacts_absent` is the observation case, and it is a deliberate
+`UNVERIFIABLE` rather than a pass on the half that was present: a transfer with
+no 402, no payload and no settle answer beside it shows that money moved and
+nothing at all about what was bought. The chain half still runs and is in the
+annotations; the three relations that did not run each say `not_evaluated` by
+name rather than being silently absent.
+
+`resolved_key` is the payer's address, with `alg` `secp256k1 / EIP-712
+(EIP-3009)`: on an EVM chain the address *is* the identifier of the public key a
+signature recovers to, so the repository-wide invariant — `resolved_key` is
+`null` exactly when the verdict is `UNVERIFIABLE` — holds here unamended.
+
+### The three limits
+
+These are on **every** result of this format, including `VALID`, as annotations
+under stable tokens and as `reported_only` rows in `coverage`:
+
+| annotation | value | what it means |
+|---|---|---|
+| `limit_resource_binding` | `unsigned` | **Nothing binds the money to the resource under a signature.** The buyer signs `{from,to,value,validAfter,validBefore,nonce}` only; the 402 object, the payload's `resource` and `accepted` members and the settle response are all unsigned. A party that can edit any of them can move which resource a settled payment appears to be for, and no verifier holding these bytes can tell. |
+| `limit_facilitator_identity` | `unsigned_list` | **The submitter-to-facilitator tie rests on an unsigned list fetched at a time.** This tool records the sender and whether it appears in the list the caller supplied, with that list's URL, digest and fetch time. It never says who the sender is. |
+| `limit_rpc_trust` | `verifier_choice` | **The RPC named is the verifier's choice and its answer is not itself evidence** unless the block is at height and a second, independently operated endpoint agrees. `tools/chain-read.ts` reads two and records whether they agree; the agreement travels with the package rather than being asserted here. |
+
+The first of those is the one that matters most and is the least visible: a
+`VALID` verdict under this format proves that a named account authorized a
+transfer and that the transfer happened on a block at height. It does not prove
+what was bought.
 
 ---
 

@@ -2041,3 +2041,75 @@ release behind, and a verifier that follows it is pinned one release behind with
 - **It does not date any of the mutable pointers.** No `ETag` and no `Last-Modified` on
   `current.json`, `integrations/current.json` or `oracle-keys.json`; the only bounds are our own
   reads.
+
+---
+
+## Appended 2026-09-16 — the x402 v2 specification, pinned as bytes at the commit that was already watched, and the two 7 September settlement envelopes
+
+Two different kinds of pin, kept in two different directories on purpose.
+
+**The specification.** `fixtures/upstreams.json` has watched
+`coinbase/x402` `specs/x402-specification-v2.md` by blob id since 2026-09-08, and said so in a
+`watch_only` line: nothing under `fixtures/` held a copy. `src/adapters/x402-settlement.ts` now cites
+section 6.1 of that document for the `TransferWithAuthorization` field list it encodes, and a
+citation a reader cannot open without the network is not one. So the bytes are pinned here, at the
+commit the entry already names.
+
+| path | URL | http | bytes | sha256 |
+|---|---|---|---|---|
+| `fixtures/x402/specs/x402-specification-v2.md` | `https://raw.githubusercontent.com/coinbase/x402/dd927a26cfefc98c24b3ec38b3a8f204dad0c60d/specs/x402-specification-v2.md` | 200 | 31299 | `aa6dc5e8ccc7758689945fc7502674f51cd0f21f09ec886aa1dbc4cd86bc81b6` |
+
+**The digest was not copied from the entry; it was reproduced, and that is the check.** The entry has
+carried `aa6dc5e8ccc7758689945fc7502674f51cd0f21f09ec886aa1dbc4cd86bc81b6` for blob
+`b7eaea66f2743eac7ce2d0e1886f29e950e06988` since 2026-09-08, recorded from the GitHub tree API. This
+session fetched the raw bytes at 2026-09-16T10:07:46Z and computed the same value. The two are
+independent: one is GitHub's statement about a blob in its object store, the other is a sha256 over
+31299 bytes on this disk. **Had they differed, the pin would have been wrong for eight days and
+nothing in the repository would have said so** — which is what makes this a check and not a
+formality. The entry's `watch_only` line is replaced by `pins_bytes`, which records the fetch and
+says why, and `corpus_dirs` is scoped to `fixtures/x402/specs` rather than `fixtures/x402`, so it
+cannot silently account for the envelopes below, which came from somewhere else entirely.
+
+What section 6.1.1 gives, and what it does not: the six-member `TransferWithAuthorization` type in
+the order the adapter encodes it, and a six-step verification list at 6.1.2 that belongs to the
+**facilitator, before settlement** — balance, simulation, a time window against the instant of the
+call. A party holding the artefacts afterwards can repeat two of those six. No `specStep` is claimed
+for any check of `x402.settlement/2` for that reason; `src/coverage.ts` says so in its `orderNote`.
+
+**The two settlement envelopes.** Not snapshots of anything fetchable. Each is assembled here from
+artefacts already pinned in `cc-output` — the decoded 402, the decoded payment payload and the
+decoded settle answer, byte-for-byte as the wire carried them — plus a chain read of that
+transaction taken by `tools/chain-read.ts` in this session.
+
+| path | assembled from | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/x402/settlements/settlement-2026-09-07-0x46db8fc8.envelope.json` | `cc-output/pins/live-2026-09-07/paid-pr-header-decoded.json`, `paid-client-x-payment.decoded.json`, `paid-payment-response.decoded.json`, and a chain read of `0x46db8fc8…` | 23455 | `48ff93f07ceb49cdc48b5c75d7b5935e025ea6b853a0841d53d036d4d0befff6` |
+| `fixtures/x402/settlements/settlement-2026-09-07-0x94bfba79.envelope.json` | `cc-output/pins/live-2026-09-07-day2/paid/paid-402-payment-required.decoded.json`, `client-x-payment.decoded.json`, `payment-response.decoded.json`, and a chain read of `0x94bfba79…` | 30009 | `21fd0597192e9796d0f646b023d421d4e99a44b12778c6daa148881ee3fd6799` |
+
+The chain reads, both endpoints, with the sha256 of every response body:
+
+| tx | endpoint | read (UTC) | `eth_chainId` | `eth_getTransactionByHash` | `eth_getTransactionReceipt` | `eth_getBlockByNumber` |
+|---|---|---|---|---|---|---|
+| `0x46db8fc8…` | `https://mainnet.base.org` | 2026-09-16T10:05:16.092Z | `60a8e1c6a5247eee8b12ffe2450558e6199f6146acc9caed1be20cd1d373d45e` | `e2d032fc076051661cb23fc05cfc0009e95ec97a2b9365e985d15df5ca379127` | `3f6aec2b33e2612dd9ca39a6920b8f927abbea2368f867e13f330bbbf36324b3` | `98bbd961de83e9fae8de33fb76b4a610ca74773265c07ad950c134df2114e92e` |
+| `0x46db8fc8…` | `https://base.drpc.org` | 2026-09-16T10:05:18.357Z | `603e6c54211eac5fb5f3133ce0c8d52b375c58dcdfd80b3a3cea9d9b58b64a85` | `61be6cb458f2e8be253434eb90623c897fc3b2b25784edd955ebcaed4e2a67f8` | `a9618661cfe84116bc71eaf1f42e99f8d3a5e7fc72e59b798f14562c5363f0f4` | `556eb857d3e40c9dbc0e1be6c29f362a1a7dbd45d149fdc9bd2fb31f82fcdef5` |
+| `0x94bfba79…` | `https://mainnet.base.org` | 2026-09-16T10:05:21.845Z | `60a8e1c6a5247eee8b12ffe2450558e6199f6146acc9caed1be20cd1d373d45e` | `048def049039a8dedf3f805a0d3629a824f3175c0b1aadc56f4242634a228689` | `be30a26d7c9e60befbc05fad4bdc0a01ed9bd8d381b8d9f007c290fb0d46169a` | `bde746f84ead45872e31b42aea6726333775371b5aeec6b07bdc679252bcdeca` |
+| `0x94bfba79…` | `https://base.drpc.org` | 2026-09-16T10:05:24.327Z | `603e6c54211eac5fb5f3133ce0c8d52b375c58dcdfd80b3a3cea9d9b58b64a85` | `d7dca166e2cd33234a434ec1ff7cf2f8b20037a2d0fdc7b5c841d0060b97ad5c` | `dd515eb8a396644b300109a366d2d54e622fae14b3d11311e19da59d499c1b8f` | `0d7168f3343d87baa0da821e03ecf31b28fa7f11e3c2dbd1842f63c045c1bc92` |
+
+**The response digests differ between the two endpoints and that is expected.** Two servers serialise
+one receipt with different member order and different whitespace, so a raw-text comparison would
+report a disagreement about their serialisers and say nothing whatever about the chain. What is
+compared is the receipt as a **document**, under a sorted-member-name stringify, and the block hash
+and chain id as values; `tools/chain-read.ts` records the method it used in `agreement_method` on
+every output, so the claim cannot be read as stronger than it is. Both transactions: same chain id
+`0x2105`, equal receipts, same block hash.
+
+`fixtures/upstreams.json` carries the envelopes as the `unmapped` row `x402-settlement-envelopes`,
+`reason_code: past_capture` — a past event has no tip, no URL and no revision, so no drift kind can
+check it. They are in `fixtures/` rather than in `packages/` because the test suite reads them, and
+the suite never reaches the network.
+
+**A note on regenerating this file.** `node tools/snapshot.mjs` rewrites `fixtures/provenance.md`
+whole, from its own fetch list — it does not append. Every section below the first two tables,
+including this one, would be lost by a run of it, and the x402 paths are not in its list at all. The
+sections have been maintained by hand since 2026-09-01. This is recorded as an observation, not
+repaired here: `npm run snapshot` is not safe to run against this file as it stands.

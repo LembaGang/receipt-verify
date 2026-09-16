@@ -499,11 +499,107 @@ const insight: FormatCoverage = {
 
 // ---------------------------------------------------------------------------
 
+const x402Settlement: FormatCoverage = {
+  format: "x402.settlement/2",
+  sources: [
+    "fixtures/x402/specs/x402-specification-v2.md, section 6.1 (coinbase/x402 at dd927a26cfefc98c24b3ec38b3a8f204dad0c60d, sha256 aa6dc5e8…): the `exact` scheme on EVM, whose 6.1.1 gives the TransferWithAuthorization field list this adapter encodes",
+    "EIP-3009 TransferWithAuthorization + EIP-712 (the typehash and both event topic0 values are recomputed in test/x402-settlement.test.ts, never pasted)",
+    "cc-output/pins/payai-facilitator-openapi_2026-09-10T1412Z.json (sha256 4865bc1c…, fetched 2026-09-10T14:12Z) — the facilitator's own SettleResponse, for what a settle answer does and does not carry",
+  ],
+  orderNote:
+    "The specification numbers six verification steps at section 6.1.2, and they are the FACILITATOR'S, performed BEFORE settlement: balance, simulation and a time window read against the instant of the call. A party holding the artefacts afterwards can repeat only two of them — step 1 (the EIP-712 signature) and step 5 (parameters match the requirements) — and the rest of what it can check, the chain half, the specification does not number at all. So no `specStep` is claimed for any check here: carrying a number from a list written for a different party at a different time would say the wrong thing about what was reproduced. `order` is THIS TOOL'S evaluation order: the three artefact relations first, because they need no third party, then the three chain relations, then the three limits, which are reported on every result and never evaluated in the sense of passing.",
+  checks: [
+    {
+      id: "envelope_shape",
+      order: 1,
+      title: "The envelope parses, declares `x402.settlement/2` at x402Version 2, and carries either the artefacts or the chain data",
+      source: "this repository — the envelope is our container, not the protocol's",
+      status: "implemented",
+      note: "The three artefacts as the wire carried them, plus the chain data for the transaction the settle answer names. x402 defines no such container: a merchant or buyer holding a paid call has these objects in four places, and naming one shape for them is what makes the relations below expressible at all. An envelope carrying neither the artefacts nor the chain establishes nothing and is refused here.",
+    },
+    {
+      id: "authorization_signature_recovers_payer",
+      order: 2,
+      title: "The EIP-712 signature over TransferWithAuthorization recovers `authorization.from`",
+      source: "the specification's 6.1.1 field list + EIP-712; this is its 6.1.2 step 1, repeated after the fact",
+      status: "conditional",
+      note: "Runs when `payment_payload` is present. This is the ONLY signature in an x402 `exact` settlement: the buyer signs {from,to,value,validAfter,validBefore,nonce} and nothing else. A recovered address that differs from `authorization.from` is INVALID/signature_invalid; a signature that will not parse, or a domain the envelope cannot supply, is UNVERIFIABLE/malformed_member, because a domain we guessed at would make the recovery say nothing.",
+    },
+    {
+      id: "authorization_matches_requirements",
+      order: 3,
+      title: "The signed authorization pays the payee, asset, network and amount the 402 asked for",
+      source: "the 402's `accepts[i]` and the payload's `accepted` and `authorization`; the specification's 6.1.2 step 5 (and its step 3), repeated after the fact",
+      status: "conditional",
+      note: "Runs when `payment_required` and `payment_payload` are both present. The accepted requirement is found in `accepts` by equality of the whole object rather than by index, because the client chooses and nothing records which it chose. Address comparison is case-insensitive and EIP-55 checksum form is an ANNOTATION, never a verdict: the 7 September 402 carries 0x26D4Ffe9…8b860AD3 and the day-two chain script compared against 0x26D4ffe9…8b860AD3, and refusing one of those would be refusing a spelling.",
+    },
+    {
+      id: "settle_response_names_authorization",
+      order: 4,
+      title: "The facilitator's settle answer names the same payer, network and a 32-byte transaction",
+      source: "the payload's `authorization` and the settle object's `payer` / `network` / `transaction`",
+      status: "conditional",
+      note: "Runs when `payment_response` and `payment_payload` are both present. `success: false` is NOT a failed-settlement verdict here: the pinned OpenAPI says `settlement_pending` means the outcome is unresolved, so `errorReason` is carried as an annotation and the chain relations still run — the chain, not the facilitator's own word, is what says whether the money moved.",
+    },
+    {
+      id: "chain_transfer_matches_authorization",
+      order: 5,
+      title: "The receipt succeeded and carries exactly one USDC Transfer, and an AuthorizationUsed, matching the signed authorization",
+      source: "the ERC-20 Transfer and EIP-3009 AuthorizationUsed event ABIs, derived from their signature strings here",
+      status: "conditional",
+      note: "Runs when chain data is present in the envelope or `--rpc` resolves it. With no payload (the observation case) the transfer and the authorization-used event are still decoded and annotated, without the comparison. AuthorizationUsed is REPORTED rather than required: whether a given token contract emits it is a fact about that contract, established by the receipts this repository pins and not by this note, so its absence is recorded as `authorization_used: absent` and never as a failure.",
+    },
+    {
+      id: "block_at_height",
+      order: 6,
+      title: "The block at the receipt's height has the receipt's block hash, and its timestamp is the settlement instant",
+      source: "eth_getBlockByNumber against eth_getTransactionReceipt's blockNumber and blockHash",
+      status: "conditional",
+      note: "Runs when chain data is resolved. This is the check a preconfirmation makes necessary: PayAI's own Flashblocks post (https://blog.payai.network/x402-flashblocks/) advertises sub-second payment confirmation, and a sub-second preconfirmation is not a block at height — so a receipt is only evidence here once the block it names carries the hash the receipt claims for it.",
+    },
+    {
+      id: "submitter_recorded",
+      order: 7,
+      title: "The transaction's sender is recorded, and compared against a supplied submitter list where one is supplied",
+      source: "eth_getTransactionByHash `from`; the list is the caller's, from `known_submitters`",
+      status: "conditional",
+      note: "Runs when chain data is resolved. NEVER 'facilitator identified'. A match says the sender was on a list someone published at a fetch time, and the list is unsigned: it is the supplier's word, it can change between two reads, and nothing on the chain says who operates an address. The annotation and the detail line both say so, and an absent list reads `no_list_supplied` rather than nothing at all.",
+    },
+    {
+      id: "resource_binding",
+      order: 8,
+      title: "That the money paid is bound to the resource the buyer asked for",
+      source: "the claim the protocol's shape invites; no signature in these bytes establishes it",
+      status: "reported_only",
+      note: "unsigned — the buyer signs {from,to,value,validAfter,validBefore,nonce} and nothing else, so the 402 object, the payload's `resource` and `accepted` members and the settle response are all unsigned text beside a signature that does not cover them. A party that can edit any of them can move which resource a settled payment appears to be for, and no verifier holding these bytes can tell. Reported on every result including VALID.",
+    },
+    {
+      id: "facilitator_identity",
+      order: 9,
+      title: "That the account which submitted the transaction is the facilitator it is said to be",
+      source: "a facilitator's own /supported list, fetched at a time, unsigned",
+      status: "reported_only",
+      note: "unsigned_list — the tie between a submitting address and a named facilitator rests on a list that facilitator publishes over HTTP, with no signature and no validity window. This tool records the sender and whether it appears in the list the caller supplied, with that list's URL, digest and fetch time; it never says who the sender is.",
+    },
+    {
+      id: "rpc_trust",
+      order: 10,
+      title: "That the chain answers relied on are the chain's",
+      source: "the endpoint the verifier chose",
+      status: "reported_only",
+      note: "verifier_choice — a JSON-RPC endpoint is a party, and its answer is not itself evidence. What raises it is that the block is at height and that a second, independently operated endpoint returns the same receipt and the same block hash; `tools/chain-read.ts` reads two and records whether they agree, and the agreement result travels in the package rather than being asserted here.",
+    },
+  ],
+};
+
+// ---------------------------------------------------------------------------
+
 export const COVERAGE: Readonly<Record<string, FormatCoverage>> = Object.freeze({
   [verification.format]: verification,
   [acta.format]: acta,
   [evidenceAction.format]: evidenceAction,
   [insight.format]: insight,
+  [x402Settlement.format]: x402Settlement,
 });
 
 export function coverageFor(format: string): FormatCoverage | undefined {

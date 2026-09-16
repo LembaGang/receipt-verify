@@ -10,8 +10,9 @@ import { evidenceActionAdapter } from "./adapters/evidence-action.js";
 import { verificationStateAdapter } from "./adapters/verification-state.js";
 import { actaAdapter } from "./adapters/acta.js";
 import { insightAdapter } from "./adapters/insight.js";
+import { x402SettlementAdapter } from "./adapters/x402-settlement.js";
 
-export const ADAPTERS: Adapter[] = [evidenceActionAdapter, verificationStateAdapter, actaAdapter, insightAdapter];
+export const ADAPTERS: Adapter[] = [evidenceActionAdapter, verificationStateAdapter, actaAdapter, insightAdapter, x402SettlementAdapter];
 
 export function adapterByFormat(name: string): Adapter | undefined {
   const n = name.toLowerCase();
@@ -26,6 +27,9 @@ export function adapterByFormat(name: string): Adapter | undefined {
   }
   if (n === "insight" || n === "insight.attestation/eip712" || n === "insight-attestation") {
     return insightAdapter;
+  }
+  if (n === "x402" || n === "x402.settlement/2" || n === "x402-settlement") {
+    return x402SettlementAdapter;
   }
   return undefined;
 }
@@ -44,4 +48,4 @@ export function detectFormat(bytes: Uint8Array): DetectOutcome {
   };
 }
 
-export const FORMAT_NAMES = ["evidence.action", "verification", "acta", "insight"] as const;
+export const FORMAT_NAMES = ["evidence.action", "verification", "acta", "insight", "x402"] as const;
