@@ -2328,3 +2328,121 @@ since. Nothing in these bytes dates the change, and no claim is made that one oc
   own bytes shows the bytes were not altered under a stable identifier. No signature over a promotion
   object was offered by the issuer or checked here.
 - **It does not implement lineage admission** (B-191), and it changes nothing in the adapter.
+
+## Appended 2026-09-17 — the pointers re-read after the head moved to promotion v7
+
+The section above walked the promotion chain from v6 back to v3 and pinned it. Within the day the
+head moved again: `npm run drift`, run by the Lead from a fresh clone of the pushed tree, reported
+the three mutable pointers as `CHANGED (NOTE)`, and the live promotion pointer now names **promotion
+v7** `0x2eeda0f89eddad88c20f69680a150754e12266396eb79d503a59c9f14b98e26c`. This section pins the three
+pointers at their new bytes and pins v7 as the fourth object. Nothing above this line is edited.
+
+Fetched at the `www.` host with `curl`, written to `refs/` byte-exact with no re-serialisation. Each
+retrieval time below is the `Date` header of that response, not a local clock read. All four answered
+**HTTP 200** with `Content-Type: application/json`; the two registry pointers carried
+`Cache-Control: public, max-age=60, must-revalidate`, `oracle-keys.json` `public, max-age=300`, and
+the promotion `public, max-age=31536000, immutable`. **None of the four carries an `ETag` or a
+`Last-Modified`**, so the only bound on when any of them moved is our own reads.
+
+| path | object | retrieved | bytes | sha256 | `check` |
+|---|---|---|---|---|---|
+| `refs/insight-oracle-registry-current-2026-09-17.json` | the registry pointer | 2026-09-17T12:10:15Z | 1330 | `ac4b4cd9d96ed2d4a9ab9b7b81be73e4c861d52dc46efb2f07f8b5d82889b0df` | `note` |
+| `refs/insight-oracle-registry-integrations-current-2026-09-17.json` | the integrations pointer | 2026-09-17T12:10:17Z | 1093 | `c2513d53e0a96999f5a718994ef2936a5b3e93ebaac1a6622fe5274698f49bf0` | `note` |
+| `refs/insight-oracle-keys-2026-09-17.json` | the keys document | 2026-09-17T12:10:18Z | 23306 | `f287c37b58d5af6b881a454f2ecd12618cd0f7a328e7ba434b42c3064944d019` | `note` |
+| `refs/insight-oracle-registry-promotion-0x2eeda0f8.json` | promotion v7 | 2026-09-17T12:10:19Z | 3486 | `ad98b03e6ac1045651d592c56754dcd2a2378c780edfcc6caa1c229ad30ee73e` | `fail` |
+
+### What each changed against the pin it succeeds
+
+Read from the two sets of bytes in this session, not copied from the handoff that requested the work.
+
+**`current.json`**, against `refs/insight-oracle-registry-current-2026-09-16.json` (1330 bytes both):
+the `promotion` member **only** — `promotionId` v6 `0x4396f761…` to v7 `0x2eeda0f8…`,
+`promotionVersion` 6 to 7, and the `immutable` URL that carries the id. The release pointer is
+**unchanged** at `0x6e3bd18c`. No member was added or removed.
+
+**`integrations/current.json`**, against the 2026-09-10 pin (825 to 1093 bytes): gains a top-level
+`registryReleasePolicy` with `rule` `lineage-floor-any`, whose `description` admits a candidate
+release that equals any policy-pinned release or reaches one through `predecessorReleaseId`. This is
+the 11 September change, never pinned until now. Nothing else moved.
+
+**`oracle-keys.json`**, against the 2026-09-10 pin (22762 to 23306 bytes): `registryRevision`
+2026-09-10.1 to 2026-09-11.1; `effectiveFrom` 2026-09-10 to 2026-09-11; a new top-level
+`protocolPromotion` member naming v7; and `registryReleasePolicy` added **inside
+`partnerIntegrations`**, not at the top level. `public_keys` (3) and `revoked_keys` (empty) are
+**byte-identical** to the 2026-09-10 pin: no key material moved.
+
+**Promotion v7**, against v6 `0x4396f761…`: `promotionVersion` 6 to 7, `effectiveFrom` 2026-09-13 to
+2026-09-17, `classification`, `predecessorPromotionId` (now v6, so the chain is v7 → v6 → v5 → v4 →
+v3), `receiptImpact`, `activationRule`, and in the `compatibilityMatrix` the `evidence` strings and
+three `outcome` values — veritas `compatible-legacy-snapshot-unchanged` to
+`compatible-legacy-scope-clarified`, agent-passport `compatible-trust-enforcement` to
+`compatible-data-contract-unchanged`, raul `compatible-signer-trust-hardening` to
+`compatible-safety-contract-unchanged`. `registryReleaseId`, `activationSetId` and the matrix's
+nine-row set are unchanged.
+
+### The v1-v4 sentence
+
+v7's `receiptImpact` says, in the object's own words:
+
+> No signed receipt, attestation, semantic profile, registry release, partner policy or historical
+> promotion bytes change. The general legacy snapshot-relative verification contract covers v1-v4.
+> The narrower v2-v4 wording in promotions v5 and v6 described the VERITAS workflow only and did not
+> supersede the repository-wide v1-v4 rule.
+
+**No code change follows.** `src/adapters/insight.ts` already treats a target `ExecutionReceipt` with
+a numeric `schemaVersion` below 5 as legacy, which covers v1-v4 **as a superset** — it also catches
+values below 1. A receipt that signs no numeric `schemaVersion` at all remains outside that scope,
+which is what F15's "what the closure still does not reach" already records. The change is in the
+record, not in the tool.
+
+### The address, recomputed
+
+From the object's **own** `digest` member — `keccak256`, `RFC 8785 JSON Canonicalization Scheme`,
+scope `the promotion object excluding promotionId` — checked rather than assumed, the script
+refusing to proceed if any of the three declared values were something else.
+
+```
+v7  refs/insight-oracle-registry-promotion-0x2eeda0f8.json
+    file bytes        3486
+    canonical bytes   TS 3159  Python 3159
+    canonical sha256  TS d9afa74a413bbd66a87bbf9a561075a57391eee64e34d7d2430b9f24ac664d88
+                      PY d9afa74a413bbd66a87bbf9a561075a57391eee64e34d7d2430b9f24ac664d88
+    byte-for-byte     AGREE
+    recomputed        0x2eeda0f89eddad88c20f69680a150754e12266396eb79d503a59c9f14b98e26c
+    stated id         0x2eeda0f89eddad88c20f69680a150754e12266396eb79d503a59c9f14b98e26c
+    RESULT            MATCH
+    control           effectiveFrom 2026-09-17 -> 2026-09-18 gives
+                      0x0b56e3714bc0eeb44b72089e554bdb9ef554345a49acba359f53b7d403d93468
+                      address MOVED, as it must
+```
+
+Two independent canonicalisers, as every promotion pin here has used: this repository's TypeScript
+one (the `canonicalize` package the adapters use) and the Python one in
+`tools/asqav_envelope_hash.py` driven by `tools/jcs-cross-check.py`, which shares no code with it.
+The canonical forms were compared **byte for byte**, not merely by digest.
+
+**The reading matters, and the wrong one is recorded here too.** The inner reading — the `promotion`
+member with `promotionId` removed — gives 3,159 canonical bytes and the declared address. The
+top-level reading, the whole object with its top-level `promotionId` removed, gives 3,403 canonical
+bytes and `0x9c6f3618b8f147ea191645fd66850b88e834d7294c4f7c41eb065df499e52c57`, which matches
+nothing.
+
+**Two known-answer controls were recomputed by the same code in the same run**, so a match here is
+not the first output of a script nobody has checked:
+
+| object | canonical bytes (TS / Py) | recomputed | stated id | mutation control moved? |
+|---|---|---|---|---|
+| v7 | 3159 / 3159 | `0x2eeda0f8…e26c` | same — **MATCH** | yes → `0x0b56e371…` |
+| v6 | 3232 / 3232 | `0x4396f761…9119` | same — **MATCH** | yes → `0xca713561…` |
+| v4 | 2631 / 2631 | `0x6148f427…5217` | same — **MATCH** | yes → `0x26e27bf3…` |
+
+The v6 and v4 figures, and both of their control addresses, reproduce the values the 16 and 17
+September sessions recorded independently.
+
+### What these bytes do not establish
+
+The pointers were last read by us at **2026-09-16T11:38:11Z** and first seen naming v7 at
+**2026-09-17T11:50:38Z**. Nothing in v7's bytes refers to any letter, question or correspondent, and
+`effectiveFrom` is a declared date rather than a publication observation. **Whether v7 was published
+before or after our 17 September send is not established by anything this repository holds**, and no
+row here should be read as saying it was.

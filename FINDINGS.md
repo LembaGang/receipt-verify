@@ -1759,6 +1759,50 @@ works" from "the method agrees with itself".
   checked.
 - **Nothing here observes the runtime**, unchanged from every section above it.
 
+#### Appended 2026-09-17 — the head moved again, to promotion v7, and its address recomputes
+
+The subsection above closes by saying that `current.json` was not re-read in that run, so "whether the
+pointer has since advanced past v6 is unobserved". It had. The pointer was re-read at
+**2026-09-17T12:10:15Z** (`Date` header) and names **promotion v7**
+`0x2eeda0f89eddad88c20f69680a150754e12266396eb79d503a59c9f14b98e26c`, `promotionVersion` 7,
+`effectiveFrom` 2026-09-17, predecessor v6 — so the chain is now v7 → v6 → v5 → v4 → v3. The object
+was pinned as bytes at `refs/insight-oracle-registry-promotion-0x2eeda0f8.json`, 3486 bytes, sha256
+`ad98b03e6ac1045651d592c56754dcd2a2378c780edfcc6caa1c229ad30ee73e`. Nothing above this line is edited.
+
+**Its address recomputes.** Under the scope the object itself declares — keccak256 over the RFC 8785
+form of the promotion object excluding `promotionId` — the canonical form is 3,159 bytes and the
+address equals the declared id. Two independent serialisers agreed byte for byte; a one-byte mutation
+of `effectiveFrom` moved the address to `0x0b56e371…`; and v6 and v4 were recomputed as known-answer
+controls in the same run, both reproducing the figures recorded earlier in this section. The
+top-level reading — the whole object with its top-level `promotionId` removed — gives 3,403 canonical
+bytes and `0x9c6f3618…`, which matches nothing.
+
+**What v7 says about v1-v4.** Its `receiptImpact`, in the object's own words:
+
+> The general legacy snapshot-relative verification contract covers v1-v4. The narrower v2-v4 wording
+> in promotions v5 and v6 described the VERITAS workflow only and did not supersede the
+> repository-wide v1-v4 rule.
+
+Its `activationRule` keeps the rest unchanged: historical v1-v4 receipts remain verification-only and
+must be evaluated against their exact receipt-adjacent registry bytes, a missing or mismatched
+snapshot fails closed, no legacy verdict is globally canonical, and production signing remains
+v5-only.
+
+**This settles the v1-v4 scope and requires no code change.** The adapter already treats a target
+`ExecutionReceipt` with a numeric `schemaVersion` below 5 as legacy, which covers v1-v4 as a
+superset. The second bullet of "What this closure does not reach" above — a receipt that signs no
+numeric `schemaVersion` at all — is unaffected and stays open.
+
+**What is not established.** The pointer was last read by us at **2026-09-16T11:38:11Z** and first
+seen naming v7 at **2026-09-17T11:50:38Z**, so the only bound on when it moved is those two reads:
+none of the four objects carries an `ETag` or a `Last-Modified`. Nothing in v7's bytes refers to any
+letter, question or correspondent, and `effectiveFrom` is a date the object declares rather than a
+publication we observed. **Whether v7 was published before or after anything this repository sent is
+not established by any bytes held here**, and nothing in this note should be read as claiming it.
+Recomputing an address still does not verify an issuer: it establishes that the bytes were not
+altered under a stable identifier, not who published them, and no signature over a promotion object
+was offered or checked.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`
