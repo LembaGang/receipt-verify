@@ -1015,6 +1015,60 @@
       "outcome": "current"
     }
   },
+  {
+    "id": "insight-oracle-registry-promotion/0x4396f761",
+    "kind": "http",
+    "role": "current",
+    "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x4396f761c00eee4f37aad37e9a703bd3896ace1fee8a3bde2a5ff8ebb9dc9119",
+    "sha256": "83d189157861ab37fff153bc5ff858978bba4fcf22441ab818ef94b69d31eec3",
+    "retrieved": "2026-09-17T09:20:08Z",
+    "check": "fail",
+    "check_reason": "Content-addressed and immutable. The id in the URL IS keccak256 over the RFC 8785 canonicalisation of the scope the object itself declares in its `digest` member, and this session recomputed that address from the pinned bytes with two independent JCS serialisers — the repository's TypeScript one and the Python one tools/jcs-cross-check.py drives — whose canonical forms were compared BYTE for byte, not merely by digest, and a one-byte mutation control moved the address before the result was believed. So a `changed` outcome here does not mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes. There is no benign reading, and `fail` is the only defensible setting.",
+    "pinned_file": "refs/insight-oracle-registry-promotion-0x4396f761.json",
+    "role_note": "Promotion v6, the head of the promotion chain as the 16 September current.json pin names it. This is the object that pin recorded as an open item and did not fetch; it is fetched and pinned here. registryReleaseId and the rest of its members are its own; what matters for the chain is predecessorPromotionId 0x9c87d2eface78336b901c8e8b7d2a1a0fcbe745cc6d9aa172cc36ecf453480d5, which is promotion v5 and is named in NO other document this repository holds — v5 was reachable only through these bytes, which is why v6 had to be fetched first. Its digest member declares scope `the promotion object excluding promotionId`, keccak256, RFC 8785; the address recomputes from the pinned bytes under the inner reading at 3232 canonical bytes. This repository does NOT implement lineage admission (B-191) and nothing here observes the runtime.",
+    "provenance_section": "Appended 2026-09-17 — the promotion series walked from v6 to v3, pinned, and every address recomputed",
+    "last_observed": {
+      "tip": "83d189157861ab37fff153bc5ff858978bba4fcf22441ab818ef94b69d31eec3",
+      "at": "2026-09-17T09:20:08Z",
+      "outcome": "current"
+    }
+  },
+  {
+    "id": "insight-oracle-registry-promotion/0x9c87d2ef",
+    "kind": "http",
+    "role": "current",
+    "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x9c87d2eface78336b901c8e8b7d2a1a0fcbe745cc6d9aa172cc36ecf453480d5",
+    "sha256": "519768a49824e9f68d8036c39b504d252ed90ac41ff1065c72dc484369d8a4ab",
+    "retrieved": "2026-09-17T09:20:25Z",
+    "check": "fail",
+    "check_reason": "Content-addressed and immutable. The id in the URL IS keccak256 over the RFC 8785 canonicalisation of the scope the object itself declares in its `digest` member, and this session recomputed that address from the pinned bytes with two independent JCS serialisers — the repository's TypeScript one and the Python one tools/jcs-cross-check.py drives — whose canonical forms were compared BYTE for byte, not merely by digest, and a one-byte mutation control moved the address before the result was believed. So a `changed` outcome here does not mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes. There is no benign reading, and `fail` is the only defensible setting.",
+    "pinned_file": "refs/insight-oracle-registry-promotion-0x9c87d2ef.json",
+    "role_note": "Promotion v5, the link between v6 and the already-pinned v4. NAMED IN NO DOCUMENT THIS REPOSITORY HELD before this pin: it was reached only as v6's predecessorPromotionId, so the walk discovered it rather than looked it up. Its own predecessorPromotionId is 0x6148f4273e60fa702bbac5a5f0abd3461d8e46e532675aeaec6d991ef93a5217, which is promotion v4, pinned here as insight-oracle-registry-promotion/0x6148f427 — so the chain v6 -> v5 -> v4 -> v3 is complete and every link is held. Its digest member declares scope `the promotion object excluding promotionId`, keccak256, RFC 8785; the address recomputes from the pinned bytes under the inner reading at 3014 canonical bytes.",
+    "provenance_section": "Appended 2026-09-17 — the promotion series walked from v6 to v3, pinned, and every address recomputed",
+    "last_observed": {
+      "tip": "519768a49824e9f68d8036c39b504d252ed90ac41ff1065c72dc484369d8a4ab",
+      "at": "2026-09-17T09:20:25Z",
+      "outcome": "current"
+    }
+  },
+  {
+    "id": "insight-oracle-registry-promotion/0x338a53e5",
+    "kind": "http",
+    "role": "current",
+    "url": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x338a53e57055bf01820ef3880b2668bee6907307fc6e682704f868e366518220",
+    "sha256": "8686aef18224d56b29011a95024326d9b8a4ca2fd1491e43f489e813a9fa835c",
+    "retrieved": "2026-09-17T09:20:53Z",
+    "check": "fail",
+    "check_reason": "Content-addressed and immutable. The id in the URL IS keccak256 over the RFC 8785 canonicalisation of the scope the object itself declares in its `digest` member, and this session recomputed that address from the pinned bytes with two independent JCS serialisers — the repository's TypeScript one and the Python one tools/jcs-cross-check.py drives — whose canonical forms were compared BYTE for byte, not merely by digest, and a one-byte mutation control moved the address before the result was believed. So a `changed` outcome here does not mean the issuer updated a document; it means the issuer served different bytes under an identifier that is supposed to be the digest of those bytes. There is no benign reading, and `fail` is the only defensible setting.",
+    "pinned_file": "refs/insight-oracle-registry-promotion-0x338a53e5.json",
+    "role_note": "Promotion v3, effectiveFrom 2026-09-10, the terminus of the walk this handoff scoped. THIS PIN CORRECTS A STANDING STATEMENT: fixtures/provenance.md's 10 September section reached v3 only at the branch path protocol/mainline/promotions/2026-09-10-headless-v5-only.json and recorded that its promotionId carried no digest member declaring a scope, so it could not be pinned. At the immutable path the same promotionId answers HTTP 200 with Cache-Control public, max-age=31536000, immutable, and the object DOES carry a digest member in the same words as v4's; the address recomputes at 2650 canonical bytes under the inner reading. The earlier lines are the honest record of what that session could see and are left standing per the dated-record convention README.md states; they are superseded in the 2026-09-17 provenance section, not edited. Its activationRule is the source of the v1-v4 snapshot-relative rule this repository implements. Its own predecessorPromotionId is 0x5dfbc2a5b5326b519e432a1a3c608ed9224facee48b4a483c9f3ff5743bf2eef (promotion v2), which is NOT fetched: the chain continues below the terminus and the series is verified from v6 down to v3, not to its origin.",
+    "provenance_section": "Appended 2026-09-17 — the promotion series walked from v6 to v3, pinned, and every address recomputed",
+    "last_observed": {
+      "tip": "8686aef18224d56b29011a95024326d9b8a4ca2fd1491e43f489e813a9fa835c",
+      "at": "2026-09-17T09:20:53Z",
+      "outcome": "current"
+    }
+  },
     {
       "id": "insight-oracle-registry-current",
       "kind": "http",

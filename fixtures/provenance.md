@@ -2224,3 +2224,107 @@ this session makes no such call.
   published documents; nothing here watches the gate that reads them.
 - **It does not implement lineage admission** (B-191), and it does not encode the policy's release
   pin anywhere in the tool.
+
+## Appended 2026-09-17 — the promotion series walked from v6 to v3, pinned, and every address recomputed
+
+The 16 September section above closes by saying, in its own words, that it **does not pin promotion
+v6** — "Recorded, not fetched" — because that session's network reads were scoped to three objects.
+This section closes that item. The chain was walked from v6 back to v3 at the immutable path, every
+object on it was pinned, and each address was recomputed from the scope that object itself declares.
+**All three new objects reproduce.** Nothing above this line is edited; the sections above are dated
+records of what was true when they were written, and the one statement they contain that these bytes
+contradict is named and superseded at the end of this section rather than rewritten in place.
+
+The path template is taken from the release's own bytes,
+`refs/insight-oracle-registry-release-0x6e3bd18c.json` at
+`release.promotionAddressing.immutablePathTemplate`: `/.well-known/oracle-registry/promotions/{promotionId}`.
+Fetched at the `www.` host, as before, written to `refs/` byte-exact with no re-serialisation. Each
+retrieval time below is the `Date` header of that response, not a local clock read.
+
+| path | object | retrieved | bytes | sha256 | `check` |
+|---|---|---|---|---|---|
+| `refs/insight-oracle-registry-promotion-0x4396f761.json` | promotion v6 | 2026-09-17T09:20:08Z | 3559 | `83d189157861ab37fff153bc5ff858978bba4fcf22441ab818ef94b69d31eec3` | `fail` |
+| `refs/insight-oracle-registry-promotion-0x9c87d2ef.json` | promotion v5 | 2026-09-17T09:20:25Z | 3341 | `519768a49824e9f68d8036c39b504d252ed90ac41ff1065c72dc484369d8a4ab` | `fail` |
+| `refs/insight-oracle-registry-promotion-0x338a53e5.json` | promotion v3 | 2026-09-17T09:20:53Z | 2977 | `8686aef18224d56b29011a95024326d9b8a4ca2fd1491e43f489e813a9fa835c` | `fail` |
+
+All three answered **HTTP 200** with `Cache-Control: public, max-age=31536000, immutable`,
+`Content-Type: application/json`, `Server: Vercel`, `Age: 0`,
+`X-Matched-Path: /.well-known/oracle-registry/promotions/[promotionId]`.
+
+**v5 was not named in any document this repository held.** It was reached only as v6's
+`predecessorPromotionId`, which is why v6 had to be fetched before it could be asked for. The chain is
+the discovery here, not a list of known URLs: v6 → v5 → v4 → v3.
+
+**v4 was not re-pinned, and its pin was not touched.** It sits between v5 and v3 in the chain and is
+already pinned at 2,958 bytes from 16 September. It was refetched to a dated scratch path outside
+`refs/` and compared byte for byte against the existing pin: **identical**, sha256
+`0924462061c58963082e2db2da28b17bafc576e24dfbae6a92de60671a3ce426` on both. There is no difference to
+report. The scratch copy is not committed; the finding is that there was nothing to find.
+
+### Every address recomputed from the object's own declared scope
+
+Each of the three new objects carries its own `digest` member, and all three declare it in identical
+words: `algorithm` `keccak256`, `canonicalization` `RFC 8785 JSON Canonicalization Scheme`, `scope`
+*"the promotion object excluding promotionId"*. The scope was read from each object rather than
+carried over from v4, and the recomputation was run under the words each object uses.
+
+| object | canonical bytes | recomputed address | id in the URL | match |
+|---|---|---|---|---|
+| promotion v6 | 3232 | `0x4396f761…b9dc9119` | `0x4396f761…b9dc9119` | **yes** |
+| promotion v5 | 3014 | `0x9c87d2ef…453480d5` | `0x9c87d2ef…453480d5` | **yes** |
+| promotion v3 | 2650 | `0x338a53e5…66518220` | `0x338a53e5…66518220` | **yes** |
+
+That scope string reads two ways, and on these three — as on v4 — only one reproduces: the **inner
+`promotion` member with `promotionId` removed**. The other reading, the top-level object with
+`promotionId` removed, was computed for each and matches none: 3476 B → `0x9fcf8e95…` for v6,
+3258 B → `0x3965e3d4…` for v5, 2894 B → `0xdf282896…` for v3. Both readings are recorded so that the
+one used is visibly a choice that was tested rather than an assumption that was inherited.
+
+Method, unchanged from the 16 September section: keccak256 over the RFC 8785 canonical form, computed
+with **two independent JCS serialisers** — this repository's TypeScript one and the Python one in
+`tools/asqav_envelope_hash.py` that `tools/jcs-cross-check.py` drives — whose canonical forms were
+compared **byte for byte**, not merely by digest. They agree on every scope computed in this run,
+under both readings: 3232/3232, 3014/3014 and 2650/2650 bytes, with identical sha256 over each pair
+(`7d27080cebbb6a46…`, `b19894fd073f48a6…`, `a19a5d7659aa2eb2…`).
+
+**The control, run and printed before any result was believed.** A one-byte change to a string member
+inside each scope moves that object's address off its declared id — v6 to `0x84a4237c…`, v5 to
+`0x99d01ed8…`, v3 to `0xf3dad9b0…` — and both serialisers agree on the mutated forms too.
+
+**The method was also controlled against an answer written down before this run.** v4 was recomputed
+by the same code in the same run and reproduces the 16 September figures exactly: 2,631 canonical
+bytes, canonical sha256 `53ccd26362ea9fc4…`, address `0x6148f427…ef93a5217` matching its declared id,
+and 2,875 bytes → `0x4e57c18b…` for the top-level reading. A green that agreed only with itself would
+have shown nothing; this one agrees with a figure a different session recorded a day earlier.
+
+### The one statement above these lines that these bytes contradict
+
+The 10 September section, under *"What this section does not do"*, states of promotion v3:
+
+> "**It does not pin the promotion record.** Its URL is a path on a moving branch, not a content
+> address, and its `promotionId` carries no `digest` member declaring a scope, so it cannot be
+> verified the way the four registry objects were. It is read and quoted, not pinned."
+
+That was true of the bytes that path served, and it remains the honest record of what that session
+could see. It is **not** true of the object the immutable path serves under the same `promotionId`:
+that object answers 200 and **does** carry a `digest` member, in the same words as v4's, and its
+address recomputes from its own bytes under it. The v3 promotion record is content-addressed and is
+now pinned. The earlier lines are left standing as the dated record they are, per the convention
+`README.md` states; this paragraph is where they are superseded.
+
+The same correction applies to the reading of the branch path itself: the object was reachable at a
+content address on 10 September and nobody asked, rather than the object having become addressable
+since. Nothing in these bytes dates the change, and no claim is made that one occurred.
+
+### What this section does not do
+
+- **It does not fetch v2.** v3 names `predecessorPromotionId` `0x5dfbc2a5…743bf2eef`, so the chain
+  continues below v3. The terminus here is v3, and the series is verified from v6 down to v3 and not
+  to its origin.
+- **It does not re-read `current.json`.** The network reads were scoped to the promotion path
+  template, so v6 is the head of the chain *as the 16 September pin names it*; whether the live
+  pointer has advanced past v6 is unobserved here.
+- **It does not establish who published these objects.** A content address self-consistent with its
+  own bytes shows the bytes were not altered under a stable identifier. No signature over a promotion
+  object was offered by the issuer or checked here.
+- **It does not implement lineage admission** (B-191), and it changes nothing in the adapter.

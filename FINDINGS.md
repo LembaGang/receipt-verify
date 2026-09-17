@@ -1673,6 +1673,92 @@ check is B-191, and it is the founder's ruling, not a session's.
   and the promotion are published documents, and nothing in this repository watches the gate that
   reads them.
 
+#### Appended 2026-09-17 — the open item is closed: v6, v5 and v3 pinned, and all three addresses recompute
+
+The bullet above records that the live promotion pointer had moved to v6, that v6 was not fetched
+because the 16 September handoff scoped that session's network reads, and that it was left as an open
+item. **That item is closed here.** The chain from v6 back to v3 was walked at the immutable path the
+release's own `promotionAddressing.immutablePathTemplate` gives, every object on it was pinned as
+bytes, and every one of their content addresses was recomputed from the scope that object itself
+declares. Nothing above this line is edited; this is the result, not a revision of the record of what
+the earlier session did.
+
+| promotion | id | retrieved (`Date` header) | bytes | sha256 of the pinned bytes |
+|---|---|---|---|---|
+| v6 | `0x4396f761…b9dc9119` | 2026-09-17T09:20:08Z | 3559 | `83d189157861ab37fff153bc5ff858978bba4fcf22441ab818ef94b69d31eec3` |
+| v5 | `0x9c87d2ef…453480d5` | 2026-09-17T09:20:25Z | 3341 | `519768a49824e9f68d8036c39b504d252ed90ac41ff1065c72dc484369d8a4ab` |
+| v3 | `0x338a53e5…66518220` | 2026-09-17T09:20:53Z | 2977 | `8686aef18224d56b29011a95024326d9b8a4ca2fd1491e43f489e813a9fa835c` |
+
+v5 is named in no document this tree held: it was reached only as v6's `predecessorPromotionId`,
+which is why v6 had to be fetched first. The walk is therefore the discovery, not a lookup.
+
+**v4 was not re-pinned.** The chain runs v6 → v5 → v4 → v3, and v4 `0x6148f427…` was already pinned
+on 16 September at 2,958 bytes. It was refetched to a dated scratch path outside `refs/` and compared:
+**byte-identical**, sha256 `0924462061c58963082e2db2da28b17bafc576e24dfbae6a92de60671a3ce426`, the
+same digest Entry 003 rev 3 cites. The pin was not touched and there is no difference to report.
+
+**v3 resolves at the immutable path, and this corrects an expectation.** The 10 September record
+reached v3 only at a branch path, `protocol/mainline/promotions/2026-09-10-headless-v5-only.json`, and
+concluded from those bytes that its `promotionId` carried no `digest` member declaring a scope and so
+could not be pinned. At the immutable path the same id answers **HTTP 200**, 2,977 bytes,
+`Cache-Control: public, max-age=31536000, immutable`, `Content-Type: application/json`,
+`X-Matched-Path: /.well-known/oracle-registry/promotions/[promotionId]`, and the object it serves
+**does** carry a `digest` member, in the same words as v4's. The branch-path reading was true of the
+bytes that path served; it is not true of this object. v3 is pinned and its address recomputes.
+
+##### The three recomputations, with the control that could have failed
+
+Each address was recomputed from that object's **own** `digest` member — `keccak256` over the
+`RFC 8785 JSON Canonicalization Scheme` form of `the promotion object excluding promotionId` — and not
+from a rule carried over from another object. All three declare that scope in identical words.
+
+| object | canonical bytes (inner reading) | recomputed address | declared id | match |
+|---|---|---|---|---|
+| v6 | 3232 | `0x4396f761…b9dc9119` | `0x4396f761…b9dc9119` | **yes** |
+| v5 | 3014 | `0x9c87d2ef…453480d5` | `0x9c87d2ef…453480d5` | **yes** |
+| v3 | 2650 | `0x338a53e5…66518220` | `0x338a53e5…66518220` | **yes** |
+
+The scope string reads two ways and only one reproduces, on these three as on v4: the **inner
+`promotion` member with `promotionId` removed**. The top-level object with `promotionId` removed was
+computed for each as well and matches none of them — 3476 B → `0x9fcf8e95…` for v6, 3258 B →
+`0x3965e3d4…` for v5, 2894 B → `0xdf282896…` for v3. The reading that works is reported because it
+worked, and the one that does not is reported beside it so the choice is visible rather than assumed.
+
+Method, unchanged from the 16 September section: **two independent JCS serialisers** — this
+repository's TypeScript path and the Python one in `tools/asqav_envelope_hash.py` that
+`tools/jcs-cross-check.py` drives — whose canonical forms were compared **byte for byte** and not
+merely by digest. They agree on all three objects under both readings: 3232/3232, 3014/3014,
+2650/2650 bytes, with identical sha256 over each pair.
+
+**The control, run and printed before any of the above was believed.** A one-byte change to a string
+member inside each scope moves that object's address off its declared id: v6 to `0x84a4237c…`, v5 to
+`0x99d01ed8…`, v3 to `0xf3dad9b0…`, with both serialisers agreeing on the mutated forms too. A
+recomputation that could not have gone red would have established nothing about these objects.
+
+**And the method itself was controlled against a known answer.** v4 was recomputed by the same code in
+the same run: 2,631 canonical bytes, canonical sha256 `53ccd26362ea9fc4…`, address
+`0x6148f427…ef93a5217`, matching both its declared id and the figures the 16 September section
+recorded; its top-level reading gives 2,875 bytes and `0x4e57c18b…`, also as recorded. Agreement with
+a figure written down a day earlier by a different session is the check that separates "the method
+works" from "the method agrees with itself".
+
+##### What this closure does not reach
+
+- **v2 is not fetched.** v3 names `predecessorPromotionId` `0x5dfbc2a5…743bf2eef`, so the chain
+  continues below the terminus this work was scoped to. Whether v2 and its predecessors resolve at the
+  immutable path is untested here, and the series is therefore verified from v6 down to v3 and not to
+  its origin.
+- **Nothing here re-reads the live pointer.** `current.json` was not fetched in this run — the scope
+  was the promotion path template alone — so v6 is the head of the chain *as the 16 September pin
+  names it*, and whether the pointer has since advanced past v6 is unobserved, exactly as it was
+  unobserved between 11 and 16 September.
+- **Recomputing an address is not verifying an issuer.** These objects are content-addressed and they
+  are self-consistent: each one's id is the digest of its own bytes under its own declared scope. That
+  establishes that the bytes were not altered in transit or in storage under a stable identifier. It
+  does not establish who published them, and no signature over a promotion object was offered or
+  checked.
+- **Nothing here observes the runtime**, unchanged from every section above it.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`
