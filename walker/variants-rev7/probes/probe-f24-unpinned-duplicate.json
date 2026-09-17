@@ -1,0 +1,36 @@
+{
+  "id": "probe-f24-unpinned-duplicate",
+  "targets": "evidence-root.f24-pinned-only.ts",
+  "isolates": "check 11, the duplicate bound-tuple check (rev5 l.64-66, 24a), iterating pinnedEntries instead of sources",
+  "why": "Two unpinned entries identical across url, snippet_sha256, content_kind and retrieved_at. The baseline iterates every source and halts on the duplicate; the f24 build iterates the pinned entries only, sees one entry, and does not. No rev 7 vector carries a duplicated UNPINNED tuple, which is why the two builds are indistinguishable on the fixture set.",
+  "expect": { "baseline": "halt", "variant": "pass" },
+  "expect_baseline_condition": "duplicate_bound_tuple",
+  "evidence_set": {
+    "source_count": 3,
+    "pinned_count": 1,
+    "fully_pinned": false,
+    "sources": [
+      {
+        "url": "https://example.org/a",
+        "snippet_sha256": "3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea",
+        "retrieved_at": "2026-09-11T12:00:00.000Z",
+        "pinned": true,
+        "content_kind": "snippet"
+      },
+      {
+        "url": "https://example.org/b",
+        "snippet_sha256": null,
+        "retrieved_at": "2026-09-11T12:00:01.000Z",
+        "pinned": false,
+        "unpinned_reason": "no_content_returned"
+      },
+      {
+        "url": "https://example.org/b",
+        "snippet_sha256": null,
+        "retrieved_at": "2026-09-11T12:00:01.000Z",
+        "pinned": false,
+        "unpinned_reason": "no_content_returned"
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+--- tools/evidence-root.ts	2026-09-10 12:56:14.949501600 +0000
++++ walker/variants-rev7/evidence-root.f32b-pinned-only.ts	2026-09-17 10:17:26.414851700 +0000
+@@ -386,7 +386,7 @@
+     // the placement is free in any case, since conformance is the halt and not the
+     // name. No fixture vector exercises this: both retrieved_at literals in the rev 6
+     // set are already canonical.
+-    if (!isCanonicalRetrievedAt(e.retrieved_at)) {
++    if (e.pinned === true && !isCanonicalRetrievedAt(e.retrieved_at)) {
+       return fail("retrieved_at_not_canonical", `entry ${e.url} carries retrieved_at ${e.retrieved_at}, which is not RFC 3339 UTC with the Z designator and exactly three fractional-second digits`);
+     }
+ 

@@ -1,0 +1,625 @@
+{
+  "produced_by": "tools/evidence-roots-run-rev7.ts",
+  "handoff": "CC_HANDOFF_2026-09-10_rev7-and-repins.md",
+  "spec_extract": "docs/evidence-root-spec-extract.md (sections 1-9, the Rev 6 section and the Rev 7 section)",
+  "inputs_file": "walker/evidence-inputs-rev7.json",
+  "inputs_source_sha256": "a8679bdf5acb56ed7cd614086c5ea44438bcd6735b356e88c5e40172e8c696f1",
+  "fixture_title": "evidence-pinning conformance fixtures (v2 preimage, four-term sort, rev 7 rules)",
+  "fixture_vector_count": 32,
+  "leaf_prefix_used": "ao-evidence-leaf-v2",
+  "node_prefix_used": "ao-evidence-node-v1",
+  "node_child_encoding": "raw 32 octets — our choice on 7 Sep (extract §2), compelled by rev6 l.101-104 (Finding 27); not independently corroborated by this side, rev7 l.190-196",
+  "retrieved_at_rule": "RFC 3339 UTC, Z designator, exactly three fractional-second digits, rejected otherwise (rev6 l.243-247, Finding 32)",
+  "affirmative_resolution_token": "resolved (rev6 l.171-174, Finding 29)",
+  "condition_rule": "every halt reports a stable condition, and conformance requires it to equal the vector's (rev7 l.106-109, Finding 33)",
+  "vector_count": 32,
+  "normative_root_count": 25,
+  "non_normative_root_count": 5,
+  "root_count_breakdown": {
+    "root_bearing_vectors": 13,
+    "roots_on_root_bearing_vectors": 21,
+    "incidental_roots_on_resolution_vectors": 4
+  },
+  "condition_accounting": {
+    "note": "rev7 l.106-109 (Finding 33). Under rev 6 a MALFORMED row held on the bare halt; under rev 7 it holds only when the reported condition equals the vector's.",
+    "malformed_vectors": 13,
+    "carrying_a_condition": 13,
+    "conditions_matching": 13
+  },
+  "category_accounting": {
+    "note": "Not a partition. evi-root-mismatch-rejects is both MALFORMED and root-bearing; evi-step-resolves-affirmatively is root-bearing under the RESOLUTION designation (rev7 l.255-267).",
+    "root_bearing": 13,
+    "malformed": 13,
+    "remaining": 7,
+    "overlap": 1,
+    "sum_with_overlap_removed": 32
+  },
+  "relations_holding": 32,
+  "vectors": [
+    {
+      "id": "evi-root-order-independent",
+      "designation": "CANONICAL ORDER",
+      "expect": "identical evidence_root",
+      "ours": {
+        "set_1": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960",
+        "set_2": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "identical",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-root-odd-promotion",
+      "designation": "ODD NODE",
+      "expect": "root matches promote-not-duplicate (three sorted leaves, third promoted unchanged)",
+      "ours": {
+        "set": "d0cacaa281b5b0a46f8c2eb73c3100a15e5490d2c77ca542c4f9475886887bfd",
+        "non_normative:duplicated_tail": "b50b2da3fc2e7bc2c9298410cd96dfcf6f3e3082f83307ff5c94aacc427b5957",
+        "non_normative:promoted_leftmost": "34ca1c7f9e8e36f502d0010ef93d0fa2918869b76c624100fbf62d8240784f8e"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "root matches promote-not-duplicate, promoted entry rightmost",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-node-child-encoding",
+      "designation": "NODE PREIMAGE",
+      "expect": "evidence_root MUST equal normative_root and MUST NOT equal counter_construction_root. The encoding is stated normatively in the specification and is deliberately not restated here.",
+      "ours": {
+        "set": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960",
+        "non_normative:counter_construction": "bf2676fc6d5c0b2588d230ee8451f4c9855080376525c0e64c46bbf285a1c58a"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "root equals the normative form and differs from the counter-construction",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-leaf-member-encoding",
+      "designation": "LEAF PREIMAGE",
+      "expect": "evidence_root MUST equal normative_root and MUST NOT equal counter_construction_root. The encoding is stated normatively in the specification and is deliberately not restated here.",
+      "ours": {
+        "set": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "non_normative:counter_construction": "154920df5849092538d5911db5b3cd8417c291c762fc65d81b8695833953b992"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "root equals the normative form and differs from the counter-construction",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-snippet-change-changes-root",
+      "designation": "BINDING",
+      "expect": "roots differ",
+      "ours": {
+        "set_1": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "set_2": "365973a6cd59577830d4340b3bbb22e2852f92734e2d74b52311a5790e6dad69"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-url-normalization-changes-root",
+      "designation": "BINDING",
+      "expect": "roots differ; unnormalized bytes are normative",
+      "ours": {
+        "set_1": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "set_2": "14adb6a20e3e205bfa4ab3dbbb1db2b133c55341117df91fcbba15664561bfd0"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-duplicate-url-distinct-digest",
+      "designation": "CANONICAL ORDER",
+      "expect": "deterministic order by the four-term key of §4.1.2; stable root",
+      "ours": {
+        "set_1": "b563b47601d6cd2b75fe01b9047001e5ce6cd42039f5e95c96d7942a13cc7512",
+        "set_2": "b563b47601d6cd2b75fe01b9047001e5ce6cd42039f5e95c96d7942a13cc7512"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "identical",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-leaf-binds-content-kind",
+      "designation": "LEAF PREIMAGE",
+      "expect": "evidence_root differs",
+      "ours": {
+        "set_1": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "set_2": "7125a9d8aff13aca214b2f8c3ac70412610164a108cebb502ca7f37644c40af2"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-leaf-binds-retrieved-at",
+      "designation": "LEAF PREIMAGE",
+      "expect": "evidence_root differs",
+      "ours": {
+        "set_1": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3",
+        "set_2": "5e085fc1bf9069bd8c344f44722827c9ed69d33866eda7ae16ba42cdf41a2e0e"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "differ",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-order-tiebreak-content-kind",
+      "designation": "CANONICAL ORDER",
+      "expect": "identical evidence_root both ways",
+      "ours": {
+        "set_1": "2b778cd5517219e86a10d4f8da3bd327c37982fbcd6aad32ad542bdb704d586c",
+        "set_2": "2b778cd5517219e86a10d4f8da3bd327c37982fbcd6aad32ad542bdb704d586c"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "identical",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-order-tiebreak-retrieved-at",
+      "designation": "CANONICAL ORDER",
+      "expect": "identical evidence_root both ways",
+      "ours": {
+        "set_1": "ef067e8708b9b3fee310feab4dea16e5f20056aecf5362329ed8b449d635e4f3",
+        "set_2": "ef067e8708b9b3fee310feab4dea16e5f20056aecf5362329ed8b449d635e4f3"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "identical",
+        "holds": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-set-retrieved-at-not-earliest-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "set_retrieved_at_not_earliest",
+        "condition": "set_retrieved_at_not_first_in_canonical_order",
+        "detail": "set-level 2026-09-02T12:00:00.000Z against earliest per-item 2026-09-01T12:00:00.000Z"
+      },
+      "vector_condition": "set_retrieved_at_not_first_in_canonical_order",
+      "relation": {
+        "named": "halt, malformed, condition = set_retrieved_at_not_first_in_canonical_order",
+        "holds": true,
+        "condition_matches": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-content-kind-absent-when-pinned-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed; diagnostic names the missing member, not a root mismatch",
+      "ours": null,
+      "halt": {
+        "diagnostic": "content_kind_absent_when_pinned",
+        "condition": "content_kind_absent_when_pinned",
+        "detail": "entry https://example.org/a is pinned and carries no content_kind from the enumeration"
+      },
+      "vector_condition": "content_kind_absent_when_pinned",
+      "relation": {
+        "named": "halt, malformed, condition = content_kind_absent_when_pinned",
+        "holds": true,
+        "condition_matches": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-resource-sha256-with-full-resource-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "resource_sha256_with_full_resource",
+        "condition": "snippet_digest_present_for_full_resource",
+        "detail": "entry https://example.org/a carries content_kind full_resource together with resource_sha256"
+      },
+      "vector_condition": "snippet_digest_present_for_full_resource",
+      "relation": {
+        "named": "halt, malformed, condition = snippet_digest_present_for_full_resource",
+        "holds": true,
+        "condition_matches": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-empty-set-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "empty_evidence_set",
+        "condition": "pinned_set_empty",
+        "detail": "a present evidence_set MUST carry at least one entry in sources (rev4 F20)"
+      },
+      "vector_condition": "pinned_set_empty",
+      "relation": {
+        "named": "halt, malformed, condition = pinned_set_empty",
+        "holds": true,
+        "condition_matches": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-duplicate-bound-tuple-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "duplicate_bound_tuple",
+        "condition": "duplicate_bound_tuple",
+        "detail": "two entries identical across url, snippet_sha256, content_kind and retrieved_at: https://example.org/a"
+      },
+      "vector_condition": "duplicate_bound_tuple",
+      "relation": {
+        "named": "halt, malformed, condition = duplicate_bound_tuple",
+        "holds": true,
+        "condition_matches": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-unpinned-reason-outside-domain-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "unpinned_reason_outside_domain",
+        "condition": "unpinned_reason_outside_domain",
+        "detail": "entry https://example.org/a carries unpinned_reason content_not_retained"
+      },
+      "vector_condition": "unpinned_reason_outside_domain",
+      "relation": {
+        "named": "halt, malformed, condition = unpinned_reason_outside_domain",
+        "holds": true,
+        "condition_matches": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-unpinned-without-reason-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "unpinned_reason_absent",
+        "condition": "unpinned_without_reason",
+        "detail": "entry https://example.org/a is unpinned and carries no unpinned_reason"
+      },
+      "vector_condition": "unpinned_without_reason",
+      "relation": {
+        "named": "halt, malformed, condition = unpinned_without_reason",
+        "holds": true,
+        "condition_matches": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-source-count-mismatch-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "source_count_mismatch",
+        "condition": "source_count_disagrees_with_sources",
+        "detail": "source_count 3 against 2 entries"
+      },
+      "vector_condition": "source_count_disagrees_with_sources",
+      "relation": {
+        "named": "halt, malformed, condition = source_count_disagrees_with_sources",
+        "holds": true,
+        "condition_matches": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-count-inconsistency-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "pinned_count_mismatch",
+        "condition": "pinned_count_disagrees_with_pinned_entries",
+        "detail": "pinned_count 2 against 1 pinned entries"
+      },
+      "vector_condition": "pinned_count_disagrees_with_pinned_entries",
+      "relation": {
+        "named": "halt, malformed, condition = pinned_count_disagrees_with_pinned_entries",
+        "holds": true,
+        "condition_matches": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-root-with-zero-pinned-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "root_present_with_zero_pinned",
+        "condition": "root_present_with_zero_pinned",
+        "detail": "evidence_root MUST be null when pinned_count is zero"
+      },
+      "vector_condition": "root_present_with_zero_pinned",
+      "relation": {
+        "named": "halt, malformed, condition = root_present_with_zero_pinned",
+        "holds": true,
+        "condition_matches": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-nonzero-pinned-null-root-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": null,
+      "halt": {
+        "diagnostic": "root_absent_with_pinned_items",
+        "condition": "root_null_with_pinned_entries",
+        "detail": "evidence_root MUST be non-null when pinned_count is greater than zero"
+      },
+      "vector_condition": "root_null_with_pinned_entries",
+      "relation": {
+        "named": "halt, malformed, condition = root_null_with_pinned_entries",
+        "holds": true,
+        "condition_matches": true
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-root-mismatch-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed",
+      "ours": {
+        "set": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3"
+      },
+      "halt": {
+        "diagnostic": "root_mismatch",
+        "condition": "root_not_recomputable_from_sources",
+        "detail": "carried ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff against recomputed 35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3"
+      },
+      "vector_condition": "root_not_recomputable_from_sources",
+      "relation": {
+        "named": "halt, malformed, condition = root_not_recomputable_from_sources",
+        "holds": true,
+        "condition_matches": true,
+        "note": "root-bearing: correct_root sits in computed, so our recomputation is a comparison point"
+      },
+      "resolution": null
+    },
+    {
+      "id": "evi-empty-root-null",
+      "designation": "EMPTY",
+      "expect": "evidence_root null; receipt well-formed",
+      "ours": {
+        "set": null
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "evidence_root null; receipt well-formed",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false
+      }
+    },
+    {
+      "id": "evi-absent-unknown",
+      "designation": "ADDITIVE",
+      "expect": "unknown; MUST NOT halt",
+      "ours": null,
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "unknown; MUST NOT halt",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false
+      }
+    },
+    {
+      "id": "evi-partial-resolves-unknown",
+      "designation": "COMPLETENESS",
+      "expect": "step resolves unknown; must_not: [\"valid\"] on the offline-recompute claim",
+      "ours": {
+        "set": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "step resolves unknown; must_not: [\"valid\"] on the offline-recompute claim",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false,
+        "offline_recompute_claim": false
+      }
+    },
+    {
+      "id": "evi-declared-partial-is-not-invalid",
+      "designation": "COMPLETENESS",
+      "expect": "receipt core-valid; NOT malformed; MUST NOT halt",
+      "ours": {
+        "set": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "receipt core-valid; NOT malformed; MUST NOT halt",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false,
+        "offline_recompute_claim": false
+      }
+    },
+    {
+      "id": "evi-content-mismatch-unknown",
+      "designation": "UNKNOWN",
+      "expect": "unknown; MUST NOT halt; per-item reason content_differs (MUST per rev 5 Finding 17)",
+      "ours": {
+        "set": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "unknown; MUST NOT halt; per-item reason content_differs",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false,
+        "item_reasons": [
+          {
+            "url": "https://example.org/a",
+            "reason": "content_differs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "evi-content-not-held-unknown",
+      "designation": "UNKNOWN",
+      "expect": "unknown; per-item reason content_not_held (MUST per rev 5 Finding 17)",
+      "ours": {
+        "set": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "unknown; MUST NOT halt; per-item reason content_not_held",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false,
+        "item_reasons": [
+          {
+            "url": "https://example.org/a",
+            "reason": "content_not_held"
+          }
+        ]
+      }
+    },
+    {
+      "id": "evi-step-resolves-affirmatively",
+      "designation": "RESOLUTION",
+      "expect": "step resolves `resolved` (rev 6 Finding 29): not `unknown`, not a halt",
+      "ours": {
+        "set": "7f6addf189cd884e3be1919e470daeba0628bd7f84afefe1492f3fdcd86e4960"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "step resolves `resolved`: not `unknown`, not a halt",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "resolved",
+        "malformed": false,
+        "halt": false,
+        "offline_recompute_claim": true,
+        "item_reasons": []
+      }
+    },
+    {
+      "id": "evi-unpinned-members-absent-accepted",
+      "designation": "ADDITIVE",
+      "expect": "accepted; an omitted member is equivalent to an explicit null on an unpinned entry (rev 6 Finding 30). Not root-bearing: see rev 7 Finding 33b.",
+      "ours": {
+        "non_normative:incidental_root": "35bc8fb1c853c3de6fa2a4fcacaa7223202fafa7bb5411595f167f21834160c3"
+      },
+      "halt": null,
+      "vector_condition": null,
+      "relation": {
+        "named": "accepted; an omitted member is equivalent to an explicit null on an unpinned entry",
+        "holds": true
+      },
+      "resolution": {
+        "resolution": "unknown",
+        "malformed": false,
+        "halt": false
+      }
+    },
+    {
+      "id": "evi-retrieved-at-noncanonical-rejects",
+      "designation": "MALFORMED",
+      "expect": "halt, malformed; reported condition equals retrieved_at_not_canonical_form",
+      "ours": null,
+      "halt": {
+        "diagnostic": "retrieved_at_not_canonical",
+        "condition": "retrieved_at_not_canonical_form",
+        "detail": "entry https://example.org/a carries retrieved_at 2026-09-01T12:00:00Z, which is not RFC 3339 UTC with the Z designator and exactly three fractional-second digits"
+      },
+      "vector_condition": "retrieved_at_not_canonical_form",
+      "relation": {
+        "named": "halt, malformed, condition = retrieved_at_not_canonical_form",
+        "holds": true,
+        "condition_matches": true,
+        "note": "single-entry set built from the vector's entry; no other member declared"
+      },
+      "resolution": null
+    }
+  ]
+}

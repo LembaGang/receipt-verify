@@ -1,0 +1,81 @@
+{
+  "produced_by": "walker/variants-rev7/probes-run.ts",
+  "baseline_implementation": "tools/evidence-root.ts",
+  "probe_count": 3,
+  "probes_holding": 3,
+  "note": "Each probe asserts three things: the baseline's outcome, the variant's outcome, and that the two differ. The third is what the rev 7 fixture set cannot show, since all three variants reproduce d461aaf4 on it.",
+  "probes": [
+    {
+      "id": "probe-f24-unpinned-duplicate",
+      "probe_input": "walker/variants-rev7/probes/probe-f24-unpinned-duplicate.json",
+      "variant": "evidence-root.f24-pinned-only.ts",
+      "isolates": "check 11, the duplicate bound-tuple check (rev5 l.64-66, 24a), iterating pinnedEntries instead of sources",
+      "expect": {
+        "baseline": "halt",
+        "variant": "pass"
+      },
+      "baseline": {
+        "outcome": "halt",
+        "condition": "duplicate_bound_tuple",
+        "diagnostic": "duplicate_bound_tuple"
+      },
+      "variant_result": {
+        "outcome": "pass",
+        "condition": null,
+        "diagnostic": null
+      },
+      "baseline_as_expected": true,
+      "variant_as_expected": true,
+      "builds_disagree": true,
+      "holds": true
+    },
+    {
+      "id": "probe-f32a-set-retrieved-at-from-unpinned",
+      "probe_input": "walker/variants-rev7/probes/probe-f32a-set-retrieved-at-from-unpinned.json",
+      "variant": "evidence-root.f32a-pinned-only.ts",
+      "isolates": "check 6, the set-level earliest-retrieved_at comparison (rev2 l.95-97, Finding 12), seeded and iterated over pinnedEntries instead of sources",
+      "expect": {
+        "baseline": "pass",
+        "variant": "halt"
+      },
+      "baseline": {
+        "outcome": "pass",
+        "condition": null,
+        "diagnostic": null
+      },
+      "variant_result": {
+        "outcome": "halt",
+        "condition": "set_retrieved_at_not_first_in_canonical_order",
+        "diagnostic": "set_retrieved_at_not_earliest"
+      },
+      "baseline_as_expected": true,
+      "variant_as_expected": true,
+      "builds_disagree": true,
+      "holds": true
+    },
+    {
+      "id": "probe-f32b-unpinned-noncanonical-retrieved-at",
+      "probe_input": "walker/variants-rev7/probes/probe-f32b-unpinned-noncanonical-retrieved-at.json",
+      "variant": "evidence-root.f32b-pinned-only.ts",
+      "isolates": "check 6a, the retrieved_at canonical-form check (rev6 l.243-247, Finding 32), applying only when e.pinned === true",
+      "expect": {
+        "baseline": "halt",
+        "variant": "pass"
+      },
+      "baseline": {
+        "outcome": "halt",
+        "condition": "retrieved_at_not_canonical_form",
+        "diagnostic": "retrieved_at_not_canonical"
+      },
+      "variant_result": {
+        "outcome": "pass",
+        "condition": null,
+        "diagnostic": null
+      },
+      "baseline_as_expected": true,
+      "variant_as_expected": true,
+      "builds_disagree": true,
+      "holds": true
+    }
+  ]
+}

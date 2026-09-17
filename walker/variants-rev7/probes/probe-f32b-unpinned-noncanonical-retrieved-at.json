@@ -1,0 +1,29 @@
+{
+  "id": "probe-f32b-unpinned-noncanonical-retrieved-at",
+  "targets": "evidence-root.f32b-pinned-only.ts",
+  "isolates": "check 6a, the retrieved_at canonical-form check (rev6 l.243-247, Finding 32), applying only when e.pinned === true",
+  "why": "An UNPINNED entry whose retrieved_at carries zero fractional-second digits. The baseline applies the form check to every entry and halts; the f32b build applies it to pinned entries only and accepts. Rev 7's own vector for this rule, evi-retrieved-at-noncanonical-rejects, puts the malformed timestamp on a PINNED entry, so the fixture set never reaches the difference.",
+  "expect": { "baseline": "halt", "variant": "pass" },
+  "expect_baseline_condition": "retrieved_at_not_canonical_form",
+  "evidence_set": {
+    "source_count": 2,
+    "pinned_count": 1,
+    "fully_pinned": false,
+    "sources": [
+      {
+        "url": "https://example.org/a",
+        "snippet_sha256": "3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea",
+        "retrieved_at": "2026-09-11T12:00:00.000Z",
+        "pinned": true,
+        "content_kind": "snippet"
+      },
+      {
+        "url": "https://example.org/b",
+        "snippet_sha256": null,
+        "retrieved_at": "2026-09-11T12:00:01Z",
+        "pinned": false,
+        "unpinned_reason": "provider_metadata_only"
+      }
+    ]
+  }
+}

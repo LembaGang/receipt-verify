@@ -1,0 +1,11 @@
+--- tools/evidence-root.ts	2026-09-10 12:56:14.949501600 +0000
++++ walker/variants-rev7/evidence-root.f24-pinned-only.ts	2026-09-17 10:17:26.389107500 +0000
+@@ -428,7 +428,7 @@
+   // self-enforcing: a duplicated tuple produces a computable but wrong root
+   // and nothing downstream detects it (rev5 l.116-119).
+   const seen = new Set<string>();
+-  for (const e of sources) {
++  for (const e of pinnedEntries) {
+     const key = BOUND_TUPLE(e);
+     if (seen.has(key)) {
+       return fail("duplicate_bound_tuple", `two entries identical across url, snippet_sha256, content_kind and retrieved_at: ${e.url}`);
