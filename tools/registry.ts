@@ -333,7 +333,7 @@ function badgeSvg(r: RegistryRecord, label: string): string {
 // the rules that are about one record's document
 // ---------------------------------------------------------------------------
 
-function checkRecordRules(root: string, r: RegistryRecord, raw: Record<string, unknown>): void {
+function checkRecordRules(root: string, repo: string, r: RegistryRecord, raw: Record<string, unknown>): void {
   const id = r.id;
 
   // Rule 5, the half that is about the record rather than the index: a record
@@ -356,7 +356,7 @@ function checkRecordRules(root: string, r: RegistryRecord, raw: Record<string, u
   for (const [i, p] of r.pinned_inputs.entries()) {
     if (p.location !== "in_tree") continue;
     if (!p.path) throw new RuleError(1, id, `${id}: pinned_inputs[${i}] is in_tree and names no path`);
-    const abs = join(root, "records", id, ...p.path.split("/"));
+    const abs = join(repo, ...p.path.split("/"));
     if (!existsSync(abs)) throw new RuleError(1, id, `${id}: pinned_inputs[${i}] is in_tree and there is no file at ${p.path}`);
     const bytes = readFileSync(abs);
     const got = sha256Hex(bytes);
@@ -365,8 +365,8 @@ function checkRecordRules(root: string, r: RegistryRecord, raw: Record<string, u
   }
 
   for (const [i, o] of r.executed_run.outputs.entries()) {
-    const abs = join(root, "records", id, ...o.path.split("/"));
-    if (!existsSync(abs)) throw new RuleError(1, id, `${id}: executed_run.outputs[${i}] names ${o.path} and there is no such file under the record`);
+    const abs = join(repo, ...o.path.split("/"));
+    if (!existsSync(abs)) throw new RuleError(1, id, `${id}: executed_run.outputs[${i}] names ${o.path} and there is no such file in the repository`);
     const bytes = readFileSync(abs);
     const got = sha256Hex(bytes);
     if (got !== o.sha256) throw new RuleError(1, id, `${id}: executed_run.outputs[${i}] (${o.path}) hashes to ${got}, not the ${o.sha256} it names`);
@@ -374,8 +374,8 @@ function checkRecordRules(root: string, r: RegistryRecord, raw: Record<string, u
   }
 
   // The report is the human half of the record and is carried byte for byte.
-  const reportPath = join(root, "records", id, ...r.report.path.split("/"));
-  if (!existsSync(reportPath)) throw new RuleError(1, id, `${id}: report.path names ${r.report.path} and there is no such file under the record`);
+  const reportPath = join(repo, ...r.report.path.split("/"));
+  if (!existsSync(reportPath)) throw new RuleError(1, id, `${id}: report.path names ${r.report.path} and there is no such file in the repository`);
   const reportBytes = readFileSync(reportPath);
   if (sha256Hex(reportBytes) !== r.report.sha256) {
     throw new RuleError(1, id, `${id}: the report at ${r.report.path} hashes to ${sha256Hex(reportBytes)}, not the ${r.report.sha256} the record names`);
@@ -460,7 +460,7 @@ export function build(root: string, opts: { now?: string } = {}): BuildResult {
     const r = raw as unknown as RegistryRecord;
     if (r.id !== id) throw new RuleError(0, id, `${id}: the record's id member is ${JSON.stringify(r.id)}, and the folder it sits in is ${JSON.stringify(id)}`);
 
-    checkRecordRules(root, r, raw);
+    checkRecordRules(root, repo, r, raw);
 
     // Rule 2
     const k = keyOf(r);
@@ -472,7 +472,7 @@ export function build(root: string, opts: { now?: string } = {}): BuildResult {
     const svg = badgeSvg(r, label);
     badges.set(id, svg);
 
-    const reportBytes = readFileSync(join(root, "records", id, ...r.report.path.split("/")));
+    const reportBytes = readFileSync(join(repo, ...r.report.path.split("/")));
     rows.push({
       id,
       kind: r.kind,
@@ -482,7 +482,7 @@ export function build(root: string, opts: { now?: string } = {}): BuildResult {
       status_label: label,
       record_sha256: sha256Hex(bytes),
       record_bytes: bytes.length,
-      report_path: `records/${id}/${r.report.path}`,
+      report_path: r.report.path,
       report_sha256: sha256Hex(reportBytes),
       report_bytes: reportBytes.length,
       badge_path: `badges/${id}.svg`,

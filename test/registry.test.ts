@@ -98,7 +98,7 @@ function validRecord(id: string, over: RecordJson = {}): RecordJson {
     supersedes: null,
     superseded_by: null,
     supersession_reason: null,
-    report: { path: "report.md", sha256: "", bytes: 0 },
+    report: { path: `registry/records/${id}/report.md`, sha256: "", bytes: 0 },
     ...over,
   };
 }
@@ -128,7 +128,7 @@ function makeRegistry(
     const report = `# report for ${String(rec["id"])}\n`;
     writeFileSync(join(dir, "report.md"), report);
     (rec as { report: { path: string; sha256: string; bytes: number } }).report = {
-      path: "report.md",
+      path: `registry/records/${String(rec["id"])}/report.md`,
       sha256: sha256(Buffer.from(report)),
       bytes: Buffer.byteLength(report),
     };
@@ -202,7 +202,7 @@ describe("rule 1 — no record without an executed run, pinned inputs, an anchor
 
   it("an in-tree pinned input that is absent refuses to build", () => {
     const absent = validRecord("2026-01-01-throwaway", {
-      pinned_inputs: [{ path: "inputs/nope.json", location: "in_tree", sha256: "c".repeat(64), bytes: 3, source: "nowhere", retrieved_at: "2026-01-01T00:00:00Z", holder: null }],
+      pinned_inputs: [{ path: "registry/records/2026-01-01-throwaway/inputs/nope.json", location: "in_tree", sha256: "c".repeat(64), bytes: 3, source: "nowhere", retrieved_at: "2026-01-01T00:00:00Z", holder: null }],
     });
     expect(() => makeRegistry([absent])).toThrow(/rule 1:[^]*in_tree and there is no file/);
   });
@@ -211,7 +211,7 @@ describe("rule 1 — no record without an executed run, pinned inputs, an anchor
   // there and its bytes are not the bytes the record names.
   it("an in-tree pinned input that is present and hashes to something else refuses to build", () => {
     const wrong = validRecord("2026-01-01-throwaway", {
-      pinned_inputs: [{ path: "run/pinned.txt", location: "in_tree", sha256: "c".repeat(64), bytes: 6, source: "nowhere", retrieved_at: "2026-01-01T00:00:00Z", holder: null }],
+      pinned_inputs: [{ path: "registry/records/2026-01-01-throwaway/run/pinned.txt", location: "in_tree", sha256: "c".repeat(64), bytes: 6, source: "nowhere", retrieved_at: "2026-01-01T00:00:00Z", holder: null }],
     });
     expect(() => makeRegistry([wrong], (dir) => writeFileSync(join(dir, "run", "pinned.txt"), "pinned"))).toThrow(/rule 1:[^]*hashes to/);
   });
@@ -285,7 +285,7 @@ describe("rule 3 — published records are immutable; a correction is a new reco
     mkdirSync(dir, { recursive: true });
     const report = "# report for 2026-01-02-superseding\n";
     writeFileSync(join(dir, "report.md"), report);
-    superseding["report"] = { path: "report.md", sha256: sha256(Buffer.from(report)), bytes: Buffer.byteLength(report) };
+    superseding["report"] = { path: "registry/records/2026-01-02-superseding/report.md", sha256: sha256(Buffer.from(report)), bytes: Buffer.byteLength(report) };
     writeFileSync(join(dir, "record.json"), JSON.stringify(superseding, null, 2) + "\n");
     // The superseded record gains `superseded_by` and nothing else new -- which
     // IS an edit, and the rule allows exactly this one.
@@ -385,7 +385,7 @@ describe("rule 7 — the index records the digest of its previous version, and t
     mkdirSync(dir, { recursive: true });
     const report = "# report for 2026-01-02-second\n";
     writeFileSync(join(dir, "report.md"), report);
-    second["report"] = { path: "report.md", sha256: sha256(Buffer.from(report)), bytes: Buffer.byteLength(report) };
+    second["report"] = { path: "registry/records/2026-01-02-second/report.md", sha256: sha256(Buffer.from(report)), bytes: Buffer.byteLength(report) };
     writeFileSync(join(dir, "record.json"), JSON.stringify(second, null, 2) + "\n");
     writeBuild(root);
     commitAll(repo, "a second record and the rebuilt index");
