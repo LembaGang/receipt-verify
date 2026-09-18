@@ -29,7 +29,8 @@
     "fixtures": "node tools/make-throwaway-fixtures.mjs",
     "cli": "tsx src/cli.ts",
     "walk": "tsx tools/walk-digests.ts",
-    "drift": "tsx tools/drift.ts"
+    "drift": "tsx tools/drift.ts",
+    "registry": "tsx tools/registry.ts"
   },
   "dependencies": {
     "@headlessoracle/chirindo": "0.4.0",

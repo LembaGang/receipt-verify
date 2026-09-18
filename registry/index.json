@@ -1,0 +1,13 @@
+{
+  "schema": "receipt-verify/registry-index/0",
+  "built_at": "2026-09-18T10:18:45.683Z",
+  "built_at_head": "9d3cd19661591c53c494227e669ea5d6aa885314",
+  "verifier_version": "0.1.2",
+  "previous_index_sha256": null,
+  "interests": "Interests. The editor of this methodology authors draft-msebenzi-evidence-action, builds Chirindo, an operator-run gate that signs receipts of MCP calls, and maintains receipt-verify, the tool that produces the findings this methodology governs. Those occupy the same ground as the formats graded under it. Independence is not claimed. What is claimed is that every value in a finding recomputes from pinned bytes by anyone with the tool or without it, that every scope is cited to the document that names it, and that text and implementation are scored separately, a rule that came from the author of one of the formats graded. Where a judgment call was made, it is marked as one. This paragraph stands, in these words, at the end of every finding published under this methodology.",
+  "counts": {
+    "by_kind": {},
+    "by_status_label": {}
+  },
+  "records": []
+}

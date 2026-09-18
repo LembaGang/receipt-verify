@@ -25,3 +25,10 @@ refs/** -text
 # digest in it wrong on someone else's machine while leaving ours right — the
 # worst shape a verification failure can take. This rule is last so it holds.
 packages/** -text
+
+# The registry carries reports, methodology documents and pinned inputs BYTE FOR
+# BYTE, and publishes the sha256 of each one in registry/index.json. A
+# line-ending rewrite on checkout would make every one of those digests wrong on
+# someone else's machine while leaving ours right, which is the same failure
+# `packages/**` is protected from above. This rule is last so it holds.
+registry/** -text
