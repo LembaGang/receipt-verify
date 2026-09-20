@@ -1,0 +1,117 @@
+{
+  "schema": "receipt-verify/registry-record/0",
+  "id": "2026-08-07-evidence-action-chirindo-0.3.0",
+  "kind": "own_work",
+  "record_type": "conformance_entry",
+  "key": {
+    "format": "evidence.action/0",
+    "format_version": "draft-msebenzi-evidence-action-00",
+    "upstream_digest": {
+      "alg": "sha512",
+      "value": "ry2OXyIcviY6N6C8RApVLkWrl59r5hCXPHRw19ylpyBYf+1iSJX4Tq87cbDIjpC5WHQzGXmRU0mW503SyJipwA=="
+    },
+    "verifier": {
+      "tool": "@headlessoracle/chirindo scripts/release-gate.mjs",
+      "version": "0.3.0",
+      "commit": null
+    },
+    "verified_at": "2026-08-07"
+  },
+  "subject": {
+    "implementation": "@headlessoracle/chirindo@0.3.0",
+    "artefact": "the published npm tarball chirindo-0.3.0.tgz, 79 files, 78892 bytes packed",
+    "artefact_digest": {
+      "alg": "sha1",
+      "value": "c62a1bfb7f89ecc3bc6a41891cdcad6e396c5222"
+    },
+    "role": "emitter",
+    "named_party": "Michael Msebenzi"
+  },
+  "assessor": {
+    "name": "Michael Msebenzi",
+    "affiliation": "Headless Oracle"
+  },
+  "consent": {
+    "named_human": "Michael Msebenzi",
+    "affiliation": "Headless Oracle",
+    "given_on": "2026-09-11",
+    "channel": "ruling on CC_HANDOFF_2026-09-15_registry.md",
+    "scope": "own work"
+  },
+  "methodology": {
+    "document": "registry/methodology/v0.3-draft.md",
+    "version": "v0.3-draft",
+    "sha256": "393596711221c0676789c1555fe7d6b4ee22101aa2bcef65edfdaece82210ca0"
+  },
+  "method": null,
+  "executed_run": {
+    "command": "scripts/release-gate.mjs --from-registry 0.3.0 --json",
+    "run_at": "2026-08-07",
+    "tool_commit": null,
+    "outputs": [
+      {
+        "path": "registry/records/2026-08-07-evidence-action-chirindo-0.3.0/run/gate-0.3.0-2026-08-07.json",
+        "sha256": "531f815cfaedf040b51a517d4b28c99b07b79b8373705fed48039b00f226084d",
+        "bytes": 1492
+      }
+    ]
+  },
+  "pinned_inputs": [
+    {
+      "path": "registry/records/2026-08-07-evidence-action-chirindo-0.3.0/inputs/npm-registry-0.3.0.json",
+      "location": "in_tree",
+      "sha256": "0001eaa581da3e3730bb2d2186691d71054b574244ef9fb2fccc45f253746a96",
+      "bytes": 1565,
+      "source": "https://registry.npmjs.org/@headlessoracle/chirindo/0.3.0",
+      "retrieved_at": "2026-09-18T10:12:05Z",
+      "holder": null
+    },
+    {
+      "path": null,
+      "location": "external",
+      "sha256": "5ec397ebe47631dfe06a5e6fb2f3c629fa67664efc2b6d1fc8093218f4fe7465",
+      "bytes": 78892,
+      "source": "https://registry.npmjs.org/@headlessoracle/chirindo/-/chirindo-0.3.0.tgz",
+      "retrieved_at": "2026-09-18T10:12:18Z",
+      "holder": "the npm registry; .gitignore excludes *.tgz from this repository"
+    }
+  ],
+  "as_of": {
+    "upstream_digest": {
+      "alg": "sha512",
+      "value": "ry2OXyIcviY6N6C8RApVLkWrl59r5hCXPHRw19ylpyBYf+1iSJX4Tq87cbDIjpC5WHQzGXmRU0mW503SyJipwA=="
+    },
+    "date": "2026-09-18"
+  },
+  "not_established": [
+    "That the registry document pinned here is the registry document as it stood on the day of the run. The assessment ran on 2026-08-07 and carried no artefact digest of its own; the registry response under inputs/ was fetched on 2026-09-18T10:12:05Z, and the upstream_digest and the subject's artefact_digest are both taken from it. They are evidence of what the registry serves today for this version, not of what it served in August.",
+    "That the three digests agree with each other by anyone else's computation. They were checked here: the tarball was fetched at 2026-09-18T10:12:18Z, is 78892 bytes, and its sha1 is c62a1bfb7f89ecc3bc6a41891cdcad6e396c5222 and its sha512 is the base64 in upstream_digest, both equal to the dist.shasum and dist.integrity of the pinned registry document. The tarball itself is not in this repository, so a reader must refetch it to repeat that.",
+    "Cryptographic correctness beyond signature verification against the published key set (the report's non-coverage section).",
+    "Any code path not exercised by the published vectors; the proportion of the specification's normative requirements those vectors exercise is not measured (the report's non-coverage section).",
+    "Behaviour of the CLI beyond the thumbprint agreement in CLI/E2E (the report's non-coverage section).",
+    "Axis 2.6, coverage declaration, which the report records as not determinable for the artefact and for the format. The report carried here is the CORRECTED text: as first written this entry recorded 2.6 as Declared, citing a machine-readable coverage manifest that is not in the artefact, and Entry 002 records the correction of both entries. The bytes under report.md are therefore the corrected entry and not the entry as first published.",
+    "That this entry has been independently re-run. It has not; status_label is unverified, and the assessor is the author of both the specification and the implementation."
+  ],
+  "establishes": [
+    "That `scripts/release-gate.mjs --from-registry 0.3.0 --json` was run against the published tarball installed into a clean directory with --omit=dev, exited 1, and produced the output carried under run/.",
+    "That the gate's SURFACE check reported paymentRef, paymentRefFromArtifacts and paymentRefFromJsonStrings absent from the distributed artefact, while CORPUS/JCS, CORPUS/THUMBPRINT, CORPUS/STRICT and CLI/E2E all passed: the full corpus passed against an artefact missing three documented functions.",
+    "That the npm registry, read on 2026-09-18, serves @headlessoracle/chirindo@0.3.0 with dist.integrity sha512-ry2OXy... and dist.shasum c62a1bfb..., and that a tarball fetched from the tarball URL in that document has exactly those two digests."
+  ],
+  "independent_rerun": null,
+  "review_window": null,
+  "reply": {
+    "kind": "none",
+    "date": null,
+    "pointer": null,
+    "text_sha256": null
+  },
+  "status": "published",
+  "supersedes": null,
+  "superseded_by": null,
+  "supersession_reason": null,
+  "report": {
+    "path": "registry/records/2026-08-07-evidence-action-chirindo-0.3.0/report.md",
+    "sha256": "7c1695526e9ac1cc7d73705fb0b64ac61dfa3584fd983fbaab3d8463bcd612bb",
+    "bytes": 7006
+  }
+}

@@ -16,7 +16,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # The signature step walks a commit range, so the full history has to
-          # be here; the default shallow clone would break it.
+          # be here; the default shallow clone would break it. It is load-bearing
+          # for the registry's rule 7 too: a disclosed chain break is scoped by
+          # this history's root commit, and `git rev-list --max-parents=0 HEAD`
+          # returns the grafted boundary in a shallow clone, which would take the
+          # disclosure out of scope and silence it.
           fetch-depth: 0
 
       - uses: actions/setup-node@v4

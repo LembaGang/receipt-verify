@@ -1,0 +1,63 @@
+{
+  "ok": false,
+  "package": "@headlessoracle/chirindo",
+  "source": "registry:0.3.0",
+  "source_tree_version": "0.4.0",
+  "failed": [
+    "VERSION",
+    "PROD-GRAPH",
+    "SURFACE"
+  ],
+  "results": [
+    {
+      "id": "INSTALL",
+      "ok": true,
+      "detail": "@headlessoracle/chirindo@0.3.0 → clean dir, --omit=dev"
+    },
+    {
+      "id": "VERSION",
+      "ok": false,
+      "detail": "artifact=0.3.0 source_tree=0.4.0"
+    },
+    {
+      "id": "PROD-GRAPH",
+      "ok": false,
+      "detail": "direct=[@modelcontextprotocol/server-everything, canonicalize] transitive_installed=108"
+    },
+    {
+      "id": "FILES",
+      "ok": true,
+      "detail": "4/4 present"
+    },
+    {
+      "id": "BOOT",
+      "ok": true,
+      "detail": "exit=2 "
+    },
+    {
+      "id": "SURFACE",
+      "ok": false,
+      "detail": "absent from artifact: paymentRef, paymentRefFromArtifacts, paymentRefFromJsonStrings"
+    },
+    {
+      "id": "CORPUS/JCS",
+      "ok": true,
+      "detail": "10 vectors byte-exact (2 REJECT entries deferred to CORPUS/STRICT)"
+    },
+    {
+      "id": "CORPUS/THUMBPRINT",
+      "ok": true,
+      "detail": "got=NvrZE4rGdm3rW7l4aFU_Y4r_KGtb8s-b6BAxEdC-vT0 expected=NvrZE4rGdm3rW7l4aFU_Y4r_KGtb8s-b6BAxEdC-vT0"
+    },
+    {
+      "id": "CORPUS/STRICT",
+      "ok": true,
+      "detail": "2 vectors reject as specified"
+    },
+    {
+      "id": "CLI/E2E",
+      "ok": true,
+      "detail": "thumbprint agrees: kJPzhDrrihc0Y4nfKhPffT_8gzXye7Bq4GXHhRH__K0"
+    }
+  ]
+}
