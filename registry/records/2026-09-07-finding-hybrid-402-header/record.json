@@ -1,0 +1,112 @@
+{
+  "schema": "receipt-verify/registry-record/0",
+  "id": "2026-09-07-finding-hybrid-402-header",
+  "kind": "own_work",
+  "record_type": "finding",
+  "key": {
+    "format": "x402 Payment-Required header",
+    "format_version": "1/2 hybrid as served 2026-09-07T09:27:34Z",
+    "upstream_digest": {
+      "alg": "sha256",
+      "value": "2ab0def7270adbe95e02bd0b5ba3d05609b2b1b23138c0a574545ceca6aa273c"
+    },
+    "verifier": {
+      "tool": [
+        "@x402/fetch 2.20.0 (stock client)",
+        "@x402/core 2.20.0 schemas"
+      ],
+      "version": "2.20.0",
+      "commit": null
+    },
+    "verified_at": "2026-09-07T09:27:34Z"
+  },
+  "subject": {
+    "implementation": "the Headless Oracle worker at headlessoracle.com, repository LembaGang/headless-oracle-v5",
+    "artefact": "the 402 as served at https://headlessoracle.com/v5/status on 2026-09-07 at 09:27:34 GMT, captured by the contributor's own rig: response headers 2149 bytes and body 4323 bytes",
+    "artefact_digest": {
+      "alg": "sha256",
+      "value": "ccc78dd97e16440491ba86f27f85c7820b3cbfb170b47864ffb212a2ab3e6ef5"
+    },
+    "role": "emitter",
+    "named_party": "Michael Msebenzi"
+  },
+  "assessor": {
+    "name": "Michael Msebenzi",
+    "affiliation": "Headless Oracle"
+  },
+  "consent": {
+    "named_human": "Michael Msebenzi",
+    "affiliation": "Headless Oracle",
+    "given_on": "2026-09-11",
+    "channel": "ruling on CC_HANDOFF_2026-09-15_registry.md",
+    "scope": "own work"
+  },
+  "methodology": null,
+  "method": "the SCITT interop report's Row 21 shape (finding in own work)",
+  "executed_run": {
+    "command": "four sequential GET requests to https://headlessoracle.com/v5/status from the capture rig at delivery-incidence-study/rig, a stock @x402/fetch 2.20.0 client with @x402/core 2.20.0 and @x402/evm 2.20.0 as installed and no upgrade before the run; attempts 1 to 3 consumed the free trial and returned 200, attempt 4 returned the 402 captured here",
+    "run_at": "2026-09-07",
+    "tool_commit": null,
+    "outputs": []
+  },
+  "pinned_inputs": [
+    {
+      "path": null,
+      "location": "external",
+      "sha256": "0cb4a3ffcf070232e3d2b7c109e7523754172277e4ef96b68e53f490d9bd6f4f",
+      "bytes": 2149,
+      "source": "the response headers of the 402 served by https://headlessoracle.com/v5/status, held as rig/capture/t0-2026-09-07/headers.txt; both digest and byte count were recomputed from the file on the operator's machine when this record was written",
+      "retrieved_at": "2026-09-07T09:27:34Z",
+      "holder": "the operator's private delivery-incidence-study repository, where the capture is tracked per B-107"
+    },
+    {
+      "path": null,
+      "location": "external",
+      "sha256": "ccc78dd97e16440491ba86f27f85c7820b3cbfb170b47864ffb212a2ab3e6ef5",
+      "bytes": 4323,
+      "source": "the response body of the same 402, held as rig/capture/t0-2026-09-07/body.json; both digest and byte count were recomputed from the file on the operator's machine when this record was written",
+      "retrieved_at": "2026-09-07T09:27:34Z",
+      "holder": "the operator's private delivery-incidence-study repository, where the capture is tracked per B-107"
+    }
+  ],
+  "as_of": {
+    "upstream_digest": {
+      "alg": "sha256",
+      "value": "2ab0def7270adbe95e02bd0b5ba3d05609b2b1b23138c0a574545ceca6aa273c"
+    },
+    "date": "2026-09-07"
+  },
+  "not_established": [
+    "The exact command line of the capture. RAIL_T0_2026-09-07.md §E2 is what the finding pins as the capture record, and it names no command: it names the rig and the sequence, in the finding's own words, 'captured by this contributor's own capture rig (delivery-incidence-study/rig, a stock @x402/fetch 2.20.0 client with @x402/core 2.20.0 and @x402/evm 2.20.0 as installed, no upgrade before the run)', and in §E2, 'Attempts 1-3 -> 200, X-Trial-Remaining: 2, 1, 0; attempt 4 -> 402.' executed_run.command records that and not a command line, because no document reachable from this record records one.",
+    "That any version-1 client ever paid the version-1 body. The body was schema-valid throughout, but no 1.x client was run against it, before or after the fix.",
+    "That any client other than @x402/fetch 2.20.0 pays the worker: one client, one language, two settlements.",
+    "That the worker's other published surfaces were free of the same class. Two of them, /openapi.json and /.well-known/x402.json, carried unrendered template placeholders on the same day, found by the contributor's own patch inspection rather than by a client and fixed in the following commit (261c48a); that is a second finding in own work and is recorded separately.",
+    "The worker version that served these bytes. The capture carries no worker version identifier, the response headers naming only a CF-RAY, and none is reconstructed here; the defect is stated from the captured bytes and the repository's commit record.",
+    "That the capture bytes are held in this repository. They are not: headers.txt and body.json are external pinned inputs in the operator's private study repository, so a reader outside it cannot recompute these two digests from this repository alone.",
+    "That this record has been independently re-run. It has not; status_label is unverified, and the contributor, the assessor and the operator of the worker are the same person."
+  ],
+  "establishes": [
+    "That the Payment-Required header the worker served at 2026-09-07T09:27:34Z declared x402Version: 1 while carrying the version-2 field name amount rather than maxAmountRequired, and omitted version 1's mandatory resource and description, so it satisfied neither PaymentRequirementsV1Schema nor PaymentRequirementsV2Schema in the installed @x402/core 2.20.0 build.",
+    "That the response body beside it was a schema-valid version-1 object, so the same 402 said two different things in two places.",
+    "That a 2.x client reads the header first and falls back to the body only when the header is absent, so the worker's richer, schema-valid body was never consulted; the run failed at payload creation with 'Failed to create payment payload: No client registered for x402 version: 1', before any signature and before any network matching. No stock 2.x client could pay the worker while that header was served.",
+    "That the decoded Payment-Required header is byte-identical to the Payment-Required-Json header served beside it, both hashing to 2ab0def7270adbe95e02bd0b5ba3d05609b2b1b23138c0a574545ceca6aa273c, which cmp confirmed at capture time.",
+    "That the defect was repaired the same morning: fixed at worker commit 6e2f0da at 10:27:47 UTC, deployed at 12:41 UTC, confirmed live at 12:42:32 UTC, and settled against at 13:01:57 UTC. The served header after the deploy decodes to the version-2 shape, 502 bytes, sha256 a2a42195..., which is the repaired header and is NOT the key of this record."
+  ],
+  "independent_rerun": null,
+  "review_window": null,
+  "reply": {
+    "kind": "none",
+    "date": null,
+    "pointer": null,
+    "text_sha256": null
+  },
+  "status": "published",
+  "supersedes": null,
+  "superseded_by": null,
+  "supersession_reason": null,
+  "report": {
+    "path": "registry/records/2026-09-07-finding-hybrid-402-header/report.md",
+    "sha256": "cc52b461c50ea5deb0e1e12cf029cb7aeb2be3ada57943e6270411c34c12a8b2",
+    "bytes": 7175
+  }
+}

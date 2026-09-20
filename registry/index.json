@@ -1,9 +1,9 @@
 {
   "schema": "receipt-verify/registry-index/0",
-  "built_at": "2026-09-20T23:16:22.934Z",
-  "built_at_head": "f4045572f01401ff54017290af8d5910e7cc0ad4",
+  "built_at": "2026-09-20T23:17:45.513Z",
+  "built_at_head": "5e0866a69119968850a89a253431ff7d47a6f703",
   "verifier_version": "0.1.2",
-  "previous_index_sha256": "2a69c43a247f5b41f799df7617eb5b6ad1efa841ea6d602bec39da29ef3ebd67",
+  "previous_index_sha256": "37138a871e42ce8f292489b0fcd08dda829fcd530ccd5082fde366d4f685491f",
   "disclosed_chain_breaks": [
     {
       "root_commit": "acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc",
@@ -17,10 +17,10 @@
   "interests": "Interests. The editor of this methodology authors draft-msebenzi-evidence-action, builds Chirindo, an operator-run gate that signs receipts of MCP calls, and maintains receipt-verify, the tool that produces the findings this methodology governs. Those occupy the same ground as the formats graded under it. Independence is not claimed. What is claimed is that every value in a finding recomputes from pinned bytes by anyone with the tool or without it, that every scope is cited to the document that names it, and that text and implementation are scored separately, a rule that came from the author of one of the formats graded. Where a judgment call was made, it is marked as one. This paragraph stands, in these words, at the end of every finding published under this methodology.",
   "counts": {
     "by_kind": {
-      "own_work": 4
+      "own_work": 5
     },
     "by_status_label": {
-      "unverified": 4
+      "unverified": 5
     }
   },
   "records": [
@@ -84,6 +84,40 @@
       "badge_path": "registry/badges/2026-08-07-evidence-action-chirindo-0.4.0.svg",
       "badge_sha256": "b5a3b897d7ddc29dac222e9d27a6afd802b34514e8f3ade9246cfc1eb17659ba",
       "supersedes": "2026-08-07-evidence-action-chirindo-0.3.0",
+      "superseded_by": null
+    },
+    {
+      "id": "2026-09-07-finding-hybrid-402-header",
+      "kind": "own_work",
+      "record_type": "finding",
+      "key": {
+        "format": "x402 Payment-Required header",
+        "format_version": "1/2 hybrid as served 2026-09-07T09:27:34Z",
+        "upstream_digest": {
+          "alg": "sha256",
+          "value": "2ab0def7270adbe95e02bd0b5ba3d05609b2b1b23138c0a574545ceca6aa273c"
+        },
+        "verifier": {
+          "tool": [
+            "@x402/fetch 2.20.0 (stock client)",
+            "@x402/core 2.20.0 schemas"
+          ],
+          "version": "2.20.0",
+          "commit": null
+        },
+        "verified_at": "2026-09-07T09:27:34Z"
+      },
+      "status": "published",
+      "status_label": "unverified",
+      "record_path": "registry/records/2026-09-07-finding-hybrid-402-header/record.json",
+      "record_sha256": "8aa9be26935aaa2a554ae782f69a7b5e00a1126d1694b01c76e12a4a71eac593",
+      "record_bytes": 7333,
+      "report_path": "registry/records/2026-09-07-finding-hybrid-402-header/report.md",
+      "report_sha256": "cc52b461c50ea5deb0e1e12cf029cb7aeb2be3ada57943e6270411c34c12a8b2",
+      "report_bytes": 7175,
+      "badge_path": "registry/badges/2026-09-07-finding-hybrid-402-header.svg",
+      "badge_sha256": "146798572f3dfb3665b956256d7bdd29111722c1be22de55597d13ca0697175c",
+      "supersedes": null,
       "superseded_by": null
     },
     {
