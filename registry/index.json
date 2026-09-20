@@ -1,9 +1,9 @@
 {
   "schema": "receipt-verify/registry-index/0",
-  "built_at": "2026-09-20T23:17:45.513Z",
-  "built_at_head": "5e0866a69119968850a89a253431ff7d47a6f703",
+  "built_at": "2026-09-20T23:18:36.146Z",
+  "built_at_head": "95d57d2bd25b0cb863f803db19d74e3bb5b856c6",
   "verifier_version": "0.1.2",
-  "previous_index_sha256": "37138a871e42ce8f292489b0fcd08dda829fcd530ccd5082fde366d4f685491f",
+  "previous_index_sha256": "6b0fb1c88f111f26f2952d6c3661755abb50b65acf62a3eb515df62d217bbbb0",
   "disclosed_chain_breaks": [
     {
       "root_commit": "acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc",
@@ -17,10 +17,11 @@
   "interests": "Interests. The editor of this methodology authors draft-msebenzi-evidence-action, builds Chirindo, an operator-run gate that signs receipts of MCP calls, and maintains receipt-verify, the tool that produces the findings this methodology governs. Those occupy the same ground as the formats graded under it. Independence is not claimed. What is claimed is that every value in a finding recomputes from pinned bytes by anyone with the tool or without it, that every scope is cited to the document that names it, and that text and implementation are scored separately, a rule that came from the author of one of the formats graded. Where a judgment call was made, it is marked as one. This paragraph stands, in these words, at the end of every finding published under this methodology.",
   "counts": {
     "by_kind": {
-      "own_work": 5
+      "own_work": 5,
+      "observation": 1
     },
     "by_status_label": {
-      "unverified": 5
+      "unverified": 6
     }
   },
   "records": [
@@ -179,6 +180,37 @@
       "report_bytes": 3965,
       "badge_path": "registry/badges/2026-09-07-x402-settlement-base-0x94bfba79.svg",
       "badge_sha256": "9364a51310cd10b2b8b3fd3c5094b7fdf47ec68e102dc44392b81ac010bbfe97",
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-09-16-observation-x402-base-payai-0x9ecf68be",
+      "kind": "observation",
+      "record_type": "observation",
+      "key": {
+        "format": "x402.settlement/2",
+        "format_version": "2",
+        "upstream_digest": {
+          "alg": "sha256",
+          "value": "0434d308aa5d2fbce614c4831cbf5c37d5a8958ae4098cdb97eb567eabc72d65"
+        },
+        "verifier": {
+          "tool": "@headlessoracle/receipt-verify",
+          "version": "0.1.2",
+          "commit": "897ddfcddda04e4c79e8676d7db285e87a05c4c9"
+        },
+        "verified_at": "2026-09-16T10:15:31Z"
+      },
+      "status": "published",
+      "status_label": "unverified",
+      "record_path": "registry/records/2026-09-16-observation-x402-base-payai-0x9ecf68be/record.json",
+      "record_sha256": "6b444c17bbe1a7e06f2f323910a77631beb435ea0b4842c0f778b4c5ab8dd2f7",
+      "record_bytes": 7787,
+      "report_path": "packages/x402-base-payai-0x9ecf68be/statement.md",
+      "report_sha256": "ba1b62c2284ea424982fbabd01970ab0858a110235bf6f24db73f5138664c2ae",
+      "report_bytes": 5628,
+      "badge_path": "registry/badges/2026-09-16-observation-x402-base-payai-0x9ecf68be.svg",
+      "badge_sha256": "bc60b2e33625fa3114fa5f7f1ebf7a6be0433afec25fecb4c1b6c62e9f08aca7",
       "supersedes": null,
       "superseded_by": null
     }
