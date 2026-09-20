@@ -725,6 +725,29 @@
         }
       ],
       "corpus_note": "Evidence packages this repository assembles and signs, not corpus data from anyone else. only_files scopes the census to manifest.json: a package also carries verdict.json, chain.json and the raw artefacts, whose digest-shaped values are transaction hashes, block hashes and 32-byte log topics produced by a chain — none of them SHA-256 over JCS, none with a preimage in the package, and censusing them would print several hundred unregistered rows that no rule could ever close. The digests the package DOES assert about itself are the manifest's per-file sha256 values, and pkg.manifest_file_sha256 recomputes every one of them. The package's SHA256SUMS is a plain-text digest list with no JSON pointer form, so it is not addressable by this walker at all; tools/verify-package.sh checks it and the signature over it."
+    },
+    {
+      "id": "registry",
+      "dir": "registry",
+      "only_files": [
+        "index.json"
+      ],
+      "rules": [
+        {
+          "id": "registry.index_record_sha256",
+          "file": "index.json",
+          "kind": "registry_index_record_sha256",
+          "field": "/records/N/record_sha256, /records/N/report_sha256 and /records/N/badge_sha256, for every row of the index's records array",
+          "construction": "sha256(the raw bytes of the file at the sibling path member of the same row: record_path, report_path and badge_path respectively)",
+          "encoding": "hex",
+          "status": "declared",
+          "document": null,
+          "lines": null,
+          "scope_source": "The scope is declared by this repository, because the index schema is this repository's: tools/registry.ts writes each row's record_sha256, report_sha256 and badge_sha256 as the sha256 of the raw bytes at that row's record_path, report_path and badge_path. The three paths resolve against the REPOSITORY ROOT, not against this corpus's dir and not against index.json's own directory, which is a different resolution from pkg.manifest_file_sha256: a record's report may sit under packages/, outside registry/ altogether, so no corpus-relative or file-relative reading could reach it. registry/README.md states the convention. There is no external document to cite and none is claimed; `document` is null rather than pointing at something that does not govern this.",
+          "quote": "Paths. Every path member in a record.json and in an index row is relative to the repository root."
+        }
+      ],
+      "corpus_note": "The registry of executed verifications this repository publishes, not corpus data from anyone else. only_files scopes the census to index.json: the records themselves carry digests of their own pinned inputs, reports and methodology documents, which `npm run registry -- --check` already recomputes on every run and which this walker has no rule for, so censusing them would print rows no rule could ever close. Three digest-shaped values inside index.json are deliberately NOT covered by the rule above and are censused as unregistered: previous_index_sha256 is the digest of a git blob at an earlier commit, disclosed_chain_breaks[].required is a disclosure OF such a digest, and each row's key.upstream_digest.value is an upstream's own digest of bytes that may not be in this tree. None of the three is recomputable from a file beside it, which is what this walker does; rule 7 of the registry walks the first two through the signed history instead."
     }
   ],
   "expected_refusals": [

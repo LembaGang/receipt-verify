@@ -894,6 +894,65 @@ wording, appended 2026-09-03: the author of these gradings also authors
 `draft-msebenzi-evidence-action` and builds Chirindo, which is the same ground
 as the formats graded. Independence is not claimed; recomputability is.
 
+## Registry
+
+`registry/` is the public record of executed verifications. A record says what was
+verified, against which pinned bytes, by which verifier and version, when, what the
+run established, what it did not establish, and who consented to be named. Each one
+is a folder under `registry/records/<id>/` holding a `record.json` that validates
+against `registry/schema/record.schema.json`, the human report beside it, and the
+inputs and run outputs it names. `registry/index.json` and `registry/badges/` are
+built from those folders and are never edited by hand.
+
+Verification of any receipt is free, always. A paid entry buys the run and the
+published record, never the verdict.
+
+The seven rules, in one line each; `registry/README.md` carries the full wording:
+
+1. No record without an executed run, pinned inputs, an anchored result and a named
+   consenting human. Records of kind `observation` are built from public bytes about
+   a party who has not consented, carry no consent, and are not entries.
+2. A record is keyed on the format, the format version, the digest of the upstream
+   bytes, the verifier version and the time of verification. No vendor name is a key.
+3. Published records are immutable. A record is corrected by a new dated record that
+   supersedes it, and the superseded record stays visible with a forward pointer.
+4. Every record states what it established and what it did not, as of a named
+   upstream digest and date.
+5. A record is labelled unverified until a party other than the assessor and the
+   implementer has re-run it and is named. The build computes that label.
+6. A graded party receives an entry fourteen days before publication and may reply;
+   the reply is published beside the record, unedited.
+7. The index records the digest of its previous version, and the check walks that
+   chain through the signed history.
+
+**Adding a record.** Write the folder and its `record.json`, put the inputs it names
+in the tree at the digests it names, run `npm run registry` to rebuild the index and
+the badges, then make one signed commit carrying the record and the rebuilt index
+together. `npm run registry -- --check` re-derives everything and exits non-zero on
+any of the seven rules; it runs in the ordinary test suite, so CI fails on a broken
+registry.
+
+**Citing a record.** Cite its id and the commit that ADDED it, never `HEAD`:
+`npm run registry -- --check` prints that table. A record is immutable from its
+adding commit, so the pair is stable for ever; `HEAD` is not, and a citation against
+it says nothing about what the record said when it was cited. The raw index at a
+commit is at:
+
+```
+https://raw.githubusercontent.com/LembaGang/receipt-verify/<commit>/registry/index.json
+```
+
+**One disclosed break in the chain.** The index committed at `d8b21444` carries
+`previous_index_sha256: null` where rule 7 requires
+`f3fd379d06dee26b6a2ee07b3702dfeb12cd8f052a9b8f8b38f39ac9ea7a1226`. The cause was a
+build that kept the committed link when a rebuild changed no record; that is fixed
+and tested against. The commit was never pushed, and a signed commit here is a
+statement that is never amended, so the break is disclosed rather than erased.
+`--check` prints it as a notice on every run, `index.json` carries it as
+`disclosed_chain_breaks`, and `registry/README.md` states it. It is a weakening of
+rule 7 and is recorded as one, not as a repair. The list is closed: an entry may be
+added only for history that was never pushed, and never after a push.
+
 ## Citing a release
 
 To cite what ships today, name the npm artifact by version and integrity: `@headlessoracle/receipt-verify@0.1.2`, `sha512-M8I9mgXCsOoi1i9egEOapAp1mp8xdImkAg56BtqQZ3R9tlA7bQk5E6QllvFcDPIMZH8ty6lR3enOVZDa5mIDlQ==`, built from commit `1c3452fe9a8109616481dad75dacb312517bf47f`, which the `v0.1.2` tag points at; the published tarball was compared file for file against a fresh build of that commit and is identical (recorded in `RELEASE-NOTES.md` under 0.1.2). Do not cite `v0.1.1` as the source of what 0.1.1 runs: that tag points at a commit that does not contain the code that package runs (recorded in `RELEASE-NOTES.md` under 0.1.1). Cite a commit or a tag, never `HEAD`, which moves.

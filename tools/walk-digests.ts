@@ -1023,6 +1023,58 @@ async function rulePackageManifest(ctx: Ctx, r: Rule, manifestPath: string) {
   });
 }
 
+/**
+ * The registry index's per-record digests: each row's record_sha256,
+ * report_sha256 and badge_sha256, recomputed from the file its SIBLING path
+ * member names.
+ *
+ * The paths resolve against the REPOSITORY ROOT, not against the corpus `dir`
+ * and not against the index's own directory. That is a different resolution
+ * from pkg.manifest_file_sha256 above, which resolves against the package
+ * directory, and the difference is deliberate: a record's report may sit in
+ * `packages/`, outside `registry/` altogether, so a record-relative or
+ * corpus-relative path could not reach it. Every path member in a record.json
+ * and in an index row is repository-relative, which is what makes one
+ * resolution rule enough here.
+ */
+async function ruleRegistryIndexDigests(ctx: Ctx, r: Rule, indexPath: string) {
+  const file = rel(indexPath);
+  const doc = readJson(indexPath) as Record<string, Json>;
+  const records = doc["records"];
+  if (!Array.isArray(records)) {
+    push(ctx, r, file, "/records", null, null, "unregistered", "the index carries no `records` array");
+    return;
+  }
+  const members: Array<[string, string]> = [
+    ["record_sha256", "record_path"],
+    ["report_sha256", "report_path"],
+    ["badge_sha256", "badge_path"],
+  ];
+  records.forEach((entry, i) => {
+    const row = entry as Record<string, Json>;
+    for (const [digestMember, pathMember] of members) {
+      const declared = row[digestMember];
+      const path = row[pathMember];
+      const ptr = `/records/${i}/${digestMember}`;
+      if (typeof declared !== "string" || typeof path !== "string") {
+        push(ctx, r, file, ptr, typeof declared === "string" ? declared : null, null, "unregistered",
+          `row ${i} has no string \`${pathMember}\` and \`${digestMember}\` pair`);
+        continue;
+      }
+      const target = join(ROOT, ...path.split("/"));
+      if (!existsSync(target)) {
+        push(ctx, r, file, ptr, declared, null, "unregistered",
+          `row ${i} names ${path} and there is no such file in the repository`);
+        continue;
+      }
+      const bytes = readFileSync(target);
+      const recomputed = sha256Hex(bytes);
+      push(ctx, r, file, ptr, declared, recomputed, recomputed === declared ? "match" : "mismatch",
+        `${path}, ${bytes.length} bytes`);
+    }
+  });
+}
+
 async function ruleEvidenceChain(ctx: Ctx, rules: Rule[], filePath: string) {
   const file = rel(filePath);
   const records = readJsonl(filePath) as Array<Record<string, Json>>;
@@ -1274,6 +1326,16 @@ async function main(): Promise<number> {
         if (!p.replace(/\\/g, "/").endsWith("/manifest.json")) continue;
         if (!wanted(rel(p))) continue;
         await rulePackageManifest(ctx, r, p);
+      }
+    }
+
+    // the registry index: every per-record digest the index declares
+    for (const r of rules) {
+      if (r.kind !== "registry_index_record_sha256") continue;
+      for (const p of files) {
+        if (!p.replace(/\\/g, "/").endsWith("/index.json")) continue;
+        if (!wanted(rel(p))) continue;
+        await ruleRegistryIndexDigests(ctx, r, p);
       }
     }
 

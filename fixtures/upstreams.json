@@ -46,7 +46,7 @@
     }
   },
   "unmapped": {
-    "note": "Paths under fixtures/ and refs/ that map to no upstream entry, each named, each carrying the paths it accounts for and a one-line reason, so the absence is a statement rather than an oversight. test/upstream-coverage.test.ts reads this block; nothing here is an exclusion the drift tool cannot see.",
+    "note": "Paths under fixtures/, refs/, packages/ and registry/ that map to no upstream entry, each named, each carrying the paths it accounts for and a one-line reason, so the absence is a statement rather than an oversight. test/upstream-coverage.test.ts reads this block; nothing here is an exclusion the drift tool cannot see.",
     "rows": [
       {
         "id": "evidence-action-local-clone",
@@ -157,6 +157,15 @@
         "rows": "`fixtures/provenance.md` and this file",
         "reason_code": "repository_record",
         "reason": "This repository's own records of the corpora rather than corpus data: provenance.md is the record of WHAT was pinned and why, this file the liveness relation, and neither was ever fetched from anywhere."
+      },
+      {
+        "id": "registry-of-executed-verifications",
+        "paths": [
+          "registry/*"
+        ],
+        "rows": "every file under `registry/`: the records, their reports and inputs, the built index.json and badges, the schema, the methodology documents and the README",
+        "reason_code": "repository_record",
+        "reason": "The public record of verifications this repository executed and published, not corpus data fetched from anyone: every file under registry/ is written here, by tools/registry.ts or by hand, and nothing upstream of it exists that could drift. The code is reused rather than widened because its operative claim, that the path was never fetched and has nothing upstream, is exactly true here, and because packages/ already carries it for the same class of artefact, this repository's own signed output; a sixth code would split one class across two and change no decision an agent makes about either."
       }
     ]
   },
