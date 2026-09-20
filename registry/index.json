@@ -1,9 +1,9 @@
 {
   "schema": "receipt-verify/registry-index/0",
-  "built_at": "2026-09-20T23:13:50.786Z",
-  "built_at_head": "7338d66a4b09019d40c08011daacd9e8b1191dcd",
+  "built_at": "2026-09-20T23:16:22.934Z",
+  "built_at_head": "f4045572f01401ff54017290af8d5910e7cc0ad4",
   "verifier_version": "0.1.2",
-  "previous_index_sha256": "4a19565f661d209d852437914b25d25ffa107a24d5ec4ec6f3432a2a0e9f4254",
+  "previous_index_sha256": "2a69c43a247f5b41f799df7617eb5b6ad1efa841ea6d602bec39da29ef3ebd67",
   "disclosed_chain_breaks": [
     {
       "root_commit": "acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc",
@@ -17,10 +17,10 @@
   "interests": "Interests. The editor of this methodology authors draft-msebenzi-evidence-action, builds Chirindo, an operator-run gate that signs receipts of MCP calls, and maintains receipt-verify, the tool that produces the findings this methodology governs. Those occupy the same ground as the formats graded under it. Independence is not claimed. What is claimed is that every value in a finding recomputes from pinned bytes by anyone with the tool or without it, that every scope is cited to the document that names it, and that text and implementation are scored separately, a rule that came from the author of one of the formats graded. Where a judgment call was made, it is marked as one. This paragraph stands, in these words, at the end of every finding published under this methodology.",
   "counts": {
     "by_kind": {
-      "own_work": 2
+      "own_work": 4
     },
     "by_status_label": {
-      "unverified": 2
+      "unverified": 4
     }
   },
   "records": [
@@ -84,6 +84,68 @@
       "badge_path": "registry/badges/2026-08-07-evidence-action-chirindo-0.4.0.svg",
       "badge_sha256": "b5a3b897d7ddc29dac222e9d27a6afd802b34514e8f3ade9246cfc1eb17659ba",
       "supersedes": "2026-08-07-evidence-action-chirindo-0.3.0",
+      "superseded_by": null
+    },
+    {
+      "id": "2026-09-07-x402-settlement-base-0x46db8fc8",
+      "kind": "own_work",
+      "record_type": "dispute_package",
+      "key": {
+        "format": "x402.settlement/2",
+        "format_version": "2",
+        "upstream_digest": {
+          "alg": "sha256",
+          "value": "3db8d66a63c4c6322d24102a2c2f49f8fb56fbde09c137a081e40c00c6db61e4"
+        },
+        "verifier": {
+          "tool": "@headlessoracle/receipt-verify",
+          "version": "0.1.2",
+          "commit": "1368e0dfef79fd9f1ba2e0e383676649e4b0717b"
+        },
+        "verified_at": "2026-09-07"
+      },
+      "status": "published",
+      "status_label": "unverified",
+      "record_path": "registry/records/2026-09-07-x402-settlement-base-0x46db8fc8/record.json",
+      "record_sha256": "9d4813da69b912e8ea7a0b7de6ccccdceff168bd9280a9c84c63e678094be792",
+      "record_bytes": 7167,
+      "report_path": "packages/x402-base-2026-09-07-0x46db8fc8/statement.md",
+      "report_sha256": "97dc9f07276cbce7ca5cd17e7164a315607a55eead44dec2abcc51f88a0e11ed",
+      "report_bytes": 5497,
+      "badge_path": "registry/badges/2026-09-07-x402-settlement-base-0x46db8fc8.svg",
+      "badge_sha256": "9364a51310cd10b2b8b3fd3c5094b7fdf47ec68e102dc44392b81ac010bbfe97",
+      "supersedes": null,
+      "superseded_by": null
+    },
+    {
+      "id": "2026-09-07-x402-settlement-base-0x94bfba79",
+      "kind": "own_work",
+      "record_type": "dispute_package",
+      "key": {
+        "format": "x402.settlement/2",
+        "format_version": "2",
+        "upstream_digest": {
+          "alg": "sha256",
+          "value": "f8f1d25d524416c3c87c8fe51b0a86a444bc7bc00ed50fef106f3e908efd9832"
+        },
+        "verifier": {
+          "tool": "@headlessoracle/receipt-verify",
+          "version": "0.1.2",
+          "commit": "1368e0dfef79fd9f1ba2e0e383676649e4b0717b"
+        },
+        "verified_at": "2026-09-07"
+      },
+      "status": "published",
+      "status_label": "unverified",
+      "record_path": "registry/records/2026-09-07-x402-settlement-base-0x94bfba79/record.json",
+      "record_sha256": "59613edeee19936380cb19616f0a335f4e79102f9ea0135bc68f89c38d9af895",
+      "record_bytes": 6785,
+      "report_path": "packages/x402-base-2026-09-07-0x94bfba79/statement.md",
+      "report_sha256": "217e179fc28a0af8c720421994f51c20870d59f6182ad4ba77312203a79ce41f",
+      "report_bytes": 3965,
+      "badge_path": "registry/badges/2026-09-07-x402-settlement-base-0x94bfba79.svg",
+      "badge_sha256": "9364a51310cd10b2b8b3fd3c5094b7fdf47ec68e102dc44392b81ac010bbfe97",
+      "supersedes": null,
       "superseded_by": null
     }
   ]
