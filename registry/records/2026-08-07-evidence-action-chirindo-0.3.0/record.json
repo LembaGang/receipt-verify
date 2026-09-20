@@ -105,9 +105,9 @@
     "pointer": null,
     "text_sha256": null
   },
-  "status": "published",
+  "status": "superseded",
   "supersedes": null,
-  "superseded_by": null,
+  "superseded_by": "2026-08-07-evidence-action-chirindo-0.4.0",
   "supersession_reason": null,
   "report": {
     "path": "registry/records/2026-08-07-evidence-action-chirindo-0.3.0/report.md",

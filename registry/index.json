@@ -1,9 +1,9 @@
 {
   "schema": "receipt-verify/registry-index/0",
-  "built_at": "2026-09-20T15:56:20.111Z",
-  "built_at_head": "d8b214448ee0b4e39f6bf814c7d5c631fe395ca9",
+  "built_at": "2026-09-20T23:13:50.786Z",
+  "built_at_head": "7338d66a4b09019d40c08011daacd9e8b1191dcd",
   "verifier_version": "0.1.2",
-  "previous_index_sha256": "694d9509c68f8dbd6c792d3dc1f65e10a8589ac4ac3c417f3524e864843d22cf",
+  "previous_index_sha256": "4a19565f661d209d852437914b25d25ffa107a24d5ec4ec6f3432a2a0e9f4254",
   "disclosed_chain_breaks": [
     {
       "root_commit": "acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc",
@@ -17,10 +17,10 @@
   "interests": "Interests. The editor of this methodology authors draft-msebenzi-evidence-action, builds Chirindo, an operator-run gate that signs receipts of MCP calls, and maintains receipt-verify, the tool that produces the findings this methodology governs. Those occupy the same ground as the formats graded under it. Independence is not claimed. What is claimed is that every value in a finding recomputes from pinned bytes by anyone with the tool or without it, that every scope is cited to the document that names it, and that text and implementation are scored separately, a rule that came from the author of one of the formats graded. Where a judgment call was made, it is marked as one. This paragraph stands, in these words, at the end of every finding published under this methodology.",
   "counts": {
     "by_kind": {
-      "own_work": 1
+      "own_work": 2
     },
     "by_status_label": {
-      "unverified": 1
+      "unverified": 2
     }
   },
   "records": [
@@ -42,17 +42,48 @@
         },
         "verified_at": "2026-08-07"
       },
-      "status": "published",
+      "status": "superseded",
       "status_label": "unverified",
       "record_path": "registry/records/2026-08-07-evidence-action-chirindo-0.3.0/record.json",
-      "record_sha256": "a0c5ef582a7e64ba85080e81f8bc19e9e4db967b6a197b628bf306c715d81a3b",
-      "record_bytes": 6102,
+      "record_sha256": "6d771d8728ebdda091a9ef2215757cea3cabd711efdfea6763cfa5766ee4702d",
+      "record_bytes": 6142,
       "report_path": "registry/records/2026-08-07-evidence-action-chirindo-0.3.0/report.md",
       "report_sha256": "7c1695526e9ac1cc7d73705fb0b64ac61dfa3584fd983fbaab3d8463bcd612bb",
       "report_bytes": 7006,
       "badge_path": "registry/badges/2026-08-07-evidence-action-chirindo-0.3.0.svg",
       "badge_sha256": "b5a3b897d7ddc29dac222e9d27a6afd802b34514e8f3ade9246cfc1eb17659ba",
       "supersedes": null,
+      "superseded_by": "2026-08-07-evidence-action-chirindo-0.4.0"
+    },
+    {
+      "id": "2026-08-07-evidence-action-chirindo-0.4.0",
+      "kind": "own_work",
+      "record_type": "conformance_entry",
+      "key": {
+        "format": "evidence.action/0",
+        "format_version": "draft-msebenzi-evidence-action-00",
+        "upstream_digest": {
+          "alg": "sha512",
+          "value": "KAF16qIWWGCsWt9FL+T5F4Xf3RI/SQutMfjxeOauJQdI7TL3WUhctWDRscGlF0DCu8HmjTsVj/6BYhsfp18AAA=="
+        },
+        "verifier": {
+          "tool": "@headlessoracle/chirindo scripts/release-gate.mjs",
+          "version": "0.4.0",
+          "commit": null
+        },
+        "verified_at": "2026-08-07"
+      },
+      "status": "published",
+      "status_label": "unverified",
+      "record_path": "registry/records/2026-08-07-evidence-action-chirindo-0.4.0/record.json",
+      "record_sha256": "f6ab6d4bfb635e6420635be0b4155df6b57a2d02f9634bb71abe56f9cc80a50b",
+      "record_bytes": 6702,
+      "report_path": "registry/records/2026-08-07-evidence-action-chirindo-0.4.0/report.md",
+      "report_sha256": "3334034e72d701b8f2ae27e019a277ab2b890f8512897b8b163c2b402db52644",
+      "report_bytes": 8918,
+      "badge_path": "registry/badges/2026-08-07-evidence-action-chirindo-0.4.0.svg",
+      "badge_sha256": "b5a3b897d7ddc29dac222e9d27a6afd802b34514e8f3ade9246cfc1eb17659ba",
+      "supersedes": "2026-08-07-evidence-action-chirindo-0.3.0",
       "superseded_by": null
     }
   ]

@@ -1,0 +1,122 @@
+{
+  "schema": "receipt-verify/registry-record/0",
+  "id": "2026-08-07-evidence-action-chirindo-0.4.0",
+  "kind": "own_work",
+  "record_type": "conformance_entry",
+  "key": {
+    "format": "evidence.action/0",
+    "format_version": "draft-msebenzi-evidence-action-00",
+    "upstream_digest": {
+      "alg": "sha512",
+      "value": "KAF16qIWWGCsWt9FL+T5F4Xf3RI/SQutMfjxeOauJQdI7TL3WUhctWDRscGlF0DCu8HmjTsVj/6BYhsfp18AAA=="
+    },
+    "verifier": {
+      "tool": "@headlessoracle/chirindo scripts/release-gate.mjs",
+      "version": "0.4.0",
+      "commit": null
+    },
+    "verified_at": "2026-08-07"
+  },
+  "subject": {
+    "implementation": "@headlessoracle/chirindo@0.4.0",
+    "artefact": "the published npm tarball chirindo-0.4.0.tgz, 85 files, 92778 bytes packed",
+    "artefact_digest": {
+      "alg": "sha1",
+      "value": "fd8aaa44c8a95b531840e7bd871da25817492390"
+    },
+    "role": "emitter",
+    "named_party": "Michael Msebenzi"
+  },
+  "assessor": {
+    "name": "Michael Msebenzi",
+    "affiliation": "Headless Oracle"
+  },
+  "consent": {
+    "named_human": "Michael Msebenzi",
+    "affiliation": "Headless Oracle",
+    "given_on": "2026-09-11",
+    "channel": "ruling on CC_HANDOFF_2026-09-15_registry.md",
+    "scope": "own work"
+  },
+  "methodology": {
+    "document": "registry/methodology/v0.3-draft.md",
+    "version": "v0.3-draft",
+    "sha256": "393596711221c0676789c1555fe7d6b4ee22101aa2bcef65edfdaece82210ca0"
+  },
+  "method": null,
+  "executed_run": {
+    "command": "scripts/release-gate.mjs --from-registry 0.4.0 --json",
+    "run_at": "2026-08-07",
+    "tool_commit": null,
+    "outputs": [
+      {
+        "path": "registry/records/2026-08-07-evidence-action-chirindo-0.4.0/run/gate-0.4.0-2026-08-07.json",
+        "sha256": "7fae5534273db31e054e38332f790207cefc9cf1e3d07eb91d3b610cb6030554",
+        "bytes": 1322
+      }
+    ]
+  },
+  "pinned_inputs": [
+    {
+      "path": "registry/records/2026-08-07-evidence-action-chirindo-0.4.0/inputs/npm-registry-0.4.0.json",
+      "location": "in_tree",
+      "sha256": "b7cab2626bd4cd4a1f448b35ebd548bfd8d99905e1b1b2a50521b806f30ac082",
+      "bytes": 1564,
+      "source": "https://registry.npmjs.org/@headlessoracle/chirindo/0.4.0",
+      "retrieved_at": "2026-09-20T15:59:09Z",
+      "holder": null
+    },
+    {
+      "path": null,
+      "location": "external",
+      "sha256": "5ffc00fb7ff137fb2f829b04a60dbd93582e42e0cd059523bc5569f22da4bc09",
+      "bytes": 92778,
+      "source": "https://registry.npmjs.org/@headlessoracle/chirindo/-/chirindo-0.4.0.tgz",
+      "retrieved_at": "2026-09-20T23:13:15Z",
+      "holder": "the npm registry; .gitignore excludes *.tgz from this repository"
+    }
+  ],
+  "as_of": {
+    "upstream_digest": {
+      "alg": "sha512",
+      "value": "KAF16qIWWGCsWt9FL+T5F4Xf3RI/SQutMfjxeOauJQdI7TL3WUhctWDRscGlF0DCu8HmjTsVj/6BYhsfp18AAA=="
+    },
+    "date": "2026-09-20"
+  },
+  "not_established": [
+    "That the registry document pinned here is the registry document as it stood on the day of the run. The assessment ran on 2026-08-07; the registry response under inputs/ was fetched on 2026-09-20T15:59:09Z, and the upstream_digest and the subject's artefact_digest are both taken from it. They are evidence of what the registry serves today for this version, not of what it served in August.",
+    "That the tool_commit of the run is known. The release gate was run from the implementation's own repository and the run output under run/ records no commit; the registry document's gitHead 0354cf00ab53521cb4df3bfd95832660688fabed is the commit the ARTEFACT was published from, which is not the same statement, so tool_commit is null rather than guessed.",
+    "Whether the three functions restored in 0.4.0 behave correctly. Axis 2.3 establishes that they are present, not that they are right; no published vector exercises them, which follows from Entry 001, where the full corpus passed while all three were absent (the report's non-coverage section).",
+    "Cryptographic correctness beyond signature verification against the published key set, with no independent review of the signing implementation (the report's non-coverage section).",
+    "Any code path not exercised by the published vectors; the proportion of the specification's normative requirements those vectors exercise is not measured (the report's non-coverage section).",
+    "Which 8 entry points the release gate checks. The list is defined in scripts/release-gate.mjs in the implementation's repository and was not independently enumerated for this entry (the report's non-coverage section).",
+    "Axis 2.6, coverage declaration, which the report records as not determinable for the artefact and for the format. This entry also carries the correction of Entry 001's 2.6 assessment: that entry as first written recorded 2.6 as Declared, citing a machine-readable coverage manifest that is not in the artefact.",
+    "That this entry has been independently re-run. It has not; status_label is unverified, and the assessor is the author of both the specification and the implementation."
+  ],
+  "establishes": [
+    "That `scripts/release-gate.mjs --from-registry 0.4.0 --json` was run against the published tarball installed into a clean directory with --omit=dev, exited 0 with an empty failed list, and produced the output carried under run/.",
+    "That in that run all ten checks passed, including SURFACE at 8 of 8 entry points present: the three functions absent from the 0.3.0 artefact (paymentRef, paymentRefFromArtifacts, paymentRefFromJsonStrings) are present in the 0.4.0 artefact.",
+    "That the npm registry, read on 2026-09-20, serves @headlessoracle/chirindo@0.4.0 with dist.integrity sha512-KAF16q... and dist.shasum fd8aaa44c8a95b531840e7bd871da25817492390, and that dist.shasum equals the sha1 the report carries for the artefact it graded.",
+    "That a tarball fetched from the tarball URL in that document on 2026-09-20T23:13:15Z is 92778 bytes, has sha1 fd8aaa44c8a95b531840e7bd871da25817492390 and sha512 equal to the base64 in upstream_digest, so the registry document's two digests and the report's artefact digest all describe the same bytes."
+  ],
+  "independent_rerun": null,
+  "review_window": null,
+  "reply": {
+    "kind": "none",
+    "date": null,
+    "pointer": null,
+    "text_sha256": null
+  },
+  "status": "published",
+  "supersedes": "2026-08-07-evidence-action-chirindo-0.3.0",
+  "superseded_by": null,
+  "supersession_reason": [
+    "artefact_changed",
+    "assessment_error"
+  ],
+  "report": {
+    "path": "registry/records/2026-08-07-evidence-action-chirindo-0.4.0/report.md",
+    "sha256": "3334034e72d701b8f2ae27e019a277ab2b890f8512897b8b163c2b402db52644",
+    "bytes": 8918
+  }
+}
