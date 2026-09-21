@@ -200,6 +200,8 @@ reproduce under an empty exclusion set and pin the result as a plain `digest`: o
 set §5 and §4.1 are the same operation, so those are §4.1 vectors and are excluded rather than counted.
 Neither search contains the other.
 
+**CORRECTION 2026-09-18.** Eighteen is the count of files that pin a section 5 answer in their own file and nineteen the pinned derivations across them, not the count of section 5 inputs in the corpus: at least one input pins nothing, `profile-independence/pass/01-conforming-typed-ref.json` object `profile_a`, whose exclusion set `["record_id"]` reduces its payload to a 162-byte JCS pre-image with the identifier `799f0502971440d468f253fcdeee7a3c24f919e9b5454a8d245d93fe30d1f948`, a string written nowhere in that file, found by the corpus's author on 16 September 2026 and reproduced by the code path that reproduces the same file's pinned `profile_b` value as a control. The section 5 inputs at `e0ad1c7` are therefore at least twenty, and the cover letter of 4 September 2026, which stated "Eighteen files", is corrected in the same terms.
+
 `typed-refs/fail/01` and `fail/04` are the two that close the deletion-versus-nulling question, each
 excluding a member that holds the non-null string `"secret-id-123"`.
 
@@ -222,7 +224,7 @@ from your vectors, and this document compares against them rather than deriving 
 name and no value finds. One assumption remains, stated here rather than left to be discovered later:
 the search asks whether the recomputed identifier appears **somewhere in the same file**. A vector that
 carries a payload and an exclusion set but pins its identifier in a sibling file, or does not pin it at
-all, is invisible to this search and to every search before it. That the Appendix A anchor is checkable by you today — the commit proving
+all, is invisible to this search and to every search before it. One such vector is now known, and is named in the correction of 2026-09-18 above: `profile-independence/pass/01-conforming-typed-ref.json` `profile_a`, whose identifier `799f0502…` is written nowhere in its file. That the Appendix A anchor is checkable by you today — the commit proving
 the ordering is local and unpublished, and that is stated above rather than glossed. That the `jcs`
 step conforms to RFC 8785. That §7.1 has any external check at all; it has none. That the three
 non-external structural rows establish anything about your requirements — they establish only that

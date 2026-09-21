@@ -23,7 +23,7 @@ import { join } from "node:path";
 
 import { discoverSection5, section5Files } from "../../cpb/discover-section5.js";
 import { EXCLUSION_MUTANTS, exclusionTopLevelOnly } from "../../cpb/mutants.js";
-import { canonicalDigestJcs } from "../../cpb/index.js";
+import { applyExclusionSet, canonicalDigestJcs, type JsonValue, type PayloadClass } from "../../cpb/index.js";
 import {
   bucketJcsNKats,
   runDerivedId,
@@ -310,17 +310,66 @@ describe.runIf(AVAILABLE)("the 2026-08-31 corrections", () => {
  *
  * It exists because the search before it named five identifier members read off
  * the corpus, and three vectors carry theirs under a sixth name, `digest`. The
- * count of vectors exercising §5 has been 3, 10, 12, 14, 15 and now 18, and
+ * count of files pinning a §5 answer in their own file has been 3, 10, 12, 14, 15 and now 18, and
  * every one of the first five was produced by a search scoped by something.
  */
 describe.runIf(AVAILABLE)("§5 discovery — the search that names nothing", () => {
   const dir = DIR as string;
 
-  it("eighteen files exercise §5: sixteen with an observable removal, two more that name the result", () => {
+  it("eighteen files pin a §5 answer in their own file: sixteen with an observable removal, two more that name the result", () => {
     const split = section5Files(discoverSection5(dir));
     expect(split.removalObservable.length).toBe(16);
     expect(split.identifierNamedNoop.length).toBe(2);
     expect(split.all.length).toBe(18);
+  });
+
+  it("a §5 input that pins nothing is invisible to this search, and the arithmetic says so", () => {
+    // Anton Sokolov's mail of 16 Sep 2026, checked from bytes here. At e0ad1c7
+    // this file's `profile_a` declares an exclusion set and carries a payload,
+    // and pins no identifier anywhere in its own file — so the search above,
+    // which keeps a candidate only when the answer is already written down in
+    // the same file, cannot see it. Eighteen is a property of the method.
+    //
+    // NOT through deriveIdentifier: the file declares the withdrawn `jcs-n`,
+    // which admitAlgorithm refuses. That refusal is correct and is not what this
+    // test measures, so the two steps §5 is made of are called directly.
+    const v = JSON.parse(
+      readFileSync(join(dir, "profile-independence", "pass", "01-conforming-typed-ref.json"), "utf8"),
+    ) as { profile_a: { algorithm: string; exclusion_set: string[]; payload: JsonValue; derived_id?: string } };
+
+    // The premises, asserted rather than assumed: if the corpus ever pins this
+    // identifier, or changes this exclusion set, the test says so here.
+    expect(v.profile_a.algorithm).toBe("jcs-n");
+    expect(v.profile_a.exclusion_set).toEqual(["record_id"]);
+    expect(v.profile_a.derived_id).toBeUndefined();
+
+    const cls: PayloadClass = {
+      name: "profile_a",
+      algorithm: "jcs", // substituted for the vector's withdrawn `jcs-n`
+      exclusionSet: ["record_id"],
+      representation: "hex",
+    };
+    const reduced = applyExclusionSet(cls, v.profile_a.payload);
+    if (!reduced.ok) throw new Error(reduced.reason);
+    const computed = canonicalDigestJcs(reduced.value);
+    if (!computed.ok) throw new Error(computed.reason);
+    expect(computed.value.hex).toBe("799f0502971440d468f253fcdeee7a3c24f919e9b5454a8d245d93fe30d1f948");
+
+    // (b) The search reports no row for that file under that exclusion set. A
+    // future widening that starts seeing unpinned inputs turns this red on
+    // purpose, rather than quietly moving a number this package has published.
+    const hits = discoverSection5(dir);
+    const unpinned = hits.filter(
+      (h) => h.file.includes("profile-independence/pass/01") && JSON.stringify(h.exclusionSet) === JSON.stringify(["record_id"]),
+    );
+    expect(unpinned).toEqual([]);
+
+    // (c) The derivation count the harness prints: distinct (file, exclusion
+    // set, identifier) triples among the hits that are section 5 at all.
+    const derivations = new Set(
+      hits.filter((h) => h.kind !== "not_section_5").map((h) => `${h.file}|${JSON.stringify(h.exclusionSet)}|${h.identifier}`),
+    ).size;
+    expect(derivations).toBe(19);
   });
 
   it("the three the previous search could not see, and why it could not", () => {

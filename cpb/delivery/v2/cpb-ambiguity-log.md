@@ -263,6 +263,32 @@ The implementation's behaviour is unchanged by the correction — `prefixed-text
 with `representation_prefix_undefined` and disposition `unverified`, because what the registry
 declares is not what the normative text defines, and a verifier may not infer one from the other.
 
+**ANSWERED IN -03, 2026-09-18 reading.** The last paragraph of §5.1 in -03 — present unchanged in -04
+and -05, and absent from -02 — relocates the definition this entry says is missing: "Each digest
+context used by a typed reference MUST declare whether its comparison value is raw octets, bare text,
+or prefixed text, and MUST define the exact grammar of any textual form." The corrected finding above
+is closed by that relocation, in the narrowed form the 31 August correction left it in. The normative
+text still does not define `sha256:`, and under this paragraph it does not have to: the digest context
+that selects the comparison value is required to define the grammar, and for the registered context
+`REGISTRY.md`'s Representation column is where that definition is required to live — its prose, a
+`sha256:` prefix followed by 64 characters of lowercase hexadecimal, is a grammar an implementer can
+code from.
+
+What the paragraph does not state is the case of a context that **declares a textual form and defines
+no grammar**. Such a form is not "inconsistent with the uniquely selected digest context", which is the
+one condition the paragraph assigns the Failed state to; it is unevaluable, and the paragraph names no
+state for it. **This implementation will report Failed for that case at the -03 alignment, and that is
+recorded here as our reading and not as a rule read out of the text** — -03 §4.2 makes the analogous
+choice for a vintage the record never establishes, which is where the reading comes from. One sentence
+in that paragraph naming the state would remove the choice. The scope of this reading is stated rather
+than implied: only the last paragraph of §5.1 was read for it, and neither the rest of §5.1 nor the
+rest of -05 was searched for such a rule, so what is claimed is that **the paragraph** names no state,
+not that the document does not.
+
+The alignment itself is a separate row, B-124, and is not done here: no behaviour changes in this
+session, and `prefixed-text` still fails closed with `representation_prefix_undefined` and disposition
+`unverified` until that work is written.
+
 ### A12. Is §7.1's hex-to-bytes rule an "expressly defined conversion" for comparison?
 §5.1 lines 793-796:
 
@@ -423,6 +449,32 @@ registered, live algorithm a verifier has not implemented — which is `as-trans
 **Taken:** §4.2's shape is applied by analogy — `unverified` with reason
 `algorithm_not_implemented` — because reporting `failed` would assert a defect in a record never
 examined. The analogy is ours; the draft does not authorize it.
+
+### A22. A search for pinned answers cannot see an unpinned input.
+The §5 discovery search in this package keeps a candidate only where the recomputed identifier already
+appears as a 64-hex string in the same file — a scope its own header states rather than one discovered
+afterwards. **The corpus's author reported on 16 September 2026 that at least one §5 input pins nothing
+at all:** `vectors/profile-independence/pass/01-conforming-typed-ref.json`, object `profile_a`, which
+declares `"algorithm": "jcs-n"` and the exclusion set `["record_id"]` over a payload whose `record_id`
+is JSON null. It reduces to a 162-byte JCS pre-image and the identifier
+`799f0502971440d468f253fcdeee7a3c24f919e9b5454a8d245d93fe30d1f948`, reproduced here by the same code
+path that reproduces the same file's pinned `profile_b` value as a control, and that string appears in
+no file at `e0ad1c7`.
+
+**The consequence is for every count this package states.** "Eighteen files exercise §5" reported the
+method's answer as the corpus's. The true statement is narrower, and is now made in those terms
+wherever the count appears: eighteen files pin a §5 answer in their own file, nineteen pinned
+derivations across them, and the §5 inputs at `e0ad1c7` are **at least** twenty. A count produced by a
+search scoped to answers that are written down is a lower bound on inputs and never an enumeration of
+them. The file itself was already among the eighteen, counted for `profile_b`, so the file count does
+not move and only the input count does — which is exactly why the error survived four re-derivations of
+the number.
+
+**Taken:** the wording is corrected by dated addition in the delivered documents and in the harness's
+printed line, which now names the one instance known. No behaviour changes, because nothing in the
+implementation ever depended on the count. What would close this rather than record it is a scope the
+search does not have: recomputing §5 over every declared exclusion set and reporting the results that
+match nothing, which is a list of candidates and not a list of findings, and is not offered as one.
 
 ---
 

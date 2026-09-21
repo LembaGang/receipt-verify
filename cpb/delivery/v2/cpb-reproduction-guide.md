@@ -216,6 +216,7 @@ done
 base is 29 rather than 25.
 
 **The vectors that exercise §5. Search 1, by value, over the WHOLE tree:**
+**CORRECTION 2026-09-18: "the vectors that exercise §5" means, exactly, the vectors that pin a §5 answer in their own file; see the correction under Search 2 below.**
 
 ```
 git grep -l 0c837d01faa4106c63367f199af9bfa729d1917f36dc91f9dfeb6de6ec7c6bdb e0ad1c7 -- vectors
@@ -247,6 +248,8 @@ the result equals any 64-hex string anywhere in that file.
 
 **Expected: eighteen files**, of which 16 remove a member the payload actually has and 2 more have an
 empty exclusion set and still name the result a derived identifier.
+
+**CORRECTION 2026-09-18.** Eighteen is the count of files that pin a section 5 answer in their own file, and nineteen the pinned derivations across them; neither is a count of the section 5 inputs the corpus holds. At least one input pins nothing: `profile-independence/pass/01-conforming-typed-ref.json`, object `profile_a`, exclusion set `["record_id"]`, whose payload reduces to a 162-byte JCS pre-image and the identifier `799f0502971440d468f253fcdeee7a3c24f919e9b5454a8d245d93fe30d1f948`, a string written nowhere in that file and in no file at `e0ad1c7` — found by the corpus's author on 16 September 2026 and reproduced by the code path that reproduces the same file's pinned `profile_b` value as a control. The section 5 inputs at `e0ad1c7` are therefore at least twenty, this search cannot see the difference by construction, and the cover letter of 4 September 2026, which stated "Eighteen files", is corrected in the same terms.
 
 The files search 2 finds that search 1 cannot include
 `typed-refs/fail/02-textual-equality-trap.json`, which pins

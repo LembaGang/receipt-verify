@@ -724,7 +724,7 @@ export function carriesNormalizableMember(v: JsonValue): boolean {
 
 /**
  * T3b — vectors/jcs-n/derived-id/, the only three vectors anywhere under
- * vectors/ at e0ad1c7 that exercise §5's construction.
+ * vectors/ at e0ad1c7 that pin §5's construction under jcs-n/derived-id/.
  *
  * OBSERVED, exactly as the 38 kats are: these declare `"algorithm": "jcs-n"`,
  * the withdrawn construction. We run them under `jcs`, substituting the live
@@ -918,8 +918,9 @@ function main(): void {
   const s5files = new Set(section5.map((r) => r.vector.split(" ")[0]));
   const s5ids = new Set(section5.map((r) => r.expected));
   console.log(
-    `SECTION-5 REPRODUCERS - every vector under vectors/ from which section 5 recomputes, found by` +
-      ` structure and not by value. ${s5files.size} files, ${section5.length} rows, ${s5ids.size} distinct identifiers.`,
+    `SECTION-5 REPRODUCERS - every vector under vectors/ whose section 5 result is pinned under an` +
+      ` identifier member name this search knows, found by structure and not by value.` +
+      ` ${s5files.size} files, ${section5.length} rows, ${s5ids.size} distinct identifiers.`,
   );
   console.log(table(section5));
   const typedBad = section5.filter((r) => r.verdict === "DISAGREE");
@@ -929,12 +930,13 @@ function main(): void {
 
   const disc = discoverSection5(vectorsDir);
   const split = section5Files(disc);
+  const derivations = new Set(disc.filter((h) => h.kind !== "not_section_5").map((h) => `${h.file}|${JSON.stringify(h.exclusionSet)}|${h.identifier}`)).size;
   console.log(
     `SECTION-5 DISCOVERY - every object, every declared exclusion set, matched against any 64-hex` +
       ` string in the same file. Names no member and no value.`,
   );
   console.log(
-    `  SECTION 5 IS EXERCISED BY ${split.all.length} FILES: ${split.removalObservable.length} where the` +
+    `  SECTION 5 ANSWERS PINNED IN THEIR OWN FILE: ${split.all.length} FILES, ${derivations} DERIVATIONS: ${split.removalObservable.length} where the` +
       ` removal step removes something, plus ${split.identifierNamedNoop.length} where it removes nothing` +
       ` and the vector still names the result a derived identifier.`,
   );
@@ -947,6 +949,7 @@ function main(): void {
   for (const f of split.identifierNamedNoop) console.log(`    named an identifier, no-op  : ${f}`);
   const inferred = disc.filter((h) => h.exclusionSource.startsWith("INFERRED"));
   for (const h of inferred) console.log(`    ${h.exclusionSource} -- ${h.file}`);
+  console.log(`  NOT VISIBLE TO THIS SEARCH: an input whose identifier is written nowhere in its file (profile-independence/pass/01, profile_a, 799f0502...; see the correction of 2026-09-18 in cpb-vector-results.md).`);
   console.log();
 
   const supplementary = runIdentifierGrammar(vectorsDir);
