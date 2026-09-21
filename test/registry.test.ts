@@ -602,7 +602,7 @@ describe("rule 7 — a disclosed chain break, scoped to one history", () => {
     expect(b.previous_commit).toBe("842e4265e0e40553be1c8ee8eadc223f8c8c7512");
     expect(b.carried).toBeNull();
     expect(b.required).toBe("f3fd379d06dee26b6a2ee07b3702dfeb12cd8f052a9b8f8b38f39ac9ea7a1226");
-    expect(b.reason).toMatch(/never pushed/);
+    expect(b.reason).toMatch(/had not been pushed when the break was found/);
   });
 
   it("a break whose four pinned values all match, under a matching root, is admitted and printed", () => {

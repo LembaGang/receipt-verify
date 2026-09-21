@@ -1,9 +1,9 @@
 {
   "schema": "receipt-verify/registry-index/0",
-  "built_at": "2026-09-20T23:18:36.146Z",
-  "built_at_head": "95d57d2bd25b0cb863f803db19d74e3bb5b856c6",
+  "built_at": "2026-09-21T14:00:50.159Z",
+  "built_at_head": "8632c936d312a9671ea3569a51afb41989bd2bf5",
   "verifier_version": "0.1.2",
-  "previous_index_sha256": "6b0fb1c88f111f26f2952d6c3661755abb50b65acf62a3eb515df62d217bbbb0",
+  "previous_index_sha256": "64633a7bf8ea245cad482540f8feb72bc80d203fb1b574a789fe1178989e5108",
   "disclosed_chain_breaks": [
     {
       "root_commit": "acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc",
@@ -11,7 +11,7 @@
       "previous_commit": "842e4265e0e40553be1c8ee8eadc223f8c8c7512",
       "carried": null,
       "required": "f3fd379d06dee26b6a2ee07b3702dfeb12cd8f052a9b8f8b38f39ac9ea7a1226",
-      "reason": "The build's idempotence guard kept the committed link because the rebuild's body was unchanged, so the second index was committed still carrying null; the commit was never pushed, and R84 forbids amending it, so the break is disclosed rather than erased."
+      "reason": "The build's idempotence guard kept the committed link because the rebuild's body was unchanged, so the second index was committed still carrying null; the commit had not been pushed when the break was found, and R84 forbids amending it, so the break is disclosed rather than erased."
     }
   ],
   "interests": "Interests. The editor of this methodology authors draft-msebenzi-evidence-action, builds Chirindo, an operator-run gate that signs receipts of MCP calls, and maintains receipt-verify, the tool that produces the findings this methodology governs. Those occupy the same ground as the formats graded under it. Independence is not claimed. What is claimed is that every value in a finding recomputes from pinned bytes by anyone with the tool or without it, that every scope is cited to the document that names it, and that text and implementation are scored separately, a rule that came from the author of one of the formats graded. Where a judgment call was made, it is marked as one. This paragraph stands, in these words, at the end of every finding published under this methodology.",

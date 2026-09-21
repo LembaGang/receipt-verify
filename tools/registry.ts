@@ -308,7 +308,7 @@ export const KNOWN_CHAIN_BREAKS: KnownChainBreak[] = [
     carried: null,
     required: "f3fd379d06dee26b6a2ee07b3702dfeb12cd8f052a9b8f8b38f39ac9ea7a1226",
     reason:
-      "The build's idempotence guard kept the committed link because the rebuild's body was unchanged, so the second index was committed still carrying null; the commit was never pushed, and R84 forbids amending it, so the break is disclosed rather than erased.",
+      "The build's idempotence guard kept the committed link because the rebuild's body was unchanged, so the second index was committed still carrying null; the commit had not been pushed when the break was found, and R84 forbids amending it, so the break is disclosed rather than erased.",
   },
 ];
 
