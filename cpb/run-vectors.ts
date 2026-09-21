@@ -724,7 +724,7 @@ export function carriesNormalizableMember(v: JsonValue): boolean {
 
 /**
  * T3b — vectors/jcs-n/derived-id/, the only three vectors anywhere under
- * vectors/ at e0ad1c7 that pin §5's construction under jcs-n/derived-id/.
+ * vectors/ at e0ad1c7 that pin §5's construction under a derived_id member.
  *
  * OBSERVED, exactly as the 38 kats are: these declare `"algorithm": "jcs-n"`,
  * the withdrawn construction. We run them under `jcs`, substituting the live
@@ -919,7 +919,7 @@ function main(): void {
   const s5ids = new Set(section5.map((r) => r.expected));
   console.log(
     `SECTION-5 REPRODUCERS - every vector under vectors/ whose section 5 result is pinned under an` +
-      ` identifier member name this search knows, found by structure and not by value.` +
+      ` identifier member name this search knows.` +
       ` ${s5files.size} files, ${section5.length} rows, ${s5ids.size} distinct identifiers.`,
   );
   console.log(table(section5));

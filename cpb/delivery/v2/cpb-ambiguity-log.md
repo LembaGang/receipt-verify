@@ -263,27 +263,30 @@ The implementation's behaviour is unchanged by the correction — `prefixed-text
 with `representation_prefix_undefined` and disposition `unverified`, because what the registry
 declares is not what the normative text defines, and a verifier may not infer one from the other.
 
-**ANSWERED IN -03, 2026-09-18 reading.** The last paragraph of §5.1 in -03 — present unchanged in -04
-and -05, and absent from -02 — relocates the definition this entry says is missing: "Each digest
-context used by a typed reference MUST declare whether its comparison value is raw octets, bare text,
-or prefixed text, and MUST define the exact grammar of any textual form." The corrected finding above
-is closed by that relocation, in the narrowed form the 31 August correction left it in. The normative
-text still does not define `sha256:`, and under this paragraph it does not have to: the digest context
-that selects the comparison value is required to define the grammar, and for the registered context
-`REGISTRY.md`'s Representation column is where that definition is required to live — its prose, a
-`sha256:` prefix followed by 64 characters of lowercase hexadecimal, is a grammar an implementer can
-code from.
+**ANSWERED IN -03, 2026-09-18 reading.** The last paragraph of §5.1 is absent from -02 and relocates
+the definition this entry says is missing. That paragraph is lines 759 to 765 of
+draft-mih-sokolov-scitt-payload-binding-03.txt, a file this repository pins whole at sha256
+d303e6e4ec4c4bf3b9c483bcabbd720309f952a5e77d912968bef39c1f245d13, and it reads: "Each digest context
+used by a typed reference MUST declare whether its comparison value is raw octets, bare text, or
+prefixed text, and MUST define the exact grammar of any textual form." The corrected finding above
+is closed by that relocation, in the narrowed form the 31 August correction left it in. The
+normative text still does not define `sha256:`, and under this paragraph it does not have to: the
+digest context that selects the comparison value is required to define the grammar, and for the
+registered context `REGISTRY.md`'s Representation column is where that definition is required to
+live — its prose, a `sha256:` prefix followed by 64 characters of lowercase hexadecimal, is a
+grammar an implementer can code from. Whether that paragraph stands unchanged in later revisions is
+not established from bytes in this package.
 
-What the paragraph does not state is the case of a context that **declares a textual form and defines
-no grammar**. Such a form is not "inconsistent with the uniquely selected digest context", which is the
-one condition the paragraph assigns the Failed state to; it is unevaluable, and the paragraph names no
-state for it. **This implementation will report Failed for that case at the -03 alignment, and that is
-recorded here as our reading and not as a rule read out of the text** — -03 §4.2 makes the analogous
-choice for a vintage the record never establishes, which is where the reading comes from. One sentence
-in that paragraph naming the state would remove the choice. The scope of this reading is stated rather
-than implied: only the last paragraph of §5.1 was read for it, and neither the rest of §5.1 nor the
-rest of -05 was searched for such a rule, so what is claimed is that **the paragraph** names no state,
-not that the document does not.
+What the paragraph does not state is the case of a context that **declares a textual form and
+defines no grammar**. Such a form is not "inconsistent with the uniquely selected digest context",
+which is the one condition the paragraph assigns the Failed state to; it is unevaluable, and the
+paragraph names no state for it. **This implementation will report Failed for that case at the
+alignment recorded in B-124, and that is recorded here as our reading and not as a rule read out of
+the text** — -03 §4.2 makes the analogous choice for a vintage the record never establishes, which
+is where the reading comes from. One sentence in that paragraph naming the state would remove the
+choice. The scope of this reading is stated rather than implied: only the last paragraph of §5.1 was
+read for it, and neither the rest of §5.1 nor the rest of -03 was searched for such a rule, so what
+is claimed is that **the paragraph** names no state, not that the document does not.
 
 The alignment itself is a separate row, B-124, and is not done here: no behaviour changes in this
 session, and `prefixed-text` still fails closed with `representation_prefix_undefined` and disposition
