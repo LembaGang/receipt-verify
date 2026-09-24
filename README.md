@@ -789,13 +789,14 @@ people consume these findings, there is no reader who will notice the date.
 
 A verdict is a line of output. A package is a directory someone else can be
 handed, and can check without trusting the sender and without a key of their
-own. `packages/` holds three:
+own. `packages/` holds four:
 
 | package | what it is | verdict |
 |---|---|---|
 | `x402-base-2026-09-07-0x46db8fc8/` | one of this operator's own paid calls, 7 September 2026 on Base, with the artefacts as the wire carried them | `VALID` |
 | `x402-base-2026-09-07-0x94bfba79/` | the second paid call of the same day, with the delivered response beside it | `VALID` |
 | `x402-base-payai-0x9ecf68be/` | somebody else's settlement, chain side only, found from public bytes | `UNVERIFIABLE` / `artefacts_absent` |
+| `x402-base-botpay-0xccd5497a/` | a settlement paid to the address `api.botpay.network` publishes, chain side only, found from public bytes | `UNVERIFIABLE` / `artefacts_absent` |
 
 Each carries `artefacts/` (byte for byte, with the source path of every file
 recorded in `manifest.json` beside its sha256 and byte count), `envelope.json`,

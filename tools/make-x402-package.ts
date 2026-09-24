@@ -122,6 +122,31 @@ push({
   ],
 });
 
+// The seller packages select by PAYEE, not by submitter: the settlement is one
+// paid to the address the seller itself publishes. known_submitters in each
+// envelope is the census PayAI signer pin and nothing else, so the verdict names
+// one source for the whole list.
+push({
+  id: "x402-base-botpay-0xccd5497a",
+  dir: "packages/x402-base-botpay-0xccd5497a",
+  title: "Observation: one settlement paid to api.botpay.network's published address on Base, chain side only",
+  transaction: "0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d",
+  envelope: "fixtures/x402/observations/botpay-2026-09-24-0xccd5497a.envelope.json",
+  chain: "packages/x402-base-botpay-0xccd5497a/chain.json",
+  statement: "packages/x402-base-botpay-0xccd5497a/statement.md",
+  artefacts: [
+    { name: "botpay-llms-txt_2026-09-10T160231Z.txt", from: `${PINS}/sellers-2026-09-21/botpay/llms.txt`, role: "api.botpay.network's /llms.txt as fetched 2026-09-10T16:02:31Z, whole: line 15 publishes the Base recipient this settlement was selected by. The seller's word as of that fetch" },
+    { name: "payai-supported_20260918T101256Z.json", from: `${PINS}/census-2026-09-12/payai-supported_20260918T101256Z.json`, role: "PayAI's published /supported as fetched 2026-09-18T10:12:56Z: the fifteen eip155:* signer addresses the envelope's known_submitters carries. UNSIGNED, and the supplier's word as of that fetch" },
+    { name: "discovery/scan.mjs", from: `${PINS}/sellers-2026-09-21/botpay/scan.mjs`, role: "the scanner exactly as run: per window, eth_getLogs for AuthorizationUsed and for Transfer to the payee on USDC, intersected by transaction hash" },
+    { name: "discovery/scan-log.json", from: `${PINS}/sellers-2026-09-21/botpay/scan-log.json`, role: "every window scanned and every JSON-RPC call the scan made, with endpoint, time, HTTP status and the sha256 of each response body" },
+    { name: "discovery/eth_blockNumber.json", from: `${PINS}/sellers-2026-09-21/botpay/eth_blockNumber.json`, role: "the tip read the window was placed behind, whole" },
+    { name: "discovery/eth_getLogs-authorizationUsed-51731596-51731996.json", from: `${PINS}/sellers-2026-09-21/botpay/eth_getLogs-authorizationUsed-51731596-51731996.json`, role: "the matching window's AuthorizationUsed response, whole" },
+    { name: "discovery/eth_getLogs-transfer-51731596-51731996.json", from: `${PINS}/sellers-2026-09-21/botpay/eth_getLogs-transfer-51731596-51731996.json`, role: "the matching window's Transfer-to-payee response, whole" },
+    { name: "discovery/eth_getTransactionByHash-0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d.json", from: `${PINS}/sellers-2026-09-21/botpay/eth_getTransactionByHash-0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d.json`, role: "the selected transaction as the scan read it, whole" },
+    { name: "discovery/SHA256SUMS.txt", from: `${PINS}/sellers-2026-09-21/botpay/SHA256SUMS.txt`, role: "the pin directory's own digest list, written last, copied so this package carries the same statement the pins do" },
+  ],
+});
+
 interface ManifestFile {
   path: string;
   bytes: number;

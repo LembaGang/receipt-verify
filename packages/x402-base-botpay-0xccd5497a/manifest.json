@@ -1,0 +1,104 @@
+{
+  "schema": "receipt-verify/x402-package/0",
+  "id": "x402-base-botpay-0xccd5497a",
+  "title": "Observation: one settlement paid to api.botpay.network's published address on Base, chain side only",
+  "transaction": "0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d",
+  "network": "eip155:8453",
+  "built_at": "2026-09-24T13:07:59.128Z",
+  "built_by": "tools/make-x402-package.ts",
+  "verifier": "@headlessoracle/receipt-verify, format x402.settlement/2",
+  "how_to_check": "sh tools/verify-package.sh <this directory> checks every digest below, that no file in the package is missing from SHA256SUMS, and that SHA256SUMS.sig verifies against the repository's SIGNING_KEYS. npm run walk recomputes every sha256 in this manifest from the file beside it. Neither says the contents are true; statement.md says what they do and do not show.",
+  "files": [
+    {
+      "path": "artefacts/botpay-llms-txt_2026-09-10T160231Z.txt",
+      "bytes": 1696,
+      "sha256": "32287dcdeb776e5694c44162c2d32e515cde4518a86f3884441628b89fbbcfb0",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/botpay/llms.txt",
+      "role": "api.botpay.network's /llms.txt as fetched 2026-09-10T16:02:31Z, whole: line 15 publishes the Base recipient this settlement was selected by. The seller's word as of that fetch"
+    },
+    {
+      "path": "artefacts/payai-supported_20260918T101256Z.json",
+      "bytes": 4047,
+      "sha256": "fa7839ec4dfd253e8c7287ea1c9c76a47ad3a20f08e28cc536d22285580cd9c2",
+      "source": "C:/Users/User/cc-output/pins/census-2026-09-12/payai-supported_20260918T101256Z.json",
+      "role": "PayAI's published /supported as fetched 2026-09-18T10:12:56Z: the fifteen eip155:* signer addresses the envelope's known_submitters carries. UNSIGNED, and the supplier's word as of that fetch"
+    },
+    {
+      "path": "artefacts/discovery/scan.mjs",
+      "bytes": 4862,
+      "sha256": "395597c50cb392aca7df5aa027e5be5a5bb41797d4dfa4164f5a9727d8ddee25",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/botpay/scan.mjs",
+      "role": "the scanner exactly as run: per window, eth_getLogs for AuthorizationUsed and for Transfer to the payee on USDC, intersected by transaction hash"
+    },
+    {
+      "path": "artefacts/discovery/scan-log.json",
+      "bytes": 11582,
+      "sha256": "dbe9626e1d6948639ced8729d9b2301a0e3ce9c46c9f88ac22969a08cf62b540",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/botpay/scan-log.json",
+      "role": "every window scanned and every JSON-RPC call the scan made, with endpoint, time, HTTP status and the sha256 of each response body"
+    },
+    {
+      "path": "artefacts/discovery/eth_blockNumber.json",
+      "bytes": 46,
+      "sha256": "5cd8b1d51d04e38fce853a0bce483c153fe82429ba4facfdb56dd996ed56e329",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/botpay/eth_blockNumber.json",
+      "role": "the tip read the window was placed behind, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getLogs-authorizationUsed-51731596-51731996.json",
+      "bytes": 469990,
+      "sha256": "cfcb5e235ab219180f9c6d8414f81882326d26cfc125518e94b1e686fb86560b",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/botpay/eth_getLogs-authorizationUsed-51731596-51731996.json",
+      "role": "the matching window's AuthorizationUsed response, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getLogs-transfer-51731596-51731996.json",
+      "bytes": 41992,
+      "sha256": "50f09b692a08971f0b94bfd0d910cbd139cd072c363c8638ac8463918d94602b",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/botpay/eth_getLogs-transfer-51731596-51731996.json",
+      "role": "the matching window's Transfer-to-payee response, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getTransactionByHash-0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d.json",
+      "bytes": 1449,
+      "sha256": "f56c128a81a5596c9b0c0238ef9f825ba2ea9672970fe1c9ebf22bad2dd04e3f",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/botpay/eth_getTransactionByHash-0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d.json",
+      "role": "the selected transaction as the scan read it, whole"
+    },
+    {
+      "path": "artefacts/discovery/SHA256SUMS.txt",
+      "bytes": 1167,
+      "sha256": "243871738a2d983b601cd1113a03b2183180bed8d12dc38b64d9f1b72bb88c6d",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/botpay/SHA256SUMS.txt",
+      "role": "the pin directory's own digest list, written last, copied so this package carries the same statement the pins do"
+    },
+    {
+      "path": "envelope.json",
+      "bytes": 24590,
+      "sha256": "1132081077f9fe8320dea5ae00062c37722b3ca0bf7e30f9ad34a5b15d3fe018",
+      "source": "generated in packages/x402-base-botpay-0xccd5497a",
+      "role": "the x402.settlement/2 envelope the verdict was taken over: the three artefacts above plus the chain reading below, in one document"
+    },
+    {
+      "path": "verdict.json",
+      "bytes": 3076,
+      "sha256": "a1be238c55254b4af41b443cd5d6d139b8a01609b9f9b29014057d7abcd5352b",
+      "source": "generated in packages/x402-base-botpay-0xccd5497a",
+      "role": "the verifier's full output, coverage block included, as `receipt-verify --format x402 --json` prints it"
+    },
+    {
+      "path": "chain.json",
+      "bytes": 63479,
+      "sha256": "3a1159c51222550474bb64551e9582e7434c527cc28bc701bdf5fc8fcc8606f2",
+      "source": "generated in packages/x402-base-botpay-0xccd5497a",
+      "role": "both endpoints' raw answers with URLs, read times and per-response digests, and whether they agree"
+    },
+    {
+      "path": "statement.md",
+      "bytes": 6598,
+      "sha256": "58df03fe4f40b2782dd06798192beb4377789bf6d1e74f7694178ceec8462db8",
+      "source": "generated in packages/x402-base-botpay-0xccd5497a",
+      "role": "what this package establishes, what it does not, and the standing Interests paragraph"
+    }
+  ]
+}

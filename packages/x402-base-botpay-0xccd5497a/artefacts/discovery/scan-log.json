@@ -1,0 +1,263 @@
+{
+  "rpc": "https://mainnet.base.org",
+  "payee": "0x159BE9e316BC5faC8Ce05aec4eaAe46E8f8a4908",
+  "payee_topic": "0x000000000000000000000000159be9e316bc5fac8ce05aec4eaae46e8f8a4908",
+  "payee_source": {
+    "kind": "llms.txt body",
+    "host": "api.botpay.network",
+    "url": "https://api.botpay.network/llms.txt",
+    "tgz": "C:/Users/User/cc-output/pins/b178-sellers-by-volume-pins_2026-09-10.tgz",
+    "tgz_sha256": "7b553402b5cc4d6b39a9959d50419240fbd920208bc1fc77c805188a8c53b0cd",
+    "path_in_tgz": "raw/seller_api_botpay_network_llms_txt__20260910T160231Z.bin",
+    "fetched_at": "2026-09-10T16:02:31Z",
+    "sha256": "32287dcdeb776e5694c44162c2d32e515cde4518a86f3884441628b89fbbcfb0",
+    "line": "15: Base recipient for /pay and /go: 0x159BE9e316BC5faC8Ce05aec4eaAe46E8f8a4908",
+    "copied_to": "llms.txt"
+  },
+  "tip": 51732860,
+  "ceiling": 51732796,
+  "span": 400,
+  "windows": [
+    {
+      "from": 51732396,
+      "to": 51732796,
+      "authorization_used_logs": 865,
+      "transfer_to_payee_logs": 0,
+      "matches": []
+    },
+    {
+      "from": 51731996,
+      "to": 51732396,
+      "authorization_used_logs": 1266,
+      "transfer_to_payee_logs": 0,
+      "matches": []
+    },
+    {
+      "from": 51731596,
+      "to": 51731996,
+      "authorization_used_logs": 822,
+      "transfer_to_payee_logs": 66,
+      "matches": [
+        "0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d",
+        "0xbf7850cadb56f9f43452acb11829231a8e78555f26a54ebf91e0a0609b43f354",
+        "0x82ce6b28615ad1c78ef0124dd0909ce9d8853b79a979e9ab3bb91ebb03b113a5",
+        "0xc76ff7fb96ce6da0e5151f3d5ed5e78b9d305560e3097b016b86849ffccb5b5f",
+        "0xbdfe01af760a0bcb276c2708bb772cea7b245384e5d9c1f0c0f94d669adc1fa7",
+        "0xcff660bcb9aa3137859655ebd5476ea5609f611c444fa9bf111beec8b25bf0fd",
+        "0xfabb9a28da7c57cf6f4abde5db8f146391bf64f6c2b2aca10eba8892777645c3",
+        "0x8f7a7637450d1148fc6a5fd1ba4e1b8e57024b49ee1e72c7581e29fb8cb2d7bf",
+        "0xeaba305ea582da768e99a241274387be13d56b90a0a830236f7faf01525bb5c1",
+        "0x1fd47e422ec3ecae98dd0d118eea3f6701ce8ca1a1708c0a89d73c74dfab92c1",
+        "0xe713fe9673ad7b5d6b61309fee67653f6bf2787bf809e81baaa843bb06499c24",
+        "0xba63918026b9f1cd60fa8313b12ba975fb128a6c0e123cbcb120390b2e0abdf4",
+        "0x5e71e03a2c1df3ee5f57ed734fdf16e55ec549b9963a1aedb595fbe0497bc737",
+        "0x515137482ef7be901eeb17aa84fbb3aecfffffd76c513391930f64628ee31060",
+        "0x758745df3f9ec572d7ed29cb50d4cd107cf72d3d4e6a2817c4674089a03d6372",
+        "0x50423947af8c08e879c3545b9960623d1129f19c2cd8082efca8354110e9dc46",
+        "0xeba0f25654c3cba70bcc720f72b75a5b580ffa10a3a4c684e25ac767c3152ad9",
+        "0xfe1341ce93337b20994b642146b63de32429004a68af4f0723f30a9b31787a89",
+        "0x8dc9851250b2bf3e840958de87584a05bf9314b5fa5c965c18460ded6f4b093d",
+        "0xfd3af5717934c3940687d453370269e016d6e9f924723436f62faa9125102491",
+        "0x5b233aeb1014a452ffa5ed13f4e27dd432f060e9c46397fa7e79ea0208692a7d",
+        "0x6e42f9d853d081f1dfd693d0b00fe73ee22a4fd1a85617feec6fb2b9f307af9e",
+        "0x339762693de951e8b4d7d466146347f3b6fa7b024e2254ebc3c66b0b5578c0a0",
+        "0x54c0327df587e3acd3736ac9bb7254089317300ccff28a739fc01cb2b2136a8f",
+        "0x65b558fb71615cb26caaaecf705678d4c6e8fd6bca7ef41077a23cb96386684f",
+        "0xb853edabf586737f8cc52709eaad608fc392e77f898f2ef7ef41be076e4647e1",
+        "0x11770a47999987fb1b50f1f0cb002fbe216cebd405ae9cc4bf4909b9598e7621",
+        "0xc127eb50335487594d0695df857101249dc65a3cf2b1b03b80a749f96709755c",
+        "0x09ecbaab5672d63bdc54651b1580ed1d706bbf5dfbc7e309af867e81819c4f43",
+        "0x99ba0c7abb5934f9adfc1b8a953f6631d2104035c564e2b92ef99412cf563a0c",
+        "0xf8db12b1bb5b8a691a7bf4e51a9c13cd0783bcfd253cc824cc4b0826155f10dd",
+        "0x4e8dc6ef3ae718beb0168d8afd969ca5fc7d343f7a1f636eb55f45547e26282a",
+        "0xb87f6e27dd380671c670ca985221f968ace1591e32765bdbdf61eb15a1cc8c5a",
+        "0xcf9af99733c798c2217dc9f81c5ac7f3f151697a7c348d1b88ebb28c71277876",
+        "0x7da4bddf5b136aeb196972bf3a1d570323cb08b6e7da7d8f9f987ed268413793",
+        "0x8fdcf0ca62f9df57f7781c2605cb506f4dc922ad288cfb144aed1386a57b4e2e",
+        "0xa62c0fdc3c75f6a8356f0abe86b76b39364114e04facdbbb0276e5a197e10ee4",
+        "0x9aaaea6b39f06ab0583458f4c1e1d51dd9c3ea7f2f6be86af8a7d3d7623441c0",
+        "0x4fc0f828c65afdedc945ec96ce996b11678d5a9bb404da905ccdc115e36339d4",
+        "0xa2a22822119adcb0cbfd583a1f83eda1a9d6b39e8eff24c8b3a4e0ded4bac057",
+        "0xb6dab6f86ba0304ef2786f425fbcda2558706b5e09fcbb243ce5f56ceddc1180",
+        "0x7b9d766e86aac9d35f2e7027a215256425e50fa78d69f5ed4a701c4a10a0e6de",
+        "0x65cd33ce409e8ad11e81f5bbfa20f1a3e7a6b400d38505d92472c4526fa772fc",
+        "0x9fcd3fff338b9e06e50c14fb94655cb4860e21252b86f25887b2b9d4547653e5",
+        "0x30f5a39c3866c56093ecb190fcf7a63e0b9a31b82f62d64a832770bf3c78589e",
+        "0x8feb3447ceb0f794fcd6718aab275fd1be0f7b049e6b42d009d85bc9bb6e2ad7",
+        "0x5c99f4e048c120cc56b61d297a008a3f72c72c43311a106d22405f458b5fc788",
+        "0x6a5bb7d711d7bb6cf109ddc430e1843c594fa19ee0326523802e760cf11aff49",
+        "0x9d77100c2ab77f4fbebbff321145eb72dbdc1ecfa6890249854be1459603ad95",
+        "0xffef5ea894e8ef2e9f6eb1ac06e32fd29d112e9feddb05ff8d6294af6795be9b",
+        "0x7d196f42912a7fa2e811ccc9fab518b1437433f1c5b92c49a5bda58ac65230f7",
+        "0x46fab802c37c01c8065b1017baa4fa56043d52123a8ebe9bae25baa9ad09a477",
+        "0x7fbfe9acd6e43f38af96c41066b17b4abd89156d3a5d28fc728a5744e457715c",
+        "0xbee13eeb67cc76205b90aed5bf9898350bfd4a253a7ca06355ca6d48b9c00b23",
+        "0x123d14cf3aaf4f2e84e29fc9c369cbc94ada9fa4e6e6790e4133537b2760d863",
+        "0xd30e14b0244845f028dfc2a4c5ccb5e82ce596d82e1527054afc17d55a9c00f8",
+        "0x82d90e6cec8720d09244ff1ba87fcedb9ba6c637d632fb8cfe047164ff295990",
+        "0xbaf687ebd94569180a99c51e4ccc148c4ff1e52266aa0a356a0838ded3d3caa3",
+        "0x00c816a60bc31496adc1972d8eb40ef9727a0601c6da604baca6d9264da8a041",
+        "0x19ed7d040c22eb25863f51f8bfd0e7d7ad0669ac16b1823f742716197d4bf4cc",
+        "0x915e3a0cb54364fb3d8e2a2e31bac30d39340c334448c5fa7c69595079d8ca02",
+        "0x8c8da2404a0a4e354780f6bc8038374511a40297cf6fa84cf98973c808a0dede",
+        "0x492d18d9d33314f597d73fe9b4ce803f661f166e6e54aa5f84805f8dad15b2c4",
+        "0x77f6045252c00335f154f22ed7cc4320cc9036053e301ca9b540e32c5f211a28",
+        "0x4da9b67aafcdb6ed7da4dd69b3fc965f5138a8e7217162873355a9a60af9eb7e",
+        "0xfe9a26473cc96211f774d4557c8868c0b33f89d33a3594a5a10319393007f70c"
+      ]
+    }
+  ],
+  "found": {
+    "txHash": "0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d",
+    "from": "0x103040545ac5031a11e8c03dd11324c7333a13c7",
+    "blockNumber": 51731734,
+    "window": {
+      "from": 51731596,
+      "to": 51731996
+    }
+  },
+  "calls": [
+    {
+      "method": "eth_blockNumber",
+      "params": [],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:04:28.417Z",
+      "http": 200,
+      "sha256": "5cd8b1d51d04e38fce853a0bce483c153fe82429ba4facfdb56dd996ed56e329",
+      "bytes": 46,
+      "saved_as": "eth_blockNumber.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5"
+          ],
+          "fromBlock": "0x3155fac",
+          "toBlock": "0x315613c"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:04:29.367Z",
+      "http": 200,
+      "sha256": "0f7ad4e1470187afb1a4c8dc93a770578125b5fa7e5902af3cd2e5fce0ba5691",
+      "bytes": 494570,
+      "saved_as": "eth_getLogs-authorizationUsed-51732396-51732796.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            null,
+            "0x000000000000000000000000159be9e316bc5fac8ce05aec4eaae46e8f8a4908"
+          ],
+          "fromBlock": "0x3155fac",
+          "toBlock": "0x315613c"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:04:29.841Z",
+      "http": 200,
+      "sha256": "d5d4570915ae356dcee912806f2822465692ce1aa3533894cc2fc1e8385455f6",
+      "bytes": 37,
+      "saved_as": "eth_getLogs-transfer-51732396-51732796.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5"
+          ],
+          "fromBlock": "0x3155e1c",
+          "toBlock": "0x3155fac"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:04:30.876Z",
+      "http": 200,
+      "sha256": "0f9d60fb36c8448f44b58fd64c4d574502b1740da518cdad59fff79634d5a759",
+      "bytes": 723749,
+      "saved_as": "eth_getLogs-authorizationUsed-51731996-51732396.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            null,
+            "0x000000000000000000000000159be9e316bc5fac8ce05aec4eaae46e8f8a4908"
+          ],
+          "fromBlock": "0x3155e1c",
+          "toBlock": "0x3155fac"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:04:31.274Z",
+      "http": 200,
+      "sha256": "d5d4570915ae356dcee912806f2822465692ce1aa3533894cc2fc1e8385455f6",
+      "bytes": 37,
+      "saved_as": "eth_getLogs-transfer-51731996-51732396.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5"
+          ],
+          "fromBlock": "0x3155c8c",
+          "toBlock": "0x3155e1c"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:04:32.201Z",
+      "http": 200,
+      "sha256": "cfcb5e235ab219180f9c6d8414f81882326d26cfc125518e94b1e686fb86560b",
+      "bytes": 469990,
+      "saved_as": "eth_getLogs-authorizationUsed-51731596-51731996.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            null,
+            "0x000000000000000000000000159be9e316bc5fac8ce05aec4eaae46e8f8a4908"
+          ],
+          "fromBlock": "0x3155c8c",
+          "toBlock": "0x3155e1c"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:04:32.606Z",
+      "http": 200,
+      "sha256": "50f09b692a08971f0b94bfd0d910cbd139cd072c363c8638ac8463918d94602b",
+      "bytes": 41992,
+      "saved_as": "eth_getLogs-transfer-51731596-51731996.json"
+    },
+    {
+      "method": "eth_getTransactionByHash",
+      "params": [
+        "0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d"
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:04:33.015Z",
+      "http": 200,
+      "sha256": "f56c128a81a5596c9b0c0238ef9f825ba2ea9672970fe1c9ebf22bad2dd04e3f",
+      "bytes": 1449,
+      "saved_as": "eth_getTransactionByHash-0xccd5497a6d1aa6b5623db0ae1d9797ff6fda70e8fd78d5ad6625a23fb565968d.json"
+    }
+  ]
+}
