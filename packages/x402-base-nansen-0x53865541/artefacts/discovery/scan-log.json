@@ -1,0 +1,274 @@
+{
+  "rpc": "https://mainnet.base.org",
+  "payee": "0x93053f1e7A5eFEDa532Fe69CbbE43cBEc3A0F13f",
+  "payee_topic": "0x00000000000000000000000093053f1e7a5efeda532fe69cbbe43cbec3a0f13f",
+  "payee_source": {
+    "kind": "catalogue object (Coinbase Bazaar discovery)",
+    "host": "api.nansen.ai",
+    "url": "https://api.cdp.coinbase.com/platform/v2/x402/discovery/resources?limit=1000&offset=0",
+    "tgz": "C:/Users/User/cc-output/pins/b178-sellers-by-volume-pins_2026-09-10.tgz",
+    "tgz_sha256": "7b553402b5cc4d6b39a9959d50419240fbd920208bc1fc77c805188a8c53b0cd",
+    "path_in_tgz": "raw/cdp_discovery_resources_p_off0__20260910T155951Z.bin",
+    "path_in_tgz_sha256": "0d06754b9a41d7a0d3ca9e012f563af8acdf418592b78ebbbe6de08a01248ae9",
+    "fetched_at": "2026-09-10T15:59:51Z",
+    "item_index": 146,
+    "byte_offset": 518303,
+    "bytes": 4674,
+    "sha256": "14812ed3a4d3e788ecfac9c41e9772847d69bf3de6ec8242123f8f500a1e06f4",
+    "resource": "https://api.nansen.ai/api/v1/profiler/address/current-balance",
+    "copied_to": "catalogue-object.json",
+    "ruling": "Lead ruling of 2026-09-24: B3 built from the Coinbase catalogue Base payTo; rev 4 and rev 5 \"the tgz\" read as any catalogue in the tgz",
+    "not_used": {
+      "kind": "catalogue object (PayAI discovery), Solana payTo, not used by this scan",
+      "url": "https://facilitator.payai.network/discovery/resources?limit=1000&offset=0",
+      "tgz": "C:/Users/User/cc-output/pins/b178-sellers-by-volume-pins_2026-09-10.tgz",
+      "tgz_sha256": "7b553402b5cc4d6b39a9959d50419240fbd920208bc1fc77c805188a8c53b0cd",
+      "path_in_tgz": "raw/payai_discovery_resources_off0__20260910T154656Z.bin",
+      "path_in_tgz_sha256": "0406b5934a94656086583044047b88a47d6582a9b9d9f194e6b173af2e5ff551",
+      "fetched_at": "2026-09-10T15:46:56Z",
+      "item_index": 422,
+      "byte_offset": 707064,
+      "bytes": 1028,
+      "sha256": "833f1fcb4e5d6fa64d26ae048ac0344eb960477750f0a3cf56888a611b4c3569",
+      "resource": "https://api.nansen.ai/api/v1/smart-money/dex-trades",
+      "payTo": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp J7ZvJEspvwP1oRxQZ7mYmNmT22NTm3GWq3t7HEbvPZYx",
+      "copied_to": "payai-catalogue-object-solana.json"
+    }
+  },
+  "tip": 51733351,
+  "ceiling": 51733287,
+  "span": 400,
+  "windows": [
+    {
+      "from": 51732887,
+      "to": 51733287,
+      "authorization_used_logs": 759,
+      "transfer_to_payee_logs": 0,
+      "matches": []
+    },
+    {
+      "from": 51732487,
+      "to": 51732887,
+      "authorization_used_logs": 745,
+      "transfer_to_payee_logs": 0,
+      "matches": []
+    },
+    {
+      "from": 51732087,
+      "to": 51732487,
+      "authorization_used_logs": 1419,
+      "transfer_to_payee_logs": 0,
+      "matches": []
+    },
+    {
+      "from": 51731687,
+      "to": 51732087,
+      "authorization_used_logs": 812,
+      "transfer_to_payee_logs": 9,
+      "matches": [
+        "0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0",
+        "0x59cda7e0da68db0b2db3701ebc215c04a0497ee1f53b53d9ef65bfd079650d74",
+        "0xec1d02cfeaf6d0d65db2c604954a7205cb71d3248816108b2484d605f6b7d44b",
+        "0x5b90fd0f2bb435416787b6032a24d285c379a8ffd19e088b009b8c4e38a66b64",
+        "0x6f7984efa1435575b0d5b390c96d0e11861e83a64309abc6ccbf4a957aaf219d",
+        "0xfa449eca4a809adcf7d84ef04d11fc717db2db861516b0c9399b06ae67101703",
+        "0x040121754706b155695028ba43756057ffdf44eb5243f0ea25411b04ed3502d6",
+        "0x797aa4d66f844f360ea4ff44e155e582fea8dd2794e97a5050c8727d8006adf5",
+        "0x1745aa405e3f900e373875399d309fbb0812382059571d45d44c135dcae2905c"
+      ]
+    }
+  ],
+  "found": {
+    "txHash": "0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0",
+    "from": "0x8f5cb67b49555e614892b7233cfddebfb746e531",
+    "blockNumber": 51732006,
+    "window": {
+      "from": 51731687,
+      "to": 51732087
+    }
+  },
+  "calls": [
+    {
+      "method": "eth_blockNumber",
+      "params": [],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:50.823Z",
+      "http": 200,
+      "sha256": "4655e0b5fd678d88a8e67002b41d36809a6963819cbcaca9cac6e4da0f1d5e83",
+      "bytes": 46,
+      "saved_as": "eth_blockNumber.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5"
+          ],
+          "fromBlock": "0x3156197",
+          "toBlock": "0x3156327"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:51.892Z",
+      "http": 200,
+      "sha256": "81e93d6d73aa2ff446f3999d022d26fe1190326f4dd1b4f2da035dbabe90100c",
+      "bytes": 433976,
+      "saved_as": "eth_getLogs-authorizationUsed-51732887-51733287.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            null,
+            "0x00000000000000000000000093053f1e7a5efeda532fe69cbbe43cbec3a0f13f"
+          ],
+          "fromBlock": "0x3156197",
+          "toBlock": "0x3156327"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:52.258Z",
+      "http": 200,
+      "sha256": "d5d4570915ae356dcee912806f2822465692ce1aa3533894cc2fc1e8385455f6",
+      "bytes": 37,
+      "saved_as": "eth_getLogs-transfer-51732887-51733287.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5"
+          ],
+          "fromBlock": "0x3156007",
+          "toBlock": "0x3156197"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:52.796Z",
+      "http": 200,
+      "sha256": "a5d86b08361d53f40558b1080ed5f264ed5f6b487080e0dd7a2d5c906064c603",
+      "bytes": 425993,
+      "saved_as": "eth_getLogs-authorizationUsed-51732487-51732887.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            null,
+            "0x00000000000000000000000093053f1e7a5efeda532fe69cbbe43cbec3a0f13f"
+          ],
+          "fromBlock": "0x3156007",
+          "toBlock": "0x3156197"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:53.207Z",
+      "http": 200,
+      "sha256": "d5d4570915ae356dcee912806f2822465692ce1aa3533894cc2fc1e8385455f6",
+      "bytes": 37,
+      "saved_as": "eth_getLogs-transfer-51732487-51732887.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5"
+          ],
+          "fromBlock": "0x3155e77",
+          "toBlock": "0x3156007"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:54.070Z",
+      "http": 200,
+      "sha256": "9b720d6106bda7dc5c0ce8f57d812b45f18b44fcf48b815c50d565ea78e3218d",
+      "bytes": 811230,
+      "saved_as": "eth_getLogs-authorizationUsed-51732087-51732487.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            null,
+            "0x00000000000000000000000093053f1e7a5efeda532fe69cbbe43cbec3a0f13f"
+          ],
+          "fromBlock": "0x3155e77",
+          "toBlock": "0x3156007"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:55.259Z",
+      "http": 200,
+      "sha256": "d5d4570915ae356dcee912806f2822465692ce1aa3533894cc2fc1e8385455f6",
+      "bytes": 37,
+      "saved_as": "eth_getLogs-transfer-51732087-51732487.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5"
+          ],
+          "fromBlock": "0x3155ce7",
+          "toBlock": "0x3155e77"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:56.942Z",
+      "http": 200,
+      "sha256": "53b117680f0b7d72f019e5a8951f1cb2a35a561eadeaee9fa28205de79eafba6",
+      "bytes": 464259,
+      "saved_as": "eth_getLogs-authorizationUsed-51731687-51732087.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            null,
+            "0x00000000000000000000000093053f1e7a5efeda532fe69cbbe43cbec3a0f13f"
+          ],
+          "fromBlock": "0x3155ce7",
+          "toBlock": "0x3155e77"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:57.413Z",
+      "http": 200,
+      "sha256": "72147743cd777457f283b490bc519f08f4d5246c1fb0f176e4d43687a61792fb",
+      "bytes": 5757,
+      "saved_as": "eth_getLogs-transfer-51731687-51732087.json"
+    },
+    {
+      "method": "eth_getTransactionByHash",
+      "params": [
+        "0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0"
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:20:57.789Z",
+      "http": 200,
+      "sha256": "a830e23b86757d9335a8b9ca2ea2c0d37e45b2151835a3718eee70c4b995fdc3",
+      "bytes": 1387,
+      "saved_as": "eth_getTransactionByHash-0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0.json"
+    }
+  ]
+}

@@ -789,7 +789,7 @@ people consume these findings, there is no reader who will notice the date.
 
 A verdict is a line of output. A package is a directory someone else can be
 handed, and can check without trusting the sender and without a key of their
-own. `packages/` holds five:
+own. `packages/` holds six:
 
 | package | what it is | verdict |
 |---|---|---|
@@ -798,6 +798,7 @@ own. `packages/` holds five:
 | `x402-base-payai-0x9ecf68be/` | somebody else's settlement, chain side only, found from public bytes | `UNVERIFIABLE` / `artefacts_absent` |
 | `x402-base-botpay-0xccd5497a/` | a settlement paid to the address `api.botpay.network` publishes, chain side only, found from public bytes | `UNVERIFIABLE` / `artefacts_absent` |
 | `x402-base-chainlink-0x8fa8f7a0/` | a settlement paid to the address Coinbase's x402 catalogue lists for an `agents.chain.link` resource, chain side only, found from public bytes | `UNVERIFIABLE` / `artefacts_absent` |
+| `x402-base-nansen-0x53865541/` | a settlement paid to the Base address Coinbase's x402 catalogue lists for an `api.nansen.ai` resource, chain side only, found from public bytes | `UNVERIFIABLE` / `artefacts_absent` |
 
 Each carries `artefacts/` (byte for byte, with the source path of every file
 recorded in `manifest.json` beside its sha256 and byte count), `envelope.json`,

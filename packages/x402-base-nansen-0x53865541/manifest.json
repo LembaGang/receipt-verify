@@ -1,0 +1,111 @@
+{
+  "schema": "receipt-verify/x402-package/0",
+  "id": "x402-base-nansen-0x53865541",
+  "title": "Observation: one settlement paid to api.nansen.ai's published address on Base, chain side only",
+  "transaction": "0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0",
+  "network": "eip155:8453",
+  "built_at": "2026-09-24T13:22:33.875Z",
+  "built_by": "tools/make-x402-package.ts",
+  "verifier": "@headlessoracle/receipt-verify, format x402.settlement/2",
+  "how_to_check": "sh tools/verify-package.sh <this directory> checks every digest below, that no file in the package is missing from SHA256SUMS, and that SHA256SUMS.sig verifies against the repository's SIGNING_KEYS. npm run walk recomputes every sha256 in this manifest from the file beside it. Neither says the contents are true; statement.md says what they do and do not show.",
+  "files": [
+    {
+      "path": "artefacts/cdp-discovery-object_api-nansen-ai_2026-09-10T155951Z.json",
+      "bytes": 4674,
+      "sha256": "14812ed3a4d3e788ecfac9c41e9772847d69bf3de6ec8242123f8f500a1e06f4",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/catalogue-object.json",
+      "role": "the catalogue object carrying the payTo this settlement was selected by: item 146 of Coinbase's x402 discovery page at offset 0 as fetched 2026-09-10T15:59:51Z (sha256 0d06754b...), cut byte for byte at offset 518303. The catalogue's word as of that fetch"
+    },
+    {
+      "path": "artefacts/payai-discovery-object_api-nansen-ai_2026-09-10T154656Z.json",
+      "bytes": 1028,
+      "sha256": "833f1fcb4e5d6fa64d26ae048ac0344eb960477750f0a3cf56888a611b4c3569",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/payai-catalogue-object-solana.json",
+      "role": "NOT the payee source: item 422 of PayAI's x402 discovery page at offset 0 as fetched 2026-09-10T15:46:56Z (sha256 0406b593...), cut byte for byte at offset 707064, carrying the Solana payTo PayAI's catalogue lists for the same host, which this package does not use"
+    },
+    {
+      "path": "artefacts/payai-supported_20260918T101256Z.json",
+      "bytes": 4047,
+      "sha256": "fa7839ec4dfd253e8c7287ea1c9c76a47ad3a20f08e28cc536d22285580cd9c2",
+      "source": "C:/Users/User/cc-output/pins/census-2026-09-12/payai-supported_20260918T101256Z.json",
+      "role": "PayAI's published /supported as fetched 2026-09-18T10:12:56Z: the fifteen eip155:* signer addresses the envelope's known_submitters carries. UNSIGNED, and the supplier's word as of that fetch"
+    },
+    {
+      "path": "artefacts/discovery/scan.mjs",
+      "bytes": 6200,
+      "sha256": "c682f39afd7add41830f26fe804aa2baf955f5755a12d828112667c6abe25f8c",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/scan.mjs",
+      "role": "the scanner exactly as run: per window, eth_getLogs for AuthorizationUsed and for Transfer to the payee on USDC, intersected by transaction hash"
+    },
+    {
+      "path": "artefacts/discovery/scan-log.json",
+      "bytes": 9999,
+      "sha256": "de93ff853d5b675ee9973a207350bc3a133208dc10b260801f77776f70a6f28e",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/scan-log.json",
+      "role": "every window scanned and every JSON-RPC call the scan made, with endpoint, time, HTTP status and the sha256 of each response body"
+    },
+    {
+      "path": "artefacts/discovery/eth_blockNumber.json",
+      "bytes": 46,
+      "sha256": "4655e0b5fd678d88a8e67002b41d36809a6963819cbcaca9cac6e4da0f1d5e83",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/eth_blockNumber.json",
+      "role": "the tip read the window was placed behind, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getLogs-authorizationUsed-51731687-51732087.json",
+      "bytes": 464259,
+      "sha256": "53b117680f0b7d72f019e5a8951f1cb2a35a561eadeaee9fa28205de79eafba6",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/eth_getLogs-authorizationUsed-51731687-51732087.json",
+      "role": "the matching window's AuthorizationUsed response, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getLogs-transfer-51731687-51732087.json",
+      "bytes": 5757,
+      "sha256": "72147743cd777457f283b490bc519f08f4d5246c1fb0f176e4d43687a61792fb",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/eth_getLogs-transfer-51731687-51732087.json",
+      "role": "the matching window's Transfer-to-payee response, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getTransactionByHash-0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0.json",
+      "bytes": 1387,
+      "sha256": "a830e23b86757d9335a8b9ca2ea2c0d37e45b2151835a3718eee70c4b995fdc3",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/eth_getTransactionByHash-0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0.json",
+      "role": "the selected transaction as the scan read it, whole"
+    },
+    {
+      "path": "artefacts/discovery/SHA256SUMS.txt",
+      "bytes": 1510,
+      "sha256": "ef28a6de163b0f396e96c2099ae54287aa11cdb4525eaf49b046d222b37249c4",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/nansen/SHA256SUMS.txt",
+      "role": "the pin directory's own digest list, written last, copied so this package carries the same statement the pins do"
+    },
+    {
+      "path": "envelope.json",
+      "bytes": 23356,
+      "sha256": "20b272476dbe9b9c009f0d790bebf853fd6c36c1027f5f89cc46dff2af6e5f8d",
+      "source": "generated in packages/x402-base-nansen-0x53865541",
+      "role": "the x402.settlement/2 envelope the verdict was taken over: the three artefacts above plus the chain reading below, in one document"
+    },
+    {
+      "path": "verdict.json",
+      "bytes": 3075,
+      "sha256": "38da03a321615936206de63ae274275565d8ab8445bb51f422c29d984b947cf0",
+      "source": "generated in packages/x402-base-nansen-0x53865541",
+      "role": "the verifier's full output, coverage block included, as `receipt-verify --format x402 --json` prints it"
+    },
+    {
+      "path": "chain.json",
+      "bytes": 59717,
+      "sha256": "680b52a47d5ff7ae884ffedc0df500ff231f418ab1ab5ac2b8e15a24420fc332",
+      "source": "generated in packages/x402-base-nansen-0x53865541",
+      "role": "both endpoints' raw answers with URLs, read times and per-response digests, and whether they agree"
+    },
+    {
+      "path": "statement.md",
+      "bytes": 7760,
+      "sha256": "ebadf344ba79439875b4f44ab4f2851497c42883c9f1d3dc33f86cac0e7d1222",
+      "source": "generated in packages/x402-base-nansen-0x53865541",
+      "role": "what this package establishes, what it does not, and the standing Interests paragraph"
+    }
+  ]
+}

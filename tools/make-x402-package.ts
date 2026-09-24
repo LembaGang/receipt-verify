@@ -168,6 +168,32 @@ push({
   ],
 });
 
+// B3's payee is the Base payTo in Coinbase's catalogue; PayAI's catalogue lists
+// only a Solana address for the same host. The Lead ruled on 24 Sep that "the
+// tgz" means any catalogue in it. The PayAI object is carried too, so the
+// statement's sentence about it can be checked against bytes.
+push({
+  id: "x402-base-nansen-0x53865541",
+  dir: "packages/x402-base-nansen-0x53865541",
+  title: "Observation: one settlement paid to api.nansen.ai's published address on Base, chain side only",
+  transaction: "0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0",
+  envelope: "fixtures/x402/observations/nansen-2026-09-24-0x53865541.envelope.json",
+  chain: "packages/x402-base-nansen-0x53865541/chain.json",
+  statement: "packages/x402-base-nansen-0x53865541/statement.md",
+  artefacts: [
+    { name: "cdp-discovery-object_api-nansen-ai_2026-09-10T155951Z.json", from: `${PINS}/sellers-2026-09-21/nansen/catalogue-object.json`, role: "the catalogue object carrying the payTo this settlement was selected by: item 146 of Coinbase's x402 discovery page at offset 0 as fetched 2026-09-10T15:59:51Z (sha256 0d06754b...), cut byte for byte at offset 518303. The catalogue's word as of that fetch" },
+    { name: "payai-discovery-object_api-nansen-ai_2026-09-10T154656Z.json", from: `${PINS}/sellers-2026-09-21/nansen/payai-catalogue-object-solana.json`, role: "NOT the payee source: item 422 of PayAI's x402 discovery page at offset 0 as fetched 2026-09-10T15:46:56Z (sha256 0406b593...), cut byte for byte at offset 707064, carrying the Solana payTo PayAI's catalogue lists for the same host, which this package does not use" },
+    { name: "payai-supported_20260918T101256Z.json", from: `${PINS}/census-2026-09-12/payai-supported_20260918T101256Z.json`, role: "PayAI's published /supported as fetched 2026-09-18T10:12:56Z: the fifteen eip155:* signer addresses the envelope's known_submitters carries. UNSIGNED, and the supplier's word as of that fetch" },
+    { name: "discovery/scan.mjs", from: `${PINS}/sellers-2026-09-21/nansen/scan.mjs`, role: "the scanner exactly as run: per window, eth_getLogs for AuthorizationUsed and for Transfer to the payee on USDC, intersected by transaction hash" },
+    { name: "discovery/scan-log.json", from: `${PINS}/sellers-2026-09-21/nansen/scan-log.json`, role: "every window scanned and every JSON-RPC call the scan made, with endpoint, time, HTTP status and the sha256 of each response body" },
+    { name: "discovery/eth_blockNumber.json", from: `${PINS}/sellers-2026-09-21/nansen/eth_blockNumber.json`, role: "the tip read the window was placed behind, whole" },
+    { name: "discovery/eth_getLogs-authorizationUsed-51731687-51732087.json", from: `${PINS}/sellers-2026-09-21/nansen/eth_getLogs-authorizationUsed-51731687-51732087.json`, role: "the matching window's AuthorizationUsed response, whole" },
+    { name: "discovery/eth_getLogs-transfer-51731687-51732087.json", from: `${PINS}/sellers-2026-09-21/nansen/eth_getLogs-transfer-51731687-51732087.json`, role: "the matching window's Transfer-to-payee response, whole" },
+    { name: "discovery/eth_getTransactionByHash-0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0.json", from: `${PINS}/sellers-2026-09-21/nansen/eth_getTransactionByHash-0x53865541edfd87cdf1d83e6181f70ffe8e3e970c99ab6b0848d2496c2c731df0.json`, role: "the selected transaction as the scan read it, whole" },
+    { name: "discovery/SHA256SUMS.txt", from: `${PINS}/sellers-2026-09-21/nansen/SHA256SUMS.txt`, role: "the pin directory's own digest list, written last, copied so this package carries the same statement the pins do" },
+  ],
+});
+
 interface ManifestFile {
   path: string;
   bytes: number;
