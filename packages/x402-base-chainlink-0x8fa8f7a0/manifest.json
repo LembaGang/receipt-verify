@@ -1,0 +1,104 @@
+{
+  "schema": "receipt-verify/x402-package/0",
+  "id": "x402-base-chainlink-0x8fa8f7a0",
+  "title": "Observation: one settlement paid to agents.chain.link's published address on Base, chain side only",
+  "transaction": "0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54",
+  "network": "eip155:8453",
+  "built_at": "2026-09-24T13:14:12.244Z",
+  "built_by": "tools/make-x402-package.ts",
+  "verifier": "@headlessoracle/receipt-verify, format x402.settlement/2",
+  "how_to_check": "sh tools/verify-package.sh <this directory> checks every digest below, that no file in the package is missing from SHA256SUMS, and that SHA256SUMS.sig verifies against the repository's SIGNING_KEYS. npm run walk recomputes every sha256 in this manifest from the file beside it. Neither says the contents are true; statement.md says what they do and do not show.",
+  "files": [
+    {
+      "path": "artefacts/cdp-discovery-object_agents-chain-link_2026-09-10T155955Z.json",
+      "bytes": 2013,
+      "sha256": "0147434c56daea28304f29b66aa532f30457e6bec28928543de000c90831b3fd",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/chainlink/catalogue-object.json",
+      "role": "the catalogue object carrying the payTo this settlement was selected by: item 201 of Coinbase's x402 discovery page at offset 1000 as fetched 2026-09-10T15:59:55Z (sha256 595a858c...), cut byte for byte at offset 679837. The catalogue's word as of that fetch"
+    },
+    {
+      "path": "artefacts/payai-supported_20260918T101256Z.json",
+      "bytes": 4047,
+      "sha256": "fa7839ec4dfd253e8c7287ea1c9c76a47ad3a20f08e28cc536d22285580cd9c2",
+      "source": "C:/Users/User/cc-output/pins/census-2026-09-12/payai-supported_20260918T101256Z.json",
+      "role": "PayAI's published /supported as fetched 2026-09-18T10:12:56Z: the fifteen eip155:* signer addresses the envelope's known_submitters carries. UNSIGNED, and the supplier's word as of that fetch"
+    },
+    {
+      "path": "artefacts/discovery/scan.mjs",
+      "bytes": 5090,
+      "sha256": "c9860fb98ce2e5675aaa4665e55908e268b75bc311f7970941d2992a4ac84616",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/chainlink/scan.mjs",
+      "role": "the scanner exactly as run: per window, eth_getLogs for AuthorizationUsed and for Transfer to the payee on USDC, intersected by transaction hash"
+    },
+    {
+      "path": "artefacts/discovery/scan-log.json",
+      "bytes": 4868,
+      "sha256": "3ead692e9b40503414c528f72e3ccad2c3c09a279179ed3d734112e37b4fa2bf",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/chainlink/scan-log.json",
+      "role": "every window scanned and every JSON-RPC call the scan made, with endpoint, time, HTTP status and the sha256 of each response body"
+    },
+    {
+      "path": "artefacts/discovery/eth_blockNumber.json",
+      "bytes": 46,
+      "sha256": "5c52f074fbe15a5a4b30130f2a185c5e256b0d97d7f05704df93f604f65d2ce8",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/chainlink/eth_blockNumber.json",
+      "role": "the tip read the window was placed behind, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getLogs-authorizationUsed-51732636-51733036.json",
+      "bytes": 472317,
+      "sha256": "f496fe26ee8daaefa4585e6d3adb6ac15e77555eb3005ece63e515e690216f47",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/chainlink/eth_getLogs-authorizationUsed-51732636-51733036.json",
+      "role": "the matching window's AuthorizationUsed response, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getLogs-transfer-51732636-51733036.json",
+      "bytes": 9571,
+      "sha256": "64fb7945ad0ea8f2dce8d906632f7c598102cf5609a04043373e88e339b73f59",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/chainlink/eth_getLogs-transfer-51732636-51733036.json",
+      "role": "the matching window's Transfer-to-payee response, whole"
+    },
+    {
+      "path": "artefacts/discovery/eth_getTransactionByHash-0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54.json",
+      "bytes": 1386,
+      "sha256": "ef346db75a84afe3f66f1c48077f44dd8fe95938db043570e064660b8f6ea9a2",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/chainlink/eth_getTransactionByHash-0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54.json",
+      "role": "the selected transaction as the scan read it, whole"
+    },
+    {
+      "path": "artefacts/discovery/SHA256SUMS.txt",
+      "bytes": 722,
+      "sha256": "0017c652e8d00f81070a43dc3b6d2697a7c54d0ffc443219faa56adfafe00d47",
+      "source": "C:/Users/User/cc-output/pins/sellers-2026-09-21/chainlink/SHA256SUMS.txt",
+      "role": "the pin directory's own digest list, written last, copied so this package carries the same statement the pins do"
+    },
+    {
+      "path": "envelope.json",
+      "bytes": 31314,
+      "sha256": "38f9bbb6b35f005e12d18c17e56598d049d4d1184acddb1dbc28dc16ca2decaa",
+      "source": "generated in packages/x402-base-chainlink-0x8fa8f7a0",
+      "role": "the x402.settlement/2 envelope the verdict was taken over: the three artefacts above plus the chain reading below, in one document"
+    },
+    {
+      "path": "verdict.json",
+      "bytes": 3075,
+      "sha256": "0c63656c84809e0b3db88b7135a2212ed951270a9e848d60dca702ac4db6e783",
+      "source": "generated in packages/x402-base-chainlink-0x8fa8f7a0",
+      "role": "the verifier's full output, coverage block included, as `receipt-verify --format x402 --json` prints it"
+    },
+    {
+      "path": "chain.json",
+      "bytes": 83999,
+      "sha256": "7c493efdc9fb4a658226cb71dbe5179b403e04c4bd276025b1e56a1da077a0ee",
+      "source": "generated in packages/x402-base-chainlink-0x8fa8f7a0",
+      "role": "both endpoints' raw answers with URLs, read times and per-response digests, and whether they agree"
+    },
+    {
+      "path": "statement.md",
+      "bytes": 6760,
+      "sha256": "f6c065b56459268c089ecba8e2703c652535fddfaa5ce53f20bd687567d74e07",
+      "source": "generated in packages/x402-base-chainlink-0x8fa8f7a0",
+      "role": "what this package establishes, what it does not, and the standing Interests paragraph"
+    }
+  ]
+}

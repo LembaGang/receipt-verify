@@ -1,0 +1,40 @@
+{
+  "schema": "receipt-verify/verdict/0",
+  "verdict": "UNVERIFIABLE",
+  "reason": "artefacts_absent",
+  "format": "x402.settlement/2",
+  "detail": "the chain half of this settlement is recorded and the off-chain half is not held: payment_required, payment_payload, payment_response absent. This is an observation of a transfer, not a verification of a purchase. three limits travel with every result of this format, whatever the verdict: see `coverage` for the reported_only rows resource_binding, facilitator_identity and rpc_trust, and the annotations limit_resource_binding, limit_facilitator_identity and limit_rpc_trust",
+  "resolved_key": null,
+  "annotations": {
+    "limit_resource_binding": "unsigned",
+    "limit_facilitator_identity": "unsigned_list",
+    "limit_rpc_trust": "verifier_choice",
+    "chain_source": "supplied in the envelope",
+    "authorization_signature": "not_evaluated — the envelope carries no payment_payload",
+    "authorization_matches_requirements": "not_evaluated — the envelope carries no payment_required",
+    "settle_names_authorization": "not_evaluated — the envelope carries no payment_response",
+    "chain_rpc": "https://mainnet.base.org",
+    "chain_read_at": "2026-09-24T13:12:46.222Z",
+    "chain_status": "ok (0x1)",
+    "chain_block_number": 51733029,
+    "transfer_topic0": "keccak(\"Transfer(address,address,uint256)\")",
+    "authorization_used_topic0": "keccak(\"AuthorizationUsed(address,bytes32)\")",
+    "token_contract": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913 (no accepted requirement in the envelope; taken from the contract that emitted AuthorizationUsed, which is EIP-3009's own event)",
+    "transaction_to": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "transfer_logs": 1,
+    "transfer": "0xcfa370b01125f985ca1be78bfda9fd790b3da8dc -> 0x158e90dd58fbe897ed8c244f472febee37283d00, 10000 atomic units of 0x833589fcd6edb6e08f4c7c32d4f71b54bda02913 (log index 899)",
+    "authorization_used": "authorizer 0xcfa370b01125f985ca1be78bfda9fd790b3da8dc, nonce 0x4d2e715a021a57a925f5b84a6846def287e070e3681bf3e7db6213725e26c63d (log index 898)",
+    "chain_compared_to_authorization": "no — the envelope carries no payment_payload, so the transfer and the authorization-used event are recorded and not compared",
+    "block_at_height": "the block at 51733029 has the receipt's blockHash 0x83ad8877c5761fce413a0627cce6944c928822dfe6becc3f7bec8d8030cfa255",
+    "settlement_instant": "1790255405 (2026-09-24T13:10:05.000Z), the timestamp of the block the receipt is in",
+    "submitter": "0xb87e1a2cc2b4643f2892768e80e41167f17c5860",
+    "submitter_list": "submitter_not_in_supplied_list",
+    "submitter_list_source": "https://facilitator.payai.network/supported sha256 fa7839ec4dfd253e8c7287ea1c9c76a47ad3a20f08e28cc536d22285580cd9c2 fetched 2026-09-18T10:12:56Z; 15 addresses. This list is unsigned and is the supplier's word as of that fetch: a match is not an identification"
+  },
+  "coverage": {
+    "stopped_at": null,
+    "checks_not_evaluated": []
+  },
+  "delivery_gate": null,
+  "exit_code": 1
+}

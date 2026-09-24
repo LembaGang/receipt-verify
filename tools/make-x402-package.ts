@@ -147,6 +147,27 @@ push({
   ],
 });
 
+push({
+  id: "x402-base-chainlink-0x8fa8f7a0",
+  dir: "packages/x402-base-chainlink-0x8fa8f7a0",
+  title: "Observation: one settlement paid to agents.chain.link's published address on Base, chain side only",
+  transaction: "0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54",
+  envelope: "fixtures/x402/observations/chainlink-2026-09-24-0x8fa8f7a0.envelope.json",
+  chain: "packages/x402-base-chainlink-0x8fa8f7a0/chain.json",
+  statement: "packages/x402-base-chainlink-0x8fa8f7a0/statement.md",
+  artefacts: [
+    { name: "cdp-discovery-object_agents-chain-link_2026-09-10T155955Z.json", from: `${PINS}/sellers-2026-09-21/chainlink/catalogue-object.json`, role: "the catalogue object carrying the payTo this settlement was selected by: item 201 of Coinbase's x402 discovery page at offset 1000 as fetched 2026-09-10T15:59:55Z (sha256 595a858c...), cut byte for byte at offset 679837. The catalogue's word as of that fetch" },
+    { name: "payai-supported_20260918T101256Z.json", from: `${PINS}/census-2026-09-12/payai-supported_20260918T101256Z.json`, role: "PayAI's published /supported as fetched 2026-09-18T10:12:56Z: the fifteen eip155:* signer addresses the envelope's known_submitters carries. UNSIGNED, and the supplier's word as of that fetch" },
+    { name: "discovery/scan.mjs", from: `${PINS}/sellers-2026-09-21/chainlink/scan.mjs`, role: "the scanner exactly as run: per window, eth_getLogs for AuthorizationUsed and for Transfer to the payee on USDC, intersected by transaction hash" },
+    { name: "discovery/scan-log.json", from: `${PINS}/sellers-2026-09-21/chainlink/scan-log.json`, role: "every window scanned and every JSON-RPC call the scan made, with endpoint, time, HTTP status and the sha256 of each response body" },
+    { name: "discovery/eth_blockNumber.json", from: `${PINS}/sellers-2026-09-21/chainlink/eth_blockNumber.json`, role: "the tip read the window was placed behind, whole" },
+    { name: "discovery/eth_getLogs-authorizationUsed-51732636-51733036.json", from: `${PINS}/sellers-2026-09-21/chainlink/eth_getLogs-authorizationUsed-51732636-51733036.json`, role: "the matching window's AuthorizationUsed response, whole" },
+    { name: "discovery/eth_getLogs-transfer-51732636-51733036.json", from: `${PINS}/sellers-2026-09-21/chainlink/eth_getLogs-transfer-51732636-51733036.json`, role: "the matching window's Transfer-to-payee response, whole" },
+    { name: "discovery/eth_getTransactionByHash-0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54.json", from: `${PINS}/sellers-2026-09-21/chainlink/eth_getTransactionByHash-0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54.json`, role: "the selected transaction as the scan read it, whole" },
+    { name: "discovery/SHA256SUMS.txt", from: `${PINS}/sellers-2026-09-21/chainlink/SHA256SUMS.txt`, role: "the pin directory's own digest list, written last, copied so this package carries the same statement the pins do" },
+  ],
+});
+
 interface ManifestFile {
   path: string;
   bytes: number;

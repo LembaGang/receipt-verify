@@ -1,0 +1,122 @@
+{
+  "rpc": "https://mainnet.base.org",
+  "payee": "0x158e90DD58FbE897ED8c244f472Febee37283d00",
+  "payee_topic": "0x000000000000000000000000158e90dd58fbe897ed8c244f472febee37283d00",
+  "payee_source": {
+    "kind": "catalogue object (Coinbase Bazaar discovery)",
+    "host": "agents.chain.link",
+    "url": "https://api.cdp.coinbase.com/platform/v2/x402/discovery/resources?limit=1000&offset=1000",
+    "tgz": "C:/Users/User/cc-output/pins/b178-sellers-by-volume-pins_2026-09-10.tgz",
+    "tgz_sha256": "7b553402b5cc4d6b39a9959d50419240fbd920208bc1fc77c805188a8c53b0cd",
+    "path_in_tgz": "raw/cdp_discovery_resources_p_off1000__20260910T155955Z.bin",
+    "path_in_tgz_sha256": "595a858cf588eee106ec36a52494596ac35c5fb383a30241af1374daa4342422",
+    "fetched_at": "2026-09-10T15:59:55Z",
+    "item_index": 201,
+    "byte_offset": 679837,
+    "bytes": 2013,
+    "sha256": "0147434c56daea28304f29b66aa532f30457e6bec28928543de000c90831b3fd",
+    "resource": "https://agents.chain.link/v1/operations/:workflowName",
+    "copied_to": "catalogue-object.json"
+  },
+  "tip": 51733100,
+  "ceiling": 51733036,
+  "span": 400,
+  "windows": [
+    {
+      "from": 51732636,
+      "to": 51733036,
+      "authorization_used_logs": 826,
+      "transfer_to_payee_logs": 15,
+      "matches": [
+        "0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54",
+        "0xc8462c2a8a549af72ac85472cd3ed07129b578f038a38705acac05993cd68f11",
+        "0xd5eb8047f7d049eb368b9fb9c38b9d5b033fd1e28dd70bb4a7ccac7319c30f08",
+        "0x60c5687fb553cd61ae895646402deece8c6d385cc24a63a639e7549d5bb00dd3",
+        "0x450750cb1340c6cd35b2f9cd0dbb9f10849e28cdb1bb7331c951f032b781a4bc",
+        "0xbc75d8f334b5fb74f93022cd7d2827984413b4f44d9c6e914f6ebaab9c23465c",
+        "0x222e5725308ac64c82498660feaeda7c75601ee256b250957c024d729b7a1b39",
+        "0xb4c54c3526ff0193e028143f9bc6c939ad2876655dabf67613090b4de67db800",
+        "0x9b01486ac7eaddae98b04d0453f4d25fdd1a310106d16e16ed1b6b352b2ce5cd",
+        "0x67ce249e5eebe45d6e37c7f45e033a08a995eedfe19e477e908154a49505d5ba",
+        "0x2acaa1c6001ae96390dd6e75b86cf2a77a006399b37958e227d67c2d5d3005ba",
+        "0xa5cd892d71527dfc99869ba506008b58d7d94cd79b6075421109da644c6a2819",
+        "0x87f555353615f716c03f65d2a6d4ff26534ff25c7c1d4787294f64e7e99004fb",
+        "0xac17c0298b4f466ff0a99a754bbf3b80d97eaac325e6d2cc84567c2d62702b65",
+        "0x2273e1ceb33a982e33f27cfacf7d0a3a9f4e50691f463a1cf9eca3ea1154437e"
+      ]
+    }
+  ],
+  "found": {
+    "txHash": "0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54",
+    "from": "0xb87e1a2cc2b4643f2892768e80e41167f17c5860",
+    "blockNumber": 51733029,
+    "window": {
+      "from": 51732636,
+      "to": 51733036
+    }
+  },
+  "calls": [
+    {
+      "method": "eth_blockNumber",
+      "params": [],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:12:29.609Z",
+      "http": 200,
+      "sha256": "5c52f074fbe15a5a4b30130f2a185c5e256b0d97d7f05704df93f604f65d2ce8",
+      "bytes": 46,
+      "saved_as": "eth_blockNumber.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0x98de503528ee59b575ef0c0a2576a82497bfc029a5685b209e9ec333479b10a5"
+          ],
+          "fromBlock": "0x315609c",
+          "toBlock": "0x315622c"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:12:31.652Z",
+      "http": 200,
+      "sha256": "f496fe26ee8daaefa4585e6d3adb6ac15e77555eb3005ece63e515e690216f47",
+      "bytes": 472317,
+      "saved_as": "eth_getLogs-authorizationUsed-51732636-51733036.json"
+    },
+    {
+      "method": "eth_getLogs",
+      "params": [
+        {
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            null,
+            "0x000000000000000000000000158e90dd58fbe897ed8c244f472febee37283d00"
+          ],
+          "fromBlock": "0x315609c",
+          "toBlock": "0x315622c"
+        }
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:12:32.070Z",
+      "http": 200,
+      "sha256": "64fb7945ad0ea8f2dce8d906632f7c598102cf5609a04043373e88e339b73f59",
+      "bytes": 9571,
+      "saved_as": "eth_getLogs-transfer-51732636-51733036.json"
+    },
+    {
+      "method": "eth_getTransactionByHash",
+      "params": [
+        "0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54"
+      ],
+      "rpc": "https://mainnet.base.org",
+      "at": "2026-09-24T13:12:32.450Z",
+      "http": 200,
+      "sha256": "ef346db75a84afe3f66f1c48077f44dd8fe95938db043570e064660b8f6ea9a2",
+      "bytes": 1386,
+      "saved_as": "eth_getTransactionByHash-0x8fa8f7a026a6bd352cac97ab4ba3ca5ee0556799efc4556b2b861e4aa6f18c54.json"
+    }
+  ]
+}
