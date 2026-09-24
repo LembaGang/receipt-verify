@@ -289,6 +289,26 @@ describe("rule 2 — the key is (format, format version, upstream digest, verifi
     const r = check(root);
     expect(r.ok, messages(r)).toBe(true);
   });
+
+  // A correction that fixes the assessment without re-running the verifier
+  // carries the SAME key as the record it supersedes. Both must build: the
+  // superseded record is exempt from uniqueness, and the shared key is the
+  // evidence that no re-run was claimed.
+  it("a superseded record and the record that corrected its assessment share a key and both build", () => {
+    const a = validRecord("2026-01-01-one", { status: "superseded", superseded_by: "2026-01-01-one-r2" });
+    const b = validRecord("2026-01-01-one-r2", { supersedes: "2026-01-01-one", supersession_reason: ["assessment_error"] });
+    const { root } = makeRegistry([a, b]);
+    const r = check(root);
+    expect(r.ok, messages(r)).toBe(true);
+  });
+
+  // The control for the exemption: two records that are BOTH published and
+  // share a key still refuse, so the exemption is for superseded records only.
+  it("negative control: two published records with the same key still refuse to build", () => {
+    const a = validRecord("2026-01-01-one");
+    const b = validRecord("2026-01-01-one-r2", { supersedes: "2026-01-01-one", supersession_reason: ["assessment_error"] });
+    expect(() => makeRegistry([a, b])).toThrow(/rule 2/);
+  });
 });
 
 describe("rule 3 — published records are immutable; a correction is a new record", () => {

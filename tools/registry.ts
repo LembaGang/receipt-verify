@@ -574,11 +574,17 @@ export function build(root: string, opts: { now?: string; knownBreaks?: KnownCha
 
     checkRecordRules(root, repo, r, raw);
 
-    // Rule 2
+    // Rule 2. The key names a verification run. Two PUBLISHED records with the
+    // same key refuse to build. A superseded record is exempt: when a correction
+    // fixes the assessment without re-running the verifier, the new record carries
+    // the same key as the one it supersedes, and that shared key is what shows a
+    // reader the correction describes the same run and not a new one.
     const k = keyOf(r);
-    const prior = seen.get(k);
-    if (prior) throw new RuleError(2, id, `${id} and ${prior} carry the same key (${k}); two records with the same key refuse to build`);
-    seen.set(k, id);
+    if (r.status === "published") {
+      const prior = seen.get(k);
+      if (prior) throw new RuleError(2, id, `${id} and ${prior} both carry the key (${k}) and both are published; at most one record per key is published`);
+      seen.set(k, id);
+    }
 
     const label = deriveStatusLabel({ independent_rerun: r.independent_rerun, assessor: r.assessor.name, subject_party: r.subject.named_party });
     const svg = badgeSvg(r, label);

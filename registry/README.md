@@ -5,7 +5,7 @@ This is a public record of executed verifications. Every record names what was v
 Rules.
 
 1. No record without an executed run, pinned inputs, an anchored result and a named consenting human. Records of the kind "observation" are built from public bytes about a party who has not consented; they carry no consent, name no one beyond what the bytes show, and are not entries.
-2. A record is keyed on the format, the format version, the digest of the upstream bytes, the verifier version and the time of verification. No vendor name is a key.
+2. A record is keyed on the format, the format version, the digest of the upstream bytes, the verifier version and the time of verification. No vendor name is a key. The key names a verification run, and at most one published record carries a given key. A record that supersedes another to correct its assessment without re-running the verifier carries the same key as the record it supersedes; the shared key is what shows a reader that the correction describes the same run and not a new one.
 3. Published records are immutable. A record is corrected by a new dated record that supersedes it; the superseded record stays visible with a forward pointer, and the new record says whether the artefact changed, the assessment was wrong, or both.
 4. Every record states what it established and what it did not, as of a named upstream digest and date.
 5. A record is labelled unverified until a party other than the assessor and the implementer has re-run it and is named. That label is computed by the build, not written by hand.
