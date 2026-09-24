@@ -1,6 +1,6 @@
 {
   "schema": "receipt-verify/registry-record/0",
-  "id": "2026-09-16-observation-x402-base-payai-0x9ecf68be",
+  "id": "2026-09-16-observation-x402-base-payai-0x9ecf68be-r2",
   "kind": "observation",
   "record_type": "observation",
   "key": {
@@ -87,12 +87,13 @@
     "Who anyone is. 0xb90c856a... paid and 0xdb5c2df4... was paid; who they are is not in these bytes and no inference about either is made or invited. The submitter is in a list PayAI published, but the list is unsigned, has no validity window, and can change between two reads, so the match is a match against a claim fetched at a time and NOT an identification. The verdict's submitter_list_source annotation says so in those words.",
     "That the resource would have been bound even with the missing artefacts in hand. PayAI's own published OpenAPI, pinned in the package at sha256 4865bc1c9c0903293807c69aca15d6bb33f6632a9115ed52694d89b887b1ab58, requires exactly four members of a SettleResponse (success, transaction, network, payer): there is no signature member in that schema and the resource is not among the four. This is not a defect in PayAI's implementation; it is the shape of x402 v2 exact on EVM, where the buyer's one signature covers {from, to, value, validAfter, validBefore, nonce} and a facilitator cannot bind what the protocol did not give it to bind.",
     "That this observation is a grading of anyone. It is not an entry, no party has consented to be named in it, and it is published as a courtesy to show what a third party can establish from the chain alone and where that stops.",
-    "That this record has been independently re-run. It has not; status_label is unverified."
+    "That this record has been independently re-run. It has not; status_label is unverified.",
+    "That this settlement was batched with any other. The record this one supersedes said it was, reasoning from the destination address alone, and the bytes in this package refute it: the aggregate3 array holds one call. Nothing here establishes how PayAI batches in general, only what this one transaction's calldata contains. The statement.md inside packages/x402-base-payai-0x9ecf68be/ carries the superseded wording at its lines 32 to 34; that package is covered by SHA256SUMS and SHA256SUMS.sig and is not edited, so this record is where the correction lives."
   ],
   "establishes": [
     "That on Base (eip155:8453) transaction 0x9ecf68be92ca279e6e8874f4ff7bb882da7da05fe8de362967be5ab4d4f6f835 succeeded in block 51382192, whose own timestamp is 1789553731 = 2026-09-16T10:15:31Z.",
     "That it carries one USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) Transfer of 100000 atomic units, 0.1 USDC, from 0xb90c856a2edc4b415140b7ee4e3df875180303a3 to 0xdb5c2df47e4a6df74edeb6de3159ae38b8cc10fd, and an EIP-3009 AuthorizationUsed from the same contract naming that same authorizer and nonce 0xf214f06bdbc8dc3e48f73b6596879e01957b9c20cf0513fab6dcf464a15e19e3, so the transfer is an authorization being consumed and that nonce can never be consumed again on that contract.",
-    "That the transaction was submitted by 0xb2bd29925cbbcea7628279c91945ca5b98bf371b, which is the second of the fifteen eip155:* signer addresses PayAI published at https://facilitator.payai.network/supported as that document stood when it was fetched at 2026-09-10T12:54Z, sha256 67bfe234984ed0237af2ae281d52907ef9abff7b9d1824fa8284fd225387c072, pinned in the package; and that its transaction went to Multicall3 rather than to the token, so this settlement was batched.",
+    "That the transaction was submitted by 0xb2bd29925cbbcea7628279c91945ca5b98bf371b, which is the second of the fifteen eip155:* signer addresses PayAI published at https://facilitator.payai.network/supported as that document stood when it was fetched at 2026-09-10T12:54Z, sha256 67bfe234984ed0237af2ae281d52907ef9abff7b9d1824fa8284fd225387c072, pinned in the package; and that the transaction went to Multicall3 (0xca11bde05977b3631167028862be2a173976ca11) rather than directly to the token, its input carrying the aggregate3(Call3[]) selector 0x82ad56cb with an array length word of 0x01, a single call whose target is the USDC contract, whose allowFailure is true and whose 356-byte inner calldata carries the transferWithAuthorization selector 0xcf092995, and whose receipt carries two logs.",
     "That the block is a block and not a preconfirmation: the block read at height 51382192 carries the block hash the receipt claims for itself, and two independently operated endpoints returned the same chain id, equal receipts and the same block hash.",
     "That the method by which the settlement was found is itself checkable and is carried in full: eth_getLogs against USDC for topic0 keccak(\"AuthorizationUsed(address,bytes32)\") over blocks 51381946 to 51382346, a window ending 64 blocks behind the tip at read time, then eth_getTransactionByHash per candidate, newest first, until a sender in the published set; the discovery response was re-fetched three minutes later and is byte-identical at 503684 bytes and the same sha256."
   ],
@@ -104,10 +105,12 @@
     "pointer": null,
     "text_sha256": null
   },
-  "status": "superseded",
-  "supersedes": null,
-  "superseded_by": "2026-09-16-observation-x402-base-payai-0x9ecf68be-r2",
-  "supersession_reason": null,
+  "status": "published",
+  "supersedes": "2026-09-16-observation-x402-base-payai-0x9ecf68be",
+  "superseded_by": null,
+  "supersession_reason": [
+    "assessment_error"
+  ],
   "report": {
     "path": "packages/x402-base-payai-0x9ecf68be/statement.md",
     "sha256": "ba1b62c2284ea424982fbabd01970ab0858a110235bf6f24db73f5138664c2ae",

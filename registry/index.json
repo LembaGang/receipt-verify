@@ -1,9 +1,9 @@
 {
   "schema": "receipt-verify/registry-index/0",
-  "built_at": "2026-09-21T14:00:50.159Z",
-  "built_at_head": "8632c936d312a9671ea3569a51afb41989bd2bf5",
+  "built_at": "2026-09-24T11:50:41.923Z",
+  "built_at_head": "7cb5d13a336ddcc24458c62d993abc9626c98b94",
   "verifier_version": "0.1.2",
-  "previous_index_sha256": "64633a7bf8ea245cad482540f8feb72bc80d203fb1b574a789fe1178989e5108",
+  "previous_index_sha256": "cdcfc098ac605ccd7c4d9f4b93dbf72a76a3a09106fb616e10c4f908059174d5",
   "disclosed_chain_breaks": [
     {
       "root_commit": "acbd5dd69c3f84c062ab8c599fd6ab05adadc8bc",
@@ -18,10 +18,10 @@
   "counts": {
     "by_kind": {
       "own_work": 5,
-      "observation": 1
+      "observation": 2
     },
     "by_status_label": {
-      "unverified": 6
+      "unverified": 7
     }
   },
   "records": [
@@ -201,17 +201,48 @@
         },
         "verified_at": "2026-09-16T10:15:31Z"
       },
-      "status": "published",
+      "status": "superseded",
       "status_label": "unverified",
       "record_path": "registry/records/2026-09-16-observation-x402-base-payai-0x9ecf68be/record.json",
-      "record_sha256": "6b444c17bbe1a7e06f2f323910a77631beb435ea0b4842c0f778b4c5ab8dd2f7",
-      "record_bytes": 7787,
+      "record_sha256": "9fd206269ce973f1e1cb1949d44a68a821474efd4fb0ae97a986138aeb74def5",
+      "record_bytes": 7838,
       "report_path": "packages/x402-base-payai-0x9ecf68be/statement.md",
       "report_sha256": "ba1b62c2284ea424982fbabd01970ab0858a110235bf6f24db73f5138664c2ae",
       "report_bytes": 5628,
       "badge_path": "registry/badges/2026-09-16-observation-x402-base-payai-0x9ecf68be.svg",
       "badge_sha256": "bc60b2e33625fa3114fa5f7f1ebf7a6be0433afec25fecb4c1b6c62e9f08aca7",
       "supersedes": null,
+      "superseded_by": "2026-09-16-observation-x402-base-payai-0x9ecf68be-r2"
+    },
+    {
+      "id": "2026-09-16-observation-x402-base-payai-0x9ecf68be-r2",
+      "kind": "observation",
+      "record_type": "observation",
+      "key": {
+        "format": "x402.settlement/2",
+        "format_version": "2",
+        "upstream_digest": {
+          "alg": "sha256",
+          "value": "0434d308aa5d2fbce614c4831cbf5c37d5a8958ae4098cdb97eb567eabc72d65"
+        },
+        "verifier": {
+          "tool": "@headlessoracle/receipt-verify",
+          "version": "0.1.2",
+          "commit": "897ddfcddda04e4c79e8676d7db285e87a05c4c9"
+        },
+        "verified_at": "2026-09-16T10:15:31Z"
+      },
+      "status": "published",
+      "status_label": "unverified",
+      "record_path": "registry/records/2026-09-16-observation-x402-base-payai-0x9ecf68be-r2/record.json",
+      "record_sha256": "03b88801655a6c311898f8a7703e2fb42052d5c60b11521d4bfb2d3f214cf747",
+      "record_bytes": 8754,
+      "report_path": "packages/x402-base-payai-0x9ecf68be/statement.md",
+      "report_sha256": "ba1b62c2284ea424982fbabd01970ab0858a110235bf6f24db73f5138664c2ae",
+      "report_bytes": 5628,
+      "badge_path": "registry/badges/2026-09-16-observation-x402-base-payai-0x9ecf68be-r2.svg",
+      "badge_sha256": "bc60b2e33625fa3114fa5f7f1ebf7a6be0433afec25fecb4c1b6c62e9f08aca7",
+      "supersedes": "2026-09-16-observation-x402-base-payai-0x9ecf68be",
       "superseded_by": null
     }
   ]
