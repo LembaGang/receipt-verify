@@ -2446,3 +2446,22 @@ The pointers were last read by us at **2026-09-16T11:38:11Z** and first seen nam
 `effectiveFrom` is a declared date rather than a publication observation. **Whether v7 was published
 before or after our 17 September send is not established by anything this repository holds**, and no
 row here should be read as saying it was.
+
+## Appended 2026-09-25 — draft-marques-asqav-compliance-receipts-09 pinned beside -08
+
+-09 was posted on 21 September 2026. Pinned here; `-08` becomes `historical` and keeps its digest
+(`ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0`), because every -08 rule in
+`walker/scopes.json` and every -08 line cite in `FINDINGS.md` was made over those bytes. Fetched from the
+IETF archive with `curl`; LF-only (zero CR bytes); digest computed on the device at the time stated.
+
+| path | bytes | sha256 | retrieved |
+|---|---|---|---|
+| `refs/draft-marques-asqav-compliance-receipts-09.txt` | 379060 | `c455cdf8a402c46bff383088321d52d7aaebfef32090fd633efcdf02e7bee406` | 2026-09-25 |
+
+`grep -c ''` counts 7840 lines. Line 7 reads `Intended status: Informational                         21 September 2026`
+and line 12 reads `draft-marques-asqav-compliance-receipts-09`. A `HEAD` at 2026-09-25T08:45:16Z answered
+`200`, `Content-Type: text/plain; charset=utf-8`, `Content-Length: 379060`, `last-modified: Mon, 21 Sep 2026
+18:38:10 GMT`, `etag: "6ab17992-5c8b4"`. `npm run drift` at 2026-09-25T08:44:49Z reported the entry `current`:
+`draft-marques-asqav-compliance-receipts-10 is 404; -09 is the highest revision published`.
+
+The digest was reproduced from the bytes, not copied from the handoff that stated it, and the two agree.

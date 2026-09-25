@@ -1350,14 +1350,31 @@
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
     {
-      "id": "draft-marques-asqav-compliance-receipts-08",
+      "id": "draft-marques-asqav-compliance-receipts-09",
       "kind": "ietf-draft",
       "role": "current",
+      "name": "draft-marques-asqav-compliance-receipts",
+      "pinned_rev": "09",
+      "url": "https://www.ietf.org/archive/id/draft-marques-asqav-compliance-receipts-09.txt",
+      "sha256": "c455cdf8a402c46bff383088321d52d7aaebfef32090fd633efcdf02e7bee406",
+      "pinned_file": "refs/draft-marques-asqav-compliance-receipts-09.txt",
+      "last_observed": {
+        "tip": "draft-marques-asqav-compliance-receipts-09",
+        "at": "2026-09-25T08:44:49.658Z",
+        "outcome": "current"
+      },
+      "provenance_section": "Appended 2026-09-25 — draft-marques-asqav-compliance-receipts-09 pinned beside -08"
+    },
+    {
+      "id": "draft-marques-asqav-compliance-receipts-08",
+      "kind": "ietf-draft",
+      "role": "historical",
       "name": "draft-marques-asqav-compliance-receipts",
       "pinned_rev": "08",
       "url": "https://www.ietf.org/archive/id/draft-marques-asqav-compliance-receipts-08.txt",
       "sha256": "ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0",
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-08.txt",
+      "role_reason": "Superseded in this repository by draft-marques-asqav-compliance-receipts-09, which is pinned beside it and carries role current. Kept, and still cited by line number in walker/scopes.json and FINDINGS.md, but a revision this repository already knows is superseded is not a freshness question.",
       "last_observed": {
         "tip": "draft-marques-asqav-compliance-receipts-08",
         "at": "2026-09-17T12:17:09.236Z",

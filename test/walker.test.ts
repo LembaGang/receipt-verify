@@ -461,8 +461,9 @@ describe("digest walker — applies_to and the rule_idle row", () => {
     // whatever new row kinds the walker grows.
     for (const [id, c] of Object.entries(baseline.report.body.per_corpus)) {
       const rows = baseline.report.body.rows.filter((r) => r.corpus === id);
+      // 2026-09-25: declared_opaque_expired excluded too; the walker subtracts it from `registered` and this recount did not.
       const graded = rows.filter(
-        (r) => r.outcome !== "unregistered" && r.outcome !== "rule_idle" && r.outcome !== "declared_opaque",
+        (r) => r.outcome !== "unregistered" && r.outcome !== "rule_idle" && r.outcome !== "declared_opaque" && r.outcome !== "declared_opaque_expired",
       ).length;
       expect(c["registered"], `registered at ${id}`).toBe(graded);
       expect(c["rule_idle"], `rule_idle at ${id}`).toBe(rows.filter((r) => r.outcome === "rule_idle").length);

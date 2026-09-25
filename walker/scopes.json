@@ -19,6 +19,10 @@
       "path": "refs/draft-marques-asqav-compliance-receipts-08.txt",
       "sha256": "ee3ca5d7c0acc1cb9b8025d29f19a7d73991718ca35d3bf4229f7b4264976ec0"
     },
+    "marques-09": {
+      "path": "refs/draft-marques-asqav-compliance-receipts-09.txt",
+      "sha256": "c455cdf8a402c46bff383088321d52d7aaebfef32090fd633efcdf02e7bee406"
+    },
     "farley-02": {
       "path": "refs/draft-farley-acta-signed-receipts-02.txt",
       "sha256": "14501a68a86e3cc403f56967b19b732316ad3cc2fc011ce3d14aec9c1de68bd2"
