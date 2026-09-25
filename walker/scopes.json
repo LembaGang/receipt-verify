@@ -7,6 +7,8 @@
     "unregistered": "Concrete digest-shaped fields no rule covers, listed by JSON pointer with the reason. They are counted and printed, never silently skipped, and they do not fail the run: an unrecomputable field is not a wrong field.",
     "declared_opaque": "A concrete digest-shaped field whose value the FORMAT'S AUTHOR states no third party holding only the receipt can recompute. Like `unregistered` it is counted and printed by JSON pointer, never silently skipped, and it does not fail the run; unlike `unregistered` it is not graded and never will be. It is NOT `unregistered`, and the difference is the point of the status: `unregistered` says no rule in THIS registry covers the field, which is a fact about our coverage and is repaired by writing a rule, while `declared_opaque` says the pre-image cannot be rebuilt from what the format publishes, which is a fact about the format, is stated by the person who defines it, and no rule we could write would repair. Filing the second under the first would have this registry standing report a gap in its own coverage that it can never close. Every entry carries `pointer`, `declared_by`, `source`, `quote` and `until`, and the walker REFUSES to run (exit 2) on an entry missing any of them: the whole weight of the status is `the author said so, and here is where`, and an entry that cannot say where still reads as though it could. `pointer` is an exact JSON pointer -- this walker has no glob matching for pointers, only for a rule's `file` -- and the entries are one per member for the same reason `applies_to` is an explicit list: a member nobody named is censused as before and still prints green. An entry matching zero pointers in its corpus is reported as a row with pointer null and counted, the `rule_idle` pattern, so a declaration cannot silently outlive the member it names. A declaration cannot pull a field OUT of the grade either: matching happens on the census, after the rules have consumed their pointers, so a field some rule covers stays graded and its declaration reports unmatched. `until` records the condition on which the entry is to be revisited, and `revisit_when` is that same condition in a form the walker evaluates against fixtures/upstreams.json -- exactly one of `upstream_repin` {upstream_id, pinned_value}, LIVE while that entry is still `role: current` and still carries the value the declaration was written against, or `upstream_appears` {id_prefix}, EXPIRED as soon as any entry whose id starts with that prefix is `role: current` -- required on every entry and refusing the run (exit 2) like the other five when it is missing or malformed, with no network, no clock and no dates in the verdict. `until` stays as the human form of that same sentence, and an EXPIRED declaration still grades nothing: its rows report `declared_opaque_expired` instead of `declared_opaque`, carry the condition that fired in words, and are subtracted from `registered` exactly as `declared_opaque` rows are, while the walk's exit code does not move -- a stale declaration is a bookkeeping condition and not a wrong measurement, so the re-review is bought by a test in test/walker.test.ts that fails while any declaration is expired rather than by a red on `npm run walk` that would block an unrelated push. A DECLARATION IS ABOUT THE MEMBER AND NEVER CERTIFIES A VALUE: it records that the format's author says the pre-image cannot be rebuilt from what the format publishes, and it says nothing whatever about whether the value sitting at that pointer is a correct instance of the construction -- as the asqav entries now show, where the author states the seven values are a fixed placeholder and that \"Declaring the member opaque does not establish that these fixtures are correct\" (Gmail 1a08449c6bf8c0f8, 2026-09-09T03:50Z). Each entry's `mechanism` member carries that answer, quoted and attributed, so a reader who reaches a declaration cannot mistake it for a check.",
     "declared_opaque_note_2026_09_25": "2026-09-25: As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction; the fourteen action_ref declarations were withdrawn on 2026-09-25 for that reason and the member is graded by rule from the 6137cb95 corpus onward.",
+    "withdrawn_declarations": "A declaration that was withdrawn is kept as bytes, unchanged, in a corpus-level `withdrawn_declarations` list, with three added members: `withdrawn_on`, `withdrawn_because` and `withdrawn_by`. The walker refuses to run (exit 2) on a withdrawn entry missing any of them or its `pointer`, never matches a withdrawn entry against a pointer and never evaluates its `revisit_when`, so the field it named is censused or graded exactly as if it had never been declared. Every run prints one `WITHDRAWN <corpus> withdrawn_declarations=N` line per corpus carrying the list, and walker/report.json carries the same count in per_corpus, so the withdrawal is visible without opening this file. Deleting a withdrawn declaration would leave no trace that it was made or why it stopped being made.",
+    "input_absent": "A field a registered rule applies to whose pre-image the corpus does not carry. The rule's construction is published by its document, so a third party holding the input could recompute the value; the row says which input is missing and cites the document's own words for the case. It is counted per corpus and in the SUMMARY (only when non-zero), printed by JSON pointer, never `match`, never fails the run, and is subtracted from `registered` like the other rows that grade nothing. It is not `unregistered` (a rule covers the field) and not `declared_opaque` (nobody says the value is unrecomputable).",
     "status": {
       "declared": "the cited document states this scope for this field",
       "inferred": "the document is silent; the scope is taken from the corpus's own self-description (a header member, a description string, or the fixture generator) and that source is named",
@@ -185,6 +187,30 @@
             "asqav/05c1c49"
           ],
           "applies_to_reason": "The rule grades a file in the asqav-sdk `verifier/conformance-vectors/` tree. That tree is not in asqav/3b88156, asqav/history/3e13a0d, asqav/history/4cbdfc0, asqav/history/ee8a3e7: each of those corpora was pinned as conformance/vectors.json alone (3b88156 also carries conformance/manifest.lock.json), so `find <dir> -name verifier` returns nothing at all four. The rule was inherited from asqav/05c1c49 and had graded nothing at any of them since it was written -- reported as eight `rule_idle` rows from the run of 2026-09-05, which is the row's whole purpose. Resolved 2026-09-06 by removing the inheritance rather than by widening `only_files`: `only_files` is not what was hiding the file, the file is genuinely absent, and a rule kept applied to a corpus that cannot carry its input is a permanent idle row that trains the reader to ignore the column."
+        },
+        {
+          "id": "asqav.action_ref.descriptor",
+          "file": "any walked .json file",
+          "kind": "asqav_action_ref_descriptor",
+          "field": "every `action_ref` member of the form sha256:<64 lowercase hex>, at any depth",
+          "construction": "\"sha256:\" || lowercase_hex(SHA-256(UTF8(JCS(A)))), A the Action descriptor {agentId, actionType, scopeRequired, timestamp} with scopeRequired sorted by UTF-16 code unit before canonicalisation",
+          "encoding": "sha256:",
+          "status": "declared",
+          "document": "marques-09",
+          "lines": "1096-1108",
+          "quote": "It commits an Action descriptor A containing exactly four members: agentId, actionType, scopeRequired and timestamp. ... Before canonicalization, sort that array by UTF-16 code-unit order; preserve repeated values and string contents without normalization. No other members belong in A. Compute action_ref = \"sha256:\" || lowercase_hex(SHA-256(UTF8(JCS(A)))), with JCS and the input restrictions of Section 4.",
+          "descriptor_member": "action_descriptor",
+          "descriptor_member_reason": "The descriptor is read from the corpus bytes at the sibling member of action_ref named here, and from nowhere else: -09 lines 1111-1114 forbid substituting a later timestamp, inferring scopeRequired from a policy name, or guessing an empty array, so a descriptor assembled by this tool would be a guess. -09 names no wire member for the retained descriptor (it is evidence-resolution material, line 1109), so the member name is this registry's; a corpus that carries the descriptor under another name reads input_absent here until this member is changed to match it.",
+          "outcomes": {
+            "input_absent": "no descriptor beside the value. The note cites -09 lines 1113-1114, \"Missing descriptor evidence makes this recomputation unverifiable.\" Counted, printed by pointer, never match, never fails the run.",
+            "match": "a four-member descriptor is present and its recomputation equals the declared value",
+            "mismatch": "a descriptor is present and is malformed, or its recomputation differs. A finding against the corpus, stated as a measurement.",
+            "zero_bytes": "A declared value equal to SHA-256 of zero bytes (e3b0c442...b855) is never match under this rule, whatever descriptor sits beside it: no four-member descriptor serialises to zero bytes (the smallest is 64 bytes of JSON)."
+          },
+          "applies_to": [
+            "asqav/6137cb95"
+          ],
+          "applies_to_reason": "The corpus -09 itself pins (-09 lines 7094-7097). Not applied to asqav/22a970d or asqav/a21d060: neither carries an Action descriptor anywhere in its bytes (no agentId, actionType, scopeRequired or action_descriptor member in either conformance/vectors.json, checked 2026-09-25), and their fourteen action_ref fields were graded under -08, which defined no construction for them. Registered here in the commit that withdraws those declarations; the corpus it applies to is pinned in the commit that follows, which moves this rule into that corpus's own rule set."
         }
       ]
     },
@@ -232,7 +258,7 @@
         "conformance/vectors.json"
       ],
       "corpus_note": "The asqav-sdk commit the first scheduled drift run of 2026-09-07 06:00Z named, pinned 2026-09-08 (fixtures/provenance.md). Same document and same line ranges as asqav/3b88156: the rules it inherits cite marques-08 1351-1369 for the envelope_hash digest scope, and the only upstream edit between the two pins (0b5fa1e, #484) rewrote the action_ref wire form inside the vectors, which changes the bytes the rules are applied TO and not the section that defines them. It carries the `expected` field shape, so it is named in asqav.counterparty.envelope_hash.expected's applies_to beside asqav/3b88156. conformance/manifest.lock.json is pinned beside it as the author's own corpus lock and is not walked, for the same reason as at 3b88156: its digests are SHA-256 over raw file bytes, not digests over JSON structures the walker can address by pointer. Its vectors.json entry -- sha256 7beebf7661c02b1e70045aa956ba49836c968edd9b24ecd4ebfb893cca7c6341, 37923 bytes -- is the same digest fixtures/provenance.md records for the pinned file, arrived at independently. The two chain rules inherited from asqav/05c1c49 grade files under verifier/conformance-vectors/, which this pin does not contain -- its two files are conformance/vectors.json and conformance/manifest.lock.json -- so they are not applied here (asqav.chain.* applies_to). Absent, not excluded: `find fixtures/asqav/22a970d -name verifier` returns nothing.",
-      "declared_opaque": [
+      "withdrawn_declarations": [
         {
           "pointer": "/vectors/14/input/action_ref",
           "declared_by": "the author, Joao Marques",
@@ -251,7 +277,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/15/input/payload/action_ref",
@@ -271,7 +300,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/16/input/action_ref",
@@ -291,7 +323,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/17/input/action_ref",
@@ -311,7 +346,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/18/input/action_ref",
@@ -331,7 +369,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/19/input/action_ref",
@@ -351,7 +392,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/20/input/action_ref",
@@ -371,7 +415,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         }
       ]
     },
@@ -383,7 +430,7 @@
         "conformance/vectors.json"
       ],
       "corpus_note": "The asqav-sdk tip of 2026-09-08 (a21d0608b0ff949c583138f2987eba3b6c15749f, `fix: declare supported Node release lines (#501)`), pinned because the 22a970d pin made the same day was already nine commits behind main and the daily drift check read moved_changed every morning for it (fixtures/provenance.md). Same document and same line ranges as asqav/22a970d, and the same BYTES: conformance/vectors.json is blob 9e0c093c83b3fff96a026093179adc09f8ffa96c at both commits, so this corpus is byte-identical to asqav/22a970d's and the rules are applied to exactly what they were applied to there. It carries the `expected` field shape, so it is named in asqav.counterparty.envelope_hash.expected's applies_to beside asqav/3b88156 and asqav/22a970d. conformance/manifest.lock.json is pinned beside it as the author's own corpus lock and is not walked, for the same reason as at 22a970d: its digests are SHA-256 over raw file bytes, not digests over JSON structures the walker can address by pointer. Its vectors.json entry -- sha256 7beebf7661c02b1e70045aa956ba49836c968edd9b24ecd4ebfb893cca7c6341, 37923 bytes -- is the same digest fixtures/provenance.md records for the pinned file and is UNCHANGED from corpus_version 6 to 7, arrived at independently by the author's tooling. The two chain rules inherited from asqav/05c1c49 grade files under verifier/conformance-vectors/, which this pin does not contain -- its two files are conformance/vectors.json and conformance/manifest.lock.json -- so they are not applied here (asqav.chain.* applies_to). Absent, not excluded: `find fixtures/asqav/a21d060 -name verifier` returns nothing.",
-      "declared_opaque": [
+      "withdrawn_declarations": [
         {
           "pointer": "/vectors/14/input/action_ref",
           "declared_by": "the author, Joao Marques",
@@ -402,7 +449,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/15/input/payload/action_ref",
@@ -422,7 +472,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/16/input/action_ref",
@@ -442,7 +495,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/17/input/action_ref",
@@ -462,7 +518,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/18/input/action_ref",
@@ -482,7 +541,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/19/input/action_ref",
@@ -502,7 +564,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         },
         {
           "pointer": "/vectors/20/input/action_ref",
@@ -522,7 +587,10 @@
             "answer": "The seven action_ref values in this corpus are A FIXED PLACEHOLDER. The receipt generator computes hashlib.sha256(b\"\").hexdigest() once and reuses the prefixed result as its demo action_ref. It is not a digest derived from an Action, and it is not a fallback triggered by missing inputs; the hash input is literally zero bytes, not an empty JSON object. The canonicalisation corpus takes a separate path in which the values are stored literally in the vector inputs, and its regeneration helper preserves action_ref while recomputing the canonical bytes and their digest -- so regenerating the corpus leaves the placeholders in place.",
             "quote": "That answers the mechanism question and it does not close the corpus correction. Declaring the member opaque does not establish that these fixtures are correct.",
             "consequence_for_this_entry": "The declaration above stays true and unchanged: it is about the MEMBER, and the author's statement that no third party holding only the receipt can rebuild the pre-image is not affected by what any particular value happens to be. What is now also known is that this value is a placeholder rather than an instance of the construction the member names. A reader must not take the pairing of a declaration and a value as the value having been checked: nothing here grades it, and the author says explicitly that the corpus correction is still open."
-          }
+          },
+          "withdrawn_on": "2026-09-25",
+          "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
+          "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
         }
       ]
     },

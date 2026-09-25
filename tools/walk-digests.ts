@@ -70,7 +70,20 @@ const UPSTREAMS_LABEL = relative(REPO, UPSTREAMS).split("\\").join("/") || UPSTR
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
-type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle" | "declared_opaque" | "declared_opaque_expired";
+type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle" | "declared_opaque" | "declared_opaque_expired" | "input_absent";
+
+/**
+ * Outcomes that grade no field. They are counted and printed, they never fail
+ * the run, and they are subtracted from `registered`, which counts only rows
+ * that compared a recomputed value against a declared one.
+ *
+ * `input_absent` is a registered rule whose construction the document publishes,
+ * applied to a field whose pre-image the corpus does not carry. It differs from
+ * `unregistered` (no rule) and from `declared_opaque` (the author says nobody can
+ * recompute it): here the rule exists and a third party could recompute the value
+ * if the corpus supplied the input, and the row says which input is missing.
+ */
+const UNGRADED: ReadonlySet<Outcome> = new Set<Outcome>(["unregistered", "rule_idle", "declared_opaque", "declared_opaque_expired", "input_absent"]);
 
 interface Row {
   corpus: string;
@@ -326,6 +339,8 @@ interface Rule {
   applies_to?: string[];
   /** Which of the three published shapes of a counterparty_binding block this rule grades. */
   holder?: string;
+  /** asqav_action_ref_descriptor: the sibling member of `action_ref` the rule reads the Action descriptor from. */
+  descriptor_member?: string;
 }
 
 /** `asqav/history/*` matches `asqav/history/ee8a3e7`. Only `*` is special. */
@@ -532,6 +547,41 @@ function validateRevisitWhen(corpus: string, i: number, d: Declaration) {
       throw new Error(`${where} has a \`revisit_when.${shape}\` carrying an unknown member \`${k}\`.${why}`);
     }
   }
+}
+
+/**
+ * A declaration that was withdrawn, kept as bytes.
+ *
+ * What was declared stays in the registry unchanged, because a registry that
+ * deletes a withdrawn claim leaves no trace that the claim was ever made or why
+ * it stopped being made. The entry moves to `withdrawn_declarations` and gains
+ * three members saying when, why and on whose reading. The walker never matches
+ * it against a pointer and never evaluates its `revisit_when`: the field it named
+ * is censused, or graded by a rule, exactly as if it had never been declared.
+ * The count is printed on every run so the withdrawal is visible without opening
+ * the registry.
+ */
+interface WithdrawnDeclaration extends Declaration {
+  withdrawn_on: string;
+  withdrawn_because: string;
+  withdrawn_by: string;
+}
+
+const WITHDRAWN_REQUIRED = ["pointer", "withdrawn_on", "withdrawn_because", "withdrawn_by"] as const;
+
+function validateWithdrawn(corpus: string, entries: WithdrawnDeclaration[]) {
+  entries.forEach((d, i) => {
+    for (const k of WITHDRAWN_REQUIRED) {
+      const v = (d as unknown as Record<string, unknown>)[k];
+      if (typeof v !== "string" || v.trim() === "") {
+        throw new Error(
+          `walker/scopes.json: withdrawn_declarations[${i}] on corpus ${corpus} is missing a non-empty \`${k}\`. ` +
+            `A withdrawn entry must carry ${WITHDRAWN_REQUIRED.join(", ")}: a withdrawal that cannot say when, why ` +
+            `and on whose reading is indistinguishable from a declaration that was deleted. Refusing to run.`,
+        );
+      }
+    }
+  });
 }
 
 interface UpstreamEntry {
@@ -1075,6 +1125,92 @@ async function ruleRegistryIndexDigests(ctx: Ctx, r: Rule, indexPath: string) {
   });
 }
 
+/** SHA-256 of zero bytes. No JSON object serialises to zero bytes, so no descriptor can produce it. */
+const SHA256_EMPTY = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+const DESCRIPTOR_MEMBERS = ["actionType", "agentId", "scopeRequired", "timestamp"] as const;
+
+/**
+ * marques-09 s5.2.7: action_ref = "sha256:" || lowercase_hex(SHA-256(UTF8(JCS(A)))),
+ * A an Action descriptor of exactly four members, scopeRequired sorted by UTF-16
+ * code unit before canonicalisation.
+ *
+ * Every `action_ref` string of the `sha256:<64 hex>` form, at any depth of any
+ * walked JSON file, is a field of this rule. The descriptor is read from the
+ * corpus bytes, at the sibling member the rule names, and from nowhere else:
+ * -09 lines 1111-1114 forbid inferring scopeRequired or substituting a timestamp,
+ * so a descriptor this tool assembled would be a guess. Where the corpus carries
+ * none, the row is `input_absent`, never `match`.
+ */
+async function ruleActionRefDescriptor(ctx: Ctx, r: Rule, filePath: string) {
+  const file = rel(filePath);
+  let doc: Json;
+  try {
+    doc = readJson(filePath);
+  } catch {
+    return;
+  }
+  const member = r.descriptor_member ?? "action_descriptor";
+  const found: Array<[string, Record<string, Json>]> = [];
+  const visit = (node: Json, path: string) => {
+    if (isObject(node)) {
+      for (const k of Object.keys(node)) {
+        const child = `${path}/${k.replace(/~/g, "~0").replace(/\//g, "~1")}`;
+        if (k === "action_ref" && typeof node[k] === "string") found.push([child, node]);
+        visit(node[k]!, child);
+      }
+    } else if (Array.isArray(node)) node.forEach((v, i) => visit(v, `${path}/${i}`));
+  };
+  visit(doc, "");
+
+  for (const [ptr, holder] of found) {
+    const declared = String(holder["action_ref"]);
+    const m = /^sha256:([0-9a-f]{64})$/.exec(declared);
+    // Not the -09 wire form (an opaque id such as `act_...`): not a digest, not this rule's field.
+    if (!m) continue;
+    const zero = m[1] === SHA256_EMPTY;
+    const zeroNote = zero
+      ? " The declared value is SHA-256 of zero bytes, which no four-member descriptor can produce: the smallest one is 64 bytes of JSON."
+      : "";
+    const a = holder[member];
+    if (a === undefined) {
+      push(ctx, r, file, ptr, declared, null, "input_absent",
+        `no \`${member}\` beside this action_ref: the corpus carries no Action descriptor, so there is nothing to recompute from. ` +
+          `marques-09 lines 1113-1114: "Missing descriptor evidence makes this recomputation unverifiable."${zeroNote}`);
+      continue;
+    }
+    if (!isObject(a)) {
+      push(ctx, r, file, ptr, declared, null, "mismatch",
+        `\`${member}\` is present and is not an object, so it is not an Action descriptor (marques-09 lines 1096-1105).${zeroNote}`);
+      continue;
+    }
+    const keys = Object.keys(a).sort();
+    const shapeOk =
+      keys.length === DESCRIPTOR_MEMBERS.length && DESCRIPTOR_MEMBERS.every((k, i) => keys[i] === k) &&
+      typeof a["agentId"] === "string" && typeof a["actionType"] === "string" && typeof a["timestamp"] === "string" &&
+      Array.isArray(a["scopeRequired"]) && (a["scopeRequired"] as Json[]).every((s) => typeof s === "string");
+    if (!shapeOk) {
+      push(ctx, r, file, ptr, declared, null, "mismatch",
+        `\`${member}\` has members ${JSON.stringify(keys)}; marques-09 lines 1096-1105 require exactly four, ` +
+          `agentId, actionType and timestamp strings and scopeRequired an array of strings.${zeroNote}`);
+      continue;
+    }
+    // JS string comparison is UTF-16 code-unit order, which is the order -09 line 1103 names.
+    const sorted = [...(a["scopeRequired"] as string[])].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
+    const c = await canon({ ...a, scopeRequired: sorted } as Json);
+    if (!c.ok) {
+      pushCanonFailure(ctx, r, file, ptr, declared, c);
+      continue;
+    }
+    const recomputed = "sha256:" + sha256Hex(c.bytes!);
+    // A zero-bytes value is never a match: the check is explicit so it cannot
+    // depend on the recomputation happening to differ.
+    const outcome: Outcome = !zero && recomputed === declared ? "match" : "mismatch";
+    push(ctx, r, file, ptr, declared, recomputed, outcome,
+      `descriptor: ${ptr.replace(/action_ref$/, member)} (${c.bytes!.length} bytes of JCS)${zeroNote}`);
+  }
+}
+
 async function ruleEvidenceChain(ctx: Ctx, rules: Rule[], filePath: string) {
   const file = rel(filePath);
   const records = readJsonl(filePath) as Array<Record<string, Json>>;
@@ -1234,6 +1370,7 @@ async function main(): Promise<number> {
       only_files?: string[];
       corpus_note?: string;
       declared_opaque?: Declaration[];
+      withdrawn_declarations?: WithdrawnDeclaration[];
     }>;
   };
 
@@ -1242,6 +1379,7 @@ async function main(): Promise<number> {
   // not just the corpus carrying it. A partial report written under a registry
   // this tool has already found unfit to read is a worse artefact than no report.
   for (const c of scopes.corpora) if (c.declared_opaque) validateDeclarations(c.id, c.declared_opaque);
+  for (const c of scopes.corpora) if (c.withdrawn_declarations) validateWithdrawn(c.id, c.withdrawn_declarations);
 
   py = new PythonJcs();
   const rows: Row[] = [];
@@ -1339,6 +1477,15 @@ async function main(): Promise<number> {
       }
     }
 
+    // action_ref under marques-09 s5.2.7, wherever a walked JSON file carries one
+    for (const r of rules) {
+      if (r.kind !== "asqav_action_ref_descriptor") continue;
+      for (const p of files) {
+        if (!p.toLowerCase().endsWith(".json") || !wanted(rel(p))) continue;
+        await ruleActionRefDescriptor(ctx, r, p);
+      }
+    }
+
     // evidence.action/0 chains
     if (rules.some((r) => r.kind.startsWith("ea_"))) {
       for (const p of files) {
@@ -1412,12 +1559,12 @@ async function main(): Promise<number> {
       }
     }
 
-    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0, declared: 0, inferred: 0 };
+    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0, input_absent: 0, declared: 0, inferred: 0 };
     for (const row of ctx.rows) {
       counts[row.outcome] = (counts[row.outcome] ?? 0) + 1;
-      if (row.outcome === "rule_idle" || row.outcome === "declared_opaque" || row.outcome === "declared_opaque_expired") continue;
-      if (row.outcome !== "unregistered" && row.status === "declared") counts["declared"]!++;
-      if (row.outcome !== "unregistered" && row.status === "inferred") counts["inferred"]!++;
+      if (UNGRADED.has(row.outcome)) continue;
+      if (row.status === "declared") counts["declared"]!++;
+      if (row.status === "inferred") counts["inferred"]!++;
     }
     // `registered` counts graded FIELDS. A rule_idle row grades no field, so it is
     // excluded here -- which is what keeps every count at every pinned corpus
@@ -1426,12 +1573,17 @@ async function main(): Promise<number> {
     // does a declared_opaque one -- the point of the status is that the value is not
     // graded -- so both are excluded, which is what keeps every count at every pinned
     // corpus identical to what it was before either column existed.
-    counts["registered"] =
-      ctx.rows.length - counts["unregistered"]! - counts["rule_idle"]! - counts["declared_opaque"]! - counts["declared_opaque_expired"]!;
+    // input_absent is excluded on the same argument: the rule applied and graded nothing.
+    counts["registered"] = ctx.rows.filter((row) => !UNGRADED.has(row.outcome)).length;
     // A permanent zero column is the thing that stops a column being read, which
     // is the `rule_idle` argument about rows applied to counts. The expired count
     // appears -- in the report and on the printed lines -- only when it is not zero.
     if (counts["declared_opaque_expired"] === 0) delete counts["declared_opaque_expired"];
+    if (counts["input_absent"] === 0) delete counts["input_absent"];
+    // Present on every corpus that carries the list, zero included: the member
+    // exists because something was withdrawn there, and the count is how a
+    // reader who never opens the registry learns that it was.
+    if (c.withdrawn_declarations) counts["withdrawn_declarations"] = c.withdrawn_declarations.length;
     perCorpus[c.id] = counts;
     rows.push(...ctx.rows);
   }
@@ -1462,10 +1614,11 @@ async function main(): Promise<number> {
     return v;
   };
 
-  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0 };
+  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0, input_absent: 0 };
   for (const r of rows) totals[r.outcome]++;
   const reported: Record<string, number> = { ...totals };
   if (totals.declared_opaque_expired === 0) delete reported["declared_opaque_expired"];
+  if (totals.input_absent === 0) delete reported["input_absent"];
 
   const body = sortKeys({ per_corpus: perCorpus, rows, totals: reported });
   const report = { header: { tool: "tools/walk-digests.ts", run_at: new Date().toISOString(), scopes: "walker/scopes.json" }, body };
@@ -1480,8 +1633,15 @@ async function main(): Promise<number> {
         `  serializer_disagreement=${c["serializer_disagreement"]}  expected_refusal=${c["expected_refusal"]}` +
         `  rule_idle=${c["rule_idle"]}  declared_opaque=${c["declared_opaque"]}` +
         (c["declared_opaque_expired"] ? `  declared_opaque_expired=${c["declared_opaque_expired"]}` : "") +
+        (c["input_absent"] ? `  input_absent=${c["input_absent"]}` : "") +
         `  (declared=${c["declared"]} inferred=${c["inferred"]})`,
     );
+  }
+  // One line per corpus carrying withdrawn declarations, so a withdrawal is
+  // visible on every run and not only to a reader of walker/scopes.json.
+  for (const id of Object.keys(perCorpus).sort()) {
+    const n = perCorpus[id]!["withdrawn_declarations"];
+    if (n !== undefined) console.log(`  WITHDRAWN  ${id.padEnd(24)} withdrawn_declarations=${n}  (kept as bytes in walker/scopes.json; matched against no pointer)`);
   }
   console.log("");
   for (const r of rows) {
@@ -1494,6 +1654,13 @@ async function main(): Promise<number> {
     if (r.outcome === "rule_idle") {
       console.log(`  RULE_IDLE  ${r.corpus}  ${r.rule}`);
       console.log(`      applies to this corpus and matched no pointer in it; the rule's file pattern is ${r.file}`);
+      continue;
+    }
+    if (r.outcome === "input_absent") {
+      console.log(`  INPUT_ABSENT  ${r.file}${r.pointer}`);
+      console.log(`      declared   : ${r.declared}`);
+      console.log(`      rule       : ${r.rule} [${r.document ?? "no document"} ${r.lines ?? ""} ${r.status}]`);
+      if (r.note) console.log(`      note       : ${r.note}`);
       continue;
     }
     if (r.outcome === "mismatch" || r.outcome === "serializer_disagreement" || r.outcome === "expected_refusal") {
@@ -1510,6 +1677,7 @@ async function main(): Promise<number> {
       `serializer_disagreement=${totals.serializer_disagreement} expected_refusal=${totals.expected_refusal} ` +
       `rule_idle=${totals.rule_idle} declared_opaque=${totals.declared_opaque}` +
       (totals.declared_opaque_expired ? ` declared_opaque_expired=${totals.declared_opaque_expired}` : "") +
+      (totals.input_absent ? ` input_absent=${totals.input_absent}` : "") +
       `; report walker/report.json`,
   );
   return totals.mismatch > 0 || totals.serializer_disagreement > 0 ? 1 : 0;
