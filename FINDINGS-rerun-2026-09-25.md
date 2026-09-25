@@ -669,6 +669,22 @@ Each is quoted from the pinned bytes and stated as an observation about the text
 
 7. **Lines 95-96.** "Says nothing about the tip" overstates: lines 74 and 94-96 state the tip's commit, its distance from `6137cb95` and which pinned files differ there. What holds is that nothing at the tip is graded here.
 
+**Appended 2026-09-25, second block, after the second adversarial read of the same mail (pushed at `a1821c1`).** Items 8 to 14, from the pinned bytes; nothing above is edited.
+
+8. **The corpus carries two verdicts per vector, and the second one bears on M7.** `README.md` at the root of `verifier/conformance-vectors/` (lines 23-24) says `expected.json`'s `outcome` "speaks the shipped verdict vocabulary" and "the runner asserts the oracle verdict equals it". `requirement-map.json`, built by `verifier/build_requirement_map.py` by running "each asqav-native vector … through the offline verifier", records a second verdict per vector under `vectors[*].observed_verdict`. Of the 20 `asqav-*` receipts whose `expected.json` says `verified`, the map's `observed_verdict` is `unverified` for 18 and `verified` for 2 (`asqav-24`, `asqav-31`). For 14 of the 15 no-evidence receipts at lines 476-477, and for `asqav-23`, the only axis in `axis_results` that is not `PASS` is `anchors: SKIPPED` (`asqav-10`'s is `payload: FAIL`). So the verdict `expected.json` asserts comes from a verifier for which a skipped anchor axis does not withhold `verified`, and the verdict the map records comes from one for which it does. The question at lines 476-500 is narrowed again: the corpus names no profile or policy, but it carries the two verdicts such a choice produces, and which of the two the -09 profile intends is the author's to say.
+
+9. **`asqav-23`'s notes name both verifiers.** They read "the oracle verdict stays verified; under the full verifier the anchors axis reports SKIPPED (unverifiable), never a PASS on presence." Lines 486-489 and 493-494 read "verified" and "SKIPPED" as one report; they are two, from the two verifiers of item 8, and the map records `asqav-23` as `declared_outcome verified`, `observed_verdict unverified`.
+
+10. **The smallest descriptor.** Lines 533-534, and the N1 append in `FINDINGS-rerun-2026-09-08.md` (line 441), put the smallest four-member descriptor at 64 bytes. Lines 1100-1101 require `timestamp` to be an RFC 3339 string, so the smallest descriptor under Section 5.2.7 is 84 bytes (`{"actionType":"","agentId":"","scopeRequired":[],"timestamp":"2026-01-01T00:00:00Z"}` under JCS). The conclusion at line 533 does not rest on the size: the value is SHA-256 of the empty input, a descriptor's JCS is never empty, and producing that digest from a non-empty descriptor would be a second preimage of SHA-256.
+
+11. **Item 3, "the recomputation is Section 11.2 (lines 4569-4574)".** The recomputation the generators' docstrings name, "the -10 §10.2 recomputation" of `payload_digest` over `context`, is the `payload_digest` check at lines 4555-4567; the `action_ref` check is at lines 4569-4574. Both are in Section 11.2.
+
+12. **Item 3, "from nothing else".** `gen_oracle_vectors.py` lines 146 and 404 write constants, as the same item records. Read: from `payload_digest.hash` wherever the value is not one of those two constants.
+
+13. **Which values the seven generators produced.** The seven generators name 26 of the 34 `asqav-*` directories; the eight they do not name are `asqav-05`, `asqav-06`, `asqav-10`, `asqav-24` and `asqav-31` to `asqav-34`, the last four regenerated, per `README.md` line 120, by `verifier/generate_counterparty_vectors.py`, a file outside the pinned tree. Of the 58 values equal to `payload_digest.hash`, 36 sit in files under the 26 named directories, 12 in `conformance/vectors.json`, 2 in `asqav-24` and 8 in `asqav-31` to `asqav-34`. "By construction" at item 3 is established for the 36 and is not established for the other 22.
+
+14. **The parse basis of the counts at lines 529-542.** The walked files carry 62 `action_ref` keys as bytes, `asqav-11`'s receipt duplicating its whole payload; the count 61 keeps the last occurrence, as lines 652-654 say of the walker and the census. `asqav-13`'s `payload_digest` carries two `hash` members, so the 58 becomes 59 under a first-occurrence parse.
+
 ---
 
 ## Interests
