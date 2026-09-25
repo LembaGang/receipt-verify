@@ -2465,3 +2465,353 @@ and line 12 reads `draft-marques-asqav-compliance-receipts-09`. A `HEAD` at 2026
 `draft-marques-asqav-compliance-receipts-10 is 404; -09 is the highest revision published`.
 
 The digest was reproduced from the bytes, not copied from the handoff that stated it, and the two agree.
+
+## Appended 2026-09-25 — the asqav-sdk corpus at `6137cb95`, the commit -09 cites
+
+For the -09 rerun (`FINDINGS-rerun-2026-09-25.md`). `draft-marques-asqav-compliance-receipts-09` names its
+vector corpus in its reference section at lines 7094-7097 of the pinned text:
+
+> [ASQAV-SDK]
+>            Asqav, "asqav-sdk: Verifier Conformance Vectors", 2026,
+>            <https://github.com/jagmarques/asqav-sdk/
+>            tree/6137cb95edcfcd820ecff0e11c6f603b2da664b1>.
+
+`tools/snapshot.mjs` has no asqav-sdk source, so the pin follows the convention of the earlier asqav-sdk
+sections above rather than that tool: taken with `git cat-file blob <commit>:<path>` from a fresh clone
+(`git -c core.autocrlf=false clone --quiet https://github.com/jagmarques/asqav-sdk`, 2026-09-25T08:51:11Z),
+never from a worktree. `git hash-object` over every copied file reproduced its upstream blob id (303 of 303);
+every file carries 0 CR bytes.
+
+| field | value |
+|---|---|
+| URL | `https://github.com/jagmarques/asqav-sdk` |
+| commit | `6137cb95edcfcd820ecff0e11c6f603b2da664b1` |
+| subject | `fix: pass originating receipts through standalone CLI (#512)` |
+| author and commit date | 2026-09-12T12:20:37+02:00 = **2026-09-12 10:20:37 UTC** |
+| fetched at | 2026-09-25T08:51:14Z (`git rev-parse origin/main` in the fresh clone printed `bd002c0c9ad863fa0b1c4de675f6378b7321dda0`; `6137cb95` is its ancestor, 32 commits behind) |
+| files pinned | 303, 609003 bytes |
+
+**What is pinned, and what is not.** `conformance/vectors.json` and `conformance/manifest.lock.json`, and the
+whole `verifier/conformance-vectors/` tree at that commit (301 files). The tree exists at `6137cb95`; of the
+earlier asqav pins only `asqav/05c1c49` carried any of it (three vector directories), and `3b88156`, `22a970d`,
+`a21d060` and the three `history/*` pins carry none. `conformance/LICENSE`, `conformance/NOTICE` and
+`conformance/README.md` are not pinned. The verifier tree includes vectors for formats other than this profile
+(ACTA, AERF, agent-receipts, W3C VC, authproof, pipelock, DSSE); they are pinned as bytes because the tree is
+what -09 cites, and are not walked (walker/scopes.json, `asqav/6137cb95` `only_files`).
+
+**Checked against the author's own locks.** `conformance/manifest.lock.json` (corpus_version 11) records
+`vectors.json` at sha256 `575d2605d5acf40d3387603cdded83e95efbe8794dc8dd8387f6b7905d1db99a`, 54904 bytes, the
+same as the table below. `verifier/conformance-vectors/manifest.lock.json` (corpus_version 26) carries 300 file
+rows; all 300 equal the pinned bytes by sha256 and byte count, and the one file on disk it does not list is
+itself.
+
+**Against the tip.** At `bd002c0c` the two `conformance/` files are the same blobs (`ebd8931d`, `69aacedb`),
+which is what `npm run drift` reported for `asqav-sdk/a21d060` at 2026-09-25T08:44:49Z. 25 files under
+`verifier/conformance-vectors/` differ between `6137cb95` and `bd002c0c`. This pin is the commit -09 cites and
+not the tip; `asqav-sdk/a21d060` stays the entry the drift check reads.
+
+| fixture path | upstream blob at 6137cb95 | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/asqav/6137cb95/conformance/manifest.lock.json` | `69aacedb141919fe321daa7ee589f7e676983be6` | 13853 | `a2839bf22a3b6eeb6b0182064ef590bff4ae721df611c612492e228af873251b` |
+| `fixtures/asqav/6137cb95/conformance/vectors.json` | `ebd8931ded180ac42c4d7c44a4b52b700c1af0d5` | 54904 | `575d2605d5acf40d3387603cdded83e95efbe8794dc8dd8387f6b7905d1db99a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/README.md` | `1209269c68a88e220eb71b235bd3a64160c96212` | 9629 | `fb73ce26100a518109a829095dd46e7e506121ddd15f1fd9c56664bcaa4bcee7` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/UPSTREAM.md` | `8c9d363f480d9771243cbf1fc6a37ba820442f8b` | 11634 | `7554dbe6fa727a17abd532c0422393233d0c6a9f4def0d3732b308e3a53f8b11` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-01-genesis/acta-keys.json` | `d3cb11e4a829d22ec715303d5b6f5b056cd32ed7` | 179 | `4f3dafaf1e2db10e23a389c7d85035b1e09a4308509e2314b464228b258445b6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-01-genesis/expected.json` | `40750f82cdc638af01f5ea6f767c725187961f96` | 139 | `6a25002b43ea3f4c7133a31bbaf95e45df248ca2378df6d02c14b332a22c648a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-01-genesis/receipt.json` | `b9f032a6a3e5d66195f92aa00a0c1a4fd08708e9` | 531 | `3dc3b36962eb8b27efc56d53b2b87fe75b88781c00111b660aad4808d8f4706d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-02-chain-link/acta-keys.json` | `d3cb11e4a829d22ec715303d5b6f5b056cd32ed7` | 179 | `4f3dafaf1e2db10e23a389c7d85035b1e09a4308509e2314b464228b258445b6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-02-chain-link/expected.json` | `a98411ee912e8b5051bdfffe334fcbee68bd3a91` | 160 | `038c708ecb2ccbda46730be02d62ae287c74964b4a348fe3f6716c27fb25aa62` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-02-chain-link/predecessor.json` | `b9f032a6a3e5d66195f92aa00a0c1a4fd08708e9` | 531 | `3dc3b36962eb8b27efc56d53b2b87fe75b88781c00111b660aad4808d8f4706d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-02-chain-link/receipt.json` | `17bfb6b25b07ce9e2d63934ce0f32088d3e03d44` | 626 | `50a6937e41bb7b82f9bb5f78548cd7681ff107faff839c644ad962c438d706bd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-03-tamper-sig/acta-keys.json` | `d3cb11e4a829d22ec715303d5b6f5b056cd32ed7` | 179 | `4f3dafaf1e2db10e23a389c7d85035b1e09a4308509e2314b464228b258445b6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-03-tamper-sig/expected.json` | `96ee4b42706897908f6eaa549ce9ee0f78b7d581` | 173 | `690bdc3a878e37a45d609bcff3d896cf2a8284d0f84c5e198af4c669e37bd6cd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-03-tamper-sig/receipt.json` | `cf9d40ac165816485f6899397cd0d57874e31ea5` | 531 | `cce9aade699d889f0582e75d28aeb9a80b35b58d1de96a33bbb764aa91479539` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-05-commitment-mode-unsupported/acta-keys.json` | `d3cb11e4a829d22ec715303d5b6f5b056cd32ed7` | 179 | `4f3dafaf1e2db10e23a389c7d85035b1e09a4308509e2314b464228b258445b6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-05-commitment-mode-unsupported/expected.json` | `91839cc368da47febf2766a46d8ce491f055532f` | 234 | `6a3bdeb40b636e93a2d5a240f7516e5a8aac5413191b57f14d7ca78a9d89a586` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-05-commitment-mode-unsupported/receipt.json` | `910655b4855a26f5cfd76f630484985186a7a45f` | 534 | `ced1fe77d143f8077c0cb2f0c73c5d70034b2725c05e2c6cc24a751467badd08` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-06-chain-link-03-prefixed/acta-keys.json` | `d3cb11e4a829d22ec715303d5b6f5b056cd32ed7` | 179 | `4f3dafaf1e2db10e23a389c7d85035b1e09a4308509e2314b464228b258445b6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-06-chain-link-03-prefixed/expected.json` | `4bfd523a51e2757624f40ec30a8ca30626bd1cc8` | 340 | `1e8a665bd67d401c4d1abca782a4c11fadfe45d423b5341b24d39c6515bf2245` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-06-chain-link-03-prefixed/predecessor.json` | `b9f032a6a3e5d66195f92aa00a0c1a4fd08708e9` | 531 | `3dc3b36962eb8b27efc56d53b2b87fe75b88781c00111b660aad4808d8f4706d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-06-chain-link-03-prefixed/receipt.json` | `9a005879e30b08a22358ea40801ca8d9a11c4ea7` | 633 | `1bbc26dd4a89513f25215798e0c66b7bc5cbe24765938a0b2ee1d6c64990c8f9` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-07-chain-link-03-wrong-digest/acta-keys.json` | `d3cb11e4a829d22ec715303d5b6f5b056cd32ed7` | 179 | `4f3dafaf1e2db10e23a389c7d85035b1e09a4308509e2314b464228b258445b6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-07-chain-link-03-wrong-digest/expected.json` | `ea55f92637a66cd190055e76092c6cd68dbb358f` | 389 | `70d1e7d14ea1e9ccb857962464c03da9da9903a6875c3779df581d0d3b93844c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-07-chain-link-03-wrong-digest/predecessor.json` | `b9f032a6a3e5d66195f92aa00a0c1a4fd08708e9` | 531 | `3dc3b36962eb8b27efc56d53b2b87fe75b88781c00111b660aad4808d8f4706d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-07-chain-link-03-wrong-digest/receipt.json` | `bcd54cc44cf2e7d62409ba7f0e9858c0f60301e9` | 633 | `eab852c676053326f792b23822587856f094f5a3593fef1749c3a7b77e96d204` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-01-a2a-trusted-attestation/acta-keys.json` | `149413f5b2fc8e7a694e73ddf0604a28fe87161f` | 190 | `f3ca2e736226b69e540ab866840083986d5acdc1b5be54706f7b1f1a549f9d93` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-01-a2a-trusted-attestation/expected.json` | `4f7e5461c6aebf1de86bcc9ea3c509bf54f60702` | 291 | `0937e4c63aacc8f2cdfbf19febb7396d6d79a0d9ee25821186c51fcdba395cf1` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-01-a2a-trusted-attestation/receipt.json` | `7304fed055475d227e32bffa683371bad1578b53` | 747 | `659330a256bdc28c95668f231ec6bcc6618568c82096126d7f638ac47faaa92d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-02-a2a-trajectory-endpoint/acta-keys.json` | `149413f5b2fc8e7a694e73ddf0604a28fe87161f` | 190 | `f3ca2e736226b69e540ab866840083986d5acdc1b5be54706f7b1f1a549f9d93` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-02-a2a-trajectory-endpoint/expected.json` | `50da99e34d926e842f1d8861a8c8289a93229d0e` | 278 | `165a84bfc0a25acb20cd92cd2fad2db69f5633005acef8e68e1e883b5cc4ae32` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-02-a2a-trajectory-endpoint/receipt.json` | `5e61598667851aed6611d1e9d9990cfdf32156fc` | 733 | `8c18d9bea2cf068164e851ac6b702f9ad16417c8d06e07569a2c1983b3fd7895` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-03-a2a-tampered-sig/acta-keys.json` | `149413f5b2fc8e7a694e73ddf0604a28fe87161f` | 190 | `f3ca2e736226b69e540ab866840083986d5acdc1b5be54706f7b1f1a549f9d93` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-03-a2a-tampered-sig/expected.json` | `b063aa9eca094557200c977faac8d780543ba137` | 310 | `5b210fd3d6ff95170783b76a52b15526cf38c038d830d3db675b0dcb34fa1be3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/acta-up-03-a2a-tampered-sig/receipt.json` | `df43181e6c99a6640a2cf891d2ca00c616936b7d` | 747 | `162414cf68f82ab6b0b7f854314cdfa244fbb21703b63f690090047d83eaf251` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-01-genesis/expected.json` | `ac9311f847c4dce9b67f9a69618772bc3f68a543` | 174 | `89d99a28c0874f4f862133061b62ec9586b386c060ca35616bc14584f62b5451` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-01-genesis/keys.json` | `fc1a679449ee3fc9ecd7992f0025d489fffc611d` | 92 | `9356fc25dd7d7ed872bb7f30a0a2555f9fb42c9482582a86de20980f79ad5720` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-01-genesis/receipt.json` | `7864733432e0bcedefe0a23a537a0a5a563bb789` | 751 | `9921eb9a3ceeec60edcb77bb95b0e2bfa1fc85efb6405dd7e1350049ae4b6a97` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-02-chain-link/expected.json` | `06e244ee147e9baf54543ab0e3e609c17ecd29f3` | 224 | `1974ea665cc50b746a1cbc82171cee877b9139ecbb622ba5c78aaec6a325cd87` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-02-chain-link/keys.json` | `fc1a679449ee3fc9ecd7992f0025d489fffc611d` | 92 | `9356fc25dd7d7ed872bb7f30a0a2555f9fb42c9482582a86de20980f79ad5720` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-02-chain-link/predecessor.json` | `7864733432e0bcedefe0a23a537a0a5a563bb789` | 751 | `9921eb9a3ceeec60edcb77bb95b0e2bfa1fc85efb6405dd7e1350049ae4b6a97` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-02-chain-link/receipt.json` | `5a4b9353c10fd16fab711abc5c9a2d5f2662b078` | 846 | `a9ba4ef87eed8ce1df18853e27143ff7128a259a902befdcc77e035f95846699` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-03-tamper-evidence/expected.json` | `9e4ea18c37eabc95c14d9e62b508c995e91cc727` | 224 | `257c47fb07633e4114972ee55a58cc4e66f0c34da0a3f23cf54c3e33eed5f35e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-03-tamper-evidence/keys.json` | `fc1a679449ee3fc9ecd7992f0025d489fffc611d` | 92 | `9356fc25dd7d7ed872bb7f30a0a2555f9fb42c9482582a86de20980f79ad5720` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-03-tamper-evidence/receipt.json` | `933b8ec997262d622a925c5443bd6b9c73d72a8f` | 751 | `d42bf60ac2ced0b25b5dfca7afdc5e0962cf386ed28980c9df5c3719d4f57d5e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-04-tamper-chain/expected.json` | `9a17b716411bf63fa18dbfa568cf34d8c166c299` | 202 | `c8a91f0e16e80e05acb9d4c0ce42ced33b8a47e012b229a91553f9a0d6acefcf` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-04-tamper-chain/keys.json` | `fc1a679449ee3fc9ecd7992f0025d489fffc611d` | 92 | `9356fc25dd7d7ed872bb7f30a0a2555f9fb42c9482582a86de20980f79ad5720` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-04-tamper-chain/predecessor.json` | `7864733432e0bcedefe0a23a537a0a5a563bb789` | 751 | `9921eb9a3ceeec60edcb77bb95b0e2bfa1fc85efb6405dd7e1350049ae4b6a97` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-04-tamper-chain/receipt.json` | `afc5e2b149495cbe34e3e14deb821ce89cde1d52` | 846 | `1901cb4da5acfc687ce5a4d39e8c25a827bef70f872df174cb13474d5d46bf66` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-01-genesis-happy-path/expected.json` | `1760335f743417366f090bb021684e9da8ec0597` | 178 | `9d42a3d7cfdb3ce4c5a1ab4d3a15c0048387d1c5fb520339feff51a3e596cabe` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-01-genesis-happy-path/keys.json` | `c5f876aab7c3d2a82fd8df2f55e18a06ace579a3` | 93 | `6aae9d9ad24ba36793830d7e517c112099ae265c096aff2e348eba4735dace54` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-01-genesis-happy-path/receipt.json` | `99e3813bd659c539bf12d1096d2c81ab41f9424e` | 1535 | `9bf562f1a88d1daf70ff196c4328f25fcef1798d0c05a97ce7ec7a5f4e9f7806` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-02-chain-happy-path/expected.json` | `43dd7fabbc6617511a8ce361bd5c1d711e52b979` | 250 | `371d3060f1e68a5dd1e01515e6b1707a388174212d52974fa354a0abc354d786` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-02-chain-happy-path/keys.json` | `15c99f31fb4afc238af7a00a529cf4aeafa18c5e` | 93 | `8f974725fc13b556530379830003752b8e50dc2668860c43824db6f0ebc188bd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-02-chain-happy-path/predecessor.json` | `1e4c96b81c5831532d662fa092b30bdb9c2548a0` | 1010 | `b13b0c39701cf00aa580c28d2749ef6bfb6eedcf60d9af3ee12f17b0869c43b8` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-02-chain-happy-path/receipt.json` | `b4a264489c962158a62a4f69bbbc61486d4c62c1` | 1010 | `eace2cd875b7527fef4f9c12c01979aa211079b80951f55016014a846837c469` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-03-tamper-evidence/expected.json` | `2b40505573c8e29f7bec132a2c59a5fa9156ff40` | 242 | `27fa3d2a754f466fb0c9f1ae068000f712de98db8b95355c779e5a86cc46c30f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-03-tamper-evidence/keys.json` | `c5f876aab7c3d2a82fd8df2f55e18a06ace579a3` | 93 | `6aae9d9ad24ba36793830d7e517c112099ae265c096aff2e348eba4735dace54` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-03-tamper-evidence/receipt.json` | `7ffc92e9b079e361e7f4ca80d2b6a325056e37b4` | 1535 | `d65b3855aa5a52687069099c391100ff6960579ba041ab6e07a40e5194267aba` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-04-tamper-chain/expected.json` | `c9118b4e6cf7bb1923ea885973cde06463394dd7` | 395 | `da30e4aaf1b4ffa5c5a3141dd934616d1aa6ac160ac77f069d0949aa47bce2d2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-04-tamper-chain/keys.json` | `15c99f31fb4afc238af7a00a529cf4aeafa18c5e` | 93 | `8f974725fc13b556530379830003752b8e50dc2668860c43824db6f0ebc188bd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-04-tamper-chain/predecessor.json` | `ec464b52b8be5b7f88997eb7371f967a3624e2ab` | 871 | `0625f628e9980a83599aea9715cb991090e569a630bfc1ff34cf2489e746355a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-04-tamper-chain/receipt.json` | `02174beb01d9da1243d180a6b54f9ae9d904ad4b` | 967 | `f02c223c5adf560688cfeecd2309ef3f2e9da46edb6cb31875ae56a8155cb194` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-05-impact-no-parent-sig/expected.json` | `2ca4e6d547201092d31c3329de4e89e123851e26` | 312 | `ad6bc0f55b104446de4e3e7e905b31e2e60217f973021681c9c5a515168c8fd3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-05-impact-no-parent-sig/keys.json` | `15c99f31fb4afc238af7a00a529cf4aeafa18c5e` | 93 | `8f974725fc13b556530379830003752b8e50dc2668860c43824db6f0ebc188bd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-05-impact-no-parent-sig/receipt.json` | `11e8218df1cb88fda0f664d01b123e26fe71fc65` | 1145 | `f85b6f0b5c2f0ffefad2ff29eba2ed6c26171b0a79368062fce185d9f0dd115a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-06-impact-with-parent-sig/expected.json` | `33f213ce8a4926c0fe7202f6936d64ed7b8092b1` | 186 | `cb4363bab841905c73dd2a07f5bb8f24a34c79d088c7504c1fedb5e7af03a4d9` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-06-impact-with-parent-sig/keys.json` | `48253795156c0c607b4b327ddf44dc619c770f4c` | 273 | `f365ad62f1939957146e02025ac134164842e8522ea7f547edfa740e22b3f96f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-06-impact-with-parent-sig/receipt.json` | `5695cdf73fb933f14053202bbb89084125f2beae` | 1338 | `71f6fc49b685e6f6264d4d394c09f215dc164329a4f177bba896091158cb14b7` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-07-pdp-binding-valid/expected.json` | `2ea780ac7b97d1cc23ffc031c54e06b43b2c08ad` | 215 | `5a8f2cce61d983c128b977b814f30be971577324d4f928d1dadd121c2b924630` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-07-pdp-binding-valid/keys.json` | `86a449136c0487d60a0ba066d6c536d18828eafe` | 183 | `b55ec977e5cde45f960321dc9fc511fa472b75591006afa706cfa6c847a78c52` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-07-pdp-binding-valid/receipt.json` | `50a11ea1f94b7d96136947b14124d15192a0e384` | 1241 | `80bb4ade1f05da62e526bdff51aa975d095acc1c8a9433c31926c18c55ec861a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-08-pdp-binding-split-context/expected.json` | `9dd3e7cd3c87722c1fc1328b6c5509344ca16e24` | 263 | `b0f659bfa564c748a144858df4aa6af341e2e7be81f99c44a6d1c636ca438dc6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-08-pdp-binding-split-context/keys.json` | `86a449136c0487d60a0ba066d6c536d18828eafe` | 183 | `b55ec977e5cde45f960321dc9fc511fa472b75591006afa706cfa6c847a78c52` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-08-pdp-binding-split-context/receipt.json` | `a905211c8db6fbeca04ad5dc897cfaa3a49befe7` | 1219 | `1d1221ab54c4777168b5ce2893bba4fd886fc0c2c041614e9ab862fcee536f5e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-11-tag-stripped-known-limit/expected.json` | `5d2582128d74d197bea4e789c96ce7841d14eb12` | 517 | `06d475243ae1f96a28befbe68f68c56e4ccc80087dd8284b319a4c6d2becaa2a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-11-tag-stripped-known-limit/keys.json` | `15c99f31fb4afc238af7a00a529cf4aeafa18c5e` | 93 | `8f974725fc13b556530379830003752b8e50dc2668860c43824db6f0ebc188bd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-11-tag-stripped-known-limit/receipt.json` | `a24fc37227ed41813d31074e108e0038b7fdaf2a` | 785 | `897fb75274b78761b5a2e5c7fef1733f255c5a2a3c952914d84cd52ec8ac1065` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-12-common-mode-known-limit/expected.json` | `6ddd5ee31b62db7083a746975750f7a1fa22e590` | 462 | `d0f1e8d5ec2f8f9995e82067a0e0dd49353dde06234734c2b50d088cb00c7f21` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-12-common-mode-known-limit/keys.json` | `48253795156c0c607b4b327ddf44dc619c770f4c` | 273 | `f365ad62f1939957146e02025ac134164842e8522ea7f547edfa740e22b3f96f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/aerf-up-12-common-mode-known-limit/receipt.json` | `11e1d5d729f85e4993181d30088a94d4f029b96e` | 1349 | `b92c879d8cc2825a74b6ce5acbf83dcdd0eba64126836e0a440792665c2c355e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-01-didkey-genesis/expected.json` | `afe616d451b6b81f3dd38a6d02552be648b9d2b8` | 187 | `e50179dfe636d4016925f23e7e47c5238b567fdd839113be022e23a8734c8409` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-01-didkey-genesis/receipt.json` | `5b0a1ca3f4aab06b14cc4b3701687056c0d3aa98` | 1199 | `8812fd0a2090c2db557d66d8f94bc84aa0448f630b99baa2c66939fffb80957a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-02-didkey-chain-link/expected.json` | `a9f63117a8bdc5b976ac200c89c1279ee16c923e` | 176 | `326535c27cf95119859c03c8ac56bfb92cdfb1dd59d3388cade623d127e3cbe2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-02-didkey-chain-link/predecessor.json` | `5b0a1ca3f4aab06b14cc4b3701687056c0d3aa98` | 1199 | `8812fd0a2090c2db557d66d8f94bc84aa0448f630b99baa2c66939fffb80957a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-02-didkey-chain-link/receipt.json` | `a9695acfd78feb98594593c4ee139340ece570a9` | 1268 | `3566a2247ccb1255acdf3847f98501526867345913c2f2ccb8c9fbc37ca10b3f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-03-tamper-payload/expected.json` | `4943d641ba65f718b89b6be591d3d0c3a684aef1` | 222 | `e990dc0c4b5d040c6549f63c86ecebee9056e9cbc1e9f34f85777bd946ecbce4` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-03-tamper-payload/receipt.json` | `f8dad92b9afb756a9cdea44fa28596717e7f50d8` | 1205 | `10ff070300130ad2125bd459adf5845fa18d3f6f473a3ec68aa3e284257cfda6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-04-tamper-proofvalue/expected.json` | `ad5bf59bd9889fb698eb8021083482cb0e810317` | 200 | `de4564e9bbde52ef7a19cf048e857335c0b4093a9d1a514812fc48db04c94b72` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-04-tamper-proofvalue/receipt.json` | `52b0f1487eb72b91edab8a189e8e9440bc2d3a62` | 1199 | `9caa968d442c8f20d47c92f1246333a7f7b8fdee568fcc374b30984dbf3c87f2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-05-genesis-missing-prev-hash/expected.json` | `1cdaf8339953eacc4407f14d188f89d35824c52a` | 234 | `a3458ed921c4bba2257e16d34947ec8d6c6719eb47504716aa15ac75214250f0` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-05-genesis-missing-prev-hash/receipt.json` | `8ce081726c2754fa6dc441f32494aa563984b3d4` | 1162 | `b1f26de55cbfa7f0cd97cf354cbb1312c3d28457c55dfd721a5150a53f212bb3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-06-wrong-key/did_map.json` | `5ff771db249669f176f77d8577045db7ec2821ab` | 103 | `024dca7cbf16495aa7a365940f6649da200c014990531b513f009e856c460094` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-06-wrong-key/expected.json` | `32fd339166a6de4bc708708823bbe96360642c2d` | 258 | `cb520e3e87f841ccecf6f991389d01baa090e5f7ea7ad508fe9a36e1966ec5a2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-06-wrong-key/receipt.json` | `a26104cfc01a20ea405ea1edd5fafef60d7269e6` | 1126 | `3f578fba2083e4262e008b31e8dd290eb77b9d9e4cc398acfd5fd9247d2931d7` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-00-valid-resigned/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-00-valid-resigned/expected.json` | `16426e9596c6648983734bcf29c81f6313249c16` | 219 | `59bf41070a56fafc0934e095baed6a5fc0370c82aa5c8d68cb3fee367ee9125c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-00-valid-resigned/receipt.json` | `2c7e51386900600672b7ea79089da788c19095d4` | 1070 | `12858f16aab3d5268069aef065cedf6772fe1bb76f1467d7fa814bb26994b2f8` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-01-wrong-proof-type/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-01-wrong-proof-type/expected.json` | `b1884c4db55d6541924f90b708452461b5f454e9` | 202 | `b829a976dc33fec0335d98253c853ad219e776e00beb0eb4469ce074010a6415` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-01-wrong-proof-type/receipt.json` | `bcc02834e4e5158f5db28ebadd493cf11f31db64` | 1066 | `f7586d1317beaad4da5aaf55c9214f0b3d7c58fc5d30f99a076cb7d6e3cdb5c9` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-02-mutated-action-type/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-02-mutated-action-type/expected.json` | `5200fc6794bf5c80c6f38c8fce742e649e16b4df` | 202 | `4113fabc0d39c54c7e9fc51a7315db87ea6d36c1d37000125a673893017868c7` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-02-mutated-action-type/receipt.json` | `65a1bd351f4c4834f0e609c803d9ec562e27bb04` | 1072 | `5327c84bb34b261ecfe6e1d88bb30c4946e412f28c8bb8973aeb5c1037894b94` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-03-mutated-principal-id/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-03-mutated-principal-id/expected.json` | `021245d14ab9c48d0ea4e8f16a6881c4cbb83ce2` | 203 | `d00140aa3b9b3c2bace16b65cf91bf96c624ba0618b1c7c0ab31c048a5ecd3ca` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-03-mutated-principal-id/receipt.json` | `eca30ba7a072b8286aa2732e382fb7b7d3ba9c20` | 1073 | `69848bb39b3f17be9cfe1feba955d176d82470745ebbfa23e79d65e340acd166` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-04-truncated-proof-value/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-04-truncated-proof-value/expected.json` | `b4821bc7ebbb8b1cab5d0bb9e51a478aa86c932b` | 236 | `563a653523fbc1ed5a09edad717d50fb9c763e1747425f5d54166da0897da1bc` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-04-truncated-proof-value/receipt.json` | `8b8f16a1ab8113622ad31adf1ef92630d31d5b4b` | 984 | `1de8195affb9c2004579596d8bfd7a3128a3a9347a5441700690cb48c3222c37` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-05-wrong-multibase-prefix/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-05-wrong-multibase-prefix/expected.json` | `871faf94ee30a04e1553440246e0df4ad9a63728` | 266 | `53bca5c4d78f90697799c7c5a49b518b4c026f30b2a7083403851c3eac4ce77c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-05-wrong-multibase-prefix/receipt.json` | `f35789bfe7d923d7754a1e67fb607415a48b0e31` | 1070 | `9d57f0bdeaa3afdb8fb905da7a530916ba23b104f4651667958c41c12950e0e7` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-06-flipped-proof-byte/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-06-flipped-proof-byte/expected.json` | `e17953f31dd527b45abec9c3710aaa2f6b601d23` | 227 | `da5b4f740244d276ae9ace47b72e9513b64c0edb50468e164e7d00dd4fd3efb3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-06-flipped-proof-byte/receipt.json` | `156bdb9d05a18fb358e1475a2d6604a16396974c` | 1070 | `49e8dda2ee5ff00db62efec6eed31e61faa060a0d6521671e227cf1da6cf3cdd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-07-tampered-mid-chain/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-07-tampered-mid-chain/expected.json` | `52e62101f18fc9fa2ee7d1740a5cf4fad51c1480` | 305 | `13ca80f61e8e19551f39135435ed28be9cb4d6973fca1ca200fcb7eaa5780273` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-07-tampered-mid-chain/predecessor.json` | `e910fdd0c252c8ae6cc7eec0851ed27a553539f8` | 1078 | `974c25b1f06a855dacbd3cd601e17a059b8df60d41217fd2ad9c2b08eeac17ef` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-07-tampered-mid-chain/receipt.json` | `b51142b880337f52ce90cc4d66633c4d34e58724` | 1078 | `be088b97896ac6c6f42fae172c05ae2b5b68819631ddf668d70d4a9c6a2f0e85` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-08-valid-chain-link/did_map.json` | `8d3f17547c4668e7dc90d817172fc35e8a09eb22` | 101 | `6095f5ff5625aa48c2ac204be71bc1e7c6981cb87fda261f6428d701551408ae` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-08-valid-chain-link/expected.json` | `f80945f72962b845d95ae5b22925c6997c8bb0e3` | 213 | `7715606674350e64bb3a23467af8dda0280030a5b00dd1e82c3457b24fa6828e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-08-valid-chain-link/predecessor.json` | `6dd02ffaadead687c2b602c1f907c0b851e4fcbc` | 1063 | `44e58aebe13a0637d1fff5986d27bc01b0c813e9b9c5eb260f3c47cdb266f128` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-up-08-valid-chain-link/receipt.json` | `80b855c9ed0b8fcf8b077dd91cf255827bca2fa5` | 1132 | `e738ffa8474c8450ca8fe3b43b9a7fc1ac12bfb2955c97c22d44257627f4dba2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-upstream-interop/LICENSE-MIT` | `8757c1d5c4ed24b01f555a5a880a27b605d5ae0b` | 1066 | `8e763ed5465f23ff5c751a9ecd4999190ee0deb00d33214633994fc5d17fd40a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-upstream-interop/canonicalization_vectors.json` | `f433c04316af7c8fae71a32c23718a4a697a278f` | 25891 | `df439a5b54471f210b7860dff5da1aa3b312e47689960979a65ffbe499f487ce` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/agentreceipts-upstream-interop/did_key_vectors.json` | `eb958f735a257c0988855044c0fe2fe7c4361699` | 4783 | `478e87e1e61a60d8239ea7f350daa99fb2341ef3d6c3c2ee74978f7e39a82aac` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-01-genesis-permit/expected.json` | `e49c143f485c38335565f395933ae1b9a9bfde9e` | 199 | `72257a48afe336d13b589dccbcdf83743d80437dee729954d0a9494e915e9fbf` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-01-genesis-permit/jwks.json` | `26d581d818e26b4c6aa18773685ea40cb9b5b323` | 218 | `9ae219e656fa81e03cb8ab0074adc3c580ae618b3f1f652f6a3dfabeed5a1615` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-01-genesis-permit/receipt.json` | `448b475971f989c1fdbebc2d587c8736806136a1` | 983 | `a04803fd954195371caa827e1e1b59a401ab16a45b4c3805495dc30c555dfd1e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-02-genesis-deny/expected.json` | `e8ef9235d8a6530bc8113e7d6e76b1e19bf709ec` | 140 | `4e2a3e0e0fbae67a1e243b82c0e240401cefe7fc6d33b84f479ff8f086cded5f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-02-genesis-deny/jwks.json` | `26d581d818e26b4c6aa18773685ea40cb9b5b323` | 218 | `9ae219e656fa81e03cb8ab0074adc3c580ae618b3f1f652f6a3dfabeed5a1615` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-02-genesis-deny/receipt.json` | `cee70e4865b85df4ad08316c3123a0c138966f73` | 979 | `d4151898456419e18605cdd5a742223a0a71b26fdd46902a5aed0d2759b97e09` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-03-chain-link/expected.json` | `604b27af19bf5b03e8679e1fdaa7af3d65a10a85` | 203 | `59cf35472dcc75f090840ba3b126bc963f41783d27192f21ffdb93aae905446d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-03-chain-link/jwks.json` | `26d581d818e26b4c6aa18773685ea40cb9b5b323` | 218 | `9ae219e656fa81e03cb8ab0074adc3c580ae618b3f1f652f6a3dfabeed5a1615` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-03-chain-link/predecessor.json` | `448b475971f989c1fdbebc2d587c8736806136a1` | 983 | `a04803fd954195371caa827e1e1b59a401ab16a45b4c3805495dc30c555dfd1e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-03-chain-link/receipt.json` | `0668529f17d35fb87716f1fef44d42697c7d711d` | 987 | `fc1fef69ad88d08ae3b178c9beafa14182da26f5a3886a5f3f4129ccb12adbed` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-04-tamper-sig/expected.json` | `f3cff2445e380dd1a61d47aceffd0314234118db` | 241 | `6a546ffe7d28449a75606be56610780b9e4dd0cdf98526e9ac3a89ed885ed584` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-04-tamper-sig/jwks.json` | `26d581d818e26b4c6aa18773685ea40cb9b5b323` | 218 | `9ae219e656fa81e03cb8ab0074adc3c580ae618b3f1f652f6a3dfabeed5a1615` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-04-tamper-sig/receipt.json` | `8bb637cd966d7506e6457a4c4d219a9ed5e90cda` | 979 | `dd2a2b93fbe092da744df4dbd1cecbd51f0e7b5291567bd45ea2ccef00681c86` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-05-hash-mode-prod/expected.json` | `040b247197b2ad3e469e6bb6ce26305c8e1dd07a` | 495 | `095cf2c05f0348f4d7e606c88fe5594850b4ef775357a21643c8ab75511950d0` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-05-hash-mode-prod/jwks.json` | `e2a52371352e5133c9dd0f5cf3a24e8871758d0d` | 2851 | `1bb3cab68ac297336fce89453f7c7a94ddaa13f84d44ae579af8f3e8b5845325` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-05-hash-mode-prod/receipt.json` | `170f8f78787d2e1127c627dd7b13952c57f12311` | 5001 | `d2f1baad9be60bdf3a2941c4e9a99e6e63d1bc7efe88c571e3f581d8db52354f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-05-hash-mode-prod/signed_message.bytes` | `7830b2b7b89d254641cc0a87e6e7d3019af891e0` | 418 | `f1011f5e493bf8f3f6fa7baa660aab6be2e0bbf925d852672e67155f08b4f0b3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-06-mldsa65-payload-prod/expected.json` | `38e85fd4e54af9fb3612c5db90644827a6ac7e5e` | 754 | `bb2b199ca610f13b136496ff84b832d4aabfefddb38d482d50dc155d19592b7e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-06-mldsa65-payload-prod/jwks.json` | `937f65124a5727471170803a37ef30837a91160a` | 2851 | `2ca81e3233f23ebdfa9f230c6914025f0dfd30a90c9cf322f70198c61d098bc4` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-06-mldsa65-payload-prod/receipt.json` | `387ce1be14203e8e06d741270fae38b60dcb9a8d` | 11222 | `e5c81f01d570a9a1cf0aca8f6c773feba8ce01b9580d44ffac3a26dddbf22e63` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-07-revoked-key/expected.json` | `0ac8af49034493d503abf34f2f5d741101937691` | 230 | `15add9bbb4e86a185ea211370dba29f68367aa7eac1c787edc272d5b2f46b19a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-07-revoked-key/jwks.json` | `6331575d76b1e1ee249b693758dda8bc90308bcc` | 232 | `189c0e0877682e5dda5665e6ce7dc09cb7af9adeb01184e97b022a2c5572bc08` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-07-revoked-key/receipt.json` | `94061c6062bf5070189446d91534cc42fb1a821c` | 1012 | `a86f92acd6544233ee0d2f0297268d2eb0a7a5fbb964a9a21615a74b08dd571e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-08-v2-signer-canary/expected.json` | `91b9d8c2b80e7a83732b54acf307ac5ee184e365` | 240 | `2095b072b9b21f4ce386c8e4ac982936b5a4e1a26b112b3f2494d06c4fa072e0` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-08-v2-signer-canary/jwks.json` | `c43b096903250f044cdc1959e51374566c58ceb6` | 217 | `ac7bb4db46eb8208b16f0eb805dcf32d42ea21af4bf5fa4287321fd971515205` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-08-v2-signer-canary/receipt.json` | `82d691659c131ec259d583cfffd4bcd6b1b176e9` | 1410 | `dfc15b1cf72c4bb5c061567fb0efda699b733735e9f1a43c9b760048fa195fd2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-09-v2-signer-tampered/expected.json` | `028db1dd269e7e39e0ed918fcfd6a9d5afab61df` | 300 | `4c8855d8e17c9d7a294d0be39bff6d8d536646ad18c56574af3a7b9a22123167` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-09-v2-signer-tampered/jwks.json` | `c43b096903250f044cdc1959e51374566c58ceb6` | 217 | `ac7bb4db46eb8208b16f0eb805dcf32d42ea21af4bf5fa4287321fd971515205` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-09-v2-signer-tampered/receipt.json` | `6734ef0593d4552e7de6de23c8697b582bb3375c` | 1417 | `3d6abfdd2e28b0ecd1665d77eb31f982351170f1a5423e2677ee0a1011c45e2a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-10-hash-mode-multikey/expected.json` | `db420bfafe0c15748429af5e9c2b2afab7b76c86` | 521 | `3c98c29f46c49dec9682e9d5f0d404b4afcfdda452b3be795e899d6271e0274a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-10-hash-mode-multikey/jwks.json` | `2863fff37f869d1fe82e23742045c5b19ccbe080` | 793 | `bf77ddd51ded09509785aaa1c74bd8c36f92ba3f139761fd158dbd2a399a2f53` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-10-hash-mode-multikey/receipt.json` | `9321bd1236899345c370c76746bbc53d1ec6c3f1` | 601 | `1cbcbba803be7a5a7cc4f62ccadcde293b82a1d97f5384272e187d1be2b7143f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-11-dup-member-toplevel/expected.json` | `c19964a324895b118e9c6b8e56596cbffd995ee0` | 287 | `c624641d5affc05afdfaf00f366b1f7af0780268f894601e272c2863975ad7ac` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-11-dup-member-toplevel/jwks.json` | `26d581d818e26b4c6aa18773685ea40cb9b5b323` | 218 | `9ae219e656fa81e03cb8ab0074adc3c580ae618b3f1f652f6a3dfabeed5a1615` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-11-dup-member-toplevel/receipt.json` | `a3c75ec3a80a05fb4d48573ab6b97f6cd76a7aff` | 1761 | `aafbcd0a35de37f1f51090aebf6818bf05c2a522f8df5a685a34573e3c738dec` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-12-time-edge-expiry/expected.json` | `d6f9dafa289ef8fc1aa0a0897de3723d64c2653d` | 609 | `4ee238d716051a55e735e89f7aa8724826245f7d65b6356746d8266ba9fde53e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-12-time-edge-expiry/jwks.json` | `269968b3a694c09d5417f01906af862af525a3ea` | 2815 | `55327556a85470fbe1402763ba9764f74834fc1490bc322b5843f75c5ec84fb3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-12-time-edge-expiry/receipt.json` | `4832cb93d3a6e2ffe7d9d7658b260973f2da80f2` | 5320 | `85c3a2b0237529983b5cdcbd125092d49ce2f65519f43e0eeae79e23571687cb` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-13-dup-member-nested/expected.json` | `d71d3844afd2862fd41ed29962f203723a9fd3a9` | 335 | `31ea22ea00a547260cf8f8c6b0cb997a1af0180b4c03c4108ca702633727d4c8` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-13-dup-member-nested/jwks.json` | `26d581d818e26b4c6aa18773685ea40cb9b5b323` | 218 | `9ae219e656fa81e03cb8ab0074adc3c580ae618b3f1f652f6a3dfabeed5a1615` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-13-dup-member-nested/receipt.json` | `867ae203d3769104c3f6ac92166050d2ff7453a9` | 950 | `92d59e50acdc025c61f333a7f6460e1360f452162b4163d7a04cdb6f2d5f9f25` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-14-omitted-action-chain/expected.json` | `98a4da9961a13f344c0b11e3b0b8b7b8f30aefb5` | 339 | `06357f2512c24e09451bee45b5c768c7209bdc478a6c6ed863ce98501cfeb33e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-14-omitted-action-chain/jwks.json` | `38aa2f2729c9ef4010a4a5fdc919975c201ff1e3` | 220 | `66b48d812c9bd056eee1e1bcd53721d71158b2cf8ae16542a6ea925fd3d8be4a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-14-omitted-action-chain/predecessor.json` | `a3055ff6b0e341d6d802abe391d071191c9a357b` | 987 | `1de638bb8bea4464108fc9ec231f197671b33c12877307cd5e14131bc99c1168` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-14-omitted-action-chain/receipt.json` | `a431aa386b904be05e233af0319a13a24043e5c5` | 1012 | `54a1199916791ed7053222f5325531cb78c7f026096929e8eb7f0c6a128a22a0` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-15-unsigned-gap/expected.json` | `2db4a703152365635cdbeb94e8e50fb04f657796` | 264 | `0a62093dbd9707846e0a44d528d693b92e0511572eb576cb35a113b4c01ba75f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-15-unsigned-gap/jwks.json` | `38aa2f2729c9ef4010a4a5fdc919975c201ff1e3` | 220 | `66b48d812c9bd056eee1e1bcd53721d71158b2cf8ae16542a6ea925fd3d8be4a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-15-unsigned-gap/predecessor.json` | `efdd8cb89d84d61cf7bfd14a2b7b05c6dda33e7a` | 967 | `ff2876c29aa10a381069a52133ccfd7f31e80ea715abf00fd0f530faf980e006` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-15-unsigned-gap/receipt.json` | `3559abcb257692a12b9559ddf6aeccb85865edcf` | 1122 | `a00ff97c72cef3fc066a48dddc7a8d628ab4f8a6ac2ac1fccf48a425e9d0bde5` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-16-chain-emission-blocked/expected.json` | `9139029cfe9335e839986dbc05ca99f9a97105a8` | 280 | `6112858c2e1a334dd468928323bab52ee87e0d2337e53e74f50fd98bba4760e6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-16-chain-emission-blocked/jwks.json` | `38aa2f2729c9ef4010a4a5fdc919975c201ff1e3` | 220 | `66b48d812c9bd056eee1e1bcd53721d71158b2cf8ae16542a6ea925fd3d8be4a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-16-chain-emission-blocked/predecessor.json` | `856baf24e1df97dce6d91297e44bdeff9ae42783` | 964 | `cf300a7789708e4251587af6d7ab3d247143d2683f47e5301d858743fa4bca42` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-16-chain-emission-blocked/receipt.json` | `1bed82e5ca09091328460b920aff0a7d993a2631` | 1044 | `37c916421e4cf494d21a3956b136447af92bfc4d33cb9df39ca25b0653fa3e19` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-17-seq-contiguous/expected.json` | `6c96b5b2d95c0d44fdda52997db64c9f31dabb75` | 203 | `09f4257b74ad32874c10f3c7a262d3642e5c55bad6f4fa303815030e1bded210` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-17-seq-contiguous/jwks.json` | `7c40c89e83f944a98f1f818b5a84997ad245aa6b` | 215 | `79868ab758a20f67ec0e9b670760c8cde54b62a55754336d0f1b8379f4c42c4b` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-17-seq-contiguous/predecessor.json` | `d5dcbb36d7eb88372eab153fe3c29535c7b23bde` | 980 | `5cc1562ba455535ca555de839c24354e84c24a01919f29c3132999f57cf10cfb` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-17-seq-contiguous/receipt.json` | `c7572cdb60e831a7cde2b02a712a8e4e8f0a3266` | 978 | `19f2713c4389668488c33e916d26b7c968e0950118ba619478aab901fd3d4ef8` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-18-seq-gap/expected.json` | `cd432acf70752eec47dcb2ab1ab4c3c10cc28a44` | 462 | `de21db0364ff296d0d3a67ab6f2d26cdceddf24987b84514a2bddeb4ad0ca926` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-18-seq-gap/jwks.json` | `7c40c89e83f944a98f1f818b5a84997ad245aa6b` | 215 | `79868ab758a20f67ec0e9b670760c8cde54b62a55754336d0f1b8379f4c42c4b` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-18-seq-gap/predecessor.json` | `c082b9143a30687ddaa0c7ae6d1684c8dd7748f8` | 975 | `37ebae00eb375af10fec6a09526fbfdd69bbc9d7b30ad5c798fea6ec32e12fec` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-18-seq-gap/receipt.json` | `1d032f1b4498021905a29e3a8120cf33644ca6a8` | 996 | `6deeec6020a6f62e4852d0d122460752edf7cebaf745a444c649a4bf6145403b` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-19-seq-non-monotonic/expected.json` | `55b7fbcc5f6a10e0bfe6fbeba0b6687be8715933` | 348 | `727d052e1cf0dac08b9c5bbbd6420dfc1f6e18b955e10d2e296db9d9d9c33aab` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-19-seq-non-monotonic/jwks.json` | `7c40c89e83f944a98f1f818b5a84997ad245aa6b` | 215 | `79868ab758a20f67ec0e9b670760c8cde54b62a55754336d0f1b8379f4c42c4b` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-19-seq-non-monotonic/predecessor.json` | `6132f5c3a73fd21d9ff2d88ba511df610ae0eaea` | 985 | `888f83e3e63eb4a87d4e47ecbbff1c89b244433363755159df656645c8a26c28` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-19-seq-non-monotonic/receipt.json` | `edafc104d448fccff7eecc262dc1d527b1715daa` | 983 | `d8b6d9660f7b4b053694cb777ae29d6c701563e53dae82fe7d16537b8c374682` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-20-seq-absent/expected.json` | `da35439e01a8d77656315b4b6cac8ba9038b7291` | 337 | `9252b33720cdb45e9f777d5af453b286335b2679768cfec46bfdbdffbfa6260f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-20-seq-absent/jwks.json` | `7c40c89e83f944a98f1f818b5a84997ad245aa6b` | 215 | `79868ab758a20f67ec0e9b670760c8cde54b62a55754336d0f1b8379f4c42c4b` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-20-seq-absent/predecessor.json` | `3052852c0bad658eebb6885fe4c42094cfc42458` | 957 | `1a7ada3d0cc133963e22541f1eb49dfc2d2f874adf360839a7838b9da28a46d3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-20-seq-absent/receipt.json` | `8f9d72dc06bab30ce87e9804e795d57f9b1ba680` | 955 | `7b75254baf81c3dbfe21544e40f324bcb7861b7980e1c15d7673fd51764b20c2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-21-key-thumbprint-binds/expected.json` | `d84fc47bade60121a2841f057df1e8a2f93ad222` | 278 | `ad1da90f46d8a46638f21bf3b8b5f1b0976f0e4efbdfe4690fc1527558b880ff` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-21-key-thumbprint-binds/jwks.json` | `80e7380ebb5e6c6b47bef9dc031be4a441f31f5a` | 2785 | `c4d9d51a5ac96dda55613c613e598b897f86b701df2c5acdbcf0ac5f043250b8` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-21-key-thumbprint-binds/receipt.json` | `3da794fbaaa311c72df9c0374bb667a1e9f890c9` | 5436 | `77a0e8866f049c73fce6bc5bfd1e7509a244c61e78ca6072fd7ca7613a64f828` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-22-key-substituted/expected.json` | `887508f94aab419aee93ba351b4b730f32de3470` | 529 | `989879fb47039d532479b0e5784972df29ef7567ddbb778118c46507b484f78a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-22-key-substituted/jwks.json` | `80e7380ebb5e6c6b47bef9dc031be4a441f31f5a` | 2785 | `c4d9d51a5ac96dda55613c613e598b897f86b701df2c5acdbcf0ac5f043250b8` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-22-key-substituted/receipt.json` | `f8ec8149b18db06bf361b8163a6dffbf5c6752c1` | 5437 | `db9bd41995bf6c8efbf7d754aaaeffcdd0bd91d3f4c7e940896cfdfcc2909ebc` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-23-anchor-status-pending/expected.json` | `a8b76aaf5cb09e6ad380b8a25b3c36fdb218985a` | 529 | `a5a3f5c3aff2f9e09b6fd29cbde39bb901153516302ce3a72ae9c12eaefec51c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-23-anchor-status-pending/jwks.json` | `50da003fdf78b6f52fdc08167e2a3ab10af43cf2` | 197 | `50944d061ae19457606aaba9e92a17fbec3a6d47a6f9ffd4b07e899e95a436c5` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-23-anchor-status-pending/receipt.json` | `35c2173fb91f5a7770c646392368507ac78c0c10` | 1021 | `6c8ba6cc000066f8df021a8e46b052887b3084219047b8af90c094f5701a93d3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/ANCHOR-MATERIAL.md` | `29ab10cc74c2a9f0a40273b627553c74cbdda3ff` | 2597 | `9c75aa2de7573f2297205289c77e3de63672d561e9aa202aeccb359cfb69a896` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/bitcoin_headers.json` | `26332559f6e2ee0874f3b729ee6b8380fc9e0368` | 224 | `c9ef4a03f1a8e1c0fd4eaf8ca4ce611b909304806e94854559179879b51bffa7` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/expected.json` | `10a0b54370268282e1efa5f6fd6aa0fd8dcf684c` | 879 | `bf709720bba281f1c14b543fc36d5f3c678ac8fcd602402f6796533fab2384e9` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/jwks.json` | `728f18cad718ad297258b4b10008ef5625b06d04` | 5671 | `6a35239a9ffff63438e5d9b810f74dec4c55d8b30c63743b69ae0e1fce04b02b` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/predecessor.json` | `0cac45e8c55c120c56e3307cf50dfaf3ed82198c` | 14083 | `2b4f3d1b33ceed39c098ebb36c6196104d302370ac04b97b30a5d68fe2a2a5b6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/receipt.json` | `38453101b8cb96f423efc52b7e0968cb553b8b3f` | 14274 | `02e529aeb56128a6e43edf3df74780408e0482433fce8aa2c55e39a27517e6d2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/tsa_trust.pem` | `1ec303631d93b84b8e5a9bd75832330e10fbd11a` | 5134 | `d04550215beb76d072d659b229dc6d14e7b7c20f68e46f09bd741954176b5e8c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-25-payload-digest-rederives/expected.json` | `7f22927c92ffbbec5e3c3fb53ab8de14de389fe6` | 554 | `7aba608ffda2cd500c908da93a4e77a6657a8d35e82dd09b4d96244fe65739a2` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-25-payload-digest-rederives/jwks.json` | `79d5b85fafb98a25dddbb9476480d3c50970883d` | 226 | `07cda346c9a4383c6dc38259da13c78b63ea95936ce449c687071f8b5ab7add5` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-25-payload-digest-rederives/receipt.json` | `6310e14d4fd3ca5ee2863311240719ac4bc12c5a` | 930 | `0ec4e347869c3ada6b97330e76e886e1c977b26a328214bc6d8fce6b67a6b62c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-26-payload-digest-mismatch/expected.json` | `2f11269f7628a39529871197f9c9fd030aed79ed` | 535 | `52945991f4fc899d4fb62ea44fe32ddecd3c23bf4857548d24cff85c035575e1` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-26-payload-digest-mismatch/jwks.json` | `79d5b85fafb98a25dddbb9476480d3c50970883d` | 226 | `07cda346c9a4383c6dc38259da13c78b63ea95936ce449c687071f8b5ab7add5` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-26-payload-digest-mismatch/receipt.json` | `84071fb3cfb633a25298b8662d92b9fee2e66d79` | 930 | `40810100d0144e95180119d7066d9250c3dc2f55913296e36dbf9449d1f4a7f6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-27-anchors-absent/expected.json` | `787f25994c557fa07ba1aadd83236f32dec8cc6f` | 378 | `8ff396cb533c06e37f75df4817d8a4726741ce58b38324630ebc693329ad9c44` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-27-anchors-absent/jwks.json` | `7c40c89e83f944a98f1f818b5a84997ad245aa6b` | 215 | `79868ab758a20f67ec0e9b670760c8cde54b62a55754336d0f1b8379f4c42c4b` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-27-anchors-absent/predecessor.json` | `d5dcbb36d7eb88372eab153fe3c29535c7b23bde` | 980 | `5cc1562ba455535ca555de839c24354e84c24a01919f29c3132999f57cf10cfb` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-27-anchors-absent/receipt.json` | `fa88b7dc810e583195ea80b10ee995ff79f56e8a` | 961 | `eecae5d126e9042bb7bdeee2ad790c06c53585855c2ac4c5659a9af3834e188a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-28-anchors-null-malformed/expected.json` | `11e943f5fb84bd53fd9dd35899fdb8f3915a9d2f` | 577 | `31a89695259911a0ecee5fd3311160fd2cda415820df353abaee752de17f8b03` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-28-anchors-null-malformed/jwks.json` | `7c40c89e83f944a98f1f818b5a84997ad245aa6b` | 215 | `79868ab758a20f67ec0e9b670760c8cde54b62a55754336d0f1b8379f4c42c4b` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-28-anchors-null-malformed/predecessor.json` | `d5dcbb36d7eb88372eab153fe3c29535c7b23bde` | 980 | `5cc1562ba455535ca555de839c24354e84c24a01919f29c3132999f57cf10cfb` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-28-anchors-null-malformed/receipt.json` | `72860698c9919142b59d9e760cd0b3a58e4791a4` | 980 | `fef4f4d402b0d737a8da4f31c413476c9ad73883522b5cd495091003f8e05f33` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-31-counterparty-scope-match/expected.json` | `d07b15aeebb20f69cb137e528ae4e79fccd7f5a9` | 174 | `d7c511fd01fec22f12fe9338c9b95e305ba4db70ad9510faacd6fca97c1d388f` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-31-counterparty-scope-match/jwks.json` | `b53c98301664fc288a731bf26cdada69d0ab1dd6` | 377 | `612143b9ca1c6f79063d7ff8e9ec3b983d70339f8898ef7ef8a2a24db06cf6f0` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-31-counterparty-scope-match/originating_envelope.json` | `cdb06ff50a4a50f0af1ad7122ab885ab028be9d1` | 1766 | `30ffa57c2cae70263318b27d785e482f8716830747a6dfb0283c690e6ebeb614` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-31-counterparty-scope-match/receipt.json` | `e4cae17a053669fe23491fc4e4967cefc52b5048` | 1573 | `c1e86744ad12a98b514c24f70bd554b3ae1e5373bb2c9a3c41d8ed80106a057d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-31-counterparty-scope-match/tsa_trust.pem` | `01e40ff8885bd54865fbb3fa0e0237e8160457eb` | 113 | `a3efa8b0ee9fb552c5d0e98b09e53bff7f1a7a1e7b91b31b4f226433456b32dd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-32-counterparty-anchors-included/expected.json` | `b7d8fc078b7f7b79c7565f4e0a8ae388f092822c` | 228 | `52f56d0e5875bfa90390ec813eb7fa984b67cb6477cc134dde6bad6b3d4676cc` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-32-counterparty-anchors-included/jwks.json` | `b53c98301664fc288a731bf26cdada69d0ab1dd6` | 377 | `612143b9ca1c6f79063d7ff8e9ec3b983d70339f8898ef7ef8a2a24db06cf6f0` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-32-counterparty-anchors-included/originating_envelope.json` | `cdb06ff50a4a50f0af1ad7122ab885ab028be9d1` | 1766 | `30ffa57c2cae70263318b27d785e482f8716830747a6dfb0283c690e6ebeb614` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-32-counterparty-anchors-included/receipt.json` | `e7722329eeb07aa86e96f446030842e2acf55539` | 1573 | `f44dbc522c594cd2d0343fefee7f19570309ff87b3d3d20bca9e470d34840680` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-32-counterparty-anchors-included/tsa_trust.pem` | `01e40ff8885bd54865fbb3fa0e0237e8160457eb` | 113 | `a3efa8b0ee9fb552c5d0e98b09e53bff7f1a7a1e7b91b31b4f226433456b32dd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-33-counterparty-scope-absent/expected.json` | `2ec25126a25f30296dea7cde2e3b283e53c98fd8` | 241 | `2b53526eee72eaba5fc6f1c5587b28b004b63f81fb272a725270d9b83f50e866` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-33-counterparty-scope-absent/jwks.json` | `b53c98301664fc288a731bf26cdada69d0ab1dd6` | 377 | `612143b9ca1c6f79063d7ff8e9ec3b983d70339f8898ef7ef8a2a24db06cf6f0` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-33-counterparty-scope-absent/originating_envelope.json` | `cdb06ff50a4a50f0af1ad7122ab885ab028be9d1` | 1766 | `30ffa57c2cae70263318b27d785e482f8716830747a6dfb0283c690e6ebeb614` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-33-counterparty-scope-absent/receipt.json` | `a7320535de7d4f0f9f1e8610987cb519b21e8baf` | 1532 | `cdf3ac3a505be89e974f3a21e2a3cfb3027ffe9384258f1b0d6c67f561c36b16` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-33-counterparty-scope-absent/tsa_trust.pem` | `01e40ff8885bd54865fbb3fa0e0237e8160457eb` | 113 | `a3efa8b0ee9fb552c5d0e98b09e53bff7f1a7a1e7b91b31b4f226433456b32dd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/expected.json` | `30af9fbc839b96d208814d055a1b02d7baa53eba` | 253 | `ba27083d69d0c95811b84f53ead17edb7076460634d8ea9adb2f4aed40c8e4c3` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/jwks.json` | `b53c98301664fc288a731bf26cdada69d0ab1dd6` | 377 | `612143b9ca1c6f79063d7ff8e9ec3b983d70339f8898ef7ef8a2a24db06cf6f0` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/originating_envelope.json` | `cdb06ff50a4a50f0af1ad7122ab885ab028be9d1` | 1766 | `30ffa57c2cae70263318b27d785e482f8716830747a6dfb0283c690e6ebeb614` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/receipt.json` | `56aa7cf945e202fe7257acffe3e7a883bbba9817` | 1576 | `3e2ca4f8c889d94246288252c0e3a87d1fccd2c11483d41e2383970cc1396ccc` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/tsa_trust.pem` | `01e40ff8885bd54865fbb3fa0e0237e8160457eb` | 113 | `a3efa8b0ee9fb552c5d0e98b09e53bff7f1a7a1e7b91b31b4f226433456b32dd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/expected.json` | `e5c31f9bf345b1fa925fd82fc5f7a612a322c763` | 373 | `55afa16c0f9d18b3069d59ff2f4b77e63a190b6a21fa2db81f4ec24ff4e978d9` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/jwks.json` | `8afed90d5d5d54a4b5609d03bda4395a7490a1f7` | 226 | `a00b3fe84d8c84f58ff8a012b448b302b3e85b57f280e6f2a269285122cfd717` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/predecessor.json` | `b5ac83c6c5f9ecf2e8e674763d175251bf3d64c0` | 1098 | `efd59e720f1e6595f7f13587d214e831f2750589e9f90de2b917ac4afde725bf` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/receipt.json` | `344f49fd69282880c92ff71e35a52881b82ca10f` | 1109 | `13ffaadac5b1c3dd17301beba0140a589883741afc7c9aa10a1d4b65d18d6065` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/expected.json` | `44a482659c517aa42348e27a264a626ddf4f0162` | 406 | `570f043a77764ad116d7d2a39b77a678acb9d10e42724e92fe42b48b66c1d729` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/jwks.json` | `8afed90d5d5d54a4b5609d03bda4395a7490a1f7` | 226 | `a00b3fe84d8c84f58ff8a012b448b302b3e85b57f280e6f2a269285122cfd717` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/predecessor.json` | `073a56a6745e7f39ca0c31508b0cead6d070cb0c` | 1074 | `be23ff90b5d50a28b9961badd43c8231fce000557c556b959ec33aaf0e13d401` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/receipt.json` | `577e308ec049b62403cfb62e4b78d3f6901f7efc` | 1074 | `a3ad3df3588dd556f2d888ef6a9f440fb36376eda8e97c21b83de476f3e97256` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/authproof-01-genesis-real-sdk/expected.json` | `83e29bdec999b4b759e3c032cc1782122342ed4d` | 274 | `5599a2e6341d4194186cd5c43be8c271c2dd40d8a382f1be536d89488e6378a8` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/authproof-01-genesis-real-sdk/receipt.json` | `1352fcac113fd257c5c3a03f3ddf52b46139ec14` | 763 | `9b0bfeb53d7474efe5f8faf5cd61ffb0675db784ea676bdd7db0952eba60ce09` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/authproof-02-forged-sig/expected.json` | `c1479634c9612fa6cee66ab07568bdb8f4a73e8d` | 186 | `e8b42e53a622ba9251d48c5ec975e357e5ad26f9d4e0e2e54b1ae739dbd8183e` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/authproof-02-forged-sig/receipt.json` | `ab5f76f80aace606bf817b7add36b46e78a8f0db` | 763 | `c7b9c29bbade77c4a9cc0e08aed4a193d8f79529dab40b2365456be94422ff13` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/authproof-03-tampered-scope/expected.json` | `bf11f47ef5d269ffd167b0705784c69bdd4fb813` | 203 | `727543274ada80070b9242064bd7d554f1d02a0f0df566a3f4ce0a53812c68fc` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/authproof-03-tampered-scope/receipt.json` | `c837206feb70a63abe003a8fa3d4074e240b21c1` | 752 | `b5eaef5a53f3aa58de9b774f6f4da82fec619fa9bf80b36cbb4649b40c6f7b4c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/dsse-attestation-ml-dsa-65/expected.json` | `b9af048495a85c355fcd18427c4733fe3f09f5a1` | 646 | `1ea376d91636d4d97011e71c1fca5453b3b0e00ebf31da148e7b1869fb5746d6` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/dsse-attestation-ml-dsa-65/jwks.json` | `88343c8089837299e1d387776074afb12a5cf662` | 2843 | `948f90f172118d08657c040598a30c7934199c918642b1cc226daae88782eec7` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/dsse-attestation-ml-dsa-65/manifest.json` | `5b387e5d3657fb89e5a60dbfdcd3b2e54d842a29` | 778 | `e7043c177731126a1deda33e0e6cca6140b67a782c00415f35c8176eecad949d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/dsse-attestation-ml-dsa-65/pae_kat.json` | `c44502223c4109db16235f7a97b7a8163bdf0ad6` | 1263 | `9599c222cbe57786a4f5309c6533053356bd2cbaf79e0cb39fd31724f53102dc` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/dsse-attestation-ml-dsa-65/receipt.json` | `ffaa26c4bef8adf69eaac9dc0bec5c425c4983f6` | 5087 | `59323a1cfe5c6b91866aece0e51f38afd391cc26c4f457d9b1d5639b3efac86a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_acta_upstream_vectors.py` | `3a747d1c8a0439b3620cf5fb4ebf4b68d28eb9d9` | 3892 | `0a805b56593b428f68d11f4240307500bbe29ca5bed9549892f53e95b839cc80` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_acta_vectors.py` | `95cd54a3f4d3a5e3da82ed492f3c4a214a8be5a7` | 9809 | `831fec25de5d0e352f75876fe91db5625c596294028695a5caeffda1828a6e54` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_invocation_ref_vectors.py` | `ef8060f16e7bce2416addbf374a373eb65ed2ac3` | 7297 | `6fad2942a36e90a5116f9a54bb11d2c95513865020016c2d972de9de4a970a55` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_key_binding_vectors.py` | `443ade8b74d6dd006b06deb96720471b326ead5c` | 7958 | `a21a3c15f03b3178555c3f37f0460035393348afc2afdfae93bb8c975f0e356c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_oracle_vectors.py` | `03107731319a6460753ce052cc6c1988f84d3cba` | 18703 | `290cea795e50dcfa9f5ebacaf13f5c3163b5cf759f3d4063555709665e45ce91` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_payload_digest_vectors.py` | `1764a8ca31372abb1ac2ce69d7c3c0641d6ff81f` | 6794 | `9e2b2ec63302f99f94dfdfc19d66c7b3da0e0a476596ee6acbb9e189834b54b8` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_selective_omission_vectors.py` | `37c1b42252b11ec329d6f7d22de21ac92eb38be5` | 8078 | `f0106153c7ebdf29b88a8e86b817e90dfd480661a78a2587a53fe42bd7bec8cc` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_seq_vectors.py` | `acf1f0c2570f2c950d77a5fd75315e70778d3664` | 11279 | `0ce1d1ad0730b8a44d8a48aeaecc1298e4e17a714e23986d446dbfc6a27df282` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/gen_v2_signer_vectors.py` | `ac82b3f7eebb2af2349f4f1b7b9f65ced98c5c0b` | 6757 | `54b4a6b07b157016cb3d9ce315bc6b6ced34d7f142739daa0058bdc4ebaeacda` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/manifest.json` | `1016ec9bac94299691083ad6b210f1ea2b125e49` | 29683 | `6a1abdfca7dd49981dc64fb6a123992244ea61bc11993be3e4044a973fc27960` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/manifest.lock.json` | `0fa374234cb81bf00ba90300a46a9e53124d4c63` | 68512 | `8c2b55a72ae9bbdc6655bc22e473687494ccdc301e60e004add407811754e5a5` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/pipelock-ev2-01-proxy-decision/expected.json` | `608254be6239fe3da0514d01fdc8c84e3e5e998f` | 379 | `c9023914bba62a4bf23e512b401f6af931eb0dfc90d25efd9e4d4f98a91a6bcd` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/pipelock-ev2-01-proxy-decision/keys.json` | `e8a084a115fe9a56ffe1219ce8fd7bb64283ff27` | 97 | `22da44053f7b7129182f1790f76cef42bd626e48a7be38ee1bae66b4a6c838d9` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/pipelock-ev2-01-proxy-decision/receipt.json` | `b8b6763cf273c73c7609a68f7bd8595b2271e664` | 730 | `b0cc553ce93afc1f797c402dc8303d86bf97d06bbc35afe2d910dae26b203289` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/pipelock-ev2-02-tamper-payload/expected.json` | `e16cc1fdae3f8acbfff2e727d2a0eeb1ef254c73` | 273 | `a19aa73082502ad4a484e7f189cd69fa7834dc61b364f576312c0c0716a3016a` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/pipelock-ev2-02-tamper-payload/keys.json` | `e8a084a115fe9a56ffe1219ce8fd7bb64283ff27` | 97 | `22da44053f7b7129182f1790f76cef42bd626e48a7be38ee1bae66b4a6c838d9` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/pipelock-ev2-02-tamper-payload/receipt.json` | `ac77825a693e5b00b6665bfe4e5911421c00341a` | 730 | `9bb3a0d9c98e7f6affa065cd5207f7ef89fb062e4bcf2da5e11f9847f764c866` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/requirement-map.json` | `673402abc26f6496371c0d8a996566fd9036d432` | 60666 | `ddcc1df27c60610081a669ea5e55b61191f457d9b99ba48e9bccdc55c4639cc4` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-01-didweb-happy-path/did_map.json` | `ca13c5fc3ed5111c9e18679bb5f08f33a20851e1` | 505 | `696b6045b08c96348fe563d15b49a54d2383d68c83ea7ed45aeb93979aac3763` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-01-didweb-happy-path/expected.json` | `2ab6c9504f1398d2d70120ba89af78484a61961d` | 301 | `a859e48fc1b5d80d5294d966581dd1fa56defd0bbb9b6d66548a9c72c210f027` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-01-didweb-happy-path/receipt.json` | `02b3ffb8fc20c1bfaa616e80b0facc585e87b7c9` | 903 | `c116216553f9c94b8b2ab08505365b60a9c952b7ae6f5b2a17cb8a356e873a08` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-02-tamper-subject/did_map.json` | `ca13c5fc3ed5111c9e18679bb5f08f33a20851e1` | 505 | `696b6045b08c96348fe563d15b49a54d2383d68c83ea7ed45aeb93979aac3763` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-02-tamper-subject/expected.json` | `935db6631c1830e9587c0e266317e48edf6eb34b` | 221 | `6e8b825f03e8004eb25c33c6a48d0994cdfb2e673a530be655e5039ec6c0e584` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-02-tamper-subject/receipt.json` | `0634237811e735e300a637d157b8fe7f90a04333` | 900 | `9170e637dab18e030a4bc2b714fbb86aeeaaee9df219b468ab91c851056d7f00` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-03-tamper-proofvalue/did_map.json` | `ca13c5fc3ed5111c9e18679bb5f08f33a20851e1` | 505 | `696b6045b08c96348fe563d15b49a54d2383d68c83ea7ed45aeb93979aac3763` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-03-tamper-proofvalue/expected.json` | `96b7443447f0d7a6b3313fedcf96ae3a99a467ee` | 226 | `e3b48a3feb74e0b3ad1f3953e28ccecb004a39c500a1f9837a7a6358d542061d` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-03-tamper-proofvalue/receipt.json` | `7d1599e20a2636e224fac9b1c942a7defbc1169c` | 903 | `63f6061a51366d7b39bfb8dbf1862fbdbb09eb3d3c79b692d193a3fe24d8a9b9` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-04-wrong-key-injected/did_map.json` | `f60c99aa6276e0f629a8ba178bb411565c73667d` | 505 | `f46792c0bd195d8139cac4ba406face71d8f1dce9195dfc05d75e96035e74819` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-04-wrong-key-injected/expected.json` | `3ed5a26c0ffb8e0d6274e5a83ec5566593031a2d` | 246 | `cb1929a9a2e99c50366235c1ec328e9bb9ddee011efb512ea45325621b9f1b63` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-04-wrong-key-injected/receipt.json` | `02b3ffb8fc20c1bfaa616e80b0facc585e87b7c9` | 903 | `c116216553f9c94b8b2ab08505365b60a9c952b7ae6f5b2a17cb8a356e873a08` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-05-no-did-document/expected.json` | `333ac9d48353ee17c4468b12d07f8e1d494295c2` | 278 | `bfa3c724fb68a3a46d5245aa612a32a7024cfde675e6b0f25d249e53db5aff2c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-05-no-did-document/receipt.json` | `02b3ffb8fc20c1bfaa616e80b0facc585e87b7c9` | 903 | `c116216553f9c94b8b2ab08505365b60a9c952b7ae6f5b2a17cb8a356e873a08` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-06-expired/did_map.json` | `ca13c5fc3ed5111c9e18679bb5f08f33a20851e1` | 505 | `696b6045b08c96348fe563d15b49a54d2383d68c83ea7ed45aeb93979aac3763` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-06-expired/expected.json` | `f36887d6b2739655382824c8fb55efb3d79f8890` | 234 | `cfa6511ce9c4a684f26b0d480b2ecaedac44f88a3c77fb3ea1a3f6dd6211f18c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-06-expired/receipt.json` | `3f63244e7d00b75b31c04ed5e8b4e98f36eb4dea` | 903 | `4952d542d6bc5080b747472dfaa4fa8f2f74445724e64553bdc79115512b5a4c` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-07-dup-member/expected.json` | `8c7d596150fbeaf9dbb320606478ae8c0296393d` | 279 | `39dedc558c062a68e5c3f50ac9aac8c5661da9217de5c920be7cdba1aa1c8f49` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-07-dup-member/receipt.json` | `1fd81cdb293cc58dbc97fdfd1e355b5a1a5e5d29` | 1064 | `e6209f19ae938c687533667a45ba3e68292b8f9c15bf1529986af05e76cfde06` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-08-didkey-happy-path/expected.json` | `fcc2cca92a4313935640d01a9fa6e4738b5a4cd1` | 207 | `f5acecb78db7fb0542ac54ef79be9c7978dc9b54e688189d091962960c9e7c79` |
+| `fixtures/asqav/6137cb95/verifier/conformance-vectors/w3c-vc-08-didkey-happy-path/receipt.json` | `d212acc69aa4d3acef6117252abc10ce4168cbd0` | 1005 | `6df9655344e7b87f5fc4a03ae097a6cd556acb7449c0df696dab6d66488e1aa4` |

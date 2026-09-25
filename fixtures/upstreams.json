@@ -171,6 +171,37 @@
   },
   "upstreams": [
     {
+      "id": "asqav-sdk/6137cb95",
+      "kind": "git",
+      "role": "historical",
+      "repo": "https://github.com/jagmarques/asqav-sdk",
+      "ref": "main",
+      "ref_source": "Resolved in this session from a fresh clone outside the repository: `git -c core.autocrlf=false clone --quiet https://github.com/jagmarques/asqav-sdk` then `git rev-parse origin/main` printed `bd002c0c9ad863fa0b1c4de675f6378b7321dda0` at 2026-09-25T08:51:14Z. 6137cb95 is its ancestor, 32 commits behind. The commit is pinned because draft-marques-asqav-compliance-receipts-09 names it as its vector corpus (-09 lines 7094-7097), not because it is the tip.",
+      "pinned_commit": "6137cb95edcfcd820ecff0e11c6f603b2da664b1",
+      "paths": [
+        {
+          "path": "conformance/vectors.json",
+          "pinned_blob": "ebd8931ded180ac42c4d7c44a4b52b700c1af0d5",
+          "sha256": "575d2605d5acf40d3387603cdded83e95efbe8794dc8dd8387f6b7905d1db99a",
+          "check": "fail"
+        },
+        {
+          "path": "conformance/manifest.lock.json",
+          "pinned_blob": "69aacedb141919fe321daa7ee589f7e676983be6",
+          "sha256": "a2839bf22a3b6eeb6b0182064ef590bff4ae721df611c612492e228af873251b",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's own lock over the conformance directory, pinned for provenance; walker/scopes.json does not walk it. Its vectors.json row is sha256 575d2605d5acf40d3387603cdded83e95efbe8794dc8dd8387f6b7905d1db99a at 54904 bytes, the digest this entry records."
+        }
+      ],
+      "tree_note": "The whole verifier/conformance-vectors/ tree at this commit (301 files) is pinned under the same corpus_dirs; its per-file digests and upstream blob ids are in fixtures/provenance.md, and all 300 rows of the author's verifier/conformance-vectors/manifest.lock.json equal the pinned bytes.",
+      "corpus_dirs": [
+        "fixtures/asqav/6137cb95"
+      ],
+      "provenance_section": "Appended 2026-09-25 — the asqav-sdk corpus at `6137cb95`, the commit -09 cites",
+      "role_reason": "Pinned for a finding: the corpus -09 cites, walked against -09 in FINDINGS-rerun-2026-09-25.md. It is not the tip (bd002c0c at 2026-09-25T08:51:14Z), so it is not the entry the drift check reads; asqav-sdk/a21d060 stays role current. At the tip the two conformance/ paths are the same blobs as here and 25 files under verifier/conformance-vectors/ differ."
+    },
+    {
       "id": "asqav-sdk/a21d060",
       "kind": "git",
       "role": "current",

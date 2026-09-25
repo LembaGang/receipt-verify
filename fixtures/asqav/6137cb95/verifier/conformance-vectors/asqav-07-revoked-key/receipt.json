@@ -1,0 +1,30 @@
+{
+  "payload": {
+    "type": "protectmcp:decision",
+    "v": 1,
+    "issued_at": "2026-06-01T12:00:00+00:00",
+    "issuer_id": "asqav-revoked-vec-key",
+    "agent_id": "agt_revoked_001",
+    "action_ref": "sha256:2e0238353b3c789cd9b340ebca1f8de5caf1503a76dcbe3abf9ee8508b78b61b",
+    "context": {
+      "subject": "revoked-key",
+      "agent": "agt_revoked_001",
+      "kid": "asqav-revoked-vec-key"
+    },
+    "payload_digest": {
+      "hash": "2e0238353b3c789cd9b340ebca1f8de5caf1503a76dcbe3abf9ee8508b78b61b",
+      "size": 81
+    },
+    "policy_digest": "sha256:9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca7",
+    "previousReceiptHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "decision": "allow",
+    "mode": "payload",
+    "tool_name": "demo.action"
+  },
+  "signature": {
+    "alg": "Ed25519",
+    "kid": "asqav-revoked-vec-key",
+    "sig": "S2iwILI8OZzkAs3bbWNvfqTqV8f/krTqbCaubNfl+I8frSeC5h7FbNtdm4eAo0g9OC2ZX866n7ohpnlaegSdDQ=="
+  },
+  "anchors": []
+}

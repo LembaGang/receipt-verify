@@ -159,9 +159,22 @@ describe("digest walker — positive control: M6 is found unaided", () => {
   it("finds M6 nowhere else: every mismatch in the run is one of those two corpora", () => {
     // The control that makes the four assertions above mean something. If the
     // walker mismatched broadly, "it found M6" would be an accident of volume.
-    expect([...new Set(mismatches.map((r) => r.corpus))].sort()).toEqual([
+    const m6 = mismatches.filter((r) => r.corpus !== "asqav/6137cb95");
+    expect([...new Set(m6.map((r) => r.corpus))].sort()).toEqual([
       "asqav/05c1c49",
       "asqav/history/ee8a3e7",
+    ]);
+    // 2026-09-25: asqav/6137cb95, graded under -09, carries four mismatches and
+    // they are not M6. Each is a negative vector the corpus itself declares a
+    // mismatch (vector 29's `expected.binding_label` "mismatch", asqav-32's
+    // `reason_code` "counterparty_mismatch"). Named exactly, so a fifth is a diff.
+    expect(
+      mismatches.filter((r) => r.corpus === "asqav/6137cb95").map((r) => `${r.file.replace("fixtures/asqav/6137cb95/", "")}#${r.pointer}`).sort(),
+    ).toEqual([
+      "conformance/vectors.json#/vectors/29/expected/envelope_hash_base64",
+      "conformance/vectors.json#/vectors/29/expected/envelope_hash_hex",
+      "conformance/vectors.json#/vectors/29/input/counterparty_binding/envelope_hash",
+      "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/receipt.json#/payload/counterparty_binding/envelope_hash",
     ]);
   });
 
@@ -467,9 +480,9 @@ describe("digest walker — applies_to and the rule_idle row", () => {
     for (const [id, c] of Object.entries(baseline.report.body.per_corpus)) {
       const rows = baseline.report.body.rows.filter((r) => r.corpus === id);
       // 2026-09-25: declared_opaque_expired excluded too; the walker subtracts it from `registered` and this recount did not.
-      const graded = rows.filter(
-        (r) => r.outcome !== "unregistered" && r.outcome !== "rule_idle" && r.outcome !== "declared_opaque" && r.outcome !== "declared_opaque_expired",
-      ).length;
+      // 2026-09-25: and input_absent and the two -09 unverifiable scope outcomes, which grade nothing either.
+      const ungraded = ["unregistered", "rule_idle", "declared_opaque", "declared_opaque_expired", "input_absent", "unverifiable_legacy_scope", "unverifiable_undefined_scope"];
+      const graded = rows.filter((r) => !ungraded.includes(r.outcome)).length;
       expect(c["registered"], `registered at ${id}`).toBe(graded);
       expect(c["rule_idle"], `rule_idle at ${id}`).toBe(rows.filter((r) => r.outcome === "rule_idle").length);
     }
@@ -1059,7 +1072,7 @@ describe("digest walker — asqav.action_ref.descriptor and input_absent", () =>
     expect(c["unregistered"]).toBe(31);
     expect(c["registered"]).toBe(60);
     expect(body.totals["input_absent"]).toBe((baseline.report.body.totals["input_absent"] ?? 0) + 7);
-    expect(run.stdout).toContain(` input_absent=${body.totals["input_absent"]};`);
+    expect(run.stdout).toMatch(new RegExp(`SUMMARY .* input_absent=${body.totals["input_absent"]}[ ;]`));
     expect(run.stdout).toContain("INPUT_ABSENT  fixtures/asqav/a21d060/conformance/vectors.json/vectors/14/input/action_ref");
     expect(body.totals["match"]).toBe(baseline.report.body.totals["match"]);
     expect(body.totals["mismatch"]).toBe(baseline.report.body.totals["mismatch"]);
@@ -1112,5 +1125,69 @@ describe("digest walker — asqav.action_ref.descriptor and input_absent", () =>
     const row = rowsAt((JSON.parse(readFileSync(report, "utf8")) as Report).body).find((r) => r.pointer === "/vectors/14/input/action_ref")!;
     expect(row.outcome).toBe("mismatch");
     expect(String(row.note)).toContain("exactly four");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// asqav/6137cb95: the corpus -09 cites, graded under -09 and under no -08 rule.
+// ---------------------------------------------------------------------------
+describe("digest walker — asqav/6137cb95 under marques-09", () => {
+  const CORPUS = "asqav/6137cb95";
+  const mine = baseline.report.body.rows.filter((r) => r.corpus === CORPUS);
+
+  it("applies no -08 rule: every graded row cites marques-09 or the corpus's own header", () => {
+    expect(mine.length).toBeGreaterThan(0);
+    const ruled = mine.filter((r) => r.rule !== null);
+    for (const r of ruled) {
+      expect(["asqav.vector.canonical", "asqav.vector.sha256"].includes(r.rule!) || (r as Row & { document?: string }).document === "marques-09", `${r.rule} at ${r.pointer}`).toBe(true);
+    }
+    for (const id of ["asqav.counterparty.envelope_hash", "asqav.counterparty.envelope_hash.input", "asqav.counterparty.envelope_hash.expected", "asqav.chain.asqav.payload", "asqav.chain.acta.whole"]) {
+      expect(mine.some((r) => r.rule === id), `${id} must not be applied at ${CORPUS}`).toBe(false);
+    }
+  });
+
+  it("a binding with no scope member is unverifiable_legacy_scope and one with an undefined scope is unverifiable_undefined_scope; neither is recomputed", () => {
+    const at = (outcome: string) => mine.filter((r) => r.outcome === outcome).map((r) => `${r.file.replace("fixtures/asqav/6137cb95/", "")}#${r.pointer}`).sort();
+    expect(at("unverifiable_legacy_scope")).toEqual([
+      "conformance/vectors.json#/vectors/30/expected/envelope_hash_base64",
+      "conformance/vectors.json#/vectors/30/expected/envelope_hash_hex",
+      "conformance/vectors.json#/vectors/30/input/counterparty_binding/envelope_hash",
+      "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/receipt.json#/payload/counterparty_binding/envelope_hash",
+    ]);
+    expect(at("unverifiable_undefined_scope")).toEqual([
+      "conformance/vectors.json#/vectors/31/expected/envelope_hash_base64",
+      "conformance/vectors.json#/vectors/31/expected/envelope_hash_hex",
+      "conformance/vectors.json#/vectors/31/input/counterparty_binding/envelope_hash",
+      "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/receipt.json#/payload/counterparty_binding/envelope_hash",
+    ]);
+    for (const r of mine.filter((x) => x.outcome.startsWith("unverifiable_"))) expect(r.recomputed).toBeNull();
+    const c = baseline.report.body.per_corpus[CORPUS]!;
+    expect(c["unverifiable_legacy_scope"]).toBe(4);
+    expect(c["unverifiable_undefined_scope"]).toBe(4);
+  });
+
+  it("the minus-anchors bindings recompute: the happy path and the receipt-file match", () => {
+    const ok = (file: string, ptr: string) => mine.find((r) => r.file.endsWith(file) && r.pointer === ptr)?.outcome;
+    expect(ok("conformance/vectors.json", "/vectors/14/input/counterparty_binding/envelope_hash")).toBe("match");
+    expect(ok("asqav-31-counterparty-scope-match/receipt.json", "/payload/counterparty_binding/envelope_hash")).toBe("match");
+  });
+
+  it("the regime is what makes the difference: the same rules without scope_regime read vectors 30 and 31 the -08 way", () => {
+    // The control. Without it, "never graded" could be a rule that grades nothing.
+    const scopes = JSON.parse(readFileSync(join(ROOT, "walker", "scopes.json"), "utf8")) as ScopesDoc;
+    for (const r of scopes.corpora.find((c) => c.id === CORPUS)!.rules!) delete r["scope_regime"];
+    const report = join(tmp(), "no-regime.json");
+    walkRaw({ report, scopes: writeJsonTmp("scopes.json", scopes) });
+    // conformance/vectors.json only: the receipt-file rule has no -08 reading to fall back to.
+    const rows = (JSON.parse(readFileSync(report, "utf8")) as Report).body.rows.filter(
+      (r) => r.corpus === CORPUS && r.file.endsWith("conformance/vectors.json"),
+    );
+    expect(rows.filter((r) => r.outcome.startsWith("unverifiable_"))).toEqual([]);
+    // Under the -08 reading vector 30's scope-less binding is resolved by peer
+    // inference, finds two scopes among its peers and is left unregistered;
+    // vector 31's undefined value is a mismatch. -09 reads neither that way.
+    const at = (ptr: string) => rows.find((r) => r.pointer === ptr)!.outcome;
+    expect(at("/vectors/30/input/counterparty_binding/envelope_hash")).toBe("unregistered");
+    expect(at("/vectors/31/input/counterparty_binding/envelope_hash")).toBe("mismatch");
   });
 });

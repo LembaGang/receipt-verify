@@ -70,7 +70,10 @@ const UPSTREAMS_LABEL = relative(REPO, UPSTREAMS).split("\\").join("/") || UPSTR
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
-type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle" | "declared_opaque" | "declared_opaque_expired" | "input_absent";
+type Outcome =
+  | "match" | "mismatch" | "unregistered" | "serializer_disagreement" | "expected_refusal" | "rule_idle"
+  | "declared_opaque" | "declared_opaque_expired" | "input_absent"
+  | "unverifiable_legacy_scope" | "unverifiable_undefined_scope";
 
 /**
  * Outcomes that grade no field. They are counted and printed, they never fail
@@ -83,7 +86,17 @@ type Outcome = "match" | "mismatch" | "unregistered" | "serializer_disagreement"
  * recompute it): here the rule exists and a third party could recompute the value
  * if the corpus supplied the input, and the row says which input is missing.
  */
-const UNGRADED: ReadonlySet<Outcome> = new Set<Outcome>(["unregistered", "rule_idle", "declared_opaque", "declared_opaque_expired", "input_absent"]);
+const UNGRADED: ReadonlySet<Outcome> = new Set<Outcome>([
+  "unregistered", "rule_idle", "declared_opaque", "declared_opaque_expired", "input_absent",
+  // marques-09 lines 1781-1787 and 1881-1892: a counterparty binding with no scope
+  // member, or with a scope value the profile does not define, is reported
+  // unverifiable and MUST NOT be reported verified or failed on byte equality.
+  // Only a rule carrying `scope_regime: "marques-09"` produces these.
+  "unverifiable_legacy_scope", "unverifiable_undefined_scope",
+]);
+
+/** Outcomes that appear in counts and on printed lines only when non-zero. */
+const SPARSE_COLUMNS = ["declared_opaque_expired", "input_absent", "unverifiable_legacy_scope", "unverifiable_undefined_scope"] as const;
 
 interface Row {
   corpus: string;
@@ -341,6 +354,15 @@ interface Rule {
   holder?: string;
   /** asqav_action_ref_descriptor: the sibling member of `action_ref` the rule reads the Action descriptor from. */
   descriptor_member?: string;
+  /**
+   * asqav_envelope_hash and asqav_envelope_hash_file: which document's reading of
+   * the `scope` member governs. ABSENT is the -08 reading this registry has always
+   * applied (no member -> the three-key object). "marques-09" is -09 s5.8.1: the
+   * only scope is envelope_minus_anchors, a binding with no member is
+   * `unverifiable_legacy_scope`, and one naming any other value is
+   * `unverifiable_undefined_scope`; neither is graded.
+   */
+  scope_regime?: "marques-09";
 }
 
 /** `asqav/history/*` matches `asqav/history/ee8a3e7`. Only `*` is special. */
@@ -767,6 +789,10 @@ async function ruleAsqavVectors(ctx: Ctx, rules: Rule[], filePath: string) {
       }
 
       const te = target["input"] as Record<string, Json>;
+      if (rEnv.scope_regime === "marques-09") {
+        await gradeEnvelope09(ctx, rEnv, file, ptrOf, cbo, fields, how, scopeOf09(prefix.endsWith("/expected") ? "expected" : "binding", cbo, v, doc, String(target["name"])), te);
+        continue;
+      }
       const three: Json = { payload: te["payload"]!, signature: te["signature"]!, anchors: te["anchors"]! };
       const minusAnchors: Json = { payload: te["payload"]!, signature: te["signature"]! };
       const cThree = await canon(three);
@@ -930,6 +956,111 @@ function scopeOf(
   }
 
   return { kind: "three_key", source: "no scope member; the -08 s5.7 three-key object is the default" };
+}
+
+/**
+ * The scope of ONE block under marques-09 s5.8.1 (lines 1781-1802, 1881-1892).
+ *
+ * A wire binding (`counterparty_binding`, at either place a vector carries one)
+ * is read from its OWN `scope` member and nothing else: -09 makes the member
+ * REQUIRED and says the verifier MUST read it before recomputing, so a binding
+ * without it is a legacy binding however its neighbours are written. The -08
+ * reading's peer inference would turn such a binding into an inferred
+ * minus-anchors one, which is the substitution -09 forbids.
+ *
+ * An `expected` block is output renderings, not a binding. It takes the scope of
+ * the same vector's input binding when the vector has one -- including that
+ * binding's absence of a scope, which makes the renderings legacy too -- and only
+ * when the vector carries no binding at all (a pure canonicalisation vector that
+ * publishes the digest of its own envelope) falls back to the unanimous scope of
+ * the vectors binding to it, as the -08 resolution order did.
+ */
+function scopeOf09(
+  kind: "binding" | "expected",
+  block: Record<string, Json>,
+  vector: Record<string, Json>,
+  doc: { vectors: Array<Record<string, Json>> },
+  envelopeName: string | null,
+): ScopeChoice {
+  const own = readScope(block["scope"], "counterparty_binding.scope");
+  if (own) return own;
+  const legacy: ScopeChoice = { kind: "three_key", source: "no scope member on this binding (marques-09 lines 1783-1787: a legacy binding)" };
+  if (kind === "binding") return legacy;
+  const input = vector["input"];
+  if (isObject(input) && isObject(input["counterparty_binding"])) {
+    const sib = readScope((input["counterparty_binding"] as Record<string, Json>)["scope"], "the same vector's input.counterparty_binding.scope");
+    return sib ?? { kind: "three_key", source: "the same vector's input.counterparty_binding carries no scope member (marques-09 lines 1783-1787: a legacy binding)" };
+  }
+  const peer = scopeOf(block, vector, doc, envelopeName);
+  return peer.kind === "three_key" ? legacy : peer;
+}
+
+/**
+ * Grade one block's renderings under marques-09. Only envelope_minus_anchors is
+ * recomputed; no other scope is tried, because -09 lines 1799-1802 and 1889-1890
+ * forbid recomputing under both and reporting whichever matches.
+ */
+async function gradeEnvelope09(
+  ctx: Ctx, rEnv: Rule, file: string, ptrOf: (f: string) => string, cbo: Record<string, Json>,
+  fields: readonly string[], how: string, sc: ScopeChoice, te: Record<string, Json>,
+) {
+  const construction = "sha256(utf8(jcs({\"payload\": A.payload, \"signature\": A.signature}))) -- A's envelope minus anchors";
+  for (const f of fields) {
+    const declared = cbo[f];
+    if (typeof declared !== "string") continue;
+    const ptr = ptrOf(f);
+    if (sc.kind === "ambiguous") {
+      push(ctx, { ...rEnv, construction: null }, file, ptr, declared, null, "unregistered", `envelope: ${how}; ${sc.source}`);
+      continue;
+    }
+    if (sc.kind === "three_key") {
+      push(ctx, { ...rEnv, construction: null }, file, ptr, declared, null, "unverifiable_legacy_scope",
+        `envelope: ${how}; ${sc.source}. Reported "unverifiable, legacy scope" and not recomputed (marques-09 lines 1785-1787 and 1883-1886).`);
+      continue;
+    }
+    if (sc.kind === "unknown") {
+      push(ctx, { ...rEnv, construction: null }, file, ptr, declared, null, "unverifiable_undefined_scope",
+        `envelope: ${how}; ${sc.source} declares ${JSON.stringify(sc.value)}, a value this profile does not define. ` +
+          "Reported unverifiable and not recomputed (marques-09 lines 1890-1892).");
+      continue;
+    }
+    const c = await canon({ payload: te["payload"]!, signature: te["signature"]! });
+    if (!c.ok) {
+      pushCanonFailure(ctx, { ...rEnv, construction }, file, ptr, declared, c);
+      continue;
+    }
+    const hex = sha256Hex(c.bytes!);
+    const encoding = /^[0-9a-f]{64}$/.test(declared) ? "hex" : /[-_]/.test(declared) ? "base64url" : "base64";
+    const db = declaredBytes(declared);
+    if (db === null) {
+      push(ctx, { ...rEnv, construction, encoding }, file, ptr, declared, renderLike(hex, declared), "unregistered",
+        `envelope: ${how}; the declared value is not a 32-byte digest in any recognised notation, so there is nothing to compare`);
+      continue;
+    }
+    // Bytes, not notation: -09 lines 1746-1748 have the verifier decode either alphabet, padded or not.
+    push(ctx, { ...rEnv, construction, encoding }, file, ptr, declared, renderLike(hex, declared),
+      db.equals(Buffer.from(hex, "hex")) ? "match" : "mismatch", `envelope: ${how}; scope: ${sc.source}`);
+  }
+}
+
+/**
+ * marques-09 s5.8.1 over a receipt FILE: `payload.counterparty_binding` of a
+ * receipt.json, recomputed against the originating_envelope.json beside it.
+ * That sibling is the only way the file names A's envelope, so a receipt without
+ * one is not this rule's input and is left to the census.
+ */
+async function ruleAsqavEnvelopeFile(ctx: Ctx, r: Rule, receiptPath: string) {
+  const origin = join(dirname(receiptPath), "originating_envelope.json");
+  if (!existsSync(origin)) return;
+  const receipt = readJson(receiptPath) as Record<string, Json>;
+  const payload = receipt["payload"];
+  if (!isObject(payload) || !isObject(payload["counterparty_binding"])) return;
+  const cbo = payload["counterparty_binding"] as Record<string, Json>;
+  const fields = ["envelope_hash", "envelope_hash_hex", "envelope_hash_base64", "envelope_hash_base64url"] as const;
+  const a = readJson(origin) as Record<string, Json>;
+  const sc = scopeOf09("binding", cbo, {}, { vectors: [] }, null);
+  await gradeEnvelope09(ctx, r, rel(receiptPath), (f) => `/payload/counterparty_binding/${f}`, cbo, fields,
+    `the sibling ${rel(origin)}`, sc, a);
 }
 
 /** The originating envelope a vector names, wherever the corpus writes the ref. */
@@ -1400,7 +1531,12 @@ async function main(): Promise<number> {
     const files = walkFiles(dir);
 
     const only = c.only_files;
-    const wanted = (relPath: string) => !only || only.some((o) => relPath.endsWith(o));
+    // A pattern with `*` is matched against the path inside the corpus directory
+    // (asqav/6137cb95 walks one format's directories out of a tree that pins
+    // several); any other entry keeps its original suffix meaning.
+    const inCorpus = (relPath: string) => (relPath.startsWith(c.dir + "/") ? relPath.slice(c.dir.length + 1) : relPath);
+    const wanted = (relPath: string) =>
+      !only || only.some((o) => (o.includes("*") ? globMatch(o, inCorpus(relPath)) : relPath.endsWith(o)));
 
     // asqav conformance vectors
     for (const p of files) {
@@ -1431,6 +1567,28 @@ async function main(): Promise<number> {
       for (let i = 1; i < members.length; i++) {
         await ruleChainPair(ctx, r, join(chainDir, members[i]!), join(chainDir, members[i - 1]!),
           r.kind === "chain_prev_payload" ? "payload" : "whole");
+      }
+    }
+
+    // chain pairs by glob: every receipt.json the pattern names with a predecessor.json beside it
+    for (const r of rules) {
+      if (r.kind !== "chain_prev_payload_pairs") continue;
+      for (const p of files) {
+        const relPath = rel(p);
+        if (!globMatch(r.file, inCorpus(relPath)) || !wanted(relPath)) continue;
+        const predecessorPath = join(dirname(p), "predecessor.json");
+        if (!existsSync(predecessorPath)) continue;
+        await ruleChainPair(ctx, r, p, predecessorPath, "payload");
+      }
+    }
+
+    // counterparty bindings in receipt files, against the originating envelope beside them
+    for (const r of rules) {
+      if (r.kind !== "asqav_envelope_hash_file") continue;
+      for (const p of files) {
+        const relPath = rel(p);
+        if (!globMatch(r.file, inCorpus(relPath)) || !wanted(relPath)) continue;
+        await ruleAsqavEnvelopeFile(ctx, r, p);
       }
     }
 
@@ -1559,7 +1717,7 @@ async function main(): Promise<number> {
       }
     }
 
-    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0, input_absent: 0, declared: 0, inferred: 0 };
+    const counts: Record<string, number> = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0, input_absent: 0, unverifiable_legacy_scope: 0, unverifiable_undefined_scope: 0, declared: 0, inferred: 0 };
     for (const row of ctx.rows) {
       counts[row.outcome] = (counts[row.outcome] ?? 0) + 1;
       if (UNGRADED.has(row.outcome)) continue;
@@ -1578,8 +1736,7 @@ async function main(): Promise<number> {
     // A permanent zero column is the thing that stops a column being read, which
     // is the `rule_idle` argument about rows applied to counts. The expired count
     // appears -- in the report and on the printed lines -- only when it is not zero.
-    if (counts["declared_opaque_expired"] === 0) delete counts["declared_opaque_expired"];
-    if (counts["input_absent"] === 0) delete counts["input_absent"];
+    for (const k of SPARSE_COLUMNS) if (counts[k] === 0) delete counts[k];
     // Present on every corpus that carries the list, zero included: the member
     // exists because something was withdrawn there, and the count is how a
     // reader who never opens the registry learns that it was.
@@ -1614,11 +1771,10 @@ async function main(): Promise<number> {
     return v;
   };
 
-  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0, input_absent: 0 };
+  const totals = { match: 0, mismatch: 0, unregistered: 0, serializer_disagreement: 0, expected_refusal: 0, rule_idle: 0, declared_opaque: 0, declared_opaque_expired: 0, input_absent: 0, unverifiable_legacy_scope: 0, unverifiable_undefined_scope: 0 };
   for (const r of rows) totals[r.outcome]++;
   const reported: Record<string, number> = { ...totals };
-  if (totals.declared_opaque_expired === 0) delete reported["declared_opaque_expired"];
-  if (totals.input_absent === 0) delete reported["input_absent"];
+  for (const k of SPARSE_COLUMNS) if (totals[k] === 0) delete reported[k];
 
   const body = sortKeys({ per_corpus: perCorpus, rows, totals: reported });
   const report = { header: { tool: "tools/walk-digests.ts", run_at: new Date().toISOString(), scopes: "walker/scopes.json" }, body };
@@ -1632,8 +1788,7 @@ async function main(): Promise<number> {
         `  mismatch=${String(c["mismatch"]).padStart(3)}  unregistered=${String(c["unregistered"]).padStart(4)}` +
         `  serializer_disagreement=${c["serializer_disagreement"]}  expected_refusal=${c["expected_refusal"]}` +
         `  rule_idle=${c["rule_idle"]}  declared_opaque=${c["declared_opaque"]}` +
-        (c["declared_opaque_expired"] ? `  declared_opaque_expired=${c["declared_opaque_expired"]}` : "") +
-        (c["input_absent"] ? `  input_absent=${c["input_absent"]}` : "") +
+        SPARSE_COLUMNS.map((k) => (c[k] ? `  ${k}=${c[k]}` : "")).join("") +
         `  (declared=${c["declared"]} inferred=${c["inferred"]})`,
     );
   }
@@ -1656,8 +1811,8 @@ async function main(): Promise<number> {
       console.log(`      applies to this corpus and matched no pointer in it; the rule's file pattern is ${r.file}`);
       continue;
     }
-    if (r.outcome === "input_absent") {
-      console.log(`  INPUT_ABSENT  ${r.file}${r.pointer}`);
+    if (r.outcome === "input_absent" || r.outcome === "unverifiable_legacy_scope" || r.outcome === "unverifiable_undefined_scope") {
+      console.log(`  ${r.outcome.toUpperCase()}  ${r.file}${r.pointer}`);
       console.log(`      declared   : ${r.declared}`);
       console.log(`      rule       : ${r.rule} [${r.document ?? "no document"} ${r.lines ?? ""} ${r.status}]`);
       if (r.note) console.log(`      note       : ${r.note}`);
@@ -1676,8 +1831,7 @@ async function main(): Promise<number> {
     `SUMMARY match=${totals.match} mismatch=${totals.mismatch} unregistered=${totals.unregistered} ` +
       `serializer_disagreement=${totals.serializer_disagreement} expected_refusal=${totals.expected_refusal} ` +
       `rule_idle=${totals.rule_idle} declared_opaque=${totals.declared_opaque}` +
-      (totals.declared_opaque_expired ? ` declared_opaque_expired=${totals.declared_opaque_expired}` : "") +
-      (totals.input_absent ? ` input_absent=${totals.input_absent}` : "") +
+      SPARSE_COLUMNS.map((k) => (totals[k] ? ` ${k}=${totals[k]}` : "")).join("") +
       `; report walker/report.json`,
   );
   return totals.mismatch > 0 || totals.serializer_disagreement > 0 ? 1 : 0;

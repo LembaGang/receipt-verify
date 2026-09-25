@@ -1,0 +1,35 @@
+{
+  "payload": {
+    "type": "protectmcp:decision",
+    "v": 1,
+    "issued_at": "2026-08-30T12:00:00+00:00",
+    "issuer_id": "Asqav Ltd",
+    "agent_id": "agt_omission_001",
+    "action_ref": "sha256:99e35b1c67fa07c7a68882d06c15527efea432fb0c579ad10d179907ea460973",
+    "context": {
+      "subject": "signer-outage-tally",
+      "unsigned_count": 2,
+      "role": "successor"
+    },
+    "payload_digest": {
+      "hash": "99e35b1c67fa07c7a68882d06c15527efea432fb0c579ad10d179907ea460973",
+      "size": 71
+    },
+    "policy_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "previousReceiptHash": "195d3a7961db5ff24efab51496b4b3f18037423270b6940a257d2f1128fc0b25",
+    "decision": "allow",
+    "mode": "payload",
+    "tool_name": "demo.action",
+    "unsigned_gap": {
+      "count": 2,
+      "from": "2026-08-30T11:58:00+00:00",
+      "to": "2026-08-30T11:59:30+00:00"
+    }
+  },
+  "signature": {
+    "alg": "Ed25519",
+    "kid": "asqav-omission-vec-key",
+    "sig": "jTKxSHtEhJoip30s6i7tpTWgvlSheeYwMU/h40xOd5BttiVkwpL37RaYPTSe3Mxo+91fhbykjaX7KBEU1Co+Aw=="
+  },
+  "anchors": []
+}

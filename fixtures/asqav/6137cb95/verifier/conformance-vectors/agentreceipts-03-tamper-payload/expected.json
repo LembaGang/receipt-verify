@@ -1,0 +1,7 @@
+{
+  "format": "agentreceipts",
+  "outcome": "unverified",
+  "reason_code": "issuer_signature",
+  "notes": "action.type mutated after signing; canonical bytes no longer match the signature.",
+  "failure_class": "invalid"
+}

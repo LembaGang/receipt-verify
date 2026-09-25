@@ -1,0 +1,1922 @@
+{
+  "action_ref": {
+    "distinct_values": 34,
+    "equals_payload_digest_hash": 58,
+    "members": 61,
+    "rows": [
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/14/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/15/input/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/16/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/17/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/18/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/19/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/20/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/27/input/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/28/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/29/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/30/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/31/input/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-01-genesis-permit/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:9632ae3c8d6b7da7ca90d0edec7467c0097799bb2954cde5bf66e5a0b101c2e1",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-02-genesis-deny/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:ac22162b9420086a2921a65d4bf11c7cf58926e253c4b13b35d47beb891d376f",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-03-chain-link/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:9632ae3c8d6b7da7ca90d0edec7467c0097799bb2954cde5bf66e5a0b101c2e1",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-03-chain-link/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:f5f246742ee00426f71d7c08697af90ee0d2aa437915a61eded1a8e4e0a86c8e",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-04-tamper-sig/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:ac22162b9420086a2921a65d4bf11c7cf58926e253c4b13b35d47beb891d376f",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": false,
+        "file": "verifier/conformance-vectors/asqav-06-mldsa65-payload-prod/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:1cb2e7953147a4fd554b681bdd9b9c460e7fabb39dc1d51bc6bc14b75d4b1446",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-07-revoked-key/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:2e0238353b3c789cd9b340ebca1f8de5caf1503a76dcbe3abf9ee8508b78b61b",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-08-v2-signer-canary/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:878424356da5097e208bf5115339777cca7a1d5c74cca70ee0499535cea0a614",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-09-v2-signer-tampered/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:878424356da5097e208bf5115339777cca7a1d5c74cca70ee0499535cea0a614",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-11-dup-member-toplevel/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:ac22162b9420086a2921a65d4bf11c7cf58926e253c4b13b35d47beb891d376f",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": false,
+        "file": "verifier/conformance-vectors/asqav-12-time-edge-expiry/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:abababababababababababababababababababababababababababababababab",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": false,
+        "file": "verifier/conformance-vectors/asqav-13-dup-member-nested/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "zero_bytes": true
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-14-omitted-action-chain/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:4e03925e53f2d363ee113d7870f132726c4136b41a6836ef97a02935a2065415",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-14-omitted-action-chain/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:3336b75eac16232a2f6221c7405a598641d2dc4c315b651a397db81baeb786a4",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-15-unsigned-gap/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:bc3aec7ced6c6a331efb19f2867d5a71abe7998bb259f2f14ecc3ef04a6dfd6b",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-15-unsigned-gap/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:99e35b1c67fa07c7a68882d06c15527efea432fb0c579ad10d179907ea460973",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-16-chain-emission-blocked/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:14e02333d85537416839352fb8821f309b8bca39e3e4da6aafc513713b4e1078",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-16-chain-emission-blocked/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:9381637c2c85b709ee52f56a8253123e4d395fcc9c15220583ca701e59eef73a",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-17-seq-contiguous/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:ede15dd0cbc7bf5d00fa914559326482ddd7f1bbde0696b85eac63715c42467e",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-17-seq-contiguous/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:9efa87338718d31179cf3209c7cf366ffc1cb971cdd96c6bb2509469abb33f9a",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-18-seq-gap/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:5d94a072dbf2394c423d95638347651dc1c551caeb191ae2e8901cc5e22bf005",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-18-seq-gap/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:1f094f31573a4cebbbd689745b2f17713a05fbf49b11b2379f2c5738994f655b",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-19-seq-non-monotonic/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:ae12fd9225c4c9fbc5c7d3583656fcac0385a8fef1e43cd0dc0a3452d2100860",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-19-seq-non-monotonic/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e1cb6c6be80c2804ce0e21a9f20402ed453ba77fb02d56da45c2ea4240abf61e",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-20-seq-absent/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:89a66376d62626659dce0957928301335a4632e92c0b3e830aba1375de2dd9a2",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-20-seq-absent/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:4dabb43c1a5b9051f17ef59c659d61537b5310be87300bc981d308bddbfe2b56",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-21-key-thumbprint-binds/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:1c3a403ecca7fa2a864adf12fd243962e9f99d4e650776cdb2d8296b3655a933",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-22-key-substituted/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:234cfcad2dc1fdbd2d8acfb88ef951a3b7f2f43f75d6bdd25cc23d90abbb3e39",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-23-anchor-status-pending/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:9632ae3c8d6b7da7ca90d0edec7467c0097799bb2954cde5bf66e5a0b101c2e1",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e72eda46d58c1a1aec629160fcc725ab68e24844e26b5721e497ad93ed204b29",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:b15eeb40a51b1a0d7b6983bbeb2106b919c89be29129d655139d00fda1908488",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-25-payload-digest-rederives/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:86d65b5861dc755628c20ccd0fe8c3015af78e2856d614557e3427264f294ca9",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-26-payload-digest-mismatch/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:215ddd5567ca2590efd4ea109b4e56cbe591e2676fbf54a9262692c539166da6",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-27-anchors-absent/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:ede15dd0cbc7bf5d00fa914559326482ddd7f1bbde0696b85eac63715c42467e",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-27-anchors-absent/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:9efa87338718d31179cf3209c7cf366ffc1cb971cdd96c6bb2509469abb33f9a",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-28-anchors-null-malformed/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:ede15dd0cbc7bf5d00fa914559326482ddd7f1bbde0696b85eac63715c42467e",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-28-anchors-null-malformed/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:9efa87338718d31179cf3209c7cf366ffc1cb971cdd96c6bb2509469abb33f9a",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/originating_envelope.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:eaa40a5ece963896517978a26f1bec6355de3513ece6afb800c15034c8b712df",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:6200a624fcf21e5d33f120a3624f7e317a1d36eb550078602dcc3494656343c9",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/originating_envelope.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:eaa40a5ece963896517978a26f1bec6355de3513ece6afb800c15034c8b712df",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:6200a624fcf21e5d33f120a3624f7e317a1d36eb550078602dcc3494656343c9",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/originating_envelope.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:eaa40a5ece963896517978a26f1bec6355de3513ece6afb800c15034c8b712df",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:6200a624fcf21e5d33f120a3624f7e317a1d36eb550078602dcc3494656343c9",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/originating_envelope.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:eaa40a5ece963896517978a26f1bec6355de3513ece6afb800c15034c8b712df",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:6200a624fcf21e5d33f120a3624f7e317a1d36eb550078602dcc3494656343c9",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:1a52218a9bbdd5b41114d058240881e2df46afa0850e945def8814df18e8a721",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e0f46f1b79d3061c6792a59fac0f11433b87f976d8e4478e9a519b85eb63cc17",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/predecessor.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:e2c5067b8ac02e492398e75794c1ed9e7aaaa0dec683dde73230128f6d327a68",
+        "zero_bytes": false
+      },
+      {
+        "descriptor_beside_it": false,
+        "equals_payload_digest_hash": true,
+        "file": "verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/receipt.json",
+        "pointer": "/payload/action_ref",
+        "sha256_form": true,
+        "value": "sha256:ee546b7e9ac6449a0bbf9aa4a4fa57a9f4a8a754137e675e150100c04cfbbb94",
+        "zero_bytes": false
+      }
+    ],
+    "sha256_form": 61,
+    "with_descriptor": 0,
+    "zero_bytes": 13
+  },
+  "alg": {
+    "counts": {
+      "Ed25519": 43,
+      "ML-DSA-65": 8,
+      "flat-top-level-algorithm:Ed25519": 1,
+      "flat-top-level-algorithm:ML-DSA-65": 1
+    },
+    "receipts_only": {
+      "Ed25519": 27,
+      "ML-DSA-65": 5,
+      "flat-top-level-algorithm:Ed25519": 1,
+      "flat-top-level-algorithm:ML-DSA-65": 1
+    },
+    "rows": [
+      {
+        "alg": "ML-DSA-65",
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/15/input/signature/alg",
+        "vector": "counterparty_binding_envelope_byte_equality"
+      },
+      {
+        "alg": "ML-DSA-65",
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/27/input/signature/alg",
+        "vector": "counterparty_binding_origin_two_anchors"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-01-genesis-permit/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-01-genesis-permit"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-02-genesis-deny/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-02-genesis-deny"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-03-chain-link/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-03-chain-link"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-03-chain-link/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-03-chain-link"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-04-tamper-sig/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-04-tamper-sig"
+      },
+      {
+        "alg": "flat-top-level-algorithm:ML-DSA-65",
+        "file": "verifier/conformance-vectors/asqav-05-hash-mode-prod/receipt.json",
+        "pointer": "/algorithm",
+        "vector": "asqav-05-hash-mode-prod"
+      },
+      {
+        "alg": "ML-DSA-65",
+        "file": "verifier/conformance-vectors/asqav-06-mldsa65-payload-prod/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-06-mldsa65-payload-prod"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-07-revoked-key/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-07-revoked-key"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-08-v2-signer-canary/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-08-v2-signer-canary"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-09-v2-signer-tampered/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-09-v2-signer-tampered"
+      },
+      {
+        "alg": "flat-top-level-algorithm:Ed25519",
+        "file": "verifier/conformance-vectors/asqav-10-hash-mode-multikey/receipt.json",
+        "pointer": "/algorithm",
+        "vector": "asqav-10-hash-mode-multikey"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-11-dup-member-toplevel/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-11-dup-member-toplevel"
+      },
+      {
+        "alg": "ML-DSA-65",
+        "file": "verifier/conformance-vectors/asqav-12-time-edge-expiry/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-12-time-edge-expiry"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-13-dup-member-nested/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-13-dup-member-nested"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-14-omitted-action-chain/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-14-omitted-action-chain"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-14-omitted-action-chain/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-14-omitted-action-chain"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-15-unsigned-gap/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-15-unsigned-gap"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-15-unsigned-gap/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-15-unsigned-gap"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-16-chain-emission-blocked/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-16-chain-emission-blocked"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-16-chain-emission-blocked/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-16-chain-emission-blocked"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-17-seq-contiguous/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-17-seq-contiguous"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-17-seq-contiguous/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-17-seq-contiguous"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-18-seq-gap/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-18-seq-gap"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-18-seq-gap/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-18-seq-gap"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-19-seq-non-monotonic/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-19-seq-non-monotonic"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-19-seq-non-monotonic/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-19-seq-non-monotonic"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-20-seq-absent/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-20-seq-absent"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-20-seq-absent/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-20-seq-absent"
+      },
+      {
+        "alg": "ML-DSA-65",
+        "file": "verifier/conformance-vectors/asqav-21-key-thumbprint-binds/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-21-key-thumbprint-binds"
+      },
+      {
+        "alg": "ML-DSA-65",
+        "file": "verifier/conformance-vectors/asqav-22-key-substituted/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-22-key-substituted"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-23-anchor-status-pending/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-23-anchor-status-pending"
+      },
+      {
+        "alg": "ML-DSA-65",
+        "file": "verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-24-anchor-block-hash-prod"
+      },
+      {
+        "alg": "ML-DSA-65",
+        "file": "verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-24-anchor-block-hash-prod"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-25-payload-digest-rederives/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-25-payload-digest-rederives"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-26-payload-digest-mismatch/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-26-payload-digest-mismatch"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-27-anchors-absent/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-27-anchors-absent"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-27-anchors-absent/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-27-anchors-absent"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-28-anchors-null-malformed/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-28-anchors-null-malformed"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-28-anchors-null-malformed/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-28-anchors-null-malformed"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-31-counterparty-scope-match"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/originating_envelope.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-31-counterparty-scope-match"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-32-counterparty-anchors-included"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/originating_envelope.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-32-counterparty-anchors-included"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-33-counterparty-scope-absent"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/originating_envelope.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-33-counterparty-scope-absent"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-34-counterparty-scope-unknown"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/originating_envelope.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-34-counterparty-scope-unknown"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-35-invocation-ref-binds-pre-post"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-35-invocation-ref-binds-pre-post"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/receipt.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-36-invocation-ref-duplicate-emission"
+      },
+      {
+        "alg": "Ed25519",
+        "file": "verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/predecessor.json",
+        "pointer": "/signature/alg",
+        "vector": "asqav-36-invocation-ref-duplicate-emission"
+      }
+    ]
+  },
+  "anchors": {
+    "counts": {
+      "absent": 1,
+      "empty": 36,
+      "entries": 15,
+      "null": 1
+    },
+    "receipts_only": {
+      "absent": 1,
+      "empty": 24,
+      "entries": 8,
+      "null": 1
+    },
+    "rows": [
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/15/input/anchors",
+        "shape": "entries",
+        "vector": "counterparty_binding_envelope_byte_equality"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/27/input/anchors",
+        "shape": "entries",
+        "vector": "counterparty_binding_origin_two_anchors"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-01-genesis-permit/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-01-genesis-permit"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-02-genesis-deny/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-02-genesis-deny"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-03-chain-link/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-03-chain-link"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-03-chain-link/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-03-chain-link"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-04-tamper-sig/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-04-tamper-sig"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-05-hash-mode-prod/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-05-hash-mode-prod"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-06-mldsa65-payload-prod/receipt.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-06-mldsa65-payload-prod"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-07-revoked-key/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-07-revoked-key"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-08-v2-signer-canary/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-08-v2-signer-canary"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-09-v2-signer-tampered/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-09-v2-signer-tampered"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-10-hash-mode-multikey/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-10-hash-mode-multikey"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-11-dup-member-toplevel/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-11-dup-member-toplevel"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-12-time-edge-expiry/receipt.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-12-time-edge-expiry"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-13-dup-member-nested/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-13-dup-member-nested"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-14-omitted-action-chain/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-14-omitted-action-chain"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-14-omitted-action-chain/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-14-omitted-action-chain"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-15-unsigned-gap/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-15-unsigned-gap"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-15-unsigned-gap/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-15-unsigned-gap"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-16-chain-emission-blocked/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-16-chain-emission-blocked"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-16-chain-emission-blocked/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-16-chain-emission-blocked"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-17-seq-contiguous/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-17-seq-contiguous"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-17-seq-contiguous/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-17-seq-contiguous"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-18-seq-gap/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-18-seq-gap"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-18-seq-gap/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-18-seq-gap"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-19-seq-non-monotonic/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-19-seq-non-monotonic"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-19-seq-non-monotonic/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-19-seq-non-monotonic"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-20-seq-absent/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-20-seq-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-20-seq-absent/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-20-seq-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-21-key-thumbprint-binds/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-21-key-thumbprint-binds"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-22-key-substituted/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-22-key-substituted"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-23-anchor-status-pending/receipt.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-23-anchor-status-pending"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/receipt.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-24-anchor-block-hash-prod"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-24-anchor-block-hash-prod"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-25-payload-digest-rederives/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-25-payload-digest-rederives"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-26-payload-digest-mismatch/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-26-payload-digest-mismatch"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-27-anchors-absent/receipt.json",
+        "pointer": "/anchors",
+        "shape": "absent",
+        "vector": "asqav-27-anchors-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-27-anchors-absent/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-27-anchors-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-28-anchors-null-malformed/receipt.json",
+        "pointer": "/anchors",
+        "shape": "null",
+        "vector": "asqav-28-anchors-null-malformed"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-28-anchors-null-malformed/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-28-anchors-null-malformed"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/receipt.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-31-counterparty-scope-match"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/originating_envelope.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-31-counterparty-scope-match"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/receipt.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-32-counterparty-anchors-included"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/originating_envelope.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-32-counterparty-anchors-included"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/receipt.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-33-counterparty-scope-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/originating_envelope.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-33-counterparty-scope-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/receipt.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-34-counterparty-scope-unknown"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/originating_envelope.json",
+        "pointer": "/anchors",
+        "shape": "entries",
+        "vector": "asqav-34-counterparty-scope-unknown"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-35-invocation-ref-binds-pre-post"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-35-invocation-ref-binds-pre-post"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/receipt.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-36-invocation-ref-duplicate-emission"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/predecessor.json",
+        "pointer": "/anchors",
+        "shape": "empty",
+        "vector": "asqav-36-invocation-ref-duplicate-emission"
+      }
+    ]
+  },
+  "corpus": "fixtures/asqav/6137cb95",
+  "envelopes": 53,
+  "expected_vs_anchors": {
+    "receipts_by_anchor_shape_and_outcome": {
+      "absent|verified": 1,
+      "empty|unverified": 10,
+      "empty|verified": 14,
+      "entries|unverified": 3,
+      "entries|verified": 5,
+      "null|unverified": 1
+    },
+    "rows": [
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Valid genesis permit; Ed25519 signature over canonical payload verifies; all-zero previousReceiptHash seed.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-01-genesis-permit"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Valid genesis deny decision; signature verifies.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-02-genesis-deny"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Successor receipt; signature verifies and previousReceiptHash rederives from the predecessor canonical payload.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-03-chain-link"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "decision flipped from allow to deny after signing; signature no longer matches the canonical payload.",
+        "outcome": "unverified",
+        "reason_code": "issuer_signature",
+        "vector": "asqav-04-tamper-sig"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Real prod hash-mode receipt (default /sign). payload is null so the signature axis is SKIPPED/INCOMPLETE here; no signing_input byte-match is asserted. This vector tests format detection and INCOMPLETE propagation only. A payload-mode prod receipt with ML-DSA-65 signature verification is a documented follow-up (real-cloud KAT vector).",
+        "outcome": "unverified",
+        "reason_code": "signature_skipped_no_dilithium",
+        "vector": "asqav-05-hash-mode-prod"
+      },
+      {
+        "anchors": "entries",
+        "mentions_anchor": false,
+        "notes": "Real prod payload-mode receipt signed by ML-DSA-65 (FIPS 204). Agent agt_LBe47lJwgA0DfVom created 2026-06-19; action act_6Xm9cj3AgtPVqZaY8IJnLw signed with key mxYqaLBR_T76ThNw0Kiekw (issuer_id f94f66c0-c580-432d-a041-29374f7aee07). mode=payload so signing_input is canonical_json(full payload dict). ML-DSA-65 signature axis must be PASS, not SKIPPED or INCOMPLETE - this is the known-answer vector for offline ML-DSA-65 against a real cloud receipt. The signed expires_at 2026-06-20T22:23:57.045786Z has lapsed: the expiry axis FAILs on its own (hosted signature_expired label) but never folds the receipt-level verdict, matching hosted parity (criterion 426).",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-06-mldsa65-payload-prod"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Valid Ed25519 signature but signing key status is 'revoked'; key_status axis FAILs the verdict.",
+        "outcome": "unverified",
+        "reason_code": "key_revoked",
+        "vector": "asqav-07-revoked-key"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Valid v:2 receipt; signer and _asqav_tid sit inside the signed body, Ed25519 over the canonical payload verifies, signer is surfaced in the verdict.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-08-v2-signer-canary"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "signer flipped after signing; because signer is inside the signed body the Ed25519 signature over the canonical payload no longer matches and the verdict FAILs.",
+        "outcome": "unverified",
+        "reason_code": "issuer_signature",
+        "vector": "asqav-09-v2-signer-tampered"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Hash-mode receipt signed by the LAST of three sibling keys that share issuer_id/org_id; signature.kid is the org id, so a kid-shaped match answers for every sibling and list position would pick the wrong one. The agent bind (agent_id plus the org_id the receipt signs) resolves the actual signer. ANTI-VACUOUS: pre-change kid-first resolution verifies the first sibling and FAILs. Parity vector: both PY and TS oracles must PASS.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-10-hash-mode-multikey"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Top-level 'payload' member appears twice; strict ingest rejects it at parse time, before any hashing or signature check, so it never verifies.",
+        "outcome": "unverified",
+        "reason_code": "duplicate_member",
+        "vector": "asqav-11-dup-member-toplevel"
+      },
+      {
+        "anchors": "entries",
+        "mentions_anchor": false,
+        "notes": "Deterministic ML-DSA-65 vector minted from the published corpus signing seed (criterion 420; dilithium-py deterministic=True, FIPS 204 pure variant), so the signature bytes reproduce exactly. Time-edge conformance (criterion 422): issued_at 2026-05-19T00:10:00+14:00 is an extreme positive UTC offset around midnight (UTC 2026-05-18T10:10:00, a past instant the skew axis accepts); the signed expires_at 2026-05-20T00:10:00Z has lapsed, so the expiry axis FAILs alone while the verdict stays verified (criterion 426).",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-12-time-edge-expiry"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "The payload_digest.hash member is duplicated two levels down; strict ingest rejects duplicate members at any depth at parse time, before any hashing or signature check, so it never verifies.",
+        "outcome": "unverified",
+        "reason_code": "duplicate_member",
+        "vector": "asqav-13-dup-member-nested"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "An Action between the two receipts produced no receipt at all. The chain still verifies: links cover the receipts that exist and are silent about an Action that never reached the signer. Completeness is a deployment property, not a chain property.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-14-omitted-action-chain"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Server-built unsigned_gap evidences a signer outage that preceded this receipt. A verifier MUST NOT read it as an assertion that the unsigned Actions were policy-evaluated.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-15-unsigned-gap"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "A bounded predecessor-lookup timeout blocked emission. The lifecycle receipt naming it links into the chain once emission resumes, so the blocked interval is detectable rather than silent.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-16-chain-emission-blocked"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "seq 8 follows predecessor 7 with nothing missing between them. The baseline the gap vector is measured against.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-17-seq-contiguous"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "seq jumps 7 -> 11, so three receipts were withheld. Both receipts are correctly signed and the chain link rederives, so the hash chain alone reports nothing wrong; the counter is what makes the omission evidence. A proven omission is a binding failure, not an incomplete recompute, so the class is invalid rather than unverifiable.",
+        "outcome": "unverified",
+        "reason_code": "seq_gap",
+        "vector": "asqav-18-seq-gap"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "The counter goes backwards, 9 then 4. A replayed or reordered receipt reaches this before a gap does, and it is refused for the same reason: the series cannot decrease under a server-built monotonic counter.",
+        "outcome": "unverified",
+        "reason_code": "seq_not_monotonic",
+        "vector": "asqav-19-seq-non-monotonic"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Neither receipt carries a counter, which is every receipt minted before the member shipped. Absence MUST stay legal: the axis passes with a note rather than skipping, because a blocking skip would regress all of them from verified to unverified.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-20-seq-absent"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "The bound key_thumbprint rederives from the resolved signing key. The control the substitution vector is measured against: without it an axis wired to FAIL would satisfy that vector too.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-21-key-thumbprint-binds"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "The receipt is correctly signed and the signature verifies against the key the directory publishes, so the signature axis PASSes and reports nothing wrong. The bound digest names a different key, which is what a swap under the same kid looks like from outside. A key that cannot be the one the issuer committed to is a proven binding break, so the class is invalid rather than unverifiable.",
+        "outcome": "unverified",
+        "reason_code": "key_substituted",
+        "vector": "asqav-22-key-substituted"
+      },
+      {
+        "anchors": "entries",
+        "mentions_anchor": true,
+        "notes": "asqav-01's valid genesis receipt with one anchor entry carrying the optional informational `status` member (draft anchors[] schema): status pending declares a not-yet-anchored proof, so the verifier must not count it as a trusted anchor. The signature is untouched (anchors sit outside the signed bytes), so the oracle verdict stays verified; under the full verifier the anchors axis reports SKIPPED (unverifiable), never a PASS on presence.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-23-anchor-status-pending"
+      },
+      {
+        "anchors": "entries",
+        "mentions_anchor": true,
+        "notes": "Production receipt sig_XcmE-To6pSVUUJI6SUGx9g (the issuing platform's own org f94f66c0), ML-DSA-65 hash-mode protectmcp:lifecycle, seq 63; the predecessor.json is the seq-62 receipt from the same agent, so the chain and seq axes exercise for real. Its OpenTimestamps entry carries status anchored and the anchor_block_hash member exactly as the draft anchors[] schema defines it: the Bitcoin block hash the commitment upgraded at (height 965451, hash per blockstream.info and mempool.space, both fetched 2026-09-04). The signature, key thumbprint and chain all verify offline; the anchors axis SKIPs because completing it needs TSA key material and Bitcoin headers, which the corpus does not ship. The signature string is base64url unpadded; a 3309-byte ML-DSA-65 signature needs no padding.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-24-anchor-block-hash-prod"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Payload-mode genesis carrying BOTH context and payload_digest: hash is SHA-256 over the JCS of the carried context and size its byte length (25), so the payload_digest axis recomputes and PASSes rather than passing on absence. The dedicated honest half of the rederives/mismatch pair with asqav-26, which commits to a different context than the one carried. The digest is computed with stdlib json.dumps in JCS shape, never through the verifier's canonical_json.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-25-payload-digest-rederives"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "The asqav-25 receipt with only payload_digest.hash changed: it commits to a DIFFERENT context ({'n': 3}) than the one carried, and the receipt is re-signed over the lying payload, so the signature axis PASSes and the digest is the only lie. The payload_digest axis recomputes from the carried context and FAILs - a proven internal inconsistency, so the class is invalid, not unverifiable.",
+        "outcome": "unverified",
+        "reason_code": "payload_digest_mismatch",
+        "vector": "asqav-26-payload-digest-mismatch"
+      },
+      {
+        "anchors": "absent",
+        "mentions_anchor": true,
+        "notes": "asqav-17's receipt with the anchors member absent entirely: absent and an empty array are the two conformant spellings of no anchors, so the outcome and every axis result must equal asqav-17's. The signature covers the payload only, so removing the envelope-level member keeps it valid.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-27-anchors-absent"
+      },
+      {
+        "anchors": "null",
+        "mentions_anchor": true,
+        "notes": "asqav-17's receipt with the anchors member present as a JSON null: a third spelling of no anchors found in the wild, and a malformed one - the structure axis FAILs, naming the member and the shape, and the verdict reads unverified/unverifiable rather than reading null as absent. Nothing cryptographic was disproved, so the class is unverifiable, not invalid (same family as duplicate_member: the receipt's own bytes are malformed).",
+        "outcome": "unverified",
+        "reason_code": "malformed_member",
+        "vector": "asqav-28-anchors-null-malformed"
+      },
+      {
+        "anchors": "entries",
+        "mentions_anchor": false,
+        "notes": "Signed acknowledgment with binding result matches; signature and local TSA verify.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-31-counterparty-scope-match"
+      },
+      {
+        "anchors": "entries",
+        "mentions_anchor": false,
+        "notes": "Signed acknowledgment with binding result mismatch; signature and local TSA verify.",
+        "outcome": "unverified",
+        "reason_code": "counterparty_mismatch",
+        "vector": "asqav-32-counterparty-anchors-included"
+      },
+      {
+        "anchors": "entries",
+        "mentions_anchor": false,
+        "notes": "Signed acknowledgment with binding result legacy_scope; signature and local TSA verify.",
+        "outcome": "unverified",
+        "reason_code": "counterparty_legacy_scope",
+        "vector": "asqav-33-counterparty-scope-absent"
+      },
+      {
+        "anchors": "entries",
+        "mentions_anchor": false,
+        "notes": "Signed acknowledgment with binding result unrecognised_scope; signature and local TSA verify.",
+        "outcome": "unverified",
+        "reason_code": "counterparty_unrecognised_scope",
+        "vector": "asqav-34-counterparty-scope-unknown"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "A pre-action receipt and its post-action receipt carry the same invocation_ref, so a reader binds them to one tool invocation without trusting timestamps. Both receipts are correctly signed and the chain link rederives. The shared member is pure correlation: it changes no verdict.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-35-invocation-ref-binds-pre-post"
+      },
+      {
+        "anchors": "empty",
+        "mentions_anchor": false,
+        "notes": "Two pre-action receipts carry the same invocation_ref: the duplicate-emission shape a harness produces when it fires the hook twice for one invocation. Both receipts verify, because invocation_ref exists so a reader can SEE the duplicate, never to reject it. A verifier that refuses this pair is wrong, not strict.",
+        "outcome": "verified",
+        "reason_code": "",
+        "vector": "asqav-36-invocation-ref-duplicate-emission"
+      }
+    ]
+  },
+  "receipt_vectors": 34,
+  "scope": {
+    "counts": {
+      "<absent>": 2,
+      "envelope_minus_anchors": 9,
+      "unsupported_fixture_scope": 2
+    },
+    "rows": [
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/14/input/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/16/input/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/17/input/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/18/input/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/19/input/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/28/input/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/29/input/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/30/input/counterparty_binding",
+        "scope": "<absent>"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/31/input/counterparty_binding",
+        "scope": "unsupported_fixture_scope"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/receipt.json",
+        "pointer": "/payload/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/receipt.json",
+        "pointer": "/payload/counterparty_binding",
+        "scope": "envelope_minus_anchors"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/receipt.json",
+        "pointer": "/payload/counterparty_binding",
+        "scope": "<absent>"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/receipt.json",
+        "pointer": "/payload/counterparty_binding",
+        "scope": "unsupported_fixture_scope"
+      }
+    ]
+  },
+  "v": {
+    "counts": {
+      "1": 49,
+      "2": 2,
+      "flat-top-level:1": 2
+    },
+    "receipts_only": {
+      "1": 30,
+      "2": 2,
+      "flat-top-level:1": 2
+    },
+    "rows": [
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/15/input/payload/v",
+        "v": 1,
+        "vector": "counterparty_binding_envelope_byte_equality"
+      },
+      {
+        "file": "conformance/vectors.json",
+        "pointer": "/vectors/27/input/payload/v",
+        "v": 1,
+        "vector": "counterparty_binding_origin_two_anchors"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-01-genesis-permit/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-01-genesis-permit"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-02-genesis-deny/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-02-genesis-deny"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-03-chain-link/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-03-chain-link"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-03-chain-link/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-03-chain-link"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-04-tamper-sig/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-04-tamper-sig"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-05-hash-mode-prod/receipt.json",
+        "pointer": "/v",
+        "v": "flat-top-level:1",
+        "vector": "asqav-05-hash-mode-prod"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-06-mldsa65-payload-prod/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-06-mldsa65-payload-prod"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-07-revoked-key/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-07-revoked-key"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-08-v2-signer-canary/receipt.json",
+        "pointer": "/payload/v",
+        "v": 2,
+        "vector": "asqav-08-v2-signer-canary"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-09-v2-signer-tampered/receipt.json",
+        "pointer": "/payload/v",
+        "v": 2,
+        "vector": "asqav-09-v2-signer-tampered"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-10-hash-mode-multikey/receipt.json",
+        "pointer": "/v",
+        "v": "flat-top-level:1",
+        "vector": "asqav-10-hash-mode-multikey"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-11-dup-member-toplevel/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-11-dup-member-toplevel"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-12-time-edge-expiry/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-12-time-edge-expiry"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-13-dup-member-nested/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-13-dup-member-nested"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-14-omitted-action-chain/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-14-omitted-action-chain"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-14-omitted-action-chain/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-14-omitted-action-chain"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-15-unsigned-gap/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-15-unsigned-gap"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-15-unsigned-gap/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-15-unsigned-gap"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-16-chain-emission-blocked/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-16-chain-emission-blocked"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-16-chain-emission-blocked/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-16-chain-emission-blocked"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-17-seq-contiguous/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-17-seq-contiguous"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-17-seq-contiguous/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-17-seq-contiguous"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-18-seq-gap/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-18-seq-gap"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-18-seq-gap/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-18-seq-gap"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-19-seq-non-monotonic/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-19-seq-non-monotonic"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-19-seq-non-monotonic/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-19-seq-non-monotonic"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-20-seq-absent/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-20-seq-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-20-seq-absent/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-20-seq-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-21-key-thumbprint-binds/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-21-key-thumbprint-binds"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-22-key-substituted/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-22-key-substituted"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-23-anchor-status-pending/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-23-anchor-status-pending"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-24-anchor-block-hash-prod"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-24-anchor-block-hash-prod/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-24-anchor-block-hash-prod"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-25-payload-digest-rederives/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-25-payload-digest-rederives"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-26-payload-digest-mismatch/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-26-payload-digest-mismatch"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-27-anchors-absent/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-27-anchors-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-27-anchors-absent/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-27-anchors-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-28-anchors-null-malformed/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-28-anchors-null-malformed"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-28-anchors-null-malformed/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-28-anchors-null-malformed"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-31-counterparty-scope-match"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-31-counterparty-scope-match/originating_envelope.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-31-counterparty-scope-match"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-32-counterparty-anchors-included"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/originating_envelope.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-32-counterparty-anchors-included"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-33-counterparty-scope-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-33-counterparty-scope-absent/originating_envelope.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-33-counterparty-scope-absent"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-34-counterparty-scope-unknown"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-34-counterparty-scope-unknown/originating_envelope.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-34-counterparty-scope-unknown"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-35-invocation-ref-binds-pre-post"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-35-invocation-ref-binds-pre-post/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-35-invocation-ref-binds-pre-post"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/receipt.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-36-invocation-ref-duplicate-emission"
+      },
+      {
+        "file": "verifier/conformance-vectors/asqav-36-invocation-ref-duplicate-emission/predecessor.json",
+        "pointer": "/payload/v",
+        "v": 1,
+        "vector": "asqav-36-invocation-ref-duplicate-emission"
+      }
+    ]
+  }
+}

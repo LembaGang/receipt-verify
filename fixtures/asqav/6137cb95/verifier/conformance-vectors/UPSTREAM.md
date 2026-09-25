@@ -1,0 +1,201 @@
+# Upstream-derived conformance vectors
+
+The `aerf-up-*` vector directories are derived from the AERF conformance
+corpus at <https://github.com/aerf-spec/aerf>, cloned at commit
+`59fce60fe30bde35318812f502a55ab4bace4650`.
+
+The `agentreceipts-up-*` vector directories and the vendored interop files
+under `agentreceipts-upstream-interop/` are derived from the agent-receipts
+corpus at <https://github.com/agent-receipts/ar>, cloned at commit
+`16772507e6d00b1dfea6f079ea0e0980d324993f`. The repository code (including
+`cross-sdk-tests/`) is licensed Apache-2.0 and the protocol spec under `spec/`
+(including the did:key vectors) is licensed MIT.
+
+`agentreceipts-upstream-interop/canonicalization_vectors.json` is reproduced
+verbatim from `cross-sdk-tests/canonicalization_vectors.json`; our
+`jcs_rfc8785` canonicaliser must produce byte-identical output for every one of
+its 32 `canonicalization_vectors` entries, asserted directly in the oracle test
+suite. `agentreceipts-upstream-interop/did_key_vectors.json` is reproduced from
+`spec/test-vectors/did-key/vectors.json`; the shared DID resolver decodes each
+to the expected raw Ed25519 key. Its MIT copyright and permission notice is
+included in [LICENSE-MIT](agentreceipts-upstream-interop/LICENSE-MIT), copied
+from the [pinned spec license](https://github.com/agent-receipts/ar/blob/16772507e6d00b1dfea6f079ea0e0980d324993f/spec/LICENSE).
+
+The `agentreceipts-up-*` FAIL directories reproduce the six single-field
+mutations from `cross-sdk-tests/malformed_vectors.json` (receipts every SDK MUST
+reject) plus the tampered middle-chain receipt. The valid `agentreceipts-up-00`
+and `-up-08` directories re-sign that corpus's base receipt with the corpus's
+own Ed25519 keypair over `jcs_rfc8785` bytes, so the PASS vectors carry a real
+upstream-keypair signature rather than a self-authored one.
+
+The agent-receipts spec example receipts under `spec/examples/` are NOT ingested:
+they use `did:agent:` identifiers with no published key and carry placeholder
+`previous_receipt_hash` values, so they are documentation illustrations rather
+than cryptographically verifiable vectors.
+
+INTEROP FINDING (canonicalization dialect divergence). Both AERF SPEC.md and the
+agent-receipts spec cite "full RFC 8785 (JCS)", but their reference producers
+disagree on number serialisation and key ordering. The AERF Go canonicaliser
+(`verifiers/go/internal/aerf/canonical.go`) writes numbers via `json.Number`
+verbatim and sorts keys with `sort.Strings` (UTF-8 byte order), so an AERF
+receipt carrying `1250.0` is signed over the bytes `1250.0`. The agent-receipts
+producers sign true RFC 8785, where the same value canonicalises to `1250`. The
+two are not byte-compatible, so the oracle keeps two canonicalisers: `jcs` (the
+AERF/ACTA dialect, numbers as Python emits them) and `jcs_rfc8785` (strict RFC
+8785, used only by the agent-receipts adapter). This was verified directly:
+the upstream AERF signature on `vectors/01-genesis-happy-path` verifies under the
+verbatim-number canonicaliser and fails under the strict one, while all 32
+agent-receipts canonicalization vectors byte-match only under the strict one.
+
+The AERF code and vector data are licensed Apache-2.0; the AERF
+prose is licensed CC-BY 4.0. The receipt artifacts and public keys are
+reproduced from that corpus. Each upstream public key (SPKI PEM) is
+translated into our `keys.json` key map as raw Ed25519 hex, keyed by the
+upstream `key_id` (the leading 16 hex characters of the SHA-256 of the
+public key).
+
+## Authproof
+
+The `authproof-*` vectors target the shipping Authproof JS SDK
+(<https://github.com/Commonguy25/authproof-sdk>, `src/authproof.js`), which is
+authoritative for the wire shape: ES256 (ECDSA P-256 / SHA-256) over
+insertion-order `JSON.stringify` of the receipt minus its `signature`, signature
+hex-encoded as raw `r||s` (64 bytes), signer key embedded as a P-256 JWK at
+`signerPublicKey`. `authproof-01-genesis-real-sdk` is a receipt minted by that
+SDK and is a one-directional interop PASS (we verify a real Authproof artifact);
+`authproof-02/03` are its self-authored negatives. No published portable vector
+corpus exists upstream, so bidirectional interop against a third-party verifier
+of our output is PENDING.
+
+Two upstream variants deliberately diverge and are NOT targeted: the bundled
+draft-nelson text specifies a base64url signature, a content-hash
+`delegationId`, and canonical JSON; the repo's separate Python SDK signs DER over
+sorted-key JSON with snake_case fields. A receipt from either would not verify
+under the JS-SDK rules, and the JS SDK is the published product.
+
+## ACTA
+
+The `acta-*` vectors target draft-farley-acta-signed-receipts (the draft Asqav
+profiles): Ed25519 over the JCS of the `payload`, signed directly, hex sig. The
+four base `acta-0*` vectors are self-authored and prove self-consistency. The
+`acta-up-*` vectors are REAL third-party artifacts ingested from the
+`ScopeBlind/agent-governance-testvectors` corpus
+(<https://github.com/ScopeBlind/agent-governance-testvectors>, Apache-2.0),
+cloned at commit `9ad0856164e459024755d60f16f9f172868949ee`, regenerated by
+`gen_acta_upstream_vectors.py`.
+
+INTEROP RESULT (achieved, both directions, with one documented schema note).
+
+Outbound (our producer -> their verifier): the published offline verifier
+`@veritasacta/verify` (npm, Apache-2.0, `0.6.1`, by ScopeBlind) verifies our
+own `acta-01-genesis` and `acta-02-chain-link` receipts as VALID and rejects
+`acta-03-tamper-sig`. Its `ed25519-passport` engine routes our exact envelope
+`{payload, signature:{alg,kid,sig}}`, strips `signature`, and checks Ed25519
+over the JCS of `payload` - byte-identical to what our adapter signs. This was
+run directly against the unpacked package (`src/engines/ed25519-receipt.js` ->
+`@veritasacta/artifacts.verifyArtifact`), passing the receipt key as hex.
+
+Inbound (their producer -> our verifier): the `acta-up-*` receipts are the
+ScopeBlind/APS reference issuer's own signed attestations, lifted verbatim from
+`a2a-trust-header/happy-path.json` and `trust-level-ascending.json`. Their
+Ed25519 signatures (signer pubkey
+`4cb5abf6ad79fbf5abbccafcc269d85cd2651ed4b885b5869f241aedf0a5ba29`, the
+deterministic `aps_issuer` conformance key) verify under our adapter over
+JCS(payload). `acta-up-03` is that real receipt with one signature nibble
+flipped, which FAILs - the oracle rejects a mutated third-party receipt. The
+upstream `signature` object carries extra `pubkey`/`canonicalization` members;
+these are kept verbatim in the vector and ignored by the verify path.
+
+SCHEMA NOTE (the one alignment this required). The ScopeBlind conformance spec
+(`spec.md`) defines conformance as signature-verifies plus chain-links and
+explicitly does NOT mandate byte-identical fields; its two normative shapes
+(v1 flat, v2 envelope) and the passport envelope its verifier accepts carry no
+`type`/`issuer_id` requirement, and the reference producers emit `issuer`, not
+`issuer_id`. Our adapter formerly required `type` and `issuer_id` and forced
+`issuer_id == kid` - strictness BEYOND draft-farley that would reject conformant
+upstream receipts whose signatures genuinely verify. The adapter `schema()` is
+aligned to the spec: `issued_at` plus the signature triple stay required,
+`type`/`issuer_id` are optional, and `issuer_id == kid` is a CONDITIONAL
+false-attestation guard enforced only when `issuer_id` is present. The Python
+and TypeScript adapters carry the identical relaxation and both verify every
+`acta-up-*` vector (the 44-vector parity gate is green on both).
+
+The Commitment Mode (signing `SHA-256(JCS(payload))`) stays unimplemented: a
+commitment-mode receipt FAILs the baseline check, the honest outcome, never a
+false pass.
+
+## Outcome mapping
+
+Each upstream vector declares an outcome of `PASS`, `FAIL`, or
+`KNOWN_LIMIT`. Our `expected.json` carries the verdict our verifier
+produces for the receipt bytes:
+
+- `PASS` and `FAIL` map directly to our `PASS` / `FAIL` verdicts.
+- `KNOWN_LIMIT` maps to `PASS`. An upstream `KNOWN_LIMIT` is a residual the
+  receipt layer cannot close, where a conformant verifier exits success
+  because every signature genuinely verifies. Our verifier reaches the same
+  success on the bytes. The mapping is the honest outcome the bytes
+  produce, not a relabel; the per-vector `notes` record why the residual
+  sits outside what any receipt verifier can detect.
+
+## Multi-signer axes
+
+Our AERF adapter verifies the issuer signature and the chain link, and also
+the conditionally-required parent counter-signature and the policy-decision
+binding signature (both plain Ed25519 over canonical bytes). Vectors that
+exercise a missing-but-required counter-signature or a policy verdict bound to
+the wrong context reach `FAIL` for the same reason the upstream verifier records.
+
+The two upstream transparency-log inclusion vectors are NOT ingested here. Their
+inclusion-proof verification is deferred to the shared inclusion-proof checker
+that lands with the Asqav transparency log, which reuses a vetted library rather
+than an adapter-local proof walk; this corpus ingests the other ten upstream
+vectors now.
+
+## Chain vectors
+
+The upstream multi-receipt chain vectors ship a `receipts/` directory. Our
+runner verifies one receipt against one predecessor, so each chain vector is
+ingested as the load-bearing receipt plus its immediate predecessor:
+
+- the happy-path chain ingests the final link against its predecessor;
+- the tamper-in-chain vector ingests the mutated middle receipt against its
+  valid predecessor, where the mutated receipt's own issuer signature is
+  what fails.
+
+## Pipelock EvidenceReceipt v2
+
+The `pipelock-ev2-*` vectors target Pipelock EvidenceReceipt v2 as implemented
+in `luckyPipewrench/pipelock-verify-python`, cloned at commit
+`9eaff72a87b3b412945fac6de07739bc2bef2116`.
+
+`pipelock-ev2-01-proxy-decision/receipt.json` is reproduced verbatim from
+`tests/conformance/valid-evidence-proxy-decision.json` in that repo. It is
+emitted by the Go reference implementation (`pipelock/internal/contract/receipt`)
+under a deterministic test signing key: the RFC 8032 section 7.1 test-1 private
+key, whose public key is
+`d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a`
+(this is a published test vector; not a secret). The `keys.json` for each vector
+records this public key under the `signer_key_id` the receipt carries
+(`receipt-signing-test`).
+
+Signing rule (from `pipelock_verify/_evidence.py::_signable_preimage`): zero
+out the four fields of the `signature` object (replace with empty strings), then
+JCS-canonicalize the full envelope. JCS here is strict RFC 8785 (Unicode
+codepoint key sort, NFC strings, integer-only numerics, no whitespace) - the
+same dialect as the `agentreceipts` adapter; the oracle reuses `jcs_rfc8785`.
+
+Chain rule (`pipelock_verify/_evidence.py::evidence_receipt_hash`): the chain
+hash is `sha256:` + hex(SHA-256(JCS(full receipt including its signature))).
+Genesis receipts use `chain_prev_hash` of `"genesis"` or `"sha256:0"`; both are
+accepted.
+
+`pipelock-ev2-02-tamper-payload` is a copy of the valid fixture with
+`payload.verdict` changed from `"allow"` to `"block"` after signing; the
+original signature no longer verifies over the shifted preimage.
+
+INTEROP RESULT (inbound, partial): the Python verifier in this oracle agrees
+with the Go reference on the JCS preimage for the `proxy_decision` receipt shape,
+proven by the fact that the Go-signed bytes verify here. Outbound interop
+(Pipelock verifying an oracle-produced receipt) and chain-link vector coverage
+are deferred pending key-generation tooling for the conformance test suite.

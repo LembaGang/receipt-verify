@@ -187,30 +187,6 @@
             "asqav/05c1c49"
           ],
           "applies_to_reason": "The rule grades a file in the asqav-sdk `verifier/conformance-vectors/` tree. That tree is not in asqav/3b88156, asqav/history/3e13a0d, asqav/history/4cbdfc0, asqav/history/ee8a3e7: each of those corpora was pinned as conformance/vectors.json alone (3b88156 also carries conformance/manifest.lock.json), so `find <dir> -name verifier` returns nothing at all four. The rule was inherited from asqav/05c1c49 and had graded nothing at any of them since it was written -- reported as eight `rule_idle` rows from the run of 2026-09-05, which is the row's whole purpose. Resolved 2026-09-06 by removing the inheritance rather than by widening `only_files`: `only_files` is not what was hiding the file, the file is genuinely absent, and a rule kept applied to a corpus that cannot carry its input is a permanent idle row that trains the reader to ignore the column."
-        },
-        {
-          "id": "asqav.action_ref.descriptor",
-          "file": "any walked .json file",
-          "kind": "asqav_action_ref_descriptor",
-          "field": "every `action_ref` member of the form sha256:<64 lowercase hex>, at any depth",
-          "construction": "\"sha256:\" || lowercase_hex(SHA-256(UTF8(JCS(A)))), A the Action descriptor {agentId, actionType, scopeRequired, timestamp} with scopeRequired sorted by UTF-16 code unit before canonicalisation",
-          "encoding": "sha256:",
-          "status": "declared",
-          "document": "marques-09",
-          "lines": "1096-1108",
-          "quote": "It commits an Action descriptor A containing exactly four members: agentId, actionType, scopeRequired and timestamp. ... Before canonicalization, sort that array by UTF-16 code-unit order; preserve repeated values and string contents without normalization. No other members belong in A. Compute action_ref = \"sha256:\" || lowercase_hex(SHA-256(UTF8(JCS(A)))), with JCS and the input restrictions of Section 4.",
-          "descriptor_member": "action_descriptor",
-          "descriptor_member_reason": "The descriptor is read from the corpus bytes at the sibling member of action_ref named here, and from nowhere else: -09 lines 1111-1114 forbid substituting a later timestamp, inferring scopeRequired from a policy name, or guessing an empty array, so a descriptor assembled by this tool would be a guess. -09 names no wire member for the retained descriptor (it is evidence-resolution material, line 1109), so the member name is this registry's; a corpus that carries the descriptor under another name reads input_absent here until this member is changed to match it.",
-          "outcomes": {
-            "input_absent": "no descriptor beside the value. The note cites -09 lines 1113-1114, \"Missing descriptor evidence makes this recomputation unverifiable.\" Counted, printed by pointer, never match, never fails the run.",
-            "match": "a four-member descriptor is present and its recomputation equals the declared value",
-            "mismatch": "a descriptor is present and is malformed, or its recomputation differs. A finding against the corpus, stated as a measurement.",
-            "zero_bytes": "A declared value equal to SHA-256 of zero bytes (e3b0c442...b855) is never match under this rule, whatever descriptor sits beside it: no four-member descriptor serialises to zero bytes (the smallest is 64 bytes of JSON)."
-          },
-          "applies_to": [
-            "asqav/6137cb95"
-          ],
-          "applies_to_reason": "The corpus -09 itself pins (-09 lines 7094-7097). Not applied to asqav/22a970d or asqav/a21d060: neither carries an Action descriptor anywhere in its bytes (no agentId, actionType, scopeRequired or action_descriptor member in either conformance/vectors.json, checked 2026-09-25), and their fourteen action_ref fields were graded under -08, which defined no construction for them. Registered here in the commit that withdraws those declarations; the corpus it applies to is pinned in the commit that follows, which moves this rule into that corpus's own rule set."
         }
       ]
     },
@@ -591,6 +567,154 @@
           "withdrawn_on": "2026-09-25",
           "withdrawn_because": "As of -09 (posted 21 September 2026), action_ref's construction is published (Section 5.2.7, lines 1107 to 1108); what a third party lacks is the retained descriptor, which -09 treats as unverifiable evidence (lines 1113 to 1114), not as an unpublished construction.",
           "withdrawn_by": "the Lead, on the -09 re-read; the author's mail of 2026-09-24"
+        }
+      ]
+    },
+    {
+      "id": "asqav/6137cb95",
+      "dir": "fixtures/asqav/6137cb95",
+      "only_files": [
+        "conformance/vectors.json",
+        "verifier/conformance-vectors/asqav-*"
+      ],
+      "corpus_note": "The asqav-sdk commit draft-marques-asqav-compliance-receipts-09 names as its vector corpus (-09 lines 7094-7097), pinned 2026-09-25 (fixtures/provenance.md). The first corpus graded against -09 rather than -08: it has its own rule set, and none of the -08 rules of asqav/05c1c49 (the three-key envelope_hash default, marques-08 1351-1369) is applied to it. It carries conformance/vectors.json, conformance/manifest.lock.json and the whole verifier/conformance-vectors/ tree at that commit. Walked: conformance/vectors.json and the verifier/conformance-vectors/asqav-* directories, the vectors of this profile. Pinned and not walked: the manifest locks (SHA-256 over raw file bytes, not JSON structures addressable by pointer; all 300 rows of the verifier lock equal the pinned bytes) and the vectors of other formats in the same tree (acta-*, aerf-*, agentreceipts-*, authproof-*, pipelock-*, w3c-vc-*, dsse-*), which -09 does not govern.",
+      "rules": [
+        {
+          "id": "asqav.vector.canonical",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_vector_canonical",
+          "field": "/vectors/{i}/canonical",
+          "construction": "jcs(/vectors/{i}/input)",
+          "encoding": "utf8",
+          "status": "inferred",
+          "scope_source": "the corpus's own header members: version 2, canonicalization \"RFC 8785 JCS\", hash_algorithm \"SHA-256\". marques-08 cites this corpus but does not define its schema.",
+          "document": null,
+          "lines": null,
+          "applies_to": [
+            "asqav/6137cb95"
+          ],
+          "applies_to_reason": "Same corpus header as the earlier pins (version 2, canonicalization \"RFC 8785 JCS\", hash_algorithm \"SHA-256\"), read from this corpus's own bytes. Not a -08 rule."
+        },
+        {
+          "id": "asqav.vector.sha256",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_vector_sha256",
+          "field": "/vectors/{i}/sha256",
+          "construction": "sha256(utf8(/vectors/{i}/canonical))",
+          "encoding": "hex",
+          "status": "inferred",
+          "scope_source": "same corpus header; each vector's own description states the digest is over its canonical form.",
+          "document": null,
+          "lines": null,
+          "applies_to": [
+            "asqav/6137cb95"
+          ],
+          "applies_to_reason": "Same corpus header as the earlier pins. Not a -08 rule."
+        },
+        {
+          "id": "asqav.counterparty.envelope_hash.09.input",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_envelope_hash",
+          "construction": "sha256(utf8(jcs({\"payload\": A.payload, \"signature\": A.signature}))) -- A's envelope minus anchors",
+          "encoding": "per field suffix: envelope_hash and envelope_hash_base64 base64, envelope_hash_hex hex, envelope_hash_base64url base64url; compared as decoded bytes",
+          "status": "declared",
+          "document": "marques-09",
+          "lines": "1700-1712",
+          "holder": "input/counterparty_binding",
+          "field": "/vectors/{i}/input/counterparty_binding/{envelope_hash,...}",
+          "scope_regime": "marques-09",
+          "quote": "envelope_hash: REQUIRED string. Base64url-encoded SHA-256 digest computed over A's signed envelope with the anchors array excluded ... The digest input is the UTF-8 JCS encoding of {\"payload\": A.payload, \"signature\": A.signature}.",
+          "scope_member": {
+            "member": "counterparty_binding.scope, REQUIRED from -09 (lines 1781-1782)",
+            "values": {
+              "envelope_minus_anchors": "recomputed under the construction above; match or mismatch",
+              "<absent>": "unverifiable_legacy_scope: -09 lines 1783-1787 and 1883-1886, \"a verifier MUST report such a binding as unverifiable, legacy scope, and MUST NOT report it as verified or as failed on byte-equality grounds\". Not recomputed. This corpus carries no retained snapshot of A's envelope as B received it, so the legacy-scope verification -09 allows at lines 1797-1799 is not attempted.",
+              "<anything else>": "unverifiable_undefined_scope: -09 lines 1890-1892, \"A binding declaring a scope value this profile does not define is reported unverifiable on the same axis, never verified.\" Not recomputed."
+            },
+            "one_scope_only": "No other scope is tried, and the -08 rules' informational alternative-scope note is not produced: -09 lines 1799-1802 and 1889-1890 forbid recomputing under both scopes and reporting whichever matches.",
+            "resolution": "A wire binding is read from its own scope member only. An `expected` block takes the scope of the same vector's input binding, including its absence; only a vector with no binding at all (a pure canonicalisation vector publishing the digest of its own envelope) falls back to the unanimous scope of the vectors binding to it, and more than one scope among them leaves the block unregistered."
+          },
+          "applies_to": [
+            "asqav/6137cb95"
+          ],
+          "encoding_note": "-09 lines 1741-1749: base64url without padding for receipts issued on or after the revision date; a verifier MUST decode either alphabet, with or without padding, and compare the decoded 32 bytes. The walker compares bytes, never notation; which alphabet each value uses is a census (FINDINGS-rerun-2026-09-25.md), not a grade."
+        },
+        {
+          "id": "asqav.counterparty.envelope_hash.09.expected",
+          "file": "conformance/vectors.json",
+          "kind": "asqav_envelope_hash",
+          "construction": "sha256(utf8(jcs({\"payload\": A.payload, \"signature\": A.signature}))) -- A's envelope minus anchors",
+          "encoding": "per field suffix: envelope_hash and envelope_hash_base64 base64, envelope_hash_hex hex, envelope_hash_base64url base64url; compared as decoded bytes",
+          "status": "declared",
+          "document": "marques-09",
+          "lines": "1700-1712",
+          "holder": "expected",
+          "field": "/vectors/{i}/expected/{envelope_hash_hex,envelope_hash_base64,envelope_hash_base64url}, with originating_envelope_ref beside them",
+          "scope_regime": "marques-09",
+          "quote": "envelope_hash: REQUIRED string. Base64url-encoded SHA-256 digest computed over A's signed envelope with the anchors array excluded ... The digest input is the UTF-8 JCS encoding of {\"payload\": A.payload, \"signature\": A.signature}.",
+          "scope_documented_in": "asqav.counterparty.envelope_hash.09.input",
+          "applies_to": [
+            "asqav/6137cb95"
+          ]
+        },
+        {
+          "id": "asqav.counterparty.envelope_hash.09.receipt_file",
+          "file": "verifier/conformance-vectors/asqav-*/receipt.json",
+          "kind": "asqav_envelope_hash_file",
+          "construction": "sha256(utf8(jcs({\"payload\": A.payload, \"signature\": A.signature}))) -- A's envelope minus anchors",
+          "encoding": "per field suffix: envelope_hash and envelope_hash_base64 base64, envelope_hash_hex hex, envelope_hash_base64url base64url; compared as decoded bytes",
+          "status": "declared",
+          "document": "marques-09",
+          "lines": "1700-1712",
+          "field": "/payload/counterparty_binding/{envelope_hash,...} of a receipt.json with an originating_envelope.json beside it",
+          "scope_regime": "marques-09",
+          "quote": "envelope_hash: REQUIRED string. Base64url-encoded SHA-256 digest computed over A's signed envelope with the anchors array excluded ... The digest input is the UTF-8 JCS encoding of {\"payload\": A.payload, \"signature\": A.signature}.",
+          "scope_documented_in": "asqav.counterparty.envelope_hash.09.input",
+          "which_envelope": "the originating_envelope.json in the same directory, which is the only way these vectors name A's envelope",
+          "applies_to": [
+            "asqav/6137cb95"
+          ]
+        },
+        {
+          "id": "asqav.chain.09.payload",
+          "file": "verifier/conformance-vectors/asqav-*/receipt.json",
+          "kind": "chain_prev_payload_pairs",
+          "field": "/payload/previousReceiptHash of every receipt.json the pattern names with a predecessor.json beside it",
+          "construction": "sha256(jcs(/payload of the sibling predecessor.json)) -- the predecessor's complete signed payload, its signature object and anchors excluded",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "marques-09",
+          "lines": "1305-1309",
+          "quote": "Otherwise it is the 64-character lowercase hexadecimal encoding of SHA-256(JCS(R)), where R is the complete signed payload of the immediately preceding receipt emitted under the same issuer_id. The literal member name is case-sensitive; aliases are not accepted. The digest excludes the predecessor's signature object and anchors.",
+          "unchanged_from": "marques-08 lines 944-948, the scope of asqav.chain.asqav.payload; unchanged in substance.",
+          "pairing_note": "The pairing (which predecessor) is read from the directory, as at asqav/05c1c49: predecessor.json beside receipt.json. A receipt without a predecessor.json is a genesis or non-chain vector and is left to the census. Genesis (64 zero characters, -09 line 1304) is not registered here.",
+          "applies_to": [
+            "asqav/6137cb95"
+          ]
+        },
+        {
+          "id": "asqav.action_ref.descriptor",
+          "file": "any walked .json file",
+          "kind": "asqav_action_ref_descriptor",
+          "field": "every `action_ref` member of the form sha256:<64 lowercase hex>, at any depth",
+          "construction": "\"sha256:\" || lowercase_hex(SHA-256(UTF8(JCS(A)))), A the Action descriptor {agentId, actionType, scopeRequired, timestamp} with scopeRequired sorted by UTF-16 code unit before canonicalisation",
+          "encoding": "sha256:",
+          "status": "declared",
+          "document": "marques-09",
+          "lines": "1096-1108",
+          "quote": "It commits an Action descriptor A containing exactly four members: agentId, actionType, scopeRequired and timestamp. ... Before canonicalization, sort that array by UTF-16 code-unit order; preserve repeated values and string contents without normalization. No other members belong in A. Compute action_ref = \"sha256:\" || lowercase_hex(SHA-256(UTF8(JCS(A)))), with JCS and the input restrictions of Section 4.",
+          "descriptor_member": "action_descriptor",
+          "descriptor_member_reason": "The descriptor is read from the corpus bytes at the sibling member of action_ref named here, and from nowhere else: -09 lines 1111-1114 forbid substituting a later timestamp, inferring scopeRequired from a policy name, or guessing an empty array, so a descriptor assembled by this tool would be a guess. -09 names no wire member for the retained descriptor (it is evidence-resolution material, line 1109), so the member name is this registry's; a corpus that carries the descriptor under another name reads input_absent here until this member is changed to match it.",
+          "outcomes": {
+            "input_absent": "no descriptor beside the value. The note cites -09 lines 1113-1114, \"Missing descriptor evidence makes this recomputation unverifiable.\" Counted, printed by pointer, never match, never fails the run.",
+            "match": "a four-member descriptor is present and its recomputation equals the declared value",
+            "mismatch": "a descriptor is present and is malformed, or its recomputation differs. A finding against the corpus, stated as a measurement.",
+            "zero_bytes": "A declared value equal to SHA-256 of zero bytes (e3b0c442...b855) is never match under this rule, whatever descriptor sits beside it: no four-member descriptor serialises to zero bytes (the smallest is 64 bytes of JSON)."
+          },
+          "applies_to": [
+            "asqav/6137cb95"
+          ],
+          "applies_to_reason": "The corpus -09 itself pins (-09 lines 7094-7097). Not applied to asqav/22a970d or asqav/a21d060: neither carries an Action descriptor anywhere in its bytes (no agentId, actionType, scopeRequired or action_descriptor member in either conformance/vectors.json, checked 2026-09-25), and their fourteen action_ref fields were graded under -08, which defined no construction for them. Registered on 2026-09-25 in the asqav/05c1c49 rule set in the commit that withdrew those declarations, and moved here, into the rule set of the corpus it applies to, in the commit that pinned that corpus."
         }
       ]
     },
