@@ -4,7 +4,7 @@ A walk of the Asqav SDK conformance corpus at the commit
 `draft-marques-asqav-compliance-receipts-09` names as its own vector corpus, graded against `-09` as
 posted on 21 September 2026 rather than against `-08`, and a re-reading of M5, M7 and N1 against both.
 
-This rerun ran on **Friday 25 September 2026, 08:41Z to 09:2xZ**, dated by the clock. It is the fourth
+This rerun ran on **Friday 25 September 2026, 08:41Z to 09:18Z**, dated by the clock. It is the fourth
 document in this series, after `FINDINGS-rerun-2026-07-29.md`, `FINDINGS-rerun-2026-09-02.md` and
 `FINDINGS-rerun-2026-09-08.md`, whose method it follows.
 

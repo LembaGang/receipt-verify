@@ -1423,7 +1423,7 @@
       "url": "https://www.ietf.org/archive/id/draft-marques-asqav-compliance-receipts-07.txt",
       "sha256": "082615447288fa1e983fa2cfb7aa7356fbb35d05d65ea256f66111487746d52f",
       "pinned_file": "refs/draft-marques-asqav-compliance-receipts-07.txt",
-      "role_reason": "Superseded in this repository by draft-marques-asqav-compliance-receipts-08, which is pinned beside it and carries role current. Kept, and still cited by line number in walker/scopes.json and FINDINGS.md, but a revision this repository already knows is superseded is not a freshness question.",
+      "role_reason": "Superseded in this repository by draft-marques-asqav-compliance-receipts-08 on 2026-09-01, which is pinned beside it and has itself carried role historical since 2026-09-25, when -09 was pinned. Kept, and still cited by line number in walker/scopes.json and FINDINGS.md, but a revision this repository already knows is superseded is not a freshness question.",
       "provenance_section": "the main snapshot table (this draft was in the original table)",
       "corpus_dirs_removed": "Removed 2026-09-06. This entry pins ONE file, named by `pinned_file`; its former `corpus_dirs` claimed a whole directory it did not produce and resolved every neighbouring file to this entry."
     },
