@@ -930,6 +930,18 @@ longer distinguishes the two wire formats, and the type prefix does not either, 
 above. This commit does not solve that case and does not pretend to: the discriminator for -09 is the
 profile author's to name, and it is put back to him in the reply. What is fixed here is -08 as written.
 
+**Appended 2026-09-25 — -09 as posted: M7, the anchors-key discriminator, and the section number at line 756.**
+
+Line numbers are to `refs/draft-marques-asqav-compliance-receipts-09.txt` (sha256
+`c455cdf8a402c46bff383088321d52d7aaebfef32090fd633efcdf02e7bee406`) unless marked -08, and each was printed
+from the pinned bytes and read before this block was written.
+
+**On M7 (line 771).** Appended 2026-09-25. M7 measures the corpus against -08 Section 5.4 (lines 1052 and 1074 to 1075 of -08). -09, posted 21 September 2026 and pinned in refs/, has no such rule: issuers SHOULD obtain timestamp evidence (Section 5.5, lines 1414 to 1415), an absent or empty anchors array is conformant (lines 1449 to 1450), and full verification is withheld only when a required axis fails (lines 4634 to 4636 and 4719 to 4722). M7 remains true of -08 and of the corpus at 05c1c49. It stays open, as the author also asks, until the corpus -09 pins (asqav-sdk 6137cb95) is walked against -09.
+
+**On the anchors-key discriminator (lines 876 to 878 and 922 to 925, and test/acta.test.ts lines 167 to 173).** Appended 2026-09-25. The anchors-key rule above is -08's (line 1037 of -08) and is what detect() implements. -09 reverses it: the anchors key MUST NOT be used to tell the formats apart (Section 5.4, lines 1371 to 1374), an absent anchors member is conformant (lines 1449 to 1450), and the discriminator is v (lines 759 to 763, 797 to 808 and 1366 to 1369), read within an explicitly selected format (lines 1369 to 1371). The type-prefix reasoning above is now -09's own (lines 1375 to 1378). detect() is correct for -08 receipts only; its -09 form is a separate change and is not made in this commit.
+
+**On line 756 ("-09 corrects §5.7").** Appended 2026-09-25: Section 5.8 in -09.
+
 ### A6. A machine path is not a provenance source
 :233-234 cites `C:\Users\User\agent-action-receipt-vectors` as the source of
 `fixtures/evidence-action/`. No reader can resolve that path. The corpus is a private snapshot whose
