@@ -6,23 +6,27 @@ name: drift
 #
 # Daily, and on a schedule rather than on push, because the question is about
 # someone ELSE's repository and nothing in a push to this one can change the
-# answer. A red here does not mean this repository is broken: it means a finding
-# that cites a pin may now be describing a superseded upstream, which is the
-# thing that has to be loud rather than discovered by a run that happened to be
-# scheduled.
+# answer.
 #
-# Daily rather than weekly since 2026-09-08. The first scheduled run under the
-# weekly cron -- Monday 2026-09-07 06:00Z -- went red on both of the two things
-# it could go red on: the asqav-sdk corpus had moved with both pinned paths
-# changed, and CPB -02 had been superseded by -03 published on 5 September. The
-# -03 revision was therefore two days old before anything here noticed, and the
-# asqav tip had moved a further nine commits by the time the finding was worked.
-# A window in which every finding citing a pin may already be describing a
-# superseded upstream should be a day wide, not a week.
+# 2026-09-26 -- drift is REPORTED AS ONE ISSUE, not as a red run. Until today a
+# moved upstream turned this job red every morning until someone re-pinned, so
+# the same finding arrived as a failure email 19 days running and the signal
+# became noise. The finding still has to be loud, so it now lives in exactly one
+# open issue labelled `upstream-drift`:
+#   - the issue is opened when drift first appears;
+#   - it is updated, with a comment (which notifies), only when the SET of
+#     drifted upstreams changes -- a new upstream moves, a pin catches up, a
+#     draft is superseded again;
+#   - it is closed automatically when every role: current upstream is current
+#     or moved_untouched again (i.e. after a deliberate re-pin session).
+# The job itself goes red only when the CHECK could not be made: `unreachable`
+# or `no_entry` (a check that could not be made has not passed), or the drift
+# tool crashed. `npm run drift` keeps its exit contract unchanged; only this
+# workflow's reaction to it changed.
 #
-# It reads. It does not commit, tag or push, and it never runs with --record:
-# recording an observation into fixtures/upstreams.json is a change to make
-# deliberately in a session, not a side effect of a cron.
+# It reads the repository. It does not commit, tag or push, and it never runs
+# with --record: recording an observation into fixtures/upstreams.json is a
+# change to make deliberately in a session, not a side effect of a cron.
 
 on:
   schedule:
@@ -31,6 +35,11 @@ on:
 
 permissions:
   contents: read
+  issues: write
+
+concurrency:
+  group: drift
+  cancel-in-progress: false
 
 jobs:
   drift:
@@ -45,18 +54,108 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      # Exit 1 on any moved_changed, changed, superseded or unreachable among the
-      # role: current upstreams, which fails the job. `unreachable` is deliberately
-      # a failure: a check that could not be made has not passed.
+      # Runs the unchanged drift tool. Its exit code is captured, not obeyed:
+      # the next step classifies the report and decides.
       - name: Check upstream drift
-        run: npm run drift
+        id: drift
+        run: |
+          set +e
+          npm run drift 2>&1 | tee drift.log
+          echo "rc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          exit 0
 
-      # Uploaded whether the step above passed or failed -- the report is most
-      # useful precisely on the runs that went red.
       - name: Upload drift report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: drift-report
-          path: walker/drift.json
-          if-no-files-found: error
+          path: |
+            walker/drift.json
+            drift.log
+          if-no-files-found: warn
+
+      # One issue, updated only when the drifted set changes. Fails the job only
+      # when the check itself could not be made.
+      - name: Report drift as one tracked issue
+        uses: actions/github-script@v7
+        env:
+          DRIFT_RC: ${{ steps.drift.outputs.rc }}
+        with:
+          script: |
+            const fs = require('fs');
+            const crypto = require('crypto');
+            const LABEL = 'upstream-drift';
+            const TITLE = 'Upstream drift: pinned corpora have moved (auto-maintained)';
+            const rc = Number(process.env.DRIFT_RC || '0');
+            const log = fs.existsSync('drift.log') ? fs.readFileSync('drift.log', 'utf8') : '';
+
+            // Rows that need a deliberate re-pin session.
+            const DRIFT = /^(MOVED_CHANGED|CHANGED|SUPERSEDED)\s+(\S+)/;
+            // Rows that mean the check itself failed.
+            const BROKEN = /^(UNREACHABLE|NO_ENTRY)\s+(\S+)/;
+            const drifted = [], broken = [];
+            for (const raw of log.split('\n')) {
+              const line = raw.trim();
+              if (/^CHANGED \(NOTE\)/.test(line)) continue;       // notes never fail the tool either
+              let m;
+              if ((m = line.match(BROKEN))) broken.push(line);
+              else if ((m = line.match(DRIFT))) drifted.push(line);
+            }
+            const summary = (log.match(/^drift: .*$/m) || [''])[0];
+
+            // The tool exited non-zero but produced no recognisable rows: it crashed.
+            if (rc !== 0 && drifted.length === 0 && broken.length === 0) {
+              core.setFailed(`drift tool exited ${rc} without a report -- see drift.log in the artifact`);
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: LABEL });
+            } catch {
+              await github.rest.issues.createLabel({ owner, repo, name: LABEL, color: 'd4c5f9',
+                description: 'Pinned upstream corpora have moved; re-pin deliberately in a session' });
+            }
+            const open = (await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: LABEL, per_page: 10 })).data;
+            const issue = open[0];
+
+            const key = drifted.map(l => l.split(/\s+/).slice(0, 2).join(' ')).sort().join('\n');
+            const sig = crypto.createHash('sha256').update(key).digest('hex').slice(0, 16);
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const body = [
+              `<!-- drift-signature:${sig} -->`,
+              `**${drifted.length} pinned upstream(s) need a deliberate re-pin.** This issue is maintained by the daily \`drift\` workflow: it is updated only when the set below changes, and it closes itself when every \`role: current\` upstream is current again.`,
+              '',
+              `Latest run: ${runUrl}`,
+              `\`${summary}\``,
+              '',
+              '```',
+              ...drifted,
+              '```',
+              '',
+              'Re-pinning is a session task, never a cron side effect: read what moved, decide whether any finding citing the old pin is affected, then `npm run snapshot` / update `fixtures/upstreams.json` and commit signed.',
+            ].join('\n');
+
+            if (drifted.length === 0) {
+              if (issue) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: issue.number,
+                  body: `Every role: current upstream is current or moved_untouched again (${runUrl}). Closing.` });
+                await github.rest.issues.update({ owner, repo, issue_number: issue.number, state: 'closed' });
+              }
+            } else if (!issue) {
+              await github.rest.issues.create({ owner, repo, title: TITLE, body, labels: [LABEL] });
+              core.notice(`opened drift issue (${drifted.length} upstreams)`);
+            } else {
+              const old = (issue.body || '').match(/drift-signature:([0-9a-f]+)/);
+              if (!old || old[1] !== sig) {
+                await github.rest.issues.update({ owner, repo, issue_number: issue.number, body });
+                await github.rest.issues.createComment({ owner, repo, issue_number: issue.number,
+                  body: `The drifted set changed -- now ${drifted.length} upstream(s). ${runUrl}` });
+              } else {
+                core.info(`drift unchanged since the issue was last updated (#${issue.number}); staying quiet`);
+              }
+            }
+
+            if (broken.length) {
+              core.setFailed(`the drift check could not be made for ${broken.length} upstream(s):\n${broken.join('\n')}`);
+            }
