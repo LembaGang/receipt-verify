@@ -1852,6 +1852,482 @@
       "check_reason": "Left `fail` as the handoff directs, and NOT re-classified in this session, because the decision to de-escalate a commercial signal is the Lead's. See observation_2026-09-10 below: what this session established is that the entry cannot currently serve the purpose the `fail` is for.",
       "observation_2026-09-10": "Read 1059546c32e83a556eb6917f2c343fa6340c683bb00342fb96bff6349992327d at 72317 bytes, `ETag: \"76527003\"`, against the pin 7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b at 72326 bytes. THE PRIOR BYTES WERE NEVER HELD (`no_pinned_file`), so the two captures cannot be diffed and nothing here is asserted from a diff. What was established instead, from the upstream and from today's body: (1) the page's own source, `daprdocs/content/en/developing-applications/building-blocks/workflow/workflow-history-signing.md`, has NO commit touching it since 2026-08-25 and is blob 57d27501ce67688f2557eb81ef183295342fde07 at 33842 bytes at the tip; (2) PR #5306, `Workflow: warn to not reuse instance IDs`, merged 2026-09-08T17:11:17Z as 78b25330358bbe68b7e0f2d704f02d0432aebb75, touched howto-manage-workflow.md, workflow-features-concepts.md and reference/api/workflow_api.md -- and NOT this page; (3) the rendered body embeds the repository's latest commit in its FOOTER, reading today `Merge pull request #5306 from JoshVanL/docs/workflow-instance-id-reuse (78b2533)`. So the Lead's 9 Sep triage names the right commit and the wrong mechanism: the page's content did not change, its footer commit stamp did, and that stamp moves on EVERY merge to dapr/docs regardless of what the merge touches. This is the rendered_page_furniture class -- the same one that retired rfc9964-info and mcp-specification-changelog/render -- and as pinned this entry will red on every merge to that repository while a real edit to the page would be indistinguishable from one. Reported to the Lead, not acted on here.",
       "superseded_pin": "Previous pin 7cf9a3c539f8cd2285f1cfee08689148459fa66718d4de246b18287bf7d2c52b at 72326 bytes, retrieved 2026-09-08T09:59:01Z. Kept here because observation_2026-09-10 is a comparison against it and the entry holds no copy of the old bytes."
+    },
+    {
+      "id": "tersign-evidence-record-conformance",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/tersignhq/evidence-record-conformance",
+      "ref": "main",
+      "ref_source": "Resolved in this session: `git ls-remote https://github.com/tersignhq/evidence-record-conformance` at 2026-09-29T19:10:25Z printed `1075ca65b4495212cf49a891e63e07f2cf48acf8` for both HEAD and refs/heads/main and no refs/tags at all, and a fresh clone outside the repository (`git -c core.autocrlf=false clone`, 19:10:43Z) checked out the same commit. It is the value the Lead resolved three times earlier on 29 Sep. Commit subject `README Reproduction: two outside implementations ran the full set (#8, #9); CONTRIBUTORS/gen_vectors: Rul1an's report date and scope`, committed 2026-09-29T08:28:37-07:00. This pin IS the tip.",
+      "pinned_commit": "1075ca65b4495212cf49a891e63e07f2cf48acf8",
+      "paths": [
+        {
+          "path": "LICENSE",
+          "pinned_blob": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's licence text (Apache-2.0), pinned for the record; no check reads it, so a change to it changes no result here."
+        },
+        {
+          "path": "MANIFEST.json",
+          "pinned_blob": "9c256714d607d1487f3e2a100251a53b317749e4",
+          "sha256": "b7a1c699b34ed0bb1e8979dbcfd981577d4cf6838d65482d1e66690a42477560",
+          "check": "fail"
+        },
+        {
+          "path": "README.md",
+          "pinned_blob": "3bb59c000ec2bde2ae39e9dc6d29ad3342561896",
+          "sha256": "16e2d9bf00c461c4771d93fd86af676a2fd4551a437957fa3bdfa1c82e49cdf0",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's prose about the suite, pinned because the report quotes it (the ten reject reasons and eleven kinds, the anchor wording at lines 319-320). The constructions this repository recomputes are read from MANIFEST.json, which is `fail`; a README edit alone changes no result."
+        },
+        {
+          "path": "keccak.py",
+          "pinned_blob": "c8af65ec6cc5c59fda8e1e63f8e238eb9a4d0157",
+          "sha256": "f541c8a43a288f61a147dd43accea048eb9f55a095ca3b9dbf3f88341d469190",
+          "check": "fail"
+        },
+        {
+          "path": "tools/cross_check_ts.mjs",
+          "pinned_blob": "84176a71eab5731aaf40df06d39598013e4c8bb1",
+          "sha256": "003553ae6d111c1cfc7b618289b1f80aafc85c8c7aaa95215a0da105b55fc131",
+          "check": "fail"
+        },
+        {
+          "path": "tools/differential.py",
+          "pinned_blob": "9c08e36c02f9bce1a3b73f454b4bc369a0662e2e",
+          "sha256": "21f23dd10c5859c6597fa44c43e9ea9c4357e1574b63ae3625739418fd87d3e8",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n1-value-drift.json",
+          "pinned_blob": "ee0f158028659182f19f1d726e4b5dcf405b8b71",
+          "sha256": "2ed6b50466d387dcd39db22498ee6789692c89ff755d17025a40de9ed37a5536",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n10-float-in-digest-domain.json",
+          "pinned_blob": "0ae1746c9b836f0f922aadc0f47a1215deeea86e",
+          "sha256": "fd2c1edd4a24d1e45f90ca2072fa7a797fb03d7cd66b494a541092e6a23a4703",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n11-integer-beyond-ijson-range.json",
+          "pinned_blob": "a962a29a3a86202d1141eabc6863db922bd0b6a3",
+          "sha256": "8bda9dc87a40dff62778515f33b7febafaf8c4fdff5bf523e82172981ea264c1",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n12-codepoint-key-order.json",
+          "pinned_blob": "1a07fde56f3b62f7f273cdd92f363bc8702b6a95",
+          "sha256": "e1a43df350169685d778b7e7c3aee0a7a4f479376f8d6115f13fd2c6e95ea60e",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n13-party-alias-whitespace.json",
+          "pinned_blob": "4e17b29cd1b61a7af3bd5d1f418d46c7bbfd56da",
+          "sha256": "39732e60ff1e986f69da2de7669cd52ffa3043dd10e12146631be35eb964aa62",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n14-unparseable-attestor.json",
+          "pinned_blob": "2a83e4ce91acd154d83bb735ae0222f0ea6fc77e",
+          "sha256": "b8ec6eb69069a3e7956d020030af36a90acedde36100c2b299f3264a2a2ad91d",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n15-claim-without-attestations.json",
+          "pinned_blob": "4528a7b4cc892d402e0ce680d62e6a0d4496b904",
+          "sha256": "0ea1bc4d58fe514f68314ad7e906f789eba22e2d7712b7abb4efc44d96cb11e6",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n16-attestation-not-an-object.json",
+          "pinned_blob": "74451b5738c2afe54fdac871b2f0f8474942064e",
+          "sha256": "a71e2ee8ef75606b9670912d176df81f6b0f24e3a70a7b5487f22b4acb3b115c",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n17-renumbered-omission.json",
+          "pinned_blob": "88b569fbc4560b037697b82eabace8b1c0336b36",
+          "sha256": "6c0ddd47242243d9194467865f4e57cb57a8d2ca13b9815bb870944f1f84a1c8",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n18-unrecognized-phase.json",
+          "pinned_blob": "965c72f2a001b9a30e77925d5988f5b1e2902103",
+          "sha256": "8c23f6f4ce71e64a5710cd817cfb7b71f8778857d8a3e195fa92581677e2acfd",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n19-offer-substitution.json",
+          "pinned_blob": "75d70ea847c624c36033b15c514a9d1a12390d53",
+          "sha256": "84740d6e6c10b870e0dd9975c1d446ccf91ef00c175e345cfaa7e8d4b8ba4126",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n2-hoisted-integer-keys.json",
+          "pinned_blob": "3f23f739262aca71db54ad5602cf1d62bd85d3a3",
+          "sha256": "fcdc05259d8aeebe2334fbb68618550fcd51bba939f5527e45f517c0f9abc5f2",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n20-independence-scope-uncommitted.json",
+          "pinned_blob": "1dd0d22ea6a893a85db67cd535e952dafec3c9c3",
+          "sha256": "ca536a5e2de72f26512c6ca924a1c40f77ea0696dea6f62e712cfa8813e2f522",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n21-independence-scope-empty-settlement.json",
+          "pinned_blob": "ec8e3752e044b6b8452f2ec4f4eba7c6872ded6f",
+          "sha256": "d5f3d985a9693c7cfef1692703af78216176f295eb33467bb3c5fb68958de7b2",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n22-independence-scope-declared-override.json",
+          "pinned_blob": "5836b80c9ca92a4ad0a9fcd48c5c57804c4ac301",
+          "sha256": "68e27b0517e77b43b10d5d16eb278857840c05587c562d278f42710ec76323f7",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n23-independence-scope-null-declared.json",
+          "pinned_blob": "ea450c0579aec497212c01e4950b8e3dde2ffcea",
+          "sha256": "edeedd673b4c5730de8b6dca6192efd7d9257f5cc37130c2594a5a42e96ee816",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n24-independence-scope-declared-no-scope.json",
+          "pinned_blob": "134ec6b9c853519ecd4ac070f9775ba522bc7231",
+          "sha256": "16d51c683a519ad69306a5e4ad0003b4302aadde2fd5266668de03dac87eb7d9",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n25-boundary-prefix-only-no-position.json",
+          "pinned_blob": "2eeae70027cae3bfebe4e527955495563da91be6",
+          "sha256": "6bc645cd2b8966bb2c46baca45ff1de4687c5fd95cb01fef1f039f555cc0880a",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n26-coverage-claimed-over-empty-attestation.json",
+          "pinned_blob": "52104df195be3b20a378bf4f344ce05d835407fc",
+          "sha256": "552cbba3b3345aa69dc670f6f37772c1f94e4851c55bf87db05b5c87d7105e8f",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n27-authority-reduction-unbound.json",
+          "pinned_blob": "8050064f1ef6ee452e3b4046d88a19e48a4467a7",
+          "sha256": "c235bcdb13c4da25ace1c7340cb3bd5e118992798c66e1290e0ae06a00cc1958",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n28-authority-reduction-substitution.json",
+          "pinned_blob": "80c5ca9af601daa17b5d8d733ac6c46371fa2660",
+          "sha256": "ae85e882c3a680472c9105afee34b525ff032a9948b7ec3334a44301319250a6",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n29-suite-transition-redigests-prefix.json",
+          "pinned_blob": "5ef43802617e8962a0af6f1d00df7d4e0236930d",
+          "sha256": "222abb15f6e119fa0a41c34fbf654125766cecbc4fbcebfef2a56050bf157a2d",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n3-chain-link-wrong-prev.json",
+          "pinned_blob": "3cdb2192ef117838196c7cb96272c5a2f0e7cb67",
+          "sha256": "39d3d579d0cdd42ca748ff62e3eee2415259a448692ddc5b8d97d4cc9ab0d7c3",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n30-independence-urn-self-attested.json",
+          "pinned_blob": "ce698eddd93025ea201fe571232f3e4426ace36a",
+          "sha256": "4602b7ee50957f7ad1a4b55a0c4ff624c7e47ad983a3f8399d9812bff0836b34",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n31-independence-urn-alias-trailing-slash.json",
+          "pinned_blob": "1f18e36f2a0d0e2a493be596b7b20cbeedb3a437",
+          "sha256": "500181c0ebe98d44695f299997979fead315140e6cb19353490e3985c8ad0e0e",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n32-delivery-self-attested.json",
+          "pinned_blob": "97c9ef33dc79a230f39cc2f2b309c4d396fa530b",
+          "sha256": "1327fe45d95c42152df23a947b5170ae818ada4dfd78ec4524e138f3305d70d7",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n33-delivery-substitution-scope-overreach.json",
+          "pinned_blob": "47f1f24bf2cc585092a6ab2f7a291d6ba94beac3",
+          "sha256": "92c6f85d7be02b3d29d8f18405c174bae595ad679c2236153f3d352befe574f5",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n34-witnessed-inclusion-not-completeness.json",
+          "pinned_blob": "8a15778d13ecd81563cf471b1b645991199ff953",
+          "sha256": "4caa7de9b2ccb59585c899ed669a67aed00f0a4d8b2d4fa631660c5ba8f11b54",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n35-integer-valued-float-token.json",
+          "pinned_blob": "51dbdf462f68ff994545815a27b6423c4e5856f0",
+          "sha256": "e6bee398315208f62a0aa7846a317eabef5b6be53225aaa56d13cf950b06b590",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n36-chain-commitment-prefix-substituted.json",
+          "pinned_blob": "e7cdeaa7224ff35a9d3c1f3d6598c188ad753e7f",
+          "sha256": "d8c3f9df51e814f9c3039890caa8b959a7ed3f089eb0ca3ede7917b604f9ca0f",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n37-chain-commitment-last-link-only.json",
+          "pinned_blob": "4512357c67410d48e67a14ac6001c531a02f4ecc",
+          "sha256": "bdc11650684dea1130942e6023ddcdf5efffdd6f6ce190b7f31cc968f3088940",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n38-chain-set-float-seq-token.json",
+          "pinned_blob": "e759647f3d996c8dc3986f1020cd5d05018c9b3b",
+          "sha256": "7aa731abd92293afdf8fd2ce62cfe66f96287eea363183e76980ac39abb7d5f4",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n39-issuer-sequence-duplicate-seq.json",
+          "pinned_blob": "7f67bc492aab599c6ce778156a46fbf468bd3336",
+          "sha256": "e4c2fd27478bdee07fe0da62d42f117d3a3d5fbbe6f1eead99bfd903a3168078",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n4-omitted-record.json",
+          "pinned_blob": "c1be1b53d71b8452143a6ac0aae9b075887d8b8d",
+          "sha256": "3e9098617a84182fe92725766d614950e61011fd9da5f987376fd3f50365eaa0",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n40-equivocating-record-at-committed-position.json",
+          "pinned_blob": "1a55778ffa1dc63ce4b14566ad95088913c498a7",
+          "sha256": "5f43d78aaa075ba52bf34275e52ffc9e1d3e33d10ab58019d8e3a3039ce39e3d",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n5-truncated-anchor.json",
+          "pinned_blob": "7c8390a5f3be82e84b16b4c452ad358e16aa2f03",
+          "sha256": "15395bf34e785487f7ea72139cf1f2be8b99924d179a6efeaf28abf4d2b56e59",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n6-phase-confusion.json",
+          "pinned_blob": "4dff062869af16ce02ece51109a0ee38e8f0c284",
+          "sha256": "5154ecc1e54915a51e69f76141078f3399f548c4dc284ae514789c6375529fa9",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n7-issuer-only-independence.json",
+          "pinned_blob": "f86f62aa8a4629e08899ca7baef7de00642988b6",
+          "sha256": "0f199b7e3266a5f2d9e7d0fca3f029a339af3515b28380ccbe8688864eca42d4",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n8-unrecognized-independence-claim.json",
+          "pinned_blob": "b5239c50cd778c9c9cc0fc0d099ea8032dbdcf8e",
+          "sha256": "e5d2df6c346d86e1806535b6913074d4d35b6016554d139de36af505a0671894",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/n9-unrecognized-member-in-claim-set.json",
+          "pinned_blob": "7d9ed55172c6edffce84dbe8563037485543f1e4",
+          "sha256": "f482fdc6d0bb63f1343e2bd5216144ce5635304b2a5171825db81b1673bf07fd",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p1-live-genesis-receipt.json",
+          "pinned_blob": "91b547c32c34481456f768c306324703caf5f74e",
+          "sha256": "3f9eabd20e0c7220cf0e65f4f16e03cdbc63280510fb393f1c5661a4872aa286",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p10-claim-set-independent.json",
+          "pinned_blob": "d93dcc27a4eb53ae025ed0b9e755d279bd50292b",
+          "sha256": "8b87c26f725670fab663d88e66d87a0e9ee175ecfef95b38d1e9ef85eef325e7",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p11-claim-set-silence-only.json",
+          "pinned_blob": "4d3daaf7e388137b2a2150e8591fae72e66ca276",
+          "sha256": "72db3c712e43734c675ded9d68236262b9f220c7f4be7a60c44dffa10989bd16",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p12-ijson-integer-boundary.json",
+          "pinned_blob": "53d88205efc906f7ba9019d05cca99e985d3b5f5",
+          "sha256": "7720eb489d80aa83f59326d9a9dba7a783612212cf8f84a289f775ab2242c573",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p13-decimal-string-beside-integer.json",
+          "pinned_blob": "b612c239a432ed10d6fd3f1bff8cf96547204f06",
+          "sha256": "55bff9521cddcad9a76b43364474d11baacd372e014c813d6f9e1a6010b73c97",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p14-supplementary-plane-key-order.json",
+          "pinned_blob": "cc76b8547744dea5deb18d0b2b1105c2af2b9dc8",
+          "sha256": "3505c9c747a6533bef016fa440ff125a6913322229eb341135aa813817b35627",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p15-offer-binding.json",
+          "pinned_blob": "4a2c497001fb75ddc16384d57407f7f36222e8ef",
+          "sha256": "f0c145b4a10f2568d5a1c6af248fc6f498f69a40091b53b9ac56c85b71e0d868",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p16-independence-scope-committed.json",
+          "pinned_blob": "44f70e1e53233e6a349f6f5dc19bf561f61289ef",
+          "sha256": "015a3a1386e2da6a0e7e3e37fa08de77421f879fceb2398a60f98013f8de4242",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p17-independence-scope-derived-settlement.json",
+          "pinned_blob": "7805b3aba423fd76c1088fff8e7ccab0e75058fd",
+          "sha256": "35fa184c61cb2db8e3420b9dc15b0e15661ccd38fcbe3d14a4dce52308fcad14",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p18-boundary-binds-prefix-and-position.json",
+          "pinned_blob": "d0f56b9574553a3708762b2bfac0941f0863915b",
+          "sha256": "74bd195065e624b593dcedaed34ccf19f77200e9761722703a2f65ff69d7692d",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p19-authority-reduction-bound.json",
+          "pinned_blob": "c523382976870a38b2955c3c316e67cd83531fbe",
+          "sha256": "348decb0425d0a21d396874d8d7e8ffe4dd774a5535f4404909e9d77ccc6398b",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p2-canonical-key-order.json",
+          "pinned_blob": "74dd977ad8db6d5460734877a666ca01dafbe837",
+          "sha256": "28d79edb4ecc6923a3023443feb46832496aea45873736c0af8d03a94af8d932",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p20-suite-transition-preserves-prefix.json",
+          "pinned_blob": "45a3e7248e523bb75328af0f2cba9f4eb2dda663",
+          "sha256": "7d6f341002cee80d4e3847f8ae65c173e2730b2246c1371e6fdc3ca4c052b6f1",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p21-independence-urn-identities.json",
+          "pinned_blob": "ed5c9c3cc03b4c5253092df7e9aa257f72a5d2c0",
+          "sha256": "8210296e13861b7797a680a56cd93a9bcf021ce2dfabc1ee7d6ed99d3d431d4f",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p22-delivery-commitment-recomputed.json",
+          "pinned_blob": "4e62b7dff3cd0f5355e09e611ce46773ea604b88",
+          "sha256": "aa751715c701c2e76ddb1cd889eb339d0377f8e31bcfe0d1488d4c26c1bf42f8",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p23-delivery-independence-within-commitment.json",
+          "pinned_blob": "50088005490340d5cde09db6e4c570513edf48fe",
+          "sha256": "fcef312b15946271656dbdcaecff01116a86e78edf98e51dbfd28643a554fb74",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p24-witnessed-complete-set.json",
+          "pinned_blob": "90d0dc8254b0b951dcacc416237611cf3d02962c",
+          "sha256": "5612301d1c1e91df44eff83057541c941b00967a4bc74b99b97b5f217c4a2135",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p25-integer-token-in-text.json",
+          "pinned_blob": "e6d7b5719d7d406fba481cb602ea33814f773aba",
+          "sha256": "53e39e940b1f41fda73ef0782fe49a216fadcbf35e19f4b236366a951a113c70",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p26-chain-commitment-complete.json",
+          "pinned_blob": "55339275ffa2c436aeed57da6d05fc9b6f87e6fc",
+          "sha256": "53a0d2373836f959f4a9dbc140979809100831336425e5c240a94afb558fcdc2",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p27-live-chain-commitment-genesis-chain.json",
+          "pinned_blob": "35ca50d27b38d2f83ccc20dac1cb1de60efa63a3",
+          "sha256": "5e225572278500d8d7c089690302581eaa1a7b962089991255d09a88e7f9130d",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p28-issuer-sequence-distinct-seq.json",
+          "pinned_blob": "e8963a741f3129676a56b8cae6398cf005f49505",
+          "sha256": "b9bcbf1b6ee711aba54f716a8f3f287bcb87ec60045d7828a20ca24b44f7348e",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p29-committed-prefix-one-record-per-position.json",
+          "pinned_blob": "970cca1c6d1ccf71ec4bf6cb0f5ae3d99dd0e877",
+          "sha256": "f1710cfacaecdedad6e1e006236f3d2080b3964282adbe202d5ae3c5cf4f361f",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p3-integer-key-utf16-order.json",
+          "pinned_blob": "4b5d6c42d092d70616f91d10593ad2df5a11f43d",
+          "sha256": "39f24e02a00eb8604372a7637082aeb3f3614c163d342809f956b417b8f14d02",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p4-chain-link-genesis.json",
+          "pinned_blob": "efe980dfad38b817d355343484b2f82e0b3747ce",
+          "sha256": "7c06b413e04862019f1fc2c77357b18d7c3f5261595797dd3ff40a14c74ac78b",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p5-live-bitcoin-anchor.json",
+          "pinned_blob": "c3827e14ea1e69fd2db3f5898b0ea90b75711a83",
+          "sha256": "eeafb5b4eb82c755e58116d8c583cd70144718de27e97bb35ef4fb88e4215748",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p6-chain-set-complete.json",
+          "pinned_blob": "669c39c71cc15b9d98943bba372dc4c2eb91e981",
+          "sha256": "7064c4db5332807d0282d75564b6f011b0e6b99aae9192909732ec124af74113",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p7-phase-consistent.json",
+          "pinned_blob": "75de0b9b5270506c8bdd573f9a01b93e54e552f3",
+          "sha256": "ba7f82ce698b9b00c80654ea18d49b0195d21ea783e575adf8ac748c8c79d7a1",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p8-non-party-attestation.json",
+          "pinned_blob": "65be5f8ad23ae5af59de33e0b5c2b4e403d92399",
+          "sha256": "4fd32490668b1dc8b134cdf78a9e658ac2013524af0f828047c9a47b036dfeb4",
+          "check": "fail"
+        },
+        {
+          "path": "vectors/p9-no-independence-claim.json",
+          "pinned_blob": "b40fd41decf250efbddbe27ebaef7e1d7922cfde",
+          "sha256": "664c3f3c380e969cf5793d4e77c9dd19af9171756f7a3e8d9eedc006865abf82",
+          "check": "fail"
+        },
+        {
+          "path": "verify.py",
+          "pinned_blob": "0802d811872ac34067853f358d77440fd5197c94",
+          "sha256": "ef3ecff7c1f0f997deaef4f5fae4f33545f950d6bc5fbc5ace94c5626a702d0f",
+          "check": "fail"
+        }
+      ],
+      "tree_note": "Not the whole tree: the 76 files the 29 Sep handoff names (MANIFEST.json, the 69 files of vectors/, verify.py, keccak.py, tools/cross_check_ts.mjs, tools/differential.py, LICENSE, README.md). tools/differential_helper.mjs, tools/gen_vectors.py, tools/interop_axes.py, CONTRIBUTORS.md and .github/ are not pinned. MANIFEST.json states 69 vector entries and vectors/ holds 69 files.",
+      "corpus_dirs": [
+        "fixtures/tersign-evidence-record-conformance/1075ca65b4495212cf49a891e63e07f2cf48acf8"
+      ],
+      "provenance_section": "Appended 2026-09-29 — Tersign's evidence-record conformance suite at `1075ca65`"
     }
   ]
 }

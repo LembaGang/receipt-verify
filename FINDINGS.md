@@ -1815,6 +1815,99 @@ Recomputing an address still does not verify an issuer: it establishes that the 
 altered under a stable identifier, not who published them, and no signature over a promotion object
 was offered or checked.
 
+## G. Tersign `evidence-record-conformance` at `1075ca65` (appended 2026-09-29)
+
+Pinned at `fixtures/tersign-evidence-record-conformance/1075ca65b4495212cf49a891e63e07f2cf48acf8/`
+(76 files; `fixtures/provenance.md`, section "Appended 2026-09-29 — Tersign's evidence-record conformance
+suite at `1075ca65`"; entry `tersign-evidence-record-conformance` in `fixtures/upstreams.json`). Two
+kinds of result are kept apart below, and every sentence says which one it is. A **reproduction** is the
+author's checker run over the author's vectors: it shows the suite is self-consistent on this machine and
+nothing more. A **recomputation** is this repository's own code (`tools/tersign-recompute.ts`, and the
+walker for the one sha256 relation) deriving each declared value from the construction the suite's
+`MANIFEST.json` states, with two serialisers that share no code with the author's.
+
+### G1. The reproduction: `verify.py` is CONFORMANT on 69 of 69, once its output can be printed
+
+`python verify.py` in a clone at `1075ca65` (Python 3.13.2, stdlib only) printed 24 `[PASS]` lines and then
+died with `UnicodeEncodeError: 'charmap' codec can't encode character '\U00010000'` on the n12 line: the
+console code page here is cp1252. That is this machine, not the suite. Re-run with `PYTHONIOENCODING=utf-8`
+it printed 69 `[PASS]` lines and `CONFORMANT: 69 vectors, both verdicts observed per kind, all 10 reject
+reasons and all 11 kinds exercised.`, exit 0. `MANIFEST.json` (version 0.5.3) states 69 entries (29
+`valid`, 40 `reject`); `vectors/` holds 69 files. The 17 Sep handoff's relayed "74 entries, version 0.5.1"
+is superseded by the bytes. `tools/cross_check_ts.mjs` and `tools/differential.py` were not run: both
+import the npm package `viem` (the second through `tools/differential_helper.mjs`), it is not installed
+here, and the run permitted no installs. Both fail at import with `ERR_MODULE_NOT_FOUND`, exit 1.
+
+### G2. The recomputation: 128 declared values, no mismatch on any accepting vector
+
+`npx tsx tools/tersign-recompute.ts` recomputes every declared value whose construction MANIFEST.json
+states (content address line 7, chain link line 8, chain set line 9, commitment accumulator line 10,
+anchor relation line 11, offer binding line 12, decision-evidence binding line 13, delivery derivation
+line 17, canonical form line 6), keccak256 from `@noble/hashes`, JCS from both the repository's
+TypeScript serialiser and `tools/asqav_envelope_hash.py`, each parsing the raw vector bytes itself.
+Result: 128 rows, **109 match, 17 mismatch, 0 serializer_disagreement, 1 refused, 1 not recomputed**;
+exit 0.
+
+- **All 17 mismatches are on `expect: reject` vectors**, and each is the value that vector exists to
+  carry: n1, n2, n3, n4, n5, n12, n17, n19, n28, n29, n33, n34, n36, n37, n39 (two rows), n40. No
+  `expect: valid` vector carries a mismatch.
+- **n5 is also the walker's one Tersign mismatch.** The walker grades the suite's only sha256
+  construction, `anchored_digest = sha256(subject_digest_bytes)` (MANIFEST.json line 11), under rules
+  `tersign.anchor_relation` and `tersign.anchor_relation.provenance`: p5 and p27's provenance pair match;
+  n5's declared `0xcf48bed1…` is not sha256 of its subject's bytes, which recompute to `0x8c0a1d37…`.
+  That is the negative vector doing its job (expected `reject/existence_reject`), and it is the reason
+  `test/walker.test.ts`'s closed mismatch list names it.
+- **Refused:** n11's `{"n": 9007199254740992}` (2^53). The TypeScript serialiser emitted it; our Python
+  serialiser refuses |n| ≥ 2^53 by its own fail-closed rule, so no digest was compared. The suite's
+  domain is |n| ≤ 2^53−1 (MANIFEST.json line 6), so our bound and the suite's fall on the same value;
+  its declared digest is 32 zero bytes, a placeholder the vector expects to be rejected before any
+  comparison.
+- **Not recomputed:** p7's `/input/record/deliverable_digest` has no `deliverable_bytes` beside it, so
+  the corpus carries no preimage for it.
+
+### G3. Where the text and the vectors part: the number domain is a profile rule, not an RFC 8785 rule
+
+n10 (`{"amount": 1.1}`) and n35 (payload text `{"amount": 2.0}`) are expected to reject with
+`number_domain_reject`. Both of our serialisers produce exactly the canonical bytes each vector claims
+(`{"amount":1.1}`, `{"amount":2}`), so the byte comparison matches. The reject rests on MANIFEST.json line
+6, which confines the digest domain to integer number TOKENS (no fraction or exponent form even when
+integer-valued). That is stricter than RFC 8785, which serialises both values. Neither serialiser here
+enforces a token-class rule, and for n35 the TypeScript side (JSON.parse) and the Python side
+(json.loads, which keeps `2.0` a float) reached the same bytes by different routes. The suite states
+its rule; the finding is only that a verifier conformant to RFC 8785 alone passes these bytes, and the
+suite's reject comes from its own narrower domain.
+
+### G4. The boundary event's `prefixDigest` has no byte scope in the suite's governing documents
+
+Five vectors (p18, p20, n25, n26, n29) carry `/input/boundary_event/prefixDigest`. Neither MANIFEST.json
+nor README.md states its construction: the manifest has no `boundary_binding` member, and the README
+says only that the event "binds prefix and position". `verify.py` line 502 computes it as
+`keccak256(utf8(canonical(prefix)))`. Under that construction, read from the author's checker and
+labelled so in every row, 4 of the 5 match and n29 (a negative vector) does not. None is registered
+anywhere as a graded value: a scope the governing document does not name is not one this repository
+cites.
+
+### G5. Signatures: one recovered, one not implemented
+
+p1's `/provenance/countersignature` recovers, under secp256k1 `personal_sign` (EIP-191) over the 32 bytes
+of the seq-1 chain link (`0x837c2d85…`, which is p4's `expected_link`), to `0x9d38ba84…fda6`, the
+vector's own `ledger_signer`. This is this repository's code (`recoverAddress` in
+`src/adapters/insight.ts`), not the author's: the suite's stdlib profile recovers no signature. p1's and
+n1's `/input/payload/signature` (format `eip712`) is `not_implemented`: the corpus states no EIP-712
+domain or types for the payload, so there is no digest to recover over.
+
+### G6. What G1–G5 do not establish
+
+The vectors carry 182 `0x`-hex values. 122 are declared values with a row above (the other 6 of the 128
+rows are canonical-form strings). The remaining 60 are inputs: 53 `artifact_digest` values whose
+preimages the corpus does not carry, 2 `subject_digest` values, 4 settlement `transaction` references
+and p4's one `prev_digest`. They are consistent with each other wherever the manifest relates them.
+Nothing here says they are digests of any real record. The live-ledger vectors (p1, p5, p27) were not
+compared with `tersign.ai`, the two Bitcoin anchors were not checked against any block, and the two
+outside reproductions the README cites (#8, #9) were not read. `verify.py` agreeing with itself is a
+reproduction. The recomputation is ours, but it recomputes the constructions the author states, so it
+cannot find a wrong construction, only a wrong value under the stated one.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`

@@ -38,6 +38,11 @@
       "path": "fixtures/evidence-action/SPEC.md",
       "sha256": "5bd90aefeb8a48ef15894d8d6b59c1d5a41671895afedd5511e656f34a3a79f3",
       "note": "Corpus-internal normative document, not an IETF draft in refs/. Cited as the owning document for the evidence.action/0 format because it is the only document that states these scopes."
+    },
+    "tersign-manifest": {
+      "path": "fixtures/tersign-evidence-record-conformance/1075ca65b4495212cf49a891e63e07f2cf48acf8/MANIFEST.json",
+      "sha256": "b7a1c699b34ed0bb1e8979dbcfd981577d4cf6838d65482d1e66690a42477560",
+      "note": "Corpus-internal: the suite's own manifest, which states each construction as a one-line member (lines 6-18) beside the per-vector expectations. It is the only document that states these scopes; README.md restates some of them in prose."
     }
   },
   "corpora": [
@@ -945,6 +950,41 @@
         }
       ],
       "corpus_note": "The registry of executed verifications this repository publishes, not corpus data from anyone else. only_files scopes the census to index.json: the records themselves carry digests of their own pinned inputs, reports and methodology documents, which `npm run registry -- --check` already recomputes on every run and which this walker has no rule for, so censusing them would print rows no rule could ever close. Three digest-shaped values inside index.json are deliberately NOT covered by the rule above and are censused as unregistered: previous_index_sha256 is the digest of a git blob at an earlier commit, disclosed_chain_breaks[].required is a disclosure OF such a digest, and each row's key.upstream_digest.value is an upstream's own digest of bytes that may not be in this tree. None of the three is recomputable from a file beside it, which is what this walker does; rule 7 of the registry walks the first two through the signed history instead."
+    },
+    {
+      "id": "tersign/1075ca65",
+      "dir": "fixtures/tersign-evidence-record-conformance/1075ca65b4495212cf49a891e63e07f2cf48acf8",
+      "rules": [
+        {
+          "id": "tersign.anchor_relation",
+          "file": "vectors/*.json",
+          "kind": "tersign_anchor_relation",
+          "field": "/input/anchored_digest, in every vector carrying one (the anchor_relation kind: p5, n5)",
+          "subject_pointer": "/input/subject_digest",
+          "anchored_pointer": "/input/anchored_digest",
+          "construction": "sha256(the 32 bytes of the 0x-hex digest at /input/subject_digest)",
+          "encoding": "0x-hex",
+          "status": "declared",
+          "document": "tersign-manifest",
+          "lines": "11",
+          "quote": "\"anchor_relation\": \"anchored_digest = sha256(subject_digest_bytes)\","
+        },
+        {
+          "id": "tersign.anchor_relation.provenance",
+          "file": "vectors/*.json",
+          "kind": "tersign_anchor_relation",
+          "field": "/provenance/anchored_digest beside /provenance/commitment_digest (p27, the live genesis chain)",
+          "subject_pointer": "/provenance/commitment_digest",
+          "anchored_pointer": "/provenance/anchored_digest",
+          "construction": "sha256(the 32 bytes of the 0x-hex digest at /provenance/commitment_digest)",
+          "encoding": "0x-hex",
+          "status": "declared",
+          "document": "tersign-manifest",
+          "lines": "11",
+          "quote": "\"anchor_relation\": \"anchored_digest = sha256(subject_digest_bytes)\", The vector's own /provenance/note applies it to this pair: \"the anchor's anchoredDigest = sha256(commitment_digest bytes) (anchor_relation)\"."
+        }
+      ],
+      "corpus_note": "Two census rows here are not digests: the `id` members of n26 and p23 are 43-character vector names whose hyphens fit the census's base64url-32B shape, and MANIFEST.json names no byte scope for them because they are names. Every declared digest in this suite is 0x-hex: keccak256 over RFC 8785 bytes, except the anchor relation's sha256, which the two rules above grade. This walker computes no keccak and its census does not match 0x-prefixed hex, so it sees none of the other 0x values; tools/tersign-recompute.ts enumerates and recomputes them (keccak256, both serialisers), and the report of the 29 Sep run (RUNS_2026-09-29_community-vectors.md) carries every row."
     }
   ],
   "expected_refusals": [

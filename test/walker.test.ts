@@ -159,7 +159,7 @@ describe("digest walker — positive control: M6 is found unaided", () => {
   it("finds M6 nowhere else: every mismatch in the run is one of those two corpora", () => {
     // The control that makes the four assertions above mean something. If the
     // walker mismatched broadly, "it found M6" would be an accident of volume.
-    const m6 = mismatches.filter((r) => r.corpus !== "asqav/6137cb95");
+    const m6 = mismatches.filter((r) => r.corpus !== "asqav/6137cb95" && r.corpus !== "tersign/1075ca65");
     expect([...new Set(m6.map((r) => r.corpus))].sort()).toEqual([
       "asqav/05c1c49",
       "asqav/history/ee8a3e7",
@@ -176,6 +176,12 @@ describe("digest walker — positive control: M6 is found unaided", () => {
       "conformance/vectors.json#/vectors/29/input/counterparty_binding/envelope_hash",
       "verifier/conformance-vectors/asqav-32-counterparty-anchors-included/receipt.json#/payload/counterparty_binding/envelope_hash",
     ]);
+    // 2026-09-29: tersign/1075ca65 carries one, and it is not M6 either. n5 is the
+    // suite's own negative vector for the anchor relation (MANIFEST.json: expect
+    // reject, reason existence_reject), recorded in FINDINGS.md's Tersign block.
+    expect(
+      mismatches.filter((r) => r.corpus === "tersign/1075ca65").map((r) => `${r.file.split("/").slice(-2).join("/")}#${r.pointer}`),
+    ).toEqual(["vectors/n5-truncated-anchor.json#/input/anchored_digest"]);
   });
 
   it("agrees with the second serialiser everywhere, so no digest was compared on one opinion", () => {
@@ -1189,5 +1195,52 @@ describe("digest walker — asqav/6137cb95 under marques-09", () => {
     const at = (ptr: string) => rows.find((r) => r.pointer === ptr)!.outcome;
     expect(at("/vectors/30/input/counterparty_binding/envelope_hash")).toBe("unregistered");
     expect(at("/vectors/31/input/counterparty_binding/envelope_hash")).toBe("mismatch");
+  });
+});
+
+describe("digest walker — tersign/1075ca65: the anchor relation (MANIFEST.json line 11)", () => {
+  const CORPUS = "tersign/1075ca65";
+  const DIR = "fixtures/tersign-evidence-record-conformance/1075ca65b4495212cf49a891e63e07f2cf48acf8";
+  const mine = baseline.report.body.rows.filter((r) => r.corpus === CORPUS);
+  const short = (r: Row) => `${r.file.split("/").slice(-1)[0]}#${r.pointer}`;
+  /** sha256 over the 32 bytes of a 0x digest, computed here and not by the walker. */
+  const anchorOf = (subject: string) => "0x" + createHash("sha256").update(Buffer.from(subject.slice(2), "hex")).digest("hex");
+
+  it("grades exactly the three anchor pairs the suite carries: p5 and p27 match, the negative vector n5 does not", () => {
+    const graded = mine.filter((r) => r.rule !== null).map((r) => `${short(r)} ${r.outcome}`).sort();
+    expect(graded).toEqual([
+      "n5-truncated-anchor.json#/input/anchored_digest mismatch",
+      "p27-live-chain-commitment-genesis-chain.json#/provenance/anchored_digest match",
+      "p5-live-bitcoin-anchor.json#/input/anchored_digest match",
+    ]);
+    for (const r of mine.filter((x) => x.rule !== null)) {
+      const doc = JSON.parse(readFileSync(join(ROOT, r.file), "utf8")) as { input: Record<string, string>; provenance?: Record<string, string> };
+      const subject = r.pointer === "/provenance/anchored_digest" ? doc.provenance!["commitment_digest"]! : doc.input["subject_digest"]!;
+      expect(r.recomputed).toBe(anchorOf(subject));
+    }
+  });
+
+  it("the only unregistered rows are two vector ids, 43-character names the census's base64url shape happens to fit", () => {
+    expect(mine.filter((r) => r.outcome === "unregistered").map(short).sort()).toEqual([
+      "n26-coverage-claimed-over-empty-attestation.json#/id",
+      "p23-delivery-independence-within-commitment.json#/id",
+    ]);
+  });
+
+  it("negative control: one hex digit changed in p5's subject_digest turns its match into a mismatch and moves nothing else", () => {
+    const dir = tmp();
+    cpSync(join(ROOT, DIR), join(dir, DIR), { recursive: true });
+    const target = join(dir, DIR, "vectors", "p5-live-bitcoin-anchor.json");
+    const clean = walk({ root: dir, report: join(dir, "clean.json") }).report.body.rows.filter((r) => r.corpus === CORPUS);
+    const text = readFileSync(target, "utf8");
+    const subject = "0xb2c5d2bd28ff65e13c1549a718a4c447916d5277ce046b2061ed63749ff287d9";
+    expect(text.includes(`"subject_digest": "${subject}"`)).toBe(true);
+    const mutated = "0xb3" + subject.slice(4);
+    writeFileSync(target, text.replace(`"subject_digest": "${subject}"`, `"subject_digest": "${mutated}"`));
+    const dirty = walk({ root: dir, report: join(dir, "dirty.json") }).report.body.rows.filter((r) => r.corpus === CORPUS);
+    const outcome = (rows: Row[]) => Object.fromEntries(rows.filter((r) => r.rule !== null).map((r) => [short(r), r.outcome]));
+    expect(outcome(clean)["p5-live-bitcoin-anchor.json#/input/anchored_digest"]).toBe("match");
+    expect(outcome(dirty)).toEqual({ ...outcome(clean), "p5-live-bitcoin-anchor.json#/input/anchored_digest": "mismatch" });
+    expect(dirty.find((r) => short(r) === "p5-live-bitcoin-anchor.json#/input/anchored_digest")!.recomputed).toBe(anchorOf(mutated));
   });
 });

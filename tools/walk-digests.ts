@@ -363,6 +363,10 @@ interface Rule {
    * `unverifiable_undefined_scope`; neither is graded.
    */
   scope_regime?: "marques-09";
+  /** tersign_anchor_relation: the pointer of the `0x` digest whose 32 bytes are hashed. */
+  subject_pointer?: string;
+  /** tersign_anchor_relation: the pointer of the declared sha256 over those bytes. */
+  anchored_pointer?: string;
 }
 
 /** `asqav/history/*` matches `asqav/history/ee8a3e7`. Only `*` is special. */
@@ -1256,6 +1260,49 @@ async function ruleRegistryIndexDigests(ctx: Ctx, r: Rule, indexPath: string) {
   });
 }
 
+/**
+ * Tersign's anchor relation (MANIFEST.json line 11 at 1075ca65):
+ * anchored_digest = sha256(subject_digest_bytes), both written `0x<64 hex>`.
+ *
+ * The one sha256 construction in that suite. Its content addresses are keccak256,
+ * which this walker does not compute; tools/tersign-recompute.ts grades those. The
+ * census cannot see `0x` hex either, so these rows are the only walker rows the
+ * corpus produces, and a vector that carries neither pointer is simply not this
+ * rule's input. A pointer that is present and not a 32-byte `0x` digest is a
+ * mismatch: the vector asserts a relation over a value that has no 32 bytes.
+ */
+function ruleTersignAnchor(ctx: Ctx, r: Rule, filePath: string) {
+  const file = rel(filePath);
+  let doc: Json;
+  try {
+    doc = readJson(filePath);
+  } catch {
+    return;
+  }
+  const at = (ptr: string): Json | undefined => {
+    let cur: Json | undefined = doc;
+    for (const t of ptr.split("/").slice(1)) {
+      if (!isObject(cur)) return undefined;
+      cur = cur[t.replace(/~1/g, "/").replace(/~0/g, "~")];
+    }
+    return cur;
+  };
+  const subject = at(r.subject_pointer!);
+  const declared = at(r.anchored_pointer!);
+  if (typeof declared !== "string") return;
+  const hexOf = (s: Json | undefined): string | null =>
+    typeof s === "string" && /^0x[0-9a-fA-F]{64}$/.test(s.trim()) ? s.trim().slice(2).toLowerCase() : null;
+  const s = hexOf(subject);
+  if (s === null || hexOf(declared) === null) {
+    push(ctx, r, file, r.anchored_pointer!, declared, null, "mismatch",
+      `${r.subject_pointer} or ${r.anchored_pointer} is not a 32-byte 0x-hex digest, so the relation has no bytes to hold over`);
+    return;
+  }
+  const recomputed = "0x" + sha256Hex(Buffer.from(s, "hex"));
+  push(ctx, r, file, r.anchored_pointer!, declared, recomputed, recomputed === "0x" + hexOf(declared) ? "match" : "mismatch",
+    `sha256 of the 32 bytes at ${r.subject_pointer}`);
+}
+
 /** SHA-256 of zero bytes. No JSON object serialises to zero bytes, so no descriptor can produce it. */
 const SHA256_EMPTY = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
@@ -1632,6 +1679,16 @@ async function main(): Promise<number> {
         if (!p.replace(/\\/g, "/").endsWith("/index.json")) continue;
         if (!wanted(rel(p))) continue;
         await ruleRegistryIndexDigests(ctx, r, p);
+      }
+    }
+
+    // Tersign's anchor relation, in every vector file the rule's pattern names
+    for (const r of rules) {
+      if (r.kind !== "tersign_anchor_relation") continue;
+      for (const p of files) {
+        const relPath = rel(p);
+        if (!globMatch(r.file, inCorpus(relPath)) || !wanted(relPath)) continue;
+        ruleTersignAnchor(ctx, r, p);
       }
     }
 
