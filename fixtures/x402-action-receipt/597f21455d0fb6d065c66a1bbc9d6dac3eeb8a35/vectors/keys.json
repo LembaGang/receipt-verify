@@ -1,0 +1,15 @@
+{
+  "did:web:acme.example#es256": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF/C2RDkoJ4+WmZ5pojpPLBUr\n321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA==\n-----END PUBLIC KEY-----\n",
+  "did:web:acme.example#es256k": "-----BEGIN PUBLIC KEY-----\nMFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAERm1/yuVj5csJoNGHC7WANEgEYXh5oUlJ\nzyIoXxuuPydnKBdsPGQx+O7aRTjcN8hl4nhPOp530ETzPkB3l+Enig==\n-----END PUBLIC KEY-----\n",
+  "did:web:acme.example#ed25519": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9E=\n-----END PUBLIC KEY-----\n",
+  "did:web:acme.example#payto": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVp7ZLEKMDN0F5o7FRw9nE1WxZ8NZ\nIh8CoIIf//iu4m1yJXgqyoONxVDf7/0iuOTV11W/NaXbt0OGi6xamxI/+Q==\n-----END PUBLIC KEY-----\n",
+  "did:web:evil.example#k": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqFs6rW86NG2FUjFBy0NOHK9MZCsr\nPMlSywemNctqHfG8va22a66Osl7Kkviwi2e+AsxzYVDdf/zT8BnIdfn/3g==\n-----END PUBLIC KEY-----\n",
+  "__service__:https://api.example.com/v1/complete": [
+    "did:web:acme.example#es256",
+    "did:web:acme.example#es256k",
+    "did:web:acme.example#ed25519"
+  ],
+  "__payTo__:0x209693Bc6afc0C5328bA36FaF03C514EF312287C|https://api.example.com/v1/complete": [
+    "did:web:acme.example#payto"
+  ]
+}

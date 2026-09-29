@@ -1,0 +1,4 @@
+# Action-Bound Receipt reference suite — dependencies.
+
+cryptography>=42     # REQUIRED: ES256/ES256K/EdDSA signature verification + vector generation
+rfc8785>=0.1         # OPTIONAL: byte-for-byte cross-check of the vendored JCS canonicalizer

@@ -1,0 +1,252 @@
+{
+  "profile": "action-receipt",
+  "version": 1,
+  "note": "Expected verdicts for the Action-Bound Receipt conformance vectors. A conformant verifier loads keys.json, each vector, and the named settlement, and MUST reproduce the verdict and (on REJECT) the reason.",
+  "settlements": {
+    "ok": {
+      "success": true,
+      "transaction": "0xabababababababababababababababababababababababababababababababab",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "now": 1703123500,
+      "maxAgeSeconds": 3600
+    },
+    "failed": {
+      "success": false,
+      "transaction": "",
+      "settlementRef": "",
+      "network": "eip155:8453",
+      "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "now": 1703123500,
+      "maxAgeSeconds": 3600
+    },
+    "batch": {
+      "success": true,
+      "transaction": "",
+      "settlementRef": "batch:voucher:9f3c1d0a-0000-4a11-b2cc-settlement-root-01",
+      "network": "eip155:8453",
+      "payer": "0x857b06519E91e3A54538791bDbb0E22373e36b66",
+      "now": 1703123500,
+      "maxAgeSeconds": 3600
+    }
+  },
+  "vectors": [
+    {
+      "file": "pos_es256_valid.json",
+      "expect": "PASS",
+      "reason": null,
+      "settlement": "ok"
+    },
+    {
+      "file": "pos_es256k_valid.json",
+      "expect": "PASS",
+      "reason": null,
+      "settlement": "ok"
+    },
+    {
+      "file": "pos_eddsa_valid.json",
+      "expect": "PASS",
+      "reason": null,
+      "settlement": "ok"
+    },
+    {
+      "file": "pos_outcome_refused.json",
+      "expect": "PASS",
+      "reason": null,
+      "settlement": "ok"
+    },
+    {
+      "file": "pos_batch_settled.json",
+      "expect": "PASS",
+      "reason": null,
+      "settlement": "batch"
+    },
+    {
+      "file": "pos_refunded.json",
+      "expect": "PASS",
+      "reason": null,
+      "settlement": "ok"
+    },
+    {
+      "file": "pos_payto_signer.json",
+      "expect": "PASS",
+      "reason": null,
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_unknown_alg.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_alg",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_unsupported_version.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_version",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_invalid_outcome.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_outcome",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_invalid_status.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_status",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_signature_in_payload.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_circularity",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_noncanonical_payload.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_canonicalization",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_forged_actionref.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_actionref",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_tampered_payload.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_high_s.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_wrong_signer.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_settlement_failed.json",
+      "expect": "REJECT",
+      "reason": "invalid_transaction_state",
+      "settlement": "failed"
+    },
+    {
+      "file": "neg_settlement_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_settlementref_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "settlement": "batch"
+    },
+    {
+      "file": "neg_network_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_payer_mismatch.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_uncorroborated_transaction.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_settlement_mismatch",
+      "settlement": "batch"
+    },
+    {
+      "file": "neg_payto_wrong_resource.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signer",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_wrong_curve.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_unregistered_kid.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_signature",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_stale_issuedat.json",
+      "expect": "REJECT",
+      "reason": "invalid_actionreceipt_freshness",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_malformed_action_scalar.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_malformed_issuedat_type.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_malformed_unknown_field.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_malformed_no_settlement_id.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_not_jws_format.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_header_not_dict.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_kid_not_str.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_version_not_int.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    },
+    {
+      "file": "neg_issuedat_overflow.json",
+      "expect": "REJECT",
+      "reason": "invalid_payload",
+      "settlement": "ok"
+    }
+  ]
+}

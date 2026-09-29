@@ -3069,3 +3069,75 @@ section, its three-row vector table and the "Numbers (normative)" paragraph are 
 | `fixtures/x402-pr-2853-compliance-fields/8e0a3fc6ce3ae0323af73cf11e8c37220da4da5e/specs/extensions/compliance_fields.md` | `b9c08aaaab07ae1bf6d8b1828157fcb00a3e4094` | 18330 | `0ab527e727937d0f4079551b7eb4dbf6031c09843067150782d7ed862b5431b8` |
 | `fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/specs/extensions/compliance_fields.md` | `7af5740cf7e38c1ad4af25959c04a93719dc6796` | 32743 | `aef9430700989abcfd50e2f678df50d174269dd2a609de32aad7bf8fa1b8f719` |
 | `fixtures/x402-pr-3000-attestations/cb66605297aefe71476edef118b322a93c27583a/specs/extensions/attestations.md` | `07dc0852c5fa508dbe597d5d937c2b8c828d28eb` | 21392 | `56727576091b1700f609581948806bb66454f6772cc60f54034854f9f6089e62` |
+
+## Appended 2026-09-29 — x402 issue #2906's conformance vectors, `jsuich/x402-action-receipt` at `597f2145`, pinned for the record
+
+The 17 Sep handoff relayed that #2906's "36 matched vectors" were published nowhere its worker found (the issue
+page as rendered by WebFetch on 11 Sep). The rendered page carries the issue body only. Its 27 comments come
+from the GitHub API, and the fourth of them, jsuich's of 2026-07-20T16:20:43Z, links this repository. In the
+sixth, giskard09 reports cloning it and running the suite (36/36). Pinned here for the record and **not run**:
+running them is a separate handoff. Taken with `git cat-file blob <commit>:<path>` from a fresh clone outside
+the repository (`git -c core.autocrlf=false clone https://github.com/jsuich/x402-action-receipt`, 2026-09-29T19:19:47Z),
+never from a worktree; copied at 2026-09-29T19:20:02Z. `git hash-object` reproduced every blob id (45 of 45);
+every file carries 0 CR bytes.
+
+| field | value |
+|---|---|
+| URL | `https://github.com/jsuich/x402-action-receipt` |
+| ref | `refs/heads/master` (no tags; `git ls-remote` 19:19:46Z) |
+| commit | `597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35` |
+| subject | `docs: state signature reproducibility precisely (algorithm-dependent)` |
+| author and commit date | 2026-07-20T16:15:44-04:00 = **2026-07-20 20:15:44 UTC** |
+| files pinned | 45, 118211 bytes: the whole tracked tree |
+
+`vectors/MANIFEST.json` lists 36 vectors; `vectors/` holds 36 vector files (7 `pos_`, 29 `neg_`) plus `MANIFEST.json`
+and `keys.json`, which carries seven entries, five PEM public keys and two lists of key ids, and no private key. `requirements.txt` names `cryptography>=42`
+as required and `rfc8785` as optional; neither is installed here.
+
+| fixture path | upstream blob at 597f2145 | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/.gitignore` | `00f2d38d8063d0c6b219c0081e51888063b0c55e` | 26 | `4cad133d4f0a6cf4bba15f1b8bbae48d6a55f20b94f75487c51a93cc6a5af59f` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/LICENSE` | `d645695673349e3947e8e5ae42332d0ac3164cd7` | 11358 | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/README.md` | `8d707639725a98563b34f1accbcf015420dbe856` | 6621 | `ad92d5c403b3079a9feef7a3210d6816523367b877fba83ac5ad5ef6cf1d1cfa` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/RECEIPT-BINDING-EXTENSION.md` | `bf478c04d257746b0fd5405416b067a18cb3136f` | 20864 | `e28db4aad5e59ef469ddd43172b9359ef289a2f47055d78eb25cfcc1c2a702ae` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/VECTORS.md` | `b12ca557877b9431f0e836b9ca48d7c6a56c5c1a` | 6396 | `02831d3c68c7a98bccaa083d3cd0a52811d6a0c467e49e82fcc2252d598acd0a` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/action_receipt.py` | `935873ac172b48d6da06f6f0b33c8a46e471f741` | 32670 | `3882c813e7e4d6882d308cc83ea4d7813c39b7914db3b2668dfe9b0b18c148e8` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/requirements.txt` | `a9b1884824feb15463afed22b8783276f277f12f` | 246 | `4f46fb1feef773535649444a157a19eb62fe02d5c2bebb7c2e93d66c7a9cba9d` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/MANIFEST.json` | `5994a02118a5eb5431b73d3e22f0fd0d524d2d84` | 6531 | `989ac8641207416ec5be22742a4dc218009dcc7a526ff77a3834e3f440f31bfd` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/keys.json` | `a81a6978b521f17dd711592174c11819c95b7f2d` | 1320 | `bd6f3a60e5e5c9b88c45df95f8e5349267f8f33919197bbe1eb0b1200b3d16c2` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_forged_actionref.json` | `470822bf69cdfd4245288cf7d270b5bc98931708` | 902 | `57bdf503a2951d4848fec7efa9fdf0310f2b339ee37a9ec7e12dbc7e0c9d4c68` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_header_not_dict.json` | `4724ac20947ae941f06bbb5b5c902edaa2a35df0` | 886 | `af290e2065fe06872abba7a0a5afc2715718114916a0c3d38613c6f502d8d318` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_high_s.json` | `49d80829e21cc5614826fc11efc7a8e051ac5c83` | 902 | `0ba39613777ee7b12f647538d9c39e97c562588fc57550db960fd7534cda712c` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_invalid_outcome.json` | `2ba0336495581634568625a2b5adf563696cdd93` | 899 | `ca76b0ecb15a1be99b0e9f81e9168f7d2f8f6a7c8fb16487b8d8d3e05503c982` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_invalid_status.json` | `331d5b0eff01fcd1658d9c5359218be3d8958b2e` | 902 | `c97bbc4829129bf174bef306bc993571b510db14c912c8d07b0bf66fe6beb82a` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_issuedat_overflow.json` | `8e166f282c05b125368da8b36533af403392ca9e` | 910 | `54e63fb047a6e226f07c542ded7bb594cf9faec590aa703ba4ad438635b2de07` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_kid_not_str.json` | `435a25b3c2ce59bd28e5d71a407d3a1d52251499` | 869 | `225cf1302ee989b7ee454b46725e391c550d4c803cfffb10813d6f949996cb1d` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_malformed_action_scalar.json` | `5fc69fd5dc6229ef4fa181501fb5c47ea1b1009a` | 696 | `9a66b35564b896fa8eb986c66add4c1704fe4aa9422ff4cfda886fb8aa8845ce` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_malformed_issuedat_type.json` | `b46b38e8b4d4f2dc63a026e5d412f84b3608a923` | 907 | `b2cc18464436c46898d28a9b8e06366948b44787e3cbdab878340182d68ad678` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_malformed_no_settlement_id.json` | `f5e1af55d2b47e9cd872ef1524a04772127b14b6` | 814 | `b8144d4e8ec8093d2dd741cffb60fce87359a5a8259510f6211d50beefca2833` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_malformed_unknown_field.json` | `d5beea6815c190ae399475e5cec69e3f6b35f5f7` | 939 | `94d66445569459df51df3632a443699c536166fa874e34c7163c98b5783749c9` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_network_mismatch.json` | `ee8757fa349a3fabfc9a2a0990a56055a4a0426b` | 898 | `3fea9e5bd125afd40fcf9cbf3620eb950159a40f70ef756fd4660b03c56a313a` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_noncanonical_payload.json` | `973f3f5b2a6d263a159fadf07d333a5a3686290f` | 902 | `96d3afe28caf3323792fc6b42287fe5c3983fbeb8bc1acdb2603985b0786c24a` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_not_jws_format.json` | `02650b408b9a23dd7f8ddc070e24fa81e34d1c9e` | 905 | `48ee3110b2f7176315ffbc60fa23342641958daa89217219c5fbc8b2d78a21ac` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_payer_mismatch.json` | `9e4dfcf546772bf375681c214a536c996f79528a` | 902 | `a00e485306f9cae728fc4befe4a73e9647d56987cac0534fa0e25fa138409d5f` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_payto_wrong_resource.json` | `50f3f387a2d40c7cc59e5fba4c0070e009298186` | 886 | `9ed0d3236c027eb5edd61b50fa95421900180c11c40d45e5f27a90ddbfb2f6d0` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_settlement_failed.json` | `2d1ed6320b2d2bfa1e18bc2c34f2cf4b128ffbb6` | 902 | `1aab033bd3b0c00d137ebd170881442b92c014d58e79e73909eb19dd9f0ef7f0` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_settlement_mismatch.json` | `a43c08dafc5c009f4e86463e4305aed0b0ce2e71` | 902 | `b00157c872f631a6fd768f5e4debb925b1c44d7e92e6aed0139aee67c59686eb` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_settlementref_mismatch.json` | `7b90fe4d025db6d4d686ea7b1fb89b77a8696f6d` | 835 | `e7370af7b7c8f8fdf91115299484792a4c403fd74aeb223d6154414020378405` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_signature_in_payload.json` | `261f37694e6818a98aad6c83b690be07bc6053c5` | 930 | `1c1923be6e7c78d25b3101e82584def8b6ce2f5622b260534f6ec265761399ba` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_stale_issuedat.json` | `1a112fbc53fe467f5257d2bde411fa9828aae1de` | 902 | `99d5cb2dcb07e5eb1f8632b3c254771ee9c37338718b2b52581f009be69415a0` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_tampered_payload.json` | `9f28ce0af75cac79276bd6a89203ffba581798e6` | 899 | `4e299eb7e5aca180e4bd7279c87294bd2d80735ce98c8b1f857182579a945698` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_uncorroborated_transaction.json` | `54a50a70fcde7ebc327775efc8ab5ec6c5716c58` | 976 | `b4a5570a1b0113e29252fdd1fa33884e7c3528da00133c648a56b61d35cda19a` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_unknown_alg.json` | `45da74f31d4a9fd8d77e81790b0138307bf24d6c` | 902 | `5e6d8452c98f18c602c5e25e6c02ef48b4ebd7dcea99407ecd65b58d4384beec` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_unregistered_kid.json` | `dd71cfb3983d52a2a3cc05c51583cfba2daf5677` | 899 | `9a5f394222d7e508447d6a291de7f3fc61d5a9cf713ea0821a6a937ea4dfd311` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_unsupported_version.json` | `12784244ec49a25733abc5eea76ffbd7d53e1ce4` | 903 | `6e1b5c2d64b9c54c75e3013a93a030a5729fccec2b7b51b591dd596494b280e6` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_version_not_int.json` | `d0f0c882667e65f6cb43b6f11ceb1818599db65b` | 906 | `837f4c1c9525669a87b3883a1c4ba0a58b4336d3981fde8579ad841590056d55` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_wrong_curve.json` | `a15a8c78c44d96cf60bba5f1fc73b2d64c698235` | 903 | `b9f9c49d48ce7409119802e7d9bd09a085efb4ba3c4e4988f2e2c530bdcdebd7` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/neg_wrong_signer.json` | `e3b65a41707297c39dd03d5361ca4c58f5c0ed9a` | 897 | `a67c752f346e478e5c5f88a58f7f5f696445e9e7952566399e19312e2f7f0909` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_batch_settled.json` | `532d366f7a885af383c01fc65202edd97c73333e` | 888 | `2afea383f9940959e5ec5cb98c2cd3e053b53c1b3fd4af7fdb01eeb674c0b58a` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_eddsa_valid.json` | `9bb41ebfa37f081d411e20f412c110b8e5000942` | 905 | `d3bfd192504f504a6dd818be04592ea8d6efc9d2bebb823d3aa7c3c55d4ee265` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_es256_valid.json` | `31b11ec13a3df562d158e2a1f5c603b07b2fdcd4` | 902 | `5e166d3eda52977582107693262e2c88f0218215529abb84afcdef62b62cb59c` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_es256k_valid.json` | `6ad2d4efe8f0b1d9fd7354a2a307616cfb23d0f7` | 905 | `76a260b71420a00bc83a4ace36e415fa55b6ea0957ff131e354738eba3305acb` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_outcome_refused.json` | `c6ce5197608900c7399893c68ccdc0ec831f7938` | 899 | `3e5ff9a80f3cea9bcc3437c4821f287f20f6f7006b1e7bf287c66e0059bfe9d5` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_payto_signer.json` | `559525bc740894100d16fc6fa17c76c321055e33` | 902 | `4a9ff459fba10538ad5fc3c2e273f6ec86d49013ac801f5497710257a6377d79` |
+| `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_refunded.json` | `3b124db577a50b4bd4440308359e797f61c01fa2` | 903 | `58ffe266e53ece5729fbe780b78f56fc8b3e51c881d0855beaf5e0421f89d7ad` |
