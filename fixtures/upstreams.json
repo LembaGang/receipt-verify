@@ -2328,6 +2328,550 @@
         "fixtures/tersign-evidence-record-conformance/1075ca65b4495212cf49a891e63e07f2cf48acf8"
       ],
       "provenance_section": "Appended 2026-09-29 — Tersign's evidence-record conformance suite at `1075ca65`"
+    },
+    {
+      "id": "axes-golden-trace/corpus-2026-08-08-gt-v2",
+      "kind": "git",
+      "role": "current",
+      "repo": "https://github.com/magentixai/axes",
+      "ref": "refs/tags/corpus/2026-08-08-gt-v2^{}",
+      "ref_source": "Resolved in this session: `git ls-remote https://github.com/magentixai/axes` at 2026-09-29T19:10:27Z printed refs/tags/corpus/2026-08-08-gt-v2 = 96c086ed47c7d57c869d201d1e65008163c5e87f (an annotated tag object; tagger webasylum, message \"Golden Trace v2 corpus as independently verified 7-11 Aug 2026\") and refs/tags/corpus/2026-08-08-gt-v2^{} = 776cc0b571a6bdd3fdc3f6901688905a75c0e279, the commit it peels to; a fresh clone at that tag (`git -c core.autocrlf=false clone --branch corpus/2026-08-08-gt-v2`, 19:10:46Z) checked out the same commit. The ref carries the peel suffix so that `git ls-remote` returns the commit rather than the tag object. The same listing printed refs/heads/main = cf7b0197681216f2c5254b63320309e74ce93d5e (not the pin: the repository README warns the default branch carries an earlier lineage) and a later tag corpus/2026-08-15-pre-merge peeling to b5b6d30d83070d40b55f1138c28eaf458d703fd4, recorded and not pinned.",
+      "pinned_commit": "776cc0b571a6bdd3fdc3f6901688905a75c0e279",
+      "paths": [
+        {
+          "path": "LICENSE",
+          "pinned_blob": "231f757079a926649bb3bdef15541dfb4c169266",
+          "sha256": "4c3c0cad4496cdf420b45909eeba725243fb7709878fc1f8dff9e39357773b46",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's licence text, pinned for the record; no check reads it."
+        },
+        {
+          "path": "LICENSE-CODE",
+          "pinned_blob": "33666dddf769353b76c10d87bef9d11f3ba08325",
+          "sha256": "c274f80372d90c012937370f0e1f15087d22e308ef98b27cea5dc0d2d088366c",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's licence text, pinned for the record; no check reads it."
+        },
+        {
+          "path": "README.md",
+          "pinned_blob": "4091b89cc4716c874106e1bbfa4f8f73c87d86a7",
+          "sha256": "5f29366d341a2a8a1a681359c5ea00d442d490cb4f38f79e09084f38a1964d9d",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The repository README, pinned because the report quotes its line 61 (no published se-v0.1.schema.json, deliberately) and line 51 (the two bundles share one evidence skeleton). No walker rule cites it."
+        },
+        {
+          "path": "examples/golden-trace-ind/README.md",
+          "pinned_blob": "33b8136c9f815e06c69a3550fa824483acffeacf",
+          "sha256": "0883ca3478bb62ba95cfcea97eb40b85e7f73d081ea4bc5d501836dce6c5711b",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/generate_golden_trace.py",
+          "pinned_blob": "90f2cdb7bcbf4a3a1e73ae8a5e75e668fb40a663",
+          "sha256": "4301ae6d279e2978f9bca7ed0013e26b8814410e95a183f10af1cf0bd84ef308",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/b2mml_batchrecord_MRUN-2026-06-11-A.xml",
+          "pinned_blob": "1e1bc322bcc637a29a3e6028d1d8407befc3708a",
+          "sha256": "a9b32ae60e13c22b93e641996a8856bc4145a1337fc48c0d6843b7e1c9ea30ff",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/matcert_HT-88213.xml",
+          "pinned_blob": "b7bb29778baab8b4e381f7dc49a381d4be27150d",
+          "sha256": "b06cef666a2710157b522ef7ea0929362b046da8a7ab003321eb435cdafb3975",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0001.xml",
+          "pinned_blob": "bc51515378863634218e768aee72e68ca1c0ffde",
+          "sha256": "6aae6e47f54dae5731ddf568b58db0e6d0aafae695afb34cc014e8f22b6d8382",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0002.xml",
+          "pinned_blob": "2ad7cc81fbaee0b01870135e89628ff937fcb5db",
+          "sha256": "f88da7ef274128754b4ca1f1099d8505ea165b9435a6034715be7375675021fb",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0003.xml",
+          "pinned_blob": "3d527cc105c088d54d3a55e38e82f51cbd6d18a5",
+          "sha256": "1fbeed755c24a39bf8ed8a66d8dee25c57ae09933e9e9026546d82bcd93db3fa",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0004.xml",
+          "pinned_blob": "0653621c876794fd39dad4f84f4e40977b69a07d",
+          "sha256": "76f59f8d189c3c932a2d17e64c28be6ba0bf778712cda3d32e55aa5f257659ba",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0005.xml",
+          "pinned_blob": "c001568bc71350da41fc0162fbb87a18514530f0",
+          "sha256": "2f2173c0b9a52b6124f00b1c97a1ee6edaa595c76840f683076cb430490da0b0",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0006.xml",
+          "pinned_blob": "b3fbf6134b733789322a0eddc48cb0c6fbc29fee",
+          "sha256": "46c8bbcd1fd4f692b51290e06130359469acf468779f9d2ccb0baa1164ae7b2b",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0007.xml",
+          "pinned_blob": "45a065c1541cbd11aa10b42d27ce5ef990419dd8",
+          "sha256": "b629bfe6faeb68cebd07ccc48d4e780d360bfc7cfcf41fd7f5cc431337323704",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0008.xml",
+          "pinned_blob": "2fa8b1f9527ffe2fafc5891c96923fba7229af7c",
+          "sha256": "b949347c49f31e209e167e7d08b33fbdfc74ddf3b7ee53a7564d12894c4ac478",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0009.xml",
+          "pinned_blob": "c55c24f995c462b319956e9ce8416888a7e8ff36",
+          "sha256": "1a62e2d829dbcfa92e901c71a648abd176ac566ebeaad0f34bbc8365bfad3a1f",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0010.xml",
+          "pinned_blob": "67cf80c36d087c843929a0fa77e2fc8194985e6a",
+          "sha256": "6f6adaa97dbd4abde35b4200af544610c5aa475da79c693159735d26f10c22fc",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0011.xml",
+          "pinned_blob": "1b30c383e9f96f76f070707dd4229ce1f3410af3",
+          "sha256": "6410770987024e1a532784c4351f016e2447e85d871c24440427dab11419087e",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0012.xml",
+          "pinned_blob": "164f1b2a14af640768dcead06db7a53d4882b9ee",
+          "sha256": "1b2ddd31478a8725ad9300d4bebd7d224d28fd4e0144cdd59fceab162d130bb6",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0013.xml",
+          "pinned_blob": "10cdf3b7a7cb998fa3ced2946c21b1044ae9ba5b",
+          "sha256": "ad5c5311c334e534958d05c6e4633c70ddee41baf5450780a55036446bed535e",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mes_release_SN0014.xml",
+          "pinned_blob": "169930396b38cdc2a19a9a4016dcf909b58acf70",
+          "sha256": "d0e91b53861feb70b7a732dbf171895a4df48bbdcce89599414ba7eb071a6264",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/mtconnect_MRUN-2026-06-11-A.xml",
+          "pinned_blob": "b2bc7e37b543414d2e2cb2058071bd794997ba79",
+          "sha256": "c7e84fe697c4c256ba9d08e7d1d4bbeb016930831d280f6266b634d7e54003d2",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0001.xml",
+          "pinned_blob": "b5b1dac2b07dd186bdf4bbedf1636331f77b70cc",
+          "sha256": "474aaa15d47a58c90ef837fc622fd3d35ee3b7d31d6d26e72ece2f1d2816c35f",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0002.xml",
+          "pinned_blob": "d3c9057cae3847557be14177be828d21f23774cf",
+          "sha256": "459157aed099c20712bf20a18889a56c53440dcf3584c762a6bffcfed02818c8",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0003.xml",
+          "pinned_blob": "a6dc2a83634e5dee4bc265215ed8ef6bae0c2554",
+          "sha256": "e3a1b6d646fa1335d2a53c5e2804b4cc4a0558b893f58cb908874cf1a33e1548",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0004.xml",
+          "pinned_blob": "e6e2f88640bcfecf24513146be584bae519dd681",
+          "sha256": "2fb0e9d79419b82b375197468123377741c756522f0b951ff90f12374c560fe7",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0005.xml",
+          "pinned_blob": "ebb7ba6b49118178962dc36da7de5adebbebbd98",
+          "sha256": "2e3f195f40c2d459e72e57fc21fb137c2c9479055cdab79359d3d9ca56104bb4",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0006.xml",
+          "pinned_blob": "d8d09ce30542ea10121598fe76f540cb8e035e64",
+          "sha256": "2963ae2607fc5ebeb3833a8ca8981a805844bb2e9f73e35e09a6372098aea178",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0007.xml",
+          "pinned_blob": "c023441e61493658dd5d6352cdae436327085035",
+          "sha256": "ec0f8b3026b0dd21205e0686b6328356332e758d51f88319effbe75d7c063436",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0008.xml",
+          "pinned_blob": "ba9b11dbcd3b630e398ba822b21783615358bd0d",
+          "sha256": "f7758184a01fd539836296d804625592fb45964520c4185e6f3ac2d7b4b8bd76",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0009.xml",
+          "pinned_blob": "a208d01e6338ae8d6d96a309985aba40fb7f4b7e",
+          "sha256": "918aaecd9eaff49bc0e96b6ab56b86c297b741d3710e9e4541900668b5e96175",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0010.xml",
+          "pinned_blob": "d8ed6fec40aa6c7826f07c2b11629bde6bd65e4b",
+          "sha256": "9de650fd531158ddbe5e094e620b82dd5a0bac45a0ba5b6473bf2ce71aecb9e1",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0011.xml",
+          "pinned_blob": "f9625581eec1662bdd3de9edce2a8d6128e43fa2",
+          "sha256": "0e1b25391e550109af31173654a20797390f7cc8a914da9f1ac9c9c3ff9b4e22",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0012.xml",
+          "pinned_blob": "27bfb246fe3a54d451c364f8d99f9d3d5ae8c71d",
+          "sha256": "6c51e7703da9fa0a1cddcba5bae7be69a73505b3cf8f8970256b42698311dd51",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0013.xml",
+          "pinned_blob": "8103792de94726ad9ffd111b257e0e4e52759e4c",
+          "sha256": "36a4f54556718c835168bd9a8b6856c47294e8a226a7b7d9c9140591337ca83b",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/artifacts/qif_SN0014.xml",
+          "pinned_blob": "d6d8e9fbb3ffbc055ea5f09248d95d01f6fb6e06",
+          "sha256": "b807115d40e49bf402b3667f398091453f6304bc0f149842055ff21c93519cca",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/envelopes.jsonl",
+          "pinned_blob": "17a4ecf2d2dfc829807d8d6801eabe017a704c04",
+          "sha256": "b1a85ed2d9081aee7ee3e044ead0669e2e440e94d17d1705d074ad08c9168496",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/manifest.json",
+          "pinned_blob": "c8feb513d5d124ef6768c5d8ac7955454e7203b8",
+          "sha256": "b217603f917bd9d7dc2371dbd6b20b1b40f971ad01e126783d12934f7bf8f345",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/reports/report_A_board.md",
+          "pinned_blob": "56d422efb1246127b49dc4cfc5ff59fff589b3e4",
+          "sha256": "69704c8801093cdb91fe7ff2bfdccad8a8e73a9203bc804fed6bb06f13b6d4ca",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/reports/report_B_audit.md",
+          "pinned_blob": "eb4aae8a548200f1ce27627d5df8de6682ed647f",
+          "sha256": "d9a7ea6f4dea992a6eba6e362e693810869a7d3f1b27189856a5562ddc0305a0",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/reports/report_C_regulator.md",
+          "pinned_blob": "41dc7879f5df3c810cc737da18175e031651ba08",
+          "sha256": "b042f2748442860ac6121be2ac7ec610d7008d4287b21bfa4a713df125a863c5",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/reports/report_D_forensic.md",
+          "pinned_blob": "c87e78dc73b403d5e06bfc78d4f5f45ac3ae608f",
+          "sha256": "b8af463fbc2fb7fbb679fe5b434515bb418e0baff338911df9c2d5e8f416a539",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/samples/envelope_anchor.json",
+          "pinned_blob": "173ddd6cd089446e48bcdfb15cbd78406faf0b5f",
+          "sha256": "0f5b5756c1f7bd03738d826bda6287d6c23c3c371faaa5ef598420a577113168",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/samples/envelope_part03_commit_succeeded.json",
+          "pinned_blob": "c11f70314ffe38fc6197863968fa0d1588775e48",
+          "sha256": "b5905f6848ececadb0e6c679936ebac651b56106cc26d2147cab181b477ca8bd",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/samples/envelope_part03_quality_gate.json",
+          "pinned_blob": "aaab3db6292cb4017a7c2d80908e92035f04adaa",
+          "sha256": "ebc127b09216f5db696cc43ed020ec40f5fee98d52fcfd6f2cdcf6b60030b90e",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace-ind/out/samples/envelope_reconciliation.json",
+          "pinned_blob": "c82fa02db5b0c77354bbce036dcc1ea4159b97c4",
+          "sha256": "970a634938203d930443d3d612a5e855e60e6b0b07b8887465378860ca77eead",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/README.md",
+          "pinned_blob": "b36d20f85474850bfd14328d25e44afd7bca983f",
+          "sha256": "e40916b509315ca37e38f466ea9b2001e18e2c5a4ef30f288034b99ba13faaf7",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/generate_golden_trace.py",
+          "pinned_blob": "06c9f1ba1b901ef84187271941b072c4cf5e4c6a",
+          "sha256": "aa6678f11ce26d6fd7b15fda4e6f6f24daeab84c271893a1e49a7234607d8837",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/camt053_20260609.xml",
+          "pinned_blob": "fb73a07787ab96580aff5b44b551fabec3b7f493",
+          "sha256": "9f5f1a2529ee0d61ceac1d74e52fc40b444bd12849291a6e3b4222c2f49a3ca0",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P01.xml",
+          "pinned_blob": "29fc0df7b701ff02b44a9c9c2e0b6f4baad6b6c4",
+          "sha256": "d356feef09879924bf10ed5ae30a1693fb343801cde3e1467450f7d3992fd6ff",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P02.xml",
+          "pinned_blob": "3b39ddd0c68f73ec07b42c17883931a01f46be52",
+          "sha256": "48e0262e359f6a08aaeb93f99ba88f052efb91776d8ae9895a260537355046e4",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P03.xml",
+          "pinned_blob": "1068da599a9c16c83d8742e08950bdc7b3e117eb",
+          "sha256": "f8eeaf8f88e241728f64c9da6b2b97c6dbfafe0a2bed754839dbcc783d84447f",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P04.xml",
+          "pinned_blob": "fd11b6a679a45e737650e4170dfe32a1e09d5850",
+          "sha256": "c2608b9f878ad19f10f1c3a404b76fb4dfffadb623991a48d20df14cb89c9b73",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P05.xml",
+          "pinned_blob": "0dd8881ba11eac066da47dd4c9cf178b690d18f4",
+          "sha256": "11f1eb536f79f8d004d1b0b13ca6d2127ffffa62ce6cb015b3a88a2cf5167c19",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P06.xml",
+          "pinned_blob": "2650cdf901814307bd566ae254a25ae2ce9078da",
+          "sha256": "069faded18ef6f2591a31551ba3978e7cd58126e649ef73697007d7ad688769d",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P07.xml",
+          "pinned_blob": "a98cfe45ca4f48bd024c5d3506510f460cc5506f",
+          "sha256": "ec4db0b3fb3f5b0186b14662bbd5481d9506ffecc06642611d7863f5507c127b",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P08.xml",
+          "pinned_blob": "c7cfff52d6c191c6b06d2b7fa49a84766e41382b",
+          "sha256": "f0fcc439be389e5caf4c8b55c30be86c84110f048abfa9bf5b3853b110a5dd50",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P09.xml",
+          "pinned_blob": "2cf6dab531719d6294b5a9924db69c9bfbc16498",
+          "sha256": "7a48463cb15dc6d91b0c0f2cf1279dc9ea7c71aa5cda9d3e4dab14f1b3dbeb93",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P10.xml",
+          "pinned_blob": "db1d430e6f4cae1cba945437944948d151366502",
+          "sha256": "e845050d96b5425ce92e20aea81187a7020487cfbb0c539ce5f451a319c7599c",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P11.xml",
+          "pinned_blob": "b149388e2b74b9b59401ad3cc0d903e5d5f164bb",
+          "sha256": "0bb554bcb8d22ba5360325cbc87375e9f129028560130fba29573c591c7abacb",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P12.xml",
+          "pinned_blob": "89d3642789e66e16270f6ad39cf240e882061739",
+          "sha256": "bafc606a6aa33057fde381a5f5cef2dd988dafe922d5b43ba6d117a064063227",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P13.xml",
+          "pinned_blob": "180b5aa1266273b80473765264a482f208534266",
+          "sha256": "7fd5a242a1af88004b48ba6ea2a37b91a017ffbe3a57d0f91e149f344d11992c",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pacs002_P14.xml",
+          "pinned_blob": "bbe82879cb36028ba12cbf28a40a2893a2987f2b",
+          "sha256": "daace35cf75851db07f359241026a92114935e97fabe1676cb745d7399a847a0",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P01.xml",
+          "pinned_blob": "2a0d0b2283b75bb91e111a7459757be98e5800e3",
+          "sha256": "c659ef7ca0f22df3cc371b5588186cd4cac682df5c708cff99db0cf277ffac8b",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P02.xml",
+          "pinned_blob": "4ffcb1fb0d985323fab4f2f292dcda5fb9510935",
+          "sha256": "d456264de2aade1605d4ad306c96acaf2ff6cb3e32f2aaca40c4501b78a523de",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P03.xml",
+          "pinned_blob": "23f93b82333e0baac1193198df65e653ddfcc23f",
+          "sha256": "946ea07aad568ecfffe579e4130b2bd2d7cb1eca0de5070efc35e17ac1ca7deb",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P04.xml",
+          "pinned_blob": "ddfbbc7bb2a3da0468859b5e6fe1a1b0d2c66a69",
+          "sha256": "dfc787e69b59a8741d4ad28eb1db8380e020f073176e354c6277e3d310ad6f17",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P05.xml",
+          "pinned_blob": "2c8729d81905c20a94122874456773aa25f5e05c",
+          "sha256": "4ed1ffecc2d18f7c88da26c6855338d33c7408cd94212289dc02459a44aba6b3",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P06.xml",
+          "pinned_blob": "6e07fa03b125c4098ec04a7d268af774e0d8ed36",
+          "sha256": "2dd8b1222bc94ae897563148231a70eb6d04ebb591202713c6856d4659194c65",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P07.xml",
+          "pinned_blob": "865fb86a3ac15058d3206ec8ecf2cf72bc2cae58",
+          "sha256": "a0621cc93197c38316929adecc9eae20d688c801398d5165d67dc5536288f745",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P08.xml",
+          "pinned_blob": "091847ab6a9ceb78046479408ab2658e2d2a2a80",
+          "sha256": "b3dc070e6bdc6848773e5ed9ece7e16452aa686b0641d78e384bd3373ef3b6d4",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P09.xml",
+          "pinned_blob": "03d4f0999272889807baa110838eb20ff34a5e0b",
+          "sha256": "37fe631b03d922c77b8371601c3508eb1589a2ceaebfdc7f74947f5680ddacf1",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P10.xml",
+          "pinned_blob": "5928feb19cd81dcaeb4efee0569c31db3dddb262",
+          "sha256": "6af05914138099ef6fbe98fe11845f0607098dcf7c64d267a2ca36cfdee21992",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P11.xml",
+          "pinned_blob": "6bd7e9fa8778d302d1308e5abd28361f2bd611d5",
+          "sha256": "c0458fef849b5b84cf295dd69ff6af1f397eabb5ab965981a52c3853cfd0f643",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P12.xml",
+          "pinned_blob": "a263a03eed91b6c36426bc278bf13a7dcd813509",
+          "sha256": "7deab2e1d759ad57310d24c85cd7781a421c80303256bb4dfc42ae77c40aeb9b",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P13.xml",
+          "pinned_blob": "5a084fe1f533e4feef2ec4df011849f16529bbcc",
+          "sha256": "f01e44097deef17c4e44be6c288f81942abaa4d4b5e6fb1dfed824621a309297",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/artifacts/pain001_P14.xml",
+          "pinned_blob": "e3ef2bcf20854580b9bceb6631f7355e7323a647",
+          "sha256": "2c53b3a315788a0f24fc624f7e537618bf05d165df57a7b9438daf147845a084",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/envelopes.jsonl",
+          "pinned_blob": "518286a231a00f577dfb0785ff7f563bc75f04bf",
+          "sha256": "bf5684ee7c4ddeb69900fd472f8079b0701dfe0af68c934e2a20227b81fe4ae4",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/manifest.json",
+          "pinned_blob": "1da2204a257d9c96ec62485b2f563a80bef88a6d",
+          "sha256": "de570fa235dcc1927679db2adae04f2a151269b8126533e9ecbf92adcafbcd14",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/reports/report_A_board.md",
+          "pinned_blob": "71bf338bdb978171d6550d908c70a5038bb6159e",
+          "sha256": "3721db9ca26a01a4f71453e7a426166ea86c1bbf4323334154380d4bcf5021be",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/reports/report_B_audit.md",
+          "pinned_blob": "dd720336eff16e2f46c5115080d20c61e0cba0b0",
+          "sha256": "0de64142eae9e108120ef9bd5bf2eb2940351dd2d4fb600bc39ae1f285916bad",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/reports/report_C_regulator.md",
+          "pinned_blob": "473ad8e186edcf53c5789c38c54dffd82bffa8ee",
+          "sha256": "49478846fa1dcd89870da6a9ffaa891830d7db9a1c60cdb4e44e24e06db8181e",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/reports/report_D_forensic.md",
+          "pinned_blob": "003735f1f0afd07b8fcd16d5e2d2fc6b168c872a",
+          "sha256": "e0c0e2a9329262a1ddf9fee638b83c9877faa4d2bd5f0e66765d3b1e46b86716",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/samples/envelope_anchor.json",
+          "pinned_blob": "8111cbb1e6f3f97fb85c87b7149709e2fec5c7cd",
+          "sha256": "ff69f4efab1fcd12c8e15fff08951e935fc053cc4b86b518bf3f5db4abea008f",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/samples/envelope_payment03_commit_succeeded.json",
+          "pinned_blob": "ddbe2c05af7f7ebb0b74d478de061931922a6073",
+          "sha256": "54b71dd5d48358750570105060a1445aa569954f71191d89068c832e99dfd9c4",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/samples/envelope_payment03_policy_check.json",
+          "pinned_blob": "98f40c443e1a41a9052e23a42c8b0074758c1ddd",
+          "sha256": "ce9d4debd128ab8c91eea9efa5cf8a6d8c482793773ec29f05a0acf258dd5748",
+          "check": "fail"
+        },
+        {
+          "path": "examples/golden-trace/out/samples/envelope_reconciliation.json",
+          "pinned_blob": "38a91e50df557b3f035bdbc2ef9a252bbb1e7f21",
+          "sha256": "3742383a5023600170194b83464ac8039bdd228d2124230192169768e0e2d836",
+          "check": "fail"
+        }
+      ],
+      "tree_note": "Not the whole tree: examples/golden-trace/ and examples/golden-trace-ind/ whole (each with its generate_golden_trace.py and out/), plus LICENSE, LICENSE-CODE and README.md; 87 files. Each out/envelopes.jsonl holds 76 envelopes. The generator imports tools/axes_canonical.py from the AXES tree, which is not pinned.",
+      "corpus_dirs": [
+        "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279"
+      ],
+      "provenance_section": "Appended 2026-09-29 — the AXES Golden Trace v2 at tag `corpus/2026-08-08-gt-v2` (`776cc0b5`)"
     }
   ]
 }

@@ -43,6 +43,26 @@
       "path": "fixtures/tersign-evidence-record-conformance/1075ca65b4495212cf49a891e63e07f2cf48acf8/MANIFEST.json",
       "sha256": "b7a1c699b34ed0bb1e8979dbcfd981577d4cf6838d65482d1e66690a42477560",
       "note": "Corpus-internal: the suite's own manifest, which states each construction as a one-line member (lines 6-18) beside the per-vector expectations. It is the only document that states these scopes; README.md restates some of them in prose."
+    },
+    "axes-gt-forensic": {
+      "path": "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace/out/reports/report_D_forensic.md",
+      "sha256": "e0c0e2a9329262a1ddf9fee638b83c9877faa4d2bd5f0e66765d3b1e46b86716",
+      "note": "The Golden Trace v2 (finance) bundle's own forensic pack; its section 1, line 4, is the vendor-neutral verification procedure and states the envelope-hash scope, the chain rule and the artifact re-hash."
+    },
+    "axes-gt-readme": {
+      "path": "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace/README.md",
+      "sha256": "e40916b509315ca37e38f466ea9b2001e18e2c5a4ef30f288034b99ba13faaf7",
+      "note": "The finance bundle's README; line 36 lists what is \"real and re-verifiable\", line 28 describes out/manifest.json."
+    },
+    "axes-ind-forensic": {
+      "path": "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace-ind/out/reports/report_D_forensic.md",
+      "sha256": "b8af463fbc2fb7fbb679fe5b434515bb418e0baff338911df9c2d5e8f416a539",
+      "note": "The industrial bundle's forensic pack; its line 4 is the same six-step procedure as the finance bundle's."
+    },
+    "axes-ind-readme": {
+      "path": "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace-ind/README.md",
+      "sha256": "0883ca3478bb62ba95cfcea97eb40b85e7f73d081ea4bc5d501836dce6c5711b",
+      "note": "The industrial bundle's README; line 23 lists what is real, and it does not mention artifact hashes, the manifest's per-file digests or anchor chain heads."
     }
   },
   "corpora": [
@@ -985,6 +1005,118 @@
         }
       ],
       "corpus_note": "Two census rows here are not digests: the `id` members of n26 and p23 are 43-character vector names whose hyphens fit the census's base64url-32B shape, and MANIFEST.json names no byte scope for them because they are names. Every declared digest in this suite is 0x-hex: keccak256 over RFC 8785 bytes, except the anchor relation's sha256, which the two rules above grade. This walker computes no keccak and its census does not match 0x-prefixed hex, so it sees none of the other 0x values; tools/tersign-recompute.ts enumerates and recomputes them (keccak256, both serialisers), and the report of the 29 Sep run (RUNS_2026-09-29_community-vectors.md) carries every row."
+    },
+    {
+      "id": "axes/golden-trace",
+      "dir": "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace",
+      "rules": [
+        {
+          "id": "axes.gt.envelope_hash",
+          "file": "out/*.json*",
+          "kind": "axes_envelope_hash",
+          "field": "/integrity/envelope_hash of every envelope: each line of out/envelopes.jsonl and each out/samples/*.json",
+          "construction": "sha256(jcs(the envelope with integrity.envelope_hash and integrity.signature removed))",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "axes-gt-forensic",
+          "lines": "4",
+          "quote": "2. For each envelope, remove `integrity.envelope_hash` and `integrity.signature`; serialise with RFC 8785 JCS; SHA-256; compare to stored hash."
+        },
+        {
+          "id": "axes.gt.previous_envelope_hash",
+          "file": "out/*.json*",
+          "kind": "axes_previous_envelope_hash",
+          "field": "/integrity/previous_envelope_hash of every envelope",
+          "construction": "the recomputed step-2 hash of the envelope whose sequence_number is one less (64 x \"0\" at sequence_number 1); for a sample, looked up in the envelopes.jsonl beside it",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "axes-gt-forensic",
+          "lines": "4",
+          "quote": "3. Confirm `previous_envelope_hash` equals the prior envelope's hash (genesis = 64×'0')."
+        },
+        {
+          "id": "axes.gt.anchor_chain_head",
+          "file": "out/*.json*",
+          "kind": "axes_anchor_chain_head",
+          "field": "/anchoring/chain_head_hash and /export/final_anchor/chain_head_hash, on the envelopes that carry them",
+          "construction": "the recomputed step-2 hash of the envelope whose sequence_number is one less (64 x \"0\" at sequence_number 1); for a sample, looked up in the envelopes.jsonl beside it",
+          "encoding": "hex",
+          "status": "inferred",
+          "document": "axes-gt-readme",
+          "lines": "36",
+          "quote": "On anchor envelopes, `anchoring.chain_head_hash` is the real local chain head at that moment.",
+          "inference": "The README says what the value is (the local chain head at the moment of anchoring) and not which envelope that is. An envelope cannot contain its own hash, so the head at the moment this envelope is emitted is the hash of the envelope before it; that reading is this registry's, hence `inferred`. The same reading is applied to export.final_anchor, which the README does not mention."
+        },
+        {
+          "id": "axes.gt.artifact_sha256",
+          "file": "out/*.json*",
+          "kind": "axes_artifact_ref_sha256",
+          "field": "every {ref, sha256} and {ack_artifact_ref, ack_artifact_hash} pair inside an envelope whose ref starts artifacts/",
+          "construction": "sha256(the raw bytes of out/<ref>)",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "axes-gt-readme",
+          "lines": "36",
+          "quote": "**Real and re-verifiable:** ... artifact hashes ... (with report_D_forensic.md line 4, step 6: \"Re-hash each file in `artifacts/` and compare with `manifest.json`.\")"
+        },
+        {
+          "id": "axes.gt.manifest_files",
+          "file": "out/manifest.json",
+          "kind": "axes_manifest_file_sha256",
+          "field": "/files/<key>, every entry of the manifest's files map",
+          "construction": "sha256(the raw bytes of out/<key>)",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "axes-gt-readme",
+          "lines": "28",
+          "quote": "out/manifest.json            evidence bundle manifest (sorted file list, per-file SHA-256, bundle hash)"
+        }
+      ],
+      "corpus_note": "no byte scope named in examples/golden-trace/README.md or out/reports/report_D_forensic.md: these are tool.tool_manifest_hash (a hash of a tool manifest this corpus does not carry), and the manifest's bundle_manifest_hash and chain_head, which the README calls a \"bundle hash\" and names no scope for. The generator computes them (generate_golden_trace.py lines 310, 594 and 597); the generator is code, not a governing document."
+    },
+    {
+      "id": "axes/golden-trace-ind",
+      "dir": "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace-ind",
+      "rules": [
+        {
+          "id": "axes.ind.envelope_hash",
+          "file": "out/*.json*",
+          "kind": "axes_envelope_hash",
+          "field": "/integrity/envelope_hash of every envelope: each line of out/envelopes.jsonl and each out/samples/*.json",
+          "construction": "sha256(jcs(the envelope with integrity.envelope_hash and integrity.signature removed))",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "axes-ind-forensic",
+          "lines": "4",
+          "quote": "2. For each envelope, remove `integrity.envelope_hash` and `integrity.signature`; serialise with RFC 8785 JCS; SHA-256; compare to stored hash."
+        },
+        {
+          "id": "axes.ind.previous_envelope_hash",
+          "file": "out/*.json*",
+          "kind": "axes_previous_envelope_hash",
+          "field": "/integrity/previous_envelope_hash of every envelope",
+          "construction": "the recomputed step-2 hash of the envelope whose sequence_number is one less (64 x \"0\" at sequence_number 1); for a sample, looked up in the envelopes.jsonl beside it",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "axes-ind-forensic",
+          "lines": "4",
+          "quote": "3. Confirm `previous_envelope_hash` equals the prior envelope's hash (genesis = 64x'0')."
+        },
+        {
+          "id": "axes.ind.manifest_artifacts",
+          "file": "out/manifest.json",
+          "kind": "axes_manifest_file_sha256",
+          "key_prefix": "artifacts/",
+          "field": "/files/artifacts~1<name>, the manifest entries for files in artifacts/ only",
+          "construction": "sha256(the raw bytes of out/<key>)",
+          "encoding": "hex",
+          "status": "declared",
+          "document": "axes-ind-forensic",
+          "lines": "4",
+          "quote": "6. Re-hash each file in `artifacts/` and compare with `manifest.json`."
+        }
+      ],
+      "corpus_note": "no byte scope named in examples/golden-trace-ind/README.md or out/reports/report_D_forensic.md. Its README (line 23) lists only the hash chain as real, and its procedure (report_D line 4) re-hashes artifacts/ against manifest.json, which axes.ind.manifest_artifacts grades. Nothing in either document states a scope for the envelopes' artifact digests, the anchors' chain_head_hash, tool_manifest_hash, or the manifest's other per-file entries, bundle_manifest_hash and chain_head. The finance bundle's README states the first two for its own corpus and is not read across."
     }
   ],
   "expected_refusals": [

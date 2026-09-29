@@ -1244,3 +1244,59 @@ describe("digest walker — tersign/1075ca65: the anchor relation (MANIFEST.json
     expect(dirty.find((r) => short(r) === "p5-live-bitcoin-anchor.json#/input/anchored_digest")!.recomputed).toBe(anchorOf(mutated));
   });
 });
+
+describe("digest walker — AXES Golden Trace v2 (report_D_forensic.md line 4)", () => {
+  const GT = "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace";
+  const rowsOf = (corpus: string, rows = baseline.report.body.rows) => rows.filter((r) => r.corpus === corpus);
+  const tally = (rows: Row[]) => {
+    const t: Record<string, number> = {};
+    for (const r of rows) t[`${r.rule ?? "(census)"} ${r.outcome}`] = (t[`${r.rule ?? "(census)"} ${r.outcome}`] ?? 0) + 1;
+    return t;
+  };
+
+  it("grades both bundles with no mismatch, rule by rule", () => {
+    expect(tally(rowsOf("axes/golden-trace"))).toEqual({
+      "axes.gt.envelope_hash match": 80,
+      "axes.gt.previous_envelope_hash match": 80,
+      "axes.gt.anchor_chain_head match": 5,
+      "axes.gt.artifact_sha256 match": 31,
+      "axes.gt.manifest_files match": 38,
+      "(census) unregistered": 16,
+    });
+    expect(tally(rowsOf("axes/golden-trace-ind"))).toEqual({
+      "axes.ind.envelope_hash match": 80,
+      "axes.ind.previous_envelope_hash match": 80,
+      "axes.ind.manifest_artifacts match": 31,
+      "(census) unregistered": 61,
+    });
+  });
+
+  it("recomputes an envelope hash independently of the walker: sha256 of the JCS of the envelope minus hash and signature", () => {
+    const line = readFileSync(join(ROOT, GT, "out", "envelopes.jsonl"), "utf8").split("\n")[36]!;
+    const env = JSON.parse(line) as { integrity: Record<string, unknown> };
+    const declared = env.integrity["envelope_hash"];
+    delete env.integrity["envelope_hash"];
+    delete env.integrity["signature"];
+    const mine = createHash("sha256").update(jcsOf(env), "utf8").digest("hex");
+    expect(mine).toBe(declared);
+    const row = rowsOf("axes/golden-trace").find((r) => r.file.endsWith("out/envelopes.jsonl") && r.pointer === "#37/integrity/envelope_hash");
+    expect(row?.recomputed).toBe(mine);
+  });
+
+  it("negative control: one changed digit in envelope 5 breaks exactly its hash, envelope 6's link, and the manifest's digest of the stream", () => {
+    const dir = tmp();
+    cpSync(join(ROOT, GT), join(dir, GT), { recursive: true });
+    const target = join(dir, GT, "out", "envelopes.jsonl");
+    const lines = readFileSync(target, "utf8").split("\n");
+    const m = /"occurred_at": ?"2026-06-09T09:00:1(\d)/.exec(lines[4]!);
+    expect(m, "envelope 5 carries no occurred_at of the expected shape").not.toBeNull();
+    lines[4] = lines[4]!.replace(m![0], m![0].slice(0, -1) + String((Number(m![1]) + 1) % 10));
+    writeFileSync(target, lines.join("\n"));
+    const dirty = rowsOf("axes/golden-trace", walk({ root: dir, report: join(dir, "dirty.json") }).report.body.rows);
+    expect(dirty.filter((r) => r.outcome === "mismatch").map((r) => `${r.file.split("/out/")[1]}#${r.pointer}`).sort()).toEqual([
+      "envelopes.jsonl##5/integrity/envelope_hash",
+      "envelopes.jsonl##6/integrity/previous_envelope_hash",
+      "manifest.json#/files/envelopes.jsonl",
+    ]);
+  });
+});

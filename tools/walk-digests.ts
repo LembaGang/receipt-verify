@@ -367,6 +367,8 @@ interface Rule {
   subject_pointer?: string;
   /** tersign_anchor_relation: the pointer of the declared sha256 over those bytes. */
   anchored_pointer?: string;
+  /** axes_manifest_file_sha256: grade only the `files` keys that start with this prefix. */
+  key_prefix?: string;
 }
 
 /** `asqav/history/*` matches `asqav/history/ee8a3e7`. Only `*` is special. */
@@ -1303,6 +1305,167 @@ function ruleTersignAnchor(ctx: Ctx, r: Rule, filePath: string) {
     `sha256 of the 32 bytes at ${r.subject_pointer}`);
 }
 
+/**
+ * AXES Golden Trace v2 (magentixai/axes at tag corpus/2026-08-08-gt-v2).
+ *
+ * The corpus's own verification procedure is out/reports/report_D_forensic.md
+ * line 4: "For each envelope, remove `integrity.envelope_hash` and
+ * `integrity.signature`; serialise with RFC 8785 JCS; SHA-256" (step 2),
+ * "`previous_envelope_hash` equals the prior envelope's hash (genesis =
+ * 64x'0')" (step 3), and "Re-hash each file in `artifacts/` and compare with
+ * `manifest.json`" (step 6). Envelopes live one per line in out/envelopes.jsonl
+ * and, pretty-printed, in out/samples/*.json; a sample's predecessor is found
+ * by sequence_number in the envelopes.jsonl beside it. Hashes are cached per
+ * stream so every envelope is canonicalized once.
+ */
+interface AxesEnvelopeRef {
+  file: string;
+  pointer: (member: string) => string;
+  env: Record<string, Json>;
+}
+
+const axesStreams = new Map<string, Map<number, Promise<Canon>>>();
+
+function axesEnvelopes(filePath: string): AxesEnvelopeRef[] {
+  const file = rel(filePath);
+  if (filePath.toLowerCase().endsWith(".jsonl")) {
+    return readJsonl(filePath).map((env, i) => ({ file, pointer: (m: string) => `#${i + 1}${m}`, env: env as Record<string, Json> }));
+  }
+  let doc: Json;
+  try {
+    doc = readJson(filePath);
+  } catch {
+    return [];
+  }
+  return isObject(doc) && isObject(doc["integrity"]) ? [{ file, pointer: (m: string) => m, env: doc }] : [];
+}
+
+/** Step 2's pre-image: the envelope with integrity.envelope_hash and integrity.signature removed. */
+function axesPreimage(env: Record<string, Json>): Json {
+  const copy = JSON.parse(JSON.stringify(env)) as Record<string, Json>;
+  const integ = copy["integrity"] as Record<string, Json>;
+  delete integ["envelope_hash"];
+  delete integ["signature"];
+  return copy;
+}
+
+/** The recomputed hash of the envelope at `seq` in the stream beside `filePath`, or null if the stream has none. */
+function axesHashAt(filePath: string, seq: number): Promise<Canon> | null {
+  const stream = join(dirname(filePath), filePath.toLowerCase().endsWith(".jsonl") ? "" : "..", "envelopes.jsonl");
+  let bySeq = axesStreams.get(stream);
+  if (!bySeq) {
+    bySeq = new Map();
+    if (existsSync(stream)) {
+      for (const env of readJsonl(stream) as Array<Record<string, Json>>) {
+        bySeq.set(Number(env["sequence_number"]), canon(axesPreimage(env)));
+      }
+    }
+    axesStreams.set(stream, bySeq);
+  }
+  return bySeq.get(seq) ?? null;
+}
+
+const GENESIS_64 = "0".repeat(64);
+
+async function ruleAxesEnvelope(ctx: Ctx, r: Rule, filePath: string) {
+  for (const { file, pointer, env } of axesEnvelopes(filePath)) {
+    const integ = env["integrity"] as Record<string, Json>;
+    const seq = Number(env["sequence_number"]);
+    if (r.kind === "axes_envelope_hash") {
+      const declared = integ["envelope_hash"];
+      if (typeof declared !== "string") continue;
+      const ptr = pointer("/integrity/envelope_hash");
+      const c = await canon(axesPreimage(env));
+      if (!c.ok) {
+        pushCanonFailure(ctx, r, file, ptr, declared, c);
+        continue;
+      }
+      const hex = sha256Hex(c.bytes!);
+      push(ctx, r, file, ptr, declared, hex, hex === declared ? "match" : "mismatch", `envelope seq ${seq}, ${c.bytes!.length} bytes of JCS`);
+      continue;
+    }
+    // Every other AXES kind compares against the hash of the PRIOR envelope.
+    const members: Array<[string, Json | undefined]> =
+      r.kind === "axes_previous_envelope_hash"
+        ? [["/integrity/previous_envelope_hash", integ["previous_envelope_hash"]]]
+        : [
+            ["/anchoring/chain_head_hash", isObject(env["anchoring"]) ? env["anchoring"]["chain_head_hash"] : undefined],
+            ["/export/final_anchor/chain_head_hash",
+              isObject(env["export"]) && isObject(env["export"]["final_anchor"]) ? env["export"]["final_anchor"]["chain_head_hash"] : undefined],
+          ];
+    for (const [m, declared] of members) {
+      if (typeof declared !== "string") continue;
+      const ptr = pointer(m);
+      if (seq === 1) {
+        push(ctx, r, file, ptr, declared, GENESIS_64, declared === GENESIS_64 ? "match" : "mismatch", "genesis: 64 x '0'");
+        continue;
+      }
+      const prior = axesHashAt(filePath, seq - 1);
+      if (prior === null) {
+        push(ctx, r, file, ptr, declared, null, "unregistered", `no envelope with sequence_number ${seq - 1} in the envelopes.jsonl beside this file`);
+        continue;
+      }
+      const c = await prior;
+      if (!c.ok) {
+        pushCanonFailure(ctx, r, file, ptr, declared, c);
+        continue;
+      }
+      const hex = sha256Hex(c.bytes!);
+      push(ctx, r, file, ptr, declared, hex, hex === declared ? "match" : "mismatch", `the recomputed hash of envelope seq ${seq - 1}`);
+    }
+  }
+}
+
+/**
+ * An artifact digest inside an envelope, beside the ref naming the file: `{ref, sha256}`
+ * (instruction_artifact, settlement_artifact) and `{ack_artifact_ref, ack_artifact_hash}`.
+ * The ref is relative to out/, which is where artifacts/ sits.
+ */
+function ruleAxesArtifactRefs(ctx: Ctx, r: Rule, filePath: string, outDir: string) {
+  for (const { file, pointer, env } of axesEnvelopes(filePath)) {
+    const visit = (node: Json, path: string) => {
+      if (Array.isArray(node)) return node.forEach((v, i) => visit(v, `${path}/${i}`));
+      if (!isObject(node)) return;
+      for (const [refKey, hashKey] of [["ref", "sha256"], ["ack_artifact_ref", "ack_artifact_hash"]] as const) {
+        const ref = node[refKey];
+        const declared = node[hashKey];
+        if (typeof ref !== "string" || typeof declared !== "string" || !ref.startsWith("artifacts/")) continue;
+        const ptr = pointer(`${path}/${hashKey}`);
+        const target = join(outDir, ...ref.split("/"));
+        if (!existsSync(target)) {
+          push(ctx, r, file, ptr, declared, null, "unregistered", `${ref} is not in the corpus`);
+          continue;
+        }
+        const bytes = readFileSync(target);
+        const hex = sha256Hex(bytes);
+        push(ctx, r, file, ptr, declared, hex, hex === declared ? "match" : "mismatch", `${ref}, ${bytes.length} bytes`);
+      }
+      for (const k of Object.keys(node)) visit(node[k]!, `${path}/${k.replace(/~/g, "~0").replace(/\//g, "~1")}`);
+    };
+    visit(env, "");
+  }
+}
+
+/** out/manifest.json's `files` map: key = path under out/, value = sha256 of that file's bytes. */
+function ruleAxesManifest(ctx: Ctx, r: Rule, manifestPath: string) {
+  const file = rel(manifestPath);
+  const doc = readJson(manifestPath) as Record<string, Json>;
+  const files = doc["files"];
+  if (!isObject(files)) return;
+  for (const [key, declared] of Object.entries(files)) {
+    if (typeof declared !== "string" || !key.startsWith(r.key_prefix ?? "")) continue;
+    const ptr = `/files/${key.replace(/~/g, "~0").replace(/\//g, "~1")}`;
+    const target = join(dirname(manifestPath), ...key.split("/"));
+    if (!existsSync(target)) {
+      push(ctx, r, file, ptr, declared, null, "unregistered", `the manifest lists ${key} and there is no such file beside it`);
+      continue;
+    }
+    const bytes = readFileSync(target);
+    const hex = sha256Hex(bytes);
+    push(ctx, r, file, ptr, declared, hex, hex === declared ? "match" : "mismatch", `${key}, ${bytes.length} bytes`);
+  }
+}
+
 /** SHA-256 of zero bytes. No JSON object serialises to zero bytes, so no descriptor can produce it. */
 const SHA256_EMPTY = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
@@ -1689,6 +1852,18 @@ async function main(): Promise<number> {
         const relPath = rel(p);
         if (!globMatch(r.file, inCorpus(relPath)) || !wanted(relPath)) continue;
         ruleTersignAnchor(ctx, r, p);
+      }
+    }
+
+    // AXES Golden Trace: envelope hashes, the chain, anchor chain heads, artifact refs, the manifest
+    for (const r of rules) {
+      if (!r.kind.startsWith("axes_")) continue;
+      for (const p of files) {
+        const relPath = rel(p);
+        if (!globMatch(r.file, inCorpus(relPath)) || !wanted(relPath)) continue;
+        if (r.kind === "axes_manifest_file_sha256") ruleAxesManifest(ctx, r, p);
+        else if (r.kind === "axes_artifact_ref_sha256") ruleAxesArtifactRefs(ctx, r, p, join(dir, "out"));
+        else await ruleAxesEnvelope(ctx, r, p);
       }
     }
 

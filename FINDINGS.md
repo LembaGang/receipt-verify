@@ -1908,6 +1908,84 @@ outside reproductions the README cites (#8, #9) were not read. `verify.py` agree
 reproduction. The recomputation is ours, but it recomputes the constructions the author states, so it
 cannot find a wrong construction, only a wrong value under the stated one.
 
+## H. AXES Golden Trace v2 at tag `corpus/2026-08-08-gt-v2` (`776cc0b5`) (appended 2026-09-29)
+
+Pinned at `fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/` (87 files; `fixtures/provenance.md`,
+section "Appended 2026-09-29 — the AXES Golden Trace v2 at tag `corpus/2026-08-08-gt-v2` (`776cc0b5`)"; entry
+`axes-golden-trace/corpus-2026-08-08-gt-v2`). Two bundles: `examples/golden-trace/` (finance, APRUN-2026-06-09-A)
+and `examples/golden-trace-ind/` (industrial, MRUN-2026-06-11-A), **76 envelopes each** in `out/envelopes.jsonl`,
+plus 4 pretty-printed samples, a manifest, 4 reports and 29 / 31 artifacts. Everything below is a
+**recomputation** by the walker (`npm run walk`, corpora `axes/golden-trace` and `axes/golden-trace-ind`), with both
+serialisers, unless it says otherwise.
+
+### H1. The reproduction was not run: the generator needs a package this machine does not have
+
+Each bundle's `generate_golden_trace.py` imports `tools/axes_canonical.py` from the AXES tree, and that module
+imports the PyPI package `jcs`. Run in a scratch copy of the clone at `776cc0b5`, it stopped with
+`ImportError: The 'jcs' package is required for RFC 8785 canonicalisation. Install with: pip install jcs`, exit 1.
+The run permitted no installs, so the byte-for-byte regeneration of the 76 + 76 envelopes the README promises
+was not attempted. Nothing below depends on the generator.
+
+### H2. Every value the bundles' own procedure names recomputes: 425 of 425
+
+The governing text is each bundle's `out/reports/report_D_forensic.md` line 4, a six-step, vendor-neutral
+procedure: step 2, `sha256(JCS(envelope minus integrity.envelope_hash and integrity.signature))`; step 3,
+`previous_envelope_hash` equals the prior envelope's hash with a genesis of 64 × `0`; step 6, re-hash every file
+in `artifacts/` against `manifest.json`. The finance README adds (line 36) that artifact hashes are real and
+that "On anchor envelopes, `anchoring.chain_head_hash` is the real local chain head at that moment", and (line
+28) that the manifest carries "per-file SHA-256".
+
+| corpus | rule | graded | match |
+|---|---|---|---|
+| golden-trace | `axes.gt.envelope_hash` (76 stream + 4 samples) | 80 | 80 |
+| golden-trace | `axes.gt.previous_envelope_hash` | 80 | 80 |
+| golden-trace | `axes.gt.anchor_chain_head` (inferred) | 5 | 5 |
+| golden-trace | `axes.gt.artifact_sha256` | 31 | 31 |
+| golden-trace | `axes.gt.manifest_files` | 38 | 38 |
+| golden-trace-ind | `axes.ind.envelope_hash` | 80 | 80 |
+| golden-trace-ind | `axes.ind.previous_envelope_hash` | 80 | 80 |
+| golden-trace-ind | `axes.ind.manifest_artifacts` | 31 | 31 |
+
+**0 mismatch, 0 serializer_disagreement.** `axes.gt.anchor_chain_head` is `inferred`, not `declared`. The README
+says the value is the chain head "at that moment" and not which envelope that is. This registry reads it as
+the hash of the envelope before the anchor envelope, because an envelope cannot contain its own hash, and
+applies the same reading to `export.final_anchor`, which the README does not mention.
+
+### H3. What the two bundles' documents do not say, and the values left unregistered for it
+
+The industrial bundle's README (line 23) names only the hash chain as real, and its procedure names artifacts
+only against the manifest. So in that corpus the envelopes' artifact digests (29), the anchors' chain heads
+(4 in the stream), the manifest's non-artifact entries (9) and the equivalents in its samples stay
+**unregistered: no byte scope named in `examples/golden-trace-ind/README.md` or
+`out/reports/report_D_forensic.md`** (61 rows). The finance README's statements are not read across to the
+other bundle. In both bundles `tool.tool_manifest_hash` (14 each), the manifest's `bundle_manifest_hash` and its
+`chain_head` are unregistered for the same reason (16 and part of the 61). The generator computes them
+(`generate_golden_trace.py` lines 310, 594, 597), and code is not a governing document. **For information
+only, from a one-serialiser scratch check that is not in the tree:** every one of those values recomputes
+under the generator's construction. `bundle_manifest_hash` = sha256(JCS(`files`)), `chain_head` = the hash of
+envelope 76, `tool_manifest_hash` = sha256(UTF-8 of `tool_manifest_ref`), and the industrial bundle's artifact
+digests and chain heads follow the finance bundle's readings, all with 0 exceptions.
+
+### H4. Where the README says the two bundles agree, they do
+
+The repository README (line 51) says the two bundles "share the **same evidence skeleton** (76 envelopes, hash
+chain, heartbeats, anchors, four role-specific reports)". In the pinned bytes, each stream has 76 envelopes,
+sequence 1 to 76. Each carries the same count of every digest-bearing member: 76 envelope hashes, 76 links, 3
+anchor chain heads, 1 export chain head, 14 instruction artifacts, 14 acknowledgment artifacts, 1 settlement
+artifact and 14 tool-manifest hashes. Both chains verify from the same genesis. The README claims no shared
+value between the bundles, and none was compared. It also reads, at line 61: "There is no published
+`se-v0.1.schema.json` yet - deliberately". No such file is in the tree at `776cc0b5` (`git ls-tree`), so the
+relayed 11 Sep sentence stands, now from the bytes.
+
+### H5. What H1–H4 do not establish
+
+Signatures are stubs (`SIG-STUB(...)`) and the anchor store is simulated, as both READMEs disclose. Nothing here
+treats an anchor as an existence bound. Nothing checks that the ISO 20022 and manufacturing artifacts are
+well-formed or that the reports' prose matches the envelopes. The digests recompute, and that establishes
+that the bundle is internally consistent under its own procedure, not that any event it describes happened.
+The `inferred` chain-head reading is this registry's own. If the author meant another envelope, all 5 rows
+would have to be re-read.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`
