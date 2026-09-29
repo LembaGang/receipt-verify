@@ -214,6 +214,15 @@ author's. See FINDINGS.md §E1.
 | `fixtures/acta/keys/acta-throwaway.jwks.json` | 943 | `b31e4f4d2a429fe2233a610b163ea96cb9b31d919c94a5217f65aa608848d6d3` |
 | `fixtures/keys/test-throwaway-ed25519.jwks.json` | 561 | `4c4146101fa23c6a7fc4f79420667b40b6862751147aea8a5b2067f575fec7bd` |
 | `fixtures/keys/test-throwaway-ed25519.seed.txt` | 382 | `2d5f040fc66defc66f6807f6f7700466b8ab402e5b88abbce4b78e4df858c3fd` |
+| `fixtures/x402-pr-2853-compliance-fields/numbers/01-integers-at-and-above-2p53.json` | 2033 | `686bb9de30da29a48e2aa53be20a773312f7111e5c3c601086754cb77b237443` |
+| `fixtures/x402-pr-2853-compliance-fields/numbers/02-fractional-part.json` | 1756 | `f71d30fa85c88dfd02e229694b24fc48e4590a2c903c04dd280e4aaf881eb313` |
+| `fixtures/x402-pr-2853-compliance-fields/numbers/03-exponent-form.json` | 1587 | `18e1b1521a1c45bae795d26cf9ae54794f6fc7205ed01d727b627d161efa0877` |
+| `fixtures/x402-pr-2853-compliance-fields/numbers/04-negative-zero.json` | 1518 | `0c405b9df0f606a9aa3932f3e769b06a61c0f4b6419e80bab5c0ded260974692` |
+| `fixtures/x402-pr-2853-compliance-fields/numbers/05-shortest-round-trip-divergence.json` | 3545 | `15d006dca471ca1942c7783a2a65450ce54144a750b846ea7f5786f1c253b2c1` |
+
+The five files under `fixtures/x402-pr-2853-compliance-fields/numbers/` (added 2026-09-29) are written by `npx tsx tools/compliance-fields-recompute.ts
+--write-numbers`; every other run of that tool recomputes them and fails if these bytes differ. Each records what the two
+serialisers here emit on an input this repository chose, so none is a copy of anything published.
 
 
 ## Appended 2026-09-01 — three `refs/` entries this table did not carry
@@ -3034,3 +3043,29 @@ repository's `LICENSE`, `LICENSE-CODE` and `README.md`. The repository README li
 | `fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace/out/samples/envelope_payment03_commit_succeeded.json` | `ddbe2c05af7f7ebb0b74d478de061931922a6073` | 3844 | `54b71dd5d48358750570105060a1445aa569954f71191d89068c832e99dfd9c4` |
 | `fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace/out/samples/envelope_payment03_policy_check.json` | `98f40c443e1a41a9052e23a42c8b0074758c1ddd` | 3572 | `ce9d4debd128ab8c91eea9efa5cf8a6d8c482793773ec29f05a0acf258dd5748` |
 | `fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/examples/golden-trace/out/samples/envelope_reconciliation.json` | `38a91e50df557b3f035bdbc2ef9a252bbb1e7f21` | 3163 | `3742383a5023600170194b83464ac8039bdd228d2124230192169768e0e2d836` |
+
+## Appended 2026-09-29 — x402 PR #2853 `compliance_fields.md` at `8e0a3fc6` and at `b8a81c09`, and PR #3000 `attestations.md` at `cb666052`
+
+For the community-vector runs (handoff `CC_HANDOFF_2026-09-29_community-vector-runs_rev6.md`, B-184). All three files
+were taken with `git cat-file blob <commit>:<path>` from one blob-less clone outside the repository
+(`git -c core.autocrlf=false clone --filter=blob:none --no-checkout https://github.com/x402-foundation/x402`,
+2026-09-29T19:10:58Z) after each commit was fetched by ref or by id. None was fetched from a branch name. Copied at 2026-09-29T19:18:05Z.
+`git hash-object` over each copy reproduced its blob id; each carries 0 CR bytes. The pull requests are open, and
+both refs are GitHub's `refs/pull/N/head`, so every entry is `role: historical` (see its `role_reason`).
+
+| field | #2853 at `8e0a3fc6` | #2853 at `b8a81c09` (head on 29 Sep) | #3000 at `cb666052` |
+|---|---|---|---|
+| ref | `refs/pull/2853/head` on 11 Sep (17 Sep handoff) | `refs/pull/2853/head` (`git ls-remote` 19:10:28Z) | `refs/pull/3000/head` (`git ls-remote` 19:10:30Z) |
+| commit | `8e0a3fc6ce3ae0323af73cf11e8c37220da4da5e` | `b8a81c099d0d30607416211f819db8a40bda5371` | `cb66605297aefe71476edef118b322a93c27583a` |
+| subject | `specs(compliance-fields): inclusion proofs and checkpoint cosignatures are not a completeness attestation` | `specs(compliance-fields): full-invoice members by tier, not by VAT category; issuer-only sequences evidence ordering only; buyer declaration digest` | `spec(attestations): fold in the three amendments discussed in-thread` |
+| author date | 2026-08-22T03:08:41-07:00 | 2026-09-28T07:03:39-07:00 (committed 08:17:14-07:00) | 2026-08-03T08:22:21-05:00 |
+
+`8e0a3fc6` is an ancestor of `b8a81c09`, two commits behind (`4f1f494b`, 2026-09-27, and `b8a81c09`). Between the two, the file
+grows from 218 to 247 lines (`git diff --no-index --stat`: 43 insertions, 14 deletions). The "Canonicalization (normative)"
+section, its three-row vector table and the "Numbers (normative)" paragraph are byte-identical in both.
+
+| fixture path | upstream blob | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/x402-pr-2853-compliance-fields/8e0a3fc6ce3ae0323af73cf11e8c37220da4da5e/specs/extensions/compliance_fields.md` | `b9c08aaaab07ae1bf6d8b1828157fcb00a3e4094` | 18330 | `0ab527e727937d0f4079551b7eb4dbf6031c09843067150782d7ed862b5431b8` |
+| `fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/specs/extensions/compliance_fields.md` | `7af5740cf7e38c1ad4af25959c04a93719dc6796` | 32743 | `aef9430700989abcfd50e2f678df50d174269dd2a609de32aad7bf8fa1b8f719` |
+| `fixtures/x402-pr-3000-attestations/cb66605297aefe71476edef118b322a93c27583a/specs/extensions/attestations.md` | `07dc0852c5fa508dbe597d5d937c2b8c828d28eb` | 21392 | `56727576091b1700f609581948806bb66454f6772cc60f54034854f9f6089e62` |

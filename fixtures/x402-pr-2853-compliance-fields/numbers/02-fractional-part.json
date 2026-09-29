@@ -1,0 +1,32 @@
+{
+  "case": "a value with a fractional part in a money-bearing member",
+  "input_bytes": "{\"tax\":{\"breakdown\":[{\"taxable\":1.10}]}}",
+  "input_sha256": "a7d67f67f98937e000684122e8a88187113224f1fdc4a3b6bf6c50a6a6c77cc9",
+  "typescript": {
+    "parser": "token-preserving parser (this script), then chirindo jcs",
+    "parsed_as": "1.10 -> Number 1.1",
+    "jcs": "{\"tax\":{\"breakdown\":[{\"taxable\":1.1}]}}",
+    "recordDigest": "0xd9ed92f542ad472aa087e9a27008b6e46bf60fbefded46980f91b3f689efd3f9"
+  },
+  "typescript_json_parse": {
+    "parser": "JSON.parse, then chirindo jcs",
+    "parsed_as": "numbers 1.1",
+    "jcs": "{\"tax\":{\"breakdown\":[{\"taxable\":1.1}]}}",
+    "recordDigest": "0xd9ed92f542ad472aa087e9a27008b6e46bf60fbefded46980f91b3f689efd3f9"
+  },
+  "python": {
+    "parser": "json.loads, then tools/asqav_envelope_hash.py jcs",
+    "parsed_as": "float 1.1",
+    "jcs": "{\"tax\":{\"breakdown\":[{\"taxable\":1.1}]}}",
+    "recordDigest": "0xd9ed92f542ad472aa087e9a27008b6e46bf60fbefded46980f91b3f689efd3f9"
+  },
+  "serialisers_agree": true,
+  "specification": {
+    "pinned": "fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/specs/extensions/compliance_fields.md",
+    "decides_this_case": true,
+    "line": 198,
+    "quote": "A record containing a non-integer JSON number anywhere is non-conformant. Verifiers MUST reject it before computing `recordDigest`.",
+    "sentence": "Decided: the record is non-conformant and a verifier rejects it before any digest, so no `recordDigest` is defined for these bytes and the canonical forms recorded here are what each serialiser would emit, not a conformant digest."
+  },
+  "generated_by": "npx tsx tools/compliance-fields-recompute.ts --write-numbers"
+}

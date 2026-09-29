@@ -1986,6 +1986,87 @@ that the bundle is internally consistent under its own procedure, not that any e
 The `inferred` chain-head reading is this registry's own. If the author meant another envelope, all 5 rows
 would have to be re-read.
 
+## I. x402 PR #2853 `compliance-fields`: the inline vectors and the number cases (appended 2026-09-29)
+
+Pinned at `fixtures/x402-pr-2853-compliance-fields/<commit>/specs/extensions/compliance_fields.md` at two commits, and
+PR #3000's `attestations.md` at `fixtures/x402-pr-3000-attestations/cb66605297aefe71476edef118b322a93c27583a/`
+(`fixtures/provenance.md`, section "Appended 2026-09-29 — x402 PR #2853 `compliance_fields.md` at `8e0a3fc6` and at
+`b8a81c09`, and PR #3000 `attestations.md` at `cb666052`"). Both pull requests are open, so all three entries are
+`role: historical`. Everything below is a **recomputation** by `tools/compliance-fields-recompute.ts`: two serialisers,
+each parsing the raw input bytes itself, and keccak256 from `@noble/hashes`. The pull request carries no checker of
+its own, so there is no reproduction to report.
+
+### I1. The head moved; the canonicalization text did not
+
+On 11 Sep the head of `refs/pull/2853/head` was `8e0a3fc6`. On 29 Sep it is `b8a81c09`, two commits later
+(`4f1f494b` of 27 Sep, then `b8a81c09` of 28 Sep). GitHub still serves `8e0a3fc6`, and both are pinned. The file
+grows from 218 to 247 lines (43 insertions, 14 deletions), in tiers, VAT treatment, sequential numbering and the
+new `buyer.declarationDigest`. The "Canonicalization (normative)" section, 3,969 bytes including its three-row
+table and the "Numbers (normative)" paragraph, is byte-identical at both commits. PR #3000 is still at `cb666052`.
+It is pinned for the record, and nothing runs from it.
+
+### I2. The three inline vectors recompute, with both serialisers, at both commits
+
+For each row of the table (head lines 206-208), the input was canonicalized by both serialisers, which agreed
+byte for byte. The canonical form equals the table's, and `keccak256(utf8(canonical))` equals the table's
+`recordDigest`. Keccak256 over the table's own canonical-form string, with no serialiser involved, gives the
+same three values: `0x84fc3d9f…dd04`, `0x426b770f…7e81b`, `0x81086b58…b250`. The head also publishes one more
+digest over literal bytes (line 101): `buyer.declarationDigest` over the 15 raw bytes `{"b":"x","a":1}`, with no
+canonicalization, is `0x31816947…94e6`, and it recomputes. The second and third `recordDigest` values are also
+the `expected_digest` of Tersign's p3 and p13 (section G). They are the same bytes digested the same way,
+so this is the same claim appearing in two places, not two independent confirmations.
+
+### I3. The gap 0rkz named is closed in the text, and no inline vector exercises the rejection
+
+0rkz's comment of 29 July on PR #2853, from the pinned page bytes (`pr-2853_20260929T191831Z.html`): "neither
+vector exercises number serialization — the only number in either is 1 , which every implementation emits
+identically — and the money-bearing members are where §3.2.2.3 actually bites." The comment named two fixes.
+The text took the first: every money, rate and quantity member is a decimal string (line 196), and "A record
+containing a non-integer JSON number anywhere is non-conformant. Verifiers MUST reject it before computing
+`recordDigest`." (line 198). The third vector (line 208) pins the string-versus-number boundary for a decimal
+string. All three vectors are positive. No inline vector is a record the text requires a verifier to reject, so
+the MUST in line 198 is stated and not exercised.
+
+### I4. The five number cases, from the bytes
+
+One file per case under `fixtures/x402-pr-2853-compliance-fields/numbers/`, written by the tool. TS below means
+this script's token-preserving parser followed by the repository's JCS; PY means `json.loads` followed by
+`tools/asqav_envelope_hash.py`.
+
+| case | TS | PY | does the pinned text decide it? |
+|---|---|---|---|
+| 01 `seq` 2^53, `correctionSeq` 2^53+1 | refused: a BigInt has no JSON form (the plain `JSON.parse` path silently rounds 2^53+1 to 2^53) | refused: its own bound, \|n\| ≥ 2^53 | **open**: line 196 describes the `int` members as "well inside" the exact range and gives no bound or verifier action |
+| 02 `taxable: 1.10` | `1.1` | `1.1` | **decided**: line 198, reject before any digest |
+| 03 `seq: 1e2` | `100` | `100` | **open**: "non-integer JSON number" does not say token or value; `1e2` is an exponent token with an integer value |
+| 04 `seq: -0` | `0` | `0` | **open**: integer-valued, and nothing says whether it is an admissible `int`; it digests the same as `0` |
+| 05 `rate: 0.00001` | `0.00001` | `1e-05` | **decided**: non-integer, so line 198 rejects it before any digest |
+
+Case 5 is the one rev 1 asked for: a finite double whose shortest round-trip form differs between the two
+serialisers. It exists, and the defect is ours, not the specification's (I5).
+
+### I5. Our Python serialiser does not follow ECMAScript Number::toString in two bands
+
+`tools/asqav_envelope_hash.py` emits Python's `repr` for any float that is not an integer below 2^53, and refuses only
+|x| ≥ 1e21 or |x| < 1e-6. The pinned text says RFC 8785 §3.2.2.3 serializes through ECMAScript
+`Number::toString` (line 200), and between those bounds `repr` and ECMAScript part in two bands:
+
+- 2^53 ≤ |x| < 1e21, integer-valued floats: `repr` gives `9007199254740994.0` below 1e16 and exponent form
+  (`1e+16`, `1.2345678901234568e+20`) from 1e16. ECMAScript gives `9007199254740994`, `10000000000000000` and
+  `123456789012345680000`.
+- 1e-6 ≤ |x| < 1e-4: `repr` gives `1e-05`, ECMAScript `0.00001`.
+
+The probes are recorded in case file 05. In the walker, such a value yields `serializer_disagreement`, which fails
+the run, never a match. The run at this commit reports 0, so no digest in this repository was compared on such a
+value. **Flagged, not fixed here:** that module is the independent serialiser every walker digest is checked
+against, and changing a control belongs in its own change.
+
+### I6. What I1–I5 do not establish
+
+RFC 8785 is not pinned in this tree, and ECMAScript behaviour is observed from Node v24.13.0 alone. Line 200's
+description of §3.2.2.3 is the specification's, quoted and not checked against the RFC. The specification is a
+pull request and may change again; every row here is tied to the commit it was read at. Nothing here verifies
+an attestation or a signature, or checks any rule outside the canonicalization section.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`

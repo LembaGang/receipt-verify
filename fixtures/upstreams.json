@@ -166,6 +166,15 @@
         "rows": "every file under `registry/`: the records, their reports and inputs, the built index.json and badges, the schema, the methodology documents and the README",
         "reason_code": "repository_record",
         "reason": "The public record of verifications this repository executed and published, not corpus data fetched from anyone: every file under registry/ is written here, by tools/registry.ts or by hand, and nothing upstream of it exists that could drift. The code is reused rather than widened because its operative claim, that the path was never fetched and has nothing upstream, is exactly true here, and because packages/ already carries it for the same class of artefact, this repository's own signed output; a sixth code would split one class across two and change no decision an agent makes about either."
+      },
+      {
+        "id": "compliance-fields-number-vectors",
+        "paths": [
+          "fixtures/x402-pr-2853-compliance-fields/numbers/*"
+        ],
+        "rows": "the 5 rows for fixtures/x402-pr-2853-compliance-fields/numbers/ in the 'Generated here, not snapshotted' table of fixtures/provenance.md",
+        "reason_code": "generated_here",
+        "reason": "Written by tools/compliance-fields-recompute.ts --write-numbers on 2026-09-29: one file per number-serialisation case, each recording what the two serialisers here emit on bytes this repository chose, so none is a copy of any published artifact."
       }
     ]
   },
@@ -2872,6 +2881,72 @@
         "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279"
       ],
       "provenance_section": "Appended 2026-09-29 — the AXES Golden Trace v2 at tag `corpus/2026-08-08-gt-v2` (`776cc0b5`)"
+    },
+    {
+      "id": "x402-pr-2853-compliance-fields/8e0a3fc6",
+      "kind": "git",
+      "role": "historical",
+      "repo": "https://github.com/x402-foundation/x402",
+      "ref": "refs/pull/2853/head",
+      "ref_source": "Pinned at the commit the 17 Sep handoff recorded as the head of refs/pull/2853/head on 11 Sep. On 29 Sep `git ls-remote https://github.com/x402-foundation/x402 refs/pull/2853/head` (19:10:28Z) printed b8a81c099d0d30607416211f819db8a40bda5371 instead; `git fetch origin 8e0a3fc6ce3ae0323af73cf11e8c37220da4da5e` into a blob-less clone outside the repository (19:11:10Z) succeeded, so GitHub still serves it, and `git merge-base --is-ancestor` shows it is an ancestor of b8a81c09 (two commits behind). The file was taken with `git cat-file blob`.",
+      "pinned_commit": "8e0a3fc6ce3ae0323af73cf11e8c37220da4da5e",
+      "paths": [
+        {
+          "path": "specs/extensions/compliance_fields.md",
+          "pinned_blob": "b9c08aaaab07ae1bf6d8b1828157fcb00a3e4094",
+          "sha256": "0ab527e727937d0f4079551b7eb4dbf6031c09843067150782d7ed862b5431b8",
+          "check": "fail"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/x402-pr-2853-compliance-fields/8e0a3fc6ce3ae0323af73cf11e8c37220da4da5e"
+      ],
+      "provenance_section": "Appended 2026-09-29 — x402 PR #2853 `compliance_fields.md` at `8e0a3fc6` and at `b8a81c09`, and PR #3000 `attestations.md` at `cb666052`",
+      "role_reason": "A pull-request head is not a tip this repository tracks, and tools/drift.ts cannot clone `refs/pull/N/head` with `--branch`, so this is an evidence pin that drift reports `not_checked`. Superseded as the head by `b8a81c09` on a date between 11 and 29 Sep: the 17 Sep handoff recorded `8e0a3fc6` as the head on 11 Sep, and the next commit on the branch, 4f1f494b, carries commit date 2026-09-27T15:13:23-07:00."
+    },
+    {
+      "id": "x402-pr-2853-compliance-fields/b8a81c09",
+      "kind": "git",
+      "role": "historical",
+      "repo": "https://github.com/x402-foundation/x402",
+      "ref": "refs/pull/2853/head",
+      "ref_source": "`git ls-remote https://github.com/x402-foundation/x402 refs/pull/2853/head` at 2026-09-29T19:10:28Z printed `b8a81c099d0d30607416211f819db8a40bda5371`; the commit was then fetched into a blob-less clone outside the repository (`git clone --filter=blob:none --no-checkout`, then `git fetch origin refs/pull/2853/head`) and the file taken with `git cat-file blob`. The Lead resolved the same value three times earlier on 29 Sep.",
+      "pinned_commit": "b8a81c099d0d30607416211f819db8a40bda5371",
+      "paths": [
+        {
+          "path": "specs/extensions/compliance_fields.md",
+          "pinned_blob": "7af5740cf7e38c1ad4af25959c04a93719dc6796",
+          "sha256": "aef9430700989abcfd50e2f678df50d174269dd2a609de32aad7bf8fa1b8f719",
+          "check": "fail"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371"
+      ],
+      "provenance_section": "Appended 2026-09-29 — x402 PR #2853 `compliance_fields.md` at `8e0a3fc6` and at `b8a81c09`, and PR #3000 `attestations.md` at `cb666052`",
+      "role_reason": "A pull-request head is not a tip this repository tracks, and tools/drift.ts cannot clone `refs/pull/N/head` with `--branch`, so this is an evidence pin that drift reports `not_checked`."
+    },
+    {
+      "id": "x402-pr-3000-attestations/cb666052",
+      "kind": "git",
+      "role": "historical",
+      "repo": "https://github.com/x402-foundation/x402",
+      "ref": "refs/pull/3000/head",
+      "ref_source": "`git ls-remote https://github.com/x402-foundation/x402 refs/pull/3000/head` at 2026-09-29T19:10:30Z printed `cb66605297aefe71476edef118b322a93c27583a`, unchanged from the 17 Sep record; the commit was fetched into a blob-less clone outside the repository (`git fetch origin refs/pull/3000/head`, 19:11:07Z) and the file taken with `git cat-file blob`.",
+      "pinned_commit": "cb66605297aefe71476edef118b322a93c27583a",
+      "paths": [
+        {
+          "path": "specs/extensions/attestations.md",
+          "pinned_blob": "07dc0852c5fa508dbe597d5d937c2b8c828d28eb",
+          "sha256": "56727576091b1700f609581948806bb66454f6772cc60f54034854f9f6089e62",
+          "check": "fail"
+        }
+      ],
+      "corpus_dirs": [
+        "fixtures/x402-pr-3000-attestations/cb66605297aefe71476edef118b322a93c27583a"
+      ],
+      "provenance_section": "Appended 2026-09-29 — x402 PR #2853 `compliance_fields.md` at `8e0a3fc6` and at `b8a81c09`, and PR #3000 `attestations.md` at `cb666052`",
+      "role_reason": "A pull-request head is not a tip this repository tracks, and tools/drift.ts cannot clone `refs/pull/N/head` with `--branch`, so this is an evidence pin that drift reports `not_checked`. Pinned for the record; nothing in this repository runs from it."
     }
   ]
 }

@@ -1,0 +1,32 @@
+{
+  "case": "an exponent-form token whose value is an integer",
+  "input_bytes": "{\"seq\":1e2}",
+  "input_sha256": "2f59c1d36bfb6d231c831458433bd6be88d1906784d7f6e5be1a52d8032f9ff6",
+  "typescript": {
+    "parser": "token-preserving parser (this script), then chirindo jcs",
+    "parsed_as": "1e2 -> Number 100",
+    "jcs": "{\"seq\":100}",
+    "recordDigest": "0x3e20244e3fe63ef4b0ce96ddfcf98fa593e6f5d573e42336f715460b92dcbd4f"
+  },
+  "typescript_json_parse": {
+    "parser": "JSON.parse, then chirindo jcs",
+    "parsed_as": "numbers 100",
+    "jcs": "{\"seq\":100}",
+    "recordDigest": "0x3e20244e3fe63ef4b0ce96ddfcf98fa593e6f5d573e42336f715460b92dcbd4f"
+  },
+  "python": {
+    "parser": "json.loads, then tools/asqav_envelope_hash.py jcs",
+    "parsed_as": "float 100.0",
+    "jcs": "{\"seq\":100}",
+    "recordDigest": "0x3e20244e3fe63ef4b0ce96ddfcf98fa593e6f5d573e42336f715460b92dcbd4f"
+  },
+  "serialisers_agree": true,
+  "specification": {
+    "pinned": "fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/specs/extensions/compliance_fields.md",
+    "decides_this_case": false,
+    "line": 198,
+    "quote": "A record containing a non-integer JSON number anywhere is non-conformant.",
+    "sentence": "Left open: `1e2` is an exponent TOKEN whose VALUE is the integer 100, and the text does not say whether \"non-integer JSON number\" is read by token or by value. \"(no exponent notation)\" in the same paragraph governs decimal strings, not number tokens."
+  },
+  "generated_by": "npx tsx tools/compliance-fields-recompute.ts --write-numbers"
+}

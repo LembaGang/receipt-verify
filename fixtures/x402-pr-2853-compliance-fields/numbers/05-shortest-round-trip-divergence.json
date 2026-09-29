@@ -1,0 +1,88 @@
+{
+  "case": "a finite double whose shortest round-trip form differs between the two serialisers",
+  "input_bytes": "{\"tax\":{\"breakdown\":[{\"rate\":0.00001}]}}",
+  "input_sha256": "1e48be3a53ac0d576802fe1c9aa9cc3b5313a743a4476477b77d1bd7f250592f",
+  "typescript": {
+    "parser": "token-preserving parser (this script), then chirindo jcs",
+    "parsed_as": "0.00001 -> Number 0.00001",
+    "jcs": "{\"tax\":{\"breakdown\":[{\"rate\":0.00001}]}}",
+    "recordDigest": "0x0efd092136e298579e29f008565b2761507f28f6b6fc840aab41cde4e858f601"
+  },
+  "typescript_json_parse": {
+    "parser": "JSON.parse, then chirindo jcs",
+    "parsed_as": "numbers 0.00001",
+    "jcs": "{\"tax\":{\"breakdown\":[{\"rate\":0.00001}]}}",
+    "recordDigest": "0x0efd092136e298579e29f008565b2761507f28f6b6fc840aab41cde4e858f601"
+  },
+  "python": {
+    "parser": "json.loads, then tools/asqav_envelope_hash.py jcs",
+    "parsed_as": "float 1e-05",
+    "jcs": "{\"tax\":{\"breakdown\":[{\"rate\":1e-05}]}}",
+    "recordDigest": "0x945588bb27efa2aaa920089a94a595ebbdafc1c2ddecd5ac45f80229cad352cc"
+  },
+  "serialisers_agree": false,
+  "specification": {
+    "pinned": "fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/specs/extensions/compliance_fields.md",
+    "decides_this_case": true,
+    "line": 200,
+    "quote": "RFC 8785 §3.2.2.3 serializes JSON numbers through ECMAScript `Number::toString` over IEEE 754 doubles",
+    "sentence": "One exists: the TypeScript side emits `0.00001` (ECMAScript Number::toString, the form the text names) and our Python serialiser emits `1e-05`. The value is non-integer, so the MUST-reject sentence decides the record before any digest; the divergence is ours, in tools/asqav_envelope_hash.py, not the specification's."
+  },
+  "generated_by": "npx tsx tools/compliance-fields-recompute.ts --write-numbers",
+  "probes": [
+    {
+      "input_bytes": "{\"x\":0.00001}",
+      "typescript_jcs": "{\"x\":0.00001}",
+      "python_jcs": "{\"x\":1e-05}",
+      "agree": false
+    },
+    {
+      "input_bytes": "{\"x\":0.0001}",
+      "typescript_jcs": "{\"x\":0.0001}",
+      "python_jcs": "{\"x\":0.0001}",
+      "agree": true
+    },
+    {
+      "input_bytes": "{\"x\":9007199254740994.0}",
+      "typescript_jcs": "{\"x\":9007199254740994}",
+      "python_jcs": "{\"x\":9007199254740994.0}",
+      "agree": false
+    },
+    {
+      "input_bytes": "{\"x\":10000000000000000.0}",
+      "typescript_jcs": "{\"x\":10000000000000000}",
+      "python_jcs": "{\"x\":1e+16}",
+      "agree": false
+    },
+    {
+      "input_bytes": "{\"x\":123456789012345680000.0}",
+      "typescript_jcs": "{\"x\":123456789012345680000}",
+      "python_jcs": "{\"x\":1.2345678901234568e+20}",
+      "agree": false
+    },
+    {
+      "input_bytes": "{\"x\":0.1}",
+      "typescript_jcs": "{\"x\":0.1}",
+      "python_jcs": "{\"x\":0.1}",
+      "agree": true
+    },
+    {
+      "input_bytes": "{\"x\":0.30000000000000004}",
+      "typescript_jcs": "{\"x\":0.30000000000000004}",
+      "python_jcs": "{\"x\":0.30000000000000004}",
+      "agree": true
+    },
+    {
+      "input_bytes": "{\"x\":5e-324}",
+      "typescript_jcs": "{\"x\":5e-324}",
+      "python_jcs": "refused: ValueError: number in an exponent range where ES6 and Python notation may diverge: 5e-324",
+      "agree": null
+    },
+    {
+      "input_bytes": "{\"x\":1e21}",
+      "typescript_jcs": "{\"x\":1e+21}",
+      "python_jcs": "refused: ValueError: number in an exponent range where ES6 and Python notation may diverge: 1e+21",
+      "agree": null
+    }
+  ]
+}

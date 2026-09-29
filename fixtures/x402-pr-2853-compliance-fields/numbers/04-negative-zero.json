@@ -1,0 +1,32 @@
+{
+  "case": "negative zero",
+  "input_bytes": "{\"seq\":-0}",
+  "input_sha256": "7858b9ae0c467a2835f623d4e5801d73a00a97648f439bcc3d5db7eb9309a665",
+  "typescript": {
+    "parser": "token-preserving parser (this script), then chirindo jcs",
+    "parsed_as": "-0 -> Number -0",
+    "jcs": "{\"seq\":0}",
+    "recordDigest": "0xf391bed09d05f6d1feaa3ebeb9ca0e65f9f831b0784b8d66063bf567b867f1f8"
+  },
+  "typescript_json_parse": {
+    "parser": "JSON.parse, then chirindo jcs",
+    "parsed_as": "numbers -0",
+    "jcs": "{\"seq\":0}",
+    "recordDigest": "0xf391bed09d05f6d1feaa3ebeb9ca0e65f9f831b0784b8d66063bf567b867f1f8"
+  },
+  "python": {
+    "parser": "json.loads, then tools/asqav_envelope_hash.py jcs",
+    "parsed_as": "int 0",
+    "jcs": "{\"seq\":0}",
+    "recordDigest": "0xf391bed09d05f6d1feaa3ebeb9ca0e65f9f831b0784b8d66063bf567b867f1f8"
+  },
+  "serialisers_agree": true,
+  "specification": {
+    "pinned": "fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/specs/extensions/compliance_fields.md",
+    "decides_this_case": false,
+    "line": 196,
+    "quote": "The only members that MAY be JSON numbers are the ones declared `int` above",
+    "sentence": "Left open: `-0` is integer-valued, so the non-integer rule does not obviously reach it. Nothing says whether it is an admissible `int`, and both serialisers here emit `0`, so a record carrying `-0` and one carrying `0` share a digest."
+  },
+  "generated_by": "npx tsx tools/compliance-fields-recompute.ts --write-numbers"
+}

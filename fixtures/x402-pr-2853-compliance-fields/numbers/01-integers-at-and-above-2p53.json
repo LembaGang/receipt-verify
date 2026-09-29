@@ -1,0 +1,34 @@
+{
+  "case": "integers at and above 2^53 in members the record declares `int`",
+  "input_bytes": "{\"correctionSeq\":9007199254740993,\"issuedAt\":1735689600,\"seq\":9007199254740992}",
+  "input_sha256": "a25ed0c0b6ebaa173c0ccad008267adbbc55d21c0fbc7848198f790ec9b9b5a9",
+  "typescript": {
+    "parser": "token-preserving parser (this script), then chirindo jcs",
+    "parsed_as": "9007199254740993 -> BigInt 9007199254740993n (exact); 1735689600 -> Number 1735689600; 9007199254740992 -> BigInt 9007199254740992n (exact)",
+    "jcs": null,
+    "error": "TypeError: Do not know how to serialize a BigInt",
+    "recordDigest": null
+  },
+  "typescript_json_parse": {
+    "parser": "JSON.parse, then chirindo jcs",
+    "parsed_as": "numbers 9007199254740992, 1735689600, 9007199254740992",
+    "jcs": "{\"correctionSeq\":9007199254740992,\"issuedAt\":1735689600,\"seq\":9007199254740992}",
+    "recordDigest": "0xf8ad27705ec1c687fe55c41324784b9d1917c736efc06141bea013ee4287ff74"
+  },
+  "python": {
+    "parser": "json.loads, then tools/asqav_envelope_hash.py jcs",
+    "parsed_as": "int 9007199254740993; int 1735689600; int 9007199254740992",
+    "jcs": null,
+    "error": "ValueError: integer outside the IEEE754 safe range: 9007199254740993",
+    "recordDigest": null
+  },
+  "serialisers_agree": null,
+  "specification": {
+    "pinned": "fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/specs/extensions/compliance_fields.md",
+    "decides_this_case": false,
+    "line": 196,
+    "quote": "each is an exact integer well inside IEEE 754's exactly-representable range, which every RFC 8785 implementation serializes identically",
+    "sentence": "The text describes the `int` members as well inside the exactly-representable range, and it states no bound and no verifier action for one that is not, so what a verifier does with seq = 2^53 + 1 is left open. The MUST-reject sentence covers non-integer numbers only."
+  },
+  "generated_by": "npx tsx tools/compliance-fields-recompute.ts --write-numbers"
+}
