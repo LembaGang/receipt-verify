@@ -149,6 +149,22 @@ and reported, with conviction, that a settlement carrying one plainly visible tr
 The token is now taken from the contract that emitted `AuthorizationUsed`, which is EIP-3009's own
 event, and the test asserts both halves so the wrong answer cannot come back green.
 
+Correction, 2026-10-01. The paragraph above says the only tie between the paid receipt in the second
+package and the payment is that both sit in one directory with instants three seconds apart. There
+is a second tie, the exchange code XNYS in the URL that was paid for and in the receipt, and the
+interval is about two seconds, not three: the receipt's `issued_at` is 2026-09-07T16:37:32.817Z and
+the block's own timestamp is 16:37:35Z, 2.183 s later. Both ties are circumstantial and no signature
+covers both, so B-81 stays open. Registry record `2026-09-07-x402-settlement-base-0x94bfba79-r2`
+supersedes the record that carried the old wording and states the ties this way; it also records, as
+a finding against our own receipt, that the receipt's signed coverage cites a halt-monitor
+heartbeat, `feed_last_run` 16:37:33.656Z, dated 0.839 s after its own `issued_at` while `feed_state`
+reads `live`. The paragraph above also says that the PayAI facilitator "batches through Multicall3".
+Registry record 7 (`2026-09-16-observation-x402-base-payai-0x9ecf68be-r2`, commit `596bfe1`)
+withdrew that inference for that transaction, whose `aggregate3` array holds one call: it was routed
+through Multicall3 and was not batched with another settlement, and nothing here establishes how
+PayAI batches in general. That the transaction's `to` is Multicall3 and not the token stands, and so
+does the adapter fix.
+
 The x402 v2 specification is pinned as bytes for the first time, at the commit
 `fixtures/upstreams.json` had watched by blob id since 8 September. The fetched bytes hash to the
 sha256 that entry has carried since then, so the pin was checked rather than restated — had they
