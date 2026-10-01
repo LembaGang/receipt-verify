@@ -159,7 +159,7 @@ supersedes the record that carried the old wording and states the ties this way;
 a finding against our own receipt, that the receipt's signed coverage cites a halt-monitor
 heartbeat, `feed_last_run` 16:37:33.656Z, dated 0.839 s after its own `issued_at` while `feed_state`
 reads `live`. The paragraph above also says that the PayAI facilitator "batches through Multicall3".
-Registry record 7 (`2026-09-16-observation-x402-base-payai-0x9ecf68be-r2`, commit `596bfe1`)
+The registry record `2026-09-16-observation-x402-base-payai-0x9ecf68be-r2` (commit `596bfe1`)
 withdrew that inference for that transaction, whose `aggregate3` array holds one call: it was routed
 through Multicall3 and was not batched with another settlement, and nothing here establishes how
 PayAI batches in general. That the transaction's `to` is Multicall3 and not the token stands, and so
