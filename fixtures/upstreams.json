@@ -2874,9 +2874,17 @@
           "pinned_blob": "38a91e50df557b3f035bdbc2ef9a252bbb1e7f21",
           "sha256": "3742383a5023600170194b83464ac8039bdd228d2124230192169768e0e2d836",
           "check": "fail"
+        },
+        {
+          "path": "NOTICE",
+          "pinned_blob": "c0ea30a56130710752972389b5e9c3e840b5a0d0",
+          "sha256": "7ee8024dacbb707ec89120848a5abb999146b5295fd57e26dd3af319a007f92d",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's NOTICE file, pinned because Apache-2.0 §4(d) requires a redistribution to carry the attribution notices it contains; the repository NOTICE quotes it. No check reads it, so a change to it changes no result here."
         }
       ],
-      "tree_note": "Not the whole tree: examples/golden-trace/ and examples/golden-trace-ind/ whole (each with its generate_golden_trace.py and out/), plus LICENSE, LICENSE-CODE and README.md; 87 files. Each out/envelopes.jsonl holds 76 envelopes. The generator imports tools/axes_canonical.py from the AXES tree, which is not pinned.",
+      "tree_note": "Not the whole tree: examples/golden-trace/ and examples/golden-trace-ind/ whole (each with its generate_golden_trace.py and out/), plus LICENSE, LICENSE-CODE and README.md; 87 files. Each out/envelopes.jsonl holds 76 envelopes. The generator imports tools/axes_canonical.py from the AXES tree, which is not pinned. On 2026-10-01 NOTICE was added for the B-184 licence hold, so the count is now 88 files.",
       "corpus_dirs": [
         "fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279"
       ],
@@ -2896,6 +2904,22 @@
           "pinned_blob": "b9c08aaaab07ae1bf6d8b1828157fcb00a3e4094",
           "sha256": "0ab527e727937d0f4079551b7eb4dbf6031c09843067150782d7ed862b5431b8",
           "check": "fail"
+        },
+        {
+          "path": "LICENSE",
+          "pinned_blob": "b09cd7856d58590578ee1a4f3ad45d1310a97f87",
+          "sha256": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's licence text, pinned for the record; no check reads it, so a change to it changes no result here."
+        },
+        {
+          "path": "NOTICE",
+          "pinned_blob": "25225ce54226551753ecb6fa592f08494fdbf1d5",
+          "sha256": "0b8a03260dc87d976ea6f24d7ff1fb3f8f361cff317f9dd0da0b8d96936eabf6",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's NOTICE file, pinned because Apache-2.0 §4(d) requires a redistribution to carry the attribution notices it contains; the repository NOTICE quotes it. No check reads it, so a change to it changes no result here."
         }
       ],
       "corpus_dirs": [
@@ -2918,6 +2942,22 @@
           "pinned_blob": "7af5740cf7e38c1ad4af25959c04a93719dc6796",
           "sha256": "aef9430700989abcfd50e2f678df50d174269dd2a609de32aad7bf8fa1b8f719",
           "check": "fail"
+        },
+        {
+          "path": "LICENSE",
+          "pinned_blob": "b09cd7856d58590578ee1a4f3ad45d1310a97f87",
+          "sha256": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's licence text, pinned for the record; no check reads it, so a change to it changes no result here."
+        },
+        {
+          "path": "NOTICE",
+          "pinned_blob": "25225ce54226551753ecb6fa592f08494fdbf1d5",
+          "sha256": "0b8a03260dc87d976ea6f24d7ff1fb3f8f361cff317f9dd0da0b8d96936eabf6",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's NOTICE file, pinned because Apache-2.0 §4(d) requires a redistribution to carry the attribution notices it contains; the repository NOTICE quotes it. No check reads it, so a change to it changes no result here."
         }
       ],
       "corpus_dirs": [
@@ -2940,6 +2980,22 @@
           "pinned_blob": "07dc0852c5fa508dbe597d5d937c2b8c828d28eb",
           "sha256": "56727576091b1700f609581948806bb66454f6772cc60f54034854f9f6089e62",
           "check": "fail"
+        },
+        {
+          "path": "LICENSE",
+          "pinned_blob": "b09cd7856d58590578ee1a4f3ad45d1310a97f87",
+          "sha256": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's licence text, pinned for the record; no check reads it, so a change to it changes no result here."
+        },
+        {
+          "path": "NOTICE",
+          "pinned_blob": "25225ce54226551753ecb6fa592f08494fdbf1d5",
+          "sha256": "0b8a03260dc87d976ea6f24d7ff1fb3f8f361cff317f9dd0da0b8d96936eabf6",
+          "check": "note",
+          "check_reason_code": "author_bookkeeping",
+          "check_reason": "The author's NOTICE file, pinned because Apache-2.0 §4(d) requires a redistribution to carry the attribution notices it contains; the repository NOTICE quotes it. No check reads it, so a change to it changes no result here."
         }
       ],
       "corpus_dirs": [

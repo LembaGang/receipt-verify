@@ -3141,3 +3141,38 @@ as required and `rfc8785` as optional; neither is installed here.
 | `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_outcome_refused.json` | `c6ce5197608900c7399893c68ccdc0ec831f7938` | 899 | `3e5ff9a80f3cea9bcc3437c4821f287f20f6f7006b1e7bf287c66e0059bfe9d5` |
 | `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_payto_signer.json` | `559525bc740894100d16fc6fa17c76c321055e33` | 902 | `4a9ff459fba10538ad5fc3c2e273f6ec86d49013ac801f5497710257a6377d79` |
 | `fixtures/x402-action-receipt/597f21455d0fb6d065c66a1bbc9d6dac3eeb8a35/vectors/pos_refunded.json` | `3b124db577a50b4bd4440308359e797f61c01fa2` | 903 | `58ffe266e53ece5729fbe780b78f56fc8b3e51c881d0855beaf5e0421f89d7ad` |
+
+## Appended 2026-10-01 — licence and NOTICE files for the 29 Sep corpora (B-184 push hold)
+
+For the licence commit that releases the B-184 push hold (handoff
+`CC_HANDOFF_2026-10-01_receipt-verify-licence-corrections-a11_rev4.md`, T1). Apache-2.0 §4(d) asks a
+redistribution to carry the attribution notices of any NOTICE file the work includes, so the AXES NOTICE and the
+x402 LICENSE and NOTICE are pinned beside the files already taken from those trees on 29 Sep. The AXES file was taken
+with `git cat-file blob` from a blob-less clone outside the repository
+(`git -c core.autocrlf=false clone --filter=blob:none --no-checkout https://github.com/magentixai/axes`,
+2026-10-01T18:43:28Z) after `git fetch origin 776cc0b571a6bdd3fdc3f6901688905a75c0e279`; `git ls-remote` at
+18:43:25Z still printed that commit for `refs/tags/corpus/2026-08-08-gt-v2^{}`. The x402 files were taken the same way
+from one blob-less clone of `https://github.com/x402-foundation/x402` (18:43:30Z) after each of the three pinned commits
+was fetched by id. None was fetched from a branch name. Copied at 2026-10-01T18:44:26Z. `git hash-object` over each
+copy reproduced its blob id; each carries 0 CR bytes. LICENSE and NOTICE are the same blob at all three x402 commits,
+so the three LICENSE copies share one blob id and the three NOTICE copies share another.
+
+`git ls-tree -r <commit> --name-only` lists, as licence or notice paths, `LICENSE`, `LICENSE-CODE` and `NOTICE` at
+AXES `776cc0b5`, and `LICENSE`, `NOTICE` and `typescript/packages/mechanisms/evm/NOTICE` at each x402 commit. The
+last sits in a package directory nothing here is pinned from and is not pinned; no licence or notice path lies between
+the x402 root and `specs/extensions/`.
+
+The four entries in `fixtures/upstreams.json` (`axes-golden-trace/corpus-2026-08-08-gt-v2`,
+`x402-pr-2853-compliance-fields/8e0a3fc6`, `x402-pr-2853-compliance-fields/b8a81c09`,
+`x402-pr-3000-attestations/cb666052`) keep `provenance_section` naming their 29 Sep sections; this section extends
+their `paths`, each new path with `check: note`.
+
+| fixture path | upstream blob | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/axes-golden-trace/776cc0b571a6bdd3fdc3f6901688905a75c0e279/NOTICE` | `c0ea30a56130710752972389b5e9c3e840b5a0d0` | 938 | `7ee8024dacbb707ec89120848a5abb999146b5295fd57e26dd3af319a007f92d` |
+| `fixtures/x402-pr-2853-compliance-fields/8e0a3fc6ce3ae0323af73cf11e8c37220da4da5e/LICENSE` | `b09cd7856d58590578ee1a4f3ad45d1310a97f87` | 11324 | `50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a` |
+| `fixtures/x402-pr-2853-compliance-fields/8e0a3fc6ce3ae0323af73cf11e8c37220da4da5e/NOTICE` | `25225ce54226551753ecb6fa592f08494fdbf1d5` | 574 | `0b8a03260dc87d976ea6f24d7ff1fb3f8f361cff317f9dd0da0b8d96936eabf6` |
+| `fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/LICENSE` | `b09cd7856d58590578ee1a4f3ad45d1310a97f87` | 11324 | `50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a` |
+| `fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/NOTICE` | `25225ce54226551753ecb6fa592f08494fdbf1d5` | 574 | `0b8a03260dc87d976ea6f24d7ff1fb3f8f361cff317f9dd0da0b8d96936eabf6` |
+| `fixtures/x402-pr-3000-attestations/cb66605297aefe71476edef118b322a93c27583a/LICENSE` | `b09cd7856d58590578ee1a4f3ad45d1310a97f87` | 11324 | `50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a` |
+| `fixtures/x402-pr-3000-attestations/cb66605297aefe71476edef118b322a93c27583a/NOTICE` | `25225ce54226551753ecb6fa592f08494fdbf1d5` | 574 | `0b8a03260dc87d976ea6f24d7ff1fb3f8f361cff317f9dd0da0b8d96936eabf6` |
