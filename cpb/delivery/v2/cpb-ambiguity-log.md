@@ -292,6 +292,19 @@ The alignment itself is a separate row, B-124, and is not done here: no behaviou
 session, and `prefixed-text` still fails closed with `representation_prefix_undefined` and disposition
 `unverified` until that work is written.
 
+**DATED ADDITION, 2026-10-01.** The draft's author answered this question in writing on 23 September
+2026. Since then draft-mih-sokolov-scitt-payload-binding-04.txt and
+draft-mih-sokolov-scitt-payload-binding-05.txt, as posted at the IETF archive, are pinned in this
+repository under `refs/`, at sha256 de06a6eade0306c46b2c1d0f1987a1a7d2d544909a1299e9af9053959cedb376
+and 938073e7ce4f4289ca6d45bebac0b319f2a701804eac5c32203124e65f2fb4fa. Lines 747 to 753 of -04 and
+lines 867 to 873 of -05 are byte-identical to lines 759 to 765 of -03: each seven-line range hashes
+to sha256 f6f8916dfa16e900a3788fdd9304987ff7dfc5d89bd118b0eee26cd6257d6b0d, and in each file the
+next non-blank line is "6.  Envelope Conventions". So the question the 2026-09-18 paragraph above
+leaves open, whether that paragraph stands unchanged in later revisions, is answered from bytes this
+repository now pins: it stands unchanged in -04 and in -05, and nothing here says anything about any
+later revision. The scope is stated rather than implied: only those three line ranges were compared,
+and nothing else in -04 or -05 was read for this addition.
+
 ### A12. Is §7.1's hex-to-bytes rule an "expressly defined conversion" for comparison?
 §5.1 lines 793-796:
 

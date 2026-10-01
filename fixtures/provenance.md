@@ -3176,3 +3176,28 @@ their `paths`, each new path with `check: note`.
 | `fixtures/x402-pr-2853-compliance-fields/b8a81c099d0d30607416211f819db8a40bda5371/NOTICE` | `25225ce54226551753ecb6fa592f08494fdbf1d5` | 574 | `0b8a03260dc87d976ea6f24d7ff1fb3f8f361cff317f9dd0da0b8d96936eabf6` |
 | `fixtures/x402-pr-3000-attestations/cb66605297aefe71476edef118b322a93c27583a/LICENSE` | `b09cd7856d58590578ee1a4f3ad45d1310a97f87` | 11324 | `50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a` |
 | `fixtures/x402-pr-3000-attestations/cb66605297aefe71476edef118b322a93c27583a/NOTICE` | `25225ce54226551753ecb6fa592f08494fdbf1d5` | 574 | `0b8a03260dc87d976ea6f24d7ff1fb3f8f361cff317f9dd0da0b8d96936eabf6` |
+
+## Appended 2026-10-01 — CPB -04 and -05, pinned for A11's dated addition (B-247)
+
+For the dated addition to A11 in `cpb/delivery/v2/cpb-ambiguity-log.md` (handoff
+`CC_HANDOFF_2026-10-01_receipt-verify-licence-corrections-a11_rev4.md`, T3, B-247). Both revisions were fetched
+over HTTPS from the IETF archive with the client `tools/drift.ts` uses (node `fetch`, `GET`, `redirect: "follow"`,
+no added headers) and saved as the response body byte-exact, with no re-serialisation. No other host was contacted
+for them, and nothing under `keys/` was touched. Both entries are `role: historical`; `-03` keeps `role: current`,
+because which revision is current is B-209's to decide.
+
+| path | source URL | retrieved (UTC) | bytes | sha256 |
+|---|---|---|---|---|
+| `refs/draft-mih-sokolov-scitt-payload-binding-04.txt` | `https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-04.txt` | 2026-10-01T19:02:03Z | 109494 | `de06a6eade0306c46b2c1d0f1987a1a7d2d544909a1299e9af9053959cedb376` |
+| `refs/draft-mih-sokolov-scitt-payload-binding-05.txt` | `https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-05.txt` | 2026-10-01T19:02:04Z | 115389 | `938073e7ce4f4289ca6d45bebac0b319f2a701804eac5c32203124e65f2fb4fa` |
+
+Both answered `HTTP 200`, `content-type: text/plain; charset=utf-8`, at the URL requested. `-04` carries
+**0 CR bytes** (2576 LF, 45 form feeds); its front matter dates it **9 September 2026** and its `Expires` line
+13 March 2027. `-05` carries **0 CR bytes** (2688 LF, 47 form feeds); its front matter dates it
+**11 September 2026** and its `Expires` line 15 March 2027. A GET for `-06` at 2026-10-01T19:02:04Z answered
+`HTTP 404` (`content-type: text/html; charset=utf-8`, 77030 bytes); nothing was pinned for it, and A11's addition
+does not cover it.
+
+Lines 747 to 753 of `-04` and lines 867 to 873 of `-05` each hash (`sed -n` over the seven lines, then sha256) to
+`f6f8916dfa16e900a3788fdd9304987ff7dfc5d89bd118b0eee26cd6257d6b0d`, the same as lines 759 to 765 of `-03`, and in
+each file the next non-blank line is `6.  Envelope Conventions`. Nothing else in `-04` or `-05` was compared.

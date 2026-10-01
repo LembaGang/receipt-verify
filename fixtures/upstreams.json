@@ -1500,6 +1500,30 @@
       }
     },
     {
+      "id": "draft-mih-sokolov-scitt-payload-binding-04",
+      "kind": "ietf-draft",
+      "role": "historical",
+      "name": "draft-mih-sokolov-scitt-payload-binding",
+      "pinned_rev": "04",
+      "url": "https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-04.txt",
+      "sha256": "de06a6eade0306c46b2c1d0f1987a1a7d2d544909a1299e9af9053959cedb376",
+      "pinned_file": "refs/draft-mih-sokolov-scitt-payload-binding-04.txt",
+      "role_reason": "Pinned on 2026-10-01 as the bytes behind the dated addition to A11 in cpb/delivery/v2/cpb-ambiguity-log.md (B-247). Nothing in cpb/ or test/cpb/ is graded against it. Which revision is current is B-209's to decide; until then the -03 entry keeps role current, and this one is an evidence pin that drift reports not_checked.",
+      "provenance_section": "Appended 2026-10-01 — CPB -04 and -05, pinned for A11's dated addition (B-247)"
+    },
+    {
+      "id": "draft-mih-sokolov-scitt-payload-binding-05",
+      "kind": "ietf-draft",
+      "role": "historical",
+      "name": "draft-mih-sokolov-scitt-payload-binding",
+      "pinned_rev": "05",
+      "url": "https://www.ietf.org/archive/id/draft-mih-sokolov-scitt-payload-binding-05.txt",
+      "sha256": "938073e7ce4f4289ca6d45bebac0b319f2a701804eac5c32203124e65f2fb4fa",
+      "pinned_file": "refs/draft-mih-sokolov-scitt-payload-binding-05.txt",
+      "role_reason": "Pinned on 2026-10-01 as the bytes behind the dated addition to A11 in cpb/delivery/v2/cpb-ambiguity-log.md (B-247). Nothing in cpb/ or test/cpb/ is graded against it. Which revision is current is B-209's to decide; until then the -03 entry keeps role current, and this one is an evidence pin that drift reports not_checked.",
+      "provenance_section": "Appended 2026-10-01 — CPB -04 and -05, pinned for A11's dated addition (B-247)"
+    },
+    {
       "id": "draft-mih-sokolov-scitt-payload-binding-02",
       "kind": "ietf-draft",
       "role": "historical",
