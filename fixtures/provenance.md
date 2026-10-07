@@ -3201,3 +3201,73 @@ does not cover it.
 Lines 747 to 753 of `-04` and lines 867 to 873 of `-05` each hash (`sed -n` over the seven lines, then sha256) to
 `f6f8916dfa16e900a3788fdd9304987ff7dfc5d89bd118b0eee26cd6257d6b0d`, the same as lines 759 to 765 of `-03`, and in
 each file the next non-blank line is `6.  Envelope Conventions`. Nothing else in `-04` or `-05` was compared.
+
+## Appended 2026-10-07 — `ho.receipt/v5.0`: a local Headless Oracle worker run under a throwaway key, and the synthetic set (test key, not production)
+
+Every file in this section is signed, where it is signed at all, by the **throwaway** Ed25519 key whose seed is published in `tools/make-ho-fixtures.mjs` (ASCII `test-throwaway-receipt-verify-04`, public key `118a0ce36fdab592fc3595b41fad6f783d2224735d4d24b67e7b6ba37c635352`, key id `test-throwaway-ho-ed25519-39d969ad`). **It is not a Headless Oracle production key and it is not the HO CI key `key_test_v1`.** Anyone can re-derive it; that is the point, and it is why nothing here proves anything about any real signer. Every file name carries `test-throwaway`.
+
+**Why the throwaway seed and not the HO CI key.** Both are public test material. This repository's convention is a seed published in the generator with `test-throwaway` in every key id (README, Fixtures), so the custody statement above is true of every file by inspection; the HO CI key would have been the one key here not named for what it is. Running the worker under the same seed keeps the cross-check exact: worker bytes and generator bytes verify under one key, and the generator compares a signature with the worker's byte for byte.
+
+### The worker run
+
+Headless Oracle worker at commit `d79bd181350d184218fbdc3aa925630c79fc535e`, taken with `git archive` into a scratch directory **outside** both repositories, because the HO working tree carried another session's uncommitted edits to `src/index.ts` and a run from it would not have been that commit. `node_modules` was a symlink to the HO checkout's; nothing was written into the HO repository. `wrangler 4.72.0`, `wrangler dev --local --port 8799 --persist-to <scratch>`, with no `.dev.vars` (the export has none) and exactly three `--var`s: `ED25519_PRIVATE_KEY` (the seed above, hex), `ED25519_PUBLIC_KEY`, `PUBLIC_KEY_ID`. Before the first request, `wrangler kv key put --local --persist-to <scratch>` wrote `halt_monitor_heartbeat` (`ran_at` 2026-10-07T19:17:49.519Z, `ok: true`) into `ORACLE_TELEMETRY` and a `source: REALTIME` override for `XNAS` into `ORACLE_OVERRIDES`; for the second batch the heartbeat was deleted, an operator override (`source: OVERRIDE`) written for `XNYS`, and 17 s allowed for the worker's 10 s override cache and 15 s heartbeat memo to lapse. The Tier 3 body came from a second run with `ED25519_PRIVATE_KEY` set to a non-hex string, so `signPayload` threw at Tier 1 and again at Tier 2. Responses were written by `curl -o`, byte-exact. Captured 2026-10-07 between 19:18:23Z and 19:19:15Z.
+
+| fixture path | what | bytes | sha256 |
+|---|---|---|---|
+| `fixtures/ho/worker-d79bd18/demo-XLON-tier1-not-covered.test-throwaway.json` | `GET /v5/demo?mic=XLON` — Tier 1 CLOSED, feed `not_covered` | 1589 | `4e3b961d733cbfcf835befc801d48bed092ca48e65e32a4f1b5221962ad9d61a` |
+| `fixtures/ho/worker-d79bd18/demo-XNAS-tier0-realtime-absent.test-throwaway.json` | `GET /v5/demo?mic=XNAS` — Tier 0 HALTED from the REALTIME override, heartbeat deleted (`absent`) | 1753 | `1e2ec16f1a2ddac1f31f4f79697ac2efe3e3e959cd038d3f392fa8c156986f94` |
+| `fixtures/ho/worker-d79bd18/demo-XNAS-tier0-realtime-live.test-throwaway.json` | `GET /v5/demo?mic=XNAS` — Tier 0 HALTED from a REALTIME override, feed `live` | 1797 | `de544a817f4cd36c59ad5eab31db4daa1271c628a8863495c2ed6bd737711438` |
+| `fixtures/ho/worker-d79bd18/demo-XNYS-tier0-operator-absent.test-throwaway.json` | `GET /v5/demo?mic=XNYS` — Tier 0 HALTED from an operator override, heartbeat deleted (`absent`) | 1749 | `0cf0dbb3149ce04b5916aeb8fbaf86729c00b76df7461e9da58ab960fa6e2eb8` |
+| `fixtures/ho/worker-d79bd18/demo-XNYS-tier1-live.test-throwaway.json` | `GET /v5/demo?mic=XNYS` — Tier 1 OPEN, feed `live` (heartbeat seeded 30 s earlier) | 1633 | `dbed223898b43d54094245d540861442e1e3b168e214ae4d21978e430b653b15` |
+| `fixtures/ho/worker-d79bd18/demo-XNYS-tier3-unsigned.test-throwaway.json` | `GET /v5/demo?mic=XNYS` from a second run whose private key was not hex — the unsigned Tier 3 body, HTTP 500 | 385 | `35235547dfe7ff0401e677de7796facb90c18bb9e07193a433c418a302f16b26` |
+| `fixtures/ho/worker-d79bd18/health.test-throwaway.json` | `GET /v5/health` — the health receipt beside its unsigned members | 1648 | `a579b3a7a513b12c0d860dcaf3495c717ddb6c3062a530eaa1eef1496400546c` |
+| `fixtures/ho/worker-d79bd18/keys.test-throwaway.json` | `GET /v5/keys` — the registry snapshot: one key, `canonical_payload_spec` | 1936 | `5012fdafd3a9d11267d95277d1757b37df7d6ceab80c9d29d836c41d406b88a9` |
+| `fixtures/ho/worker-d79bd18/status-XJPX-tier1-trial.test-throwaway.json` | `GET /v5/status?mic=XJPX` (keyless trial door) — Tier 1 CLOSED, `receipt_mode` live | 1589 | `ab9ba272a3f4baf1ad349234477fec6070f667a92e34af1078a081cfd9b39c69` |
+
+These are a record of a past local run and have no upstream: the worker mints a fresh `receipt_id`, `issued_at` and signature per request. They are the `unmapped` row `ho-worker-capture-d79bd18` (`past_capture`) in `fixtures/upstreams.json`.
+
+### The synthetic set
+
+`node tools/make-ho-fixtures.mjs` writes these from the same seed, building every payload as `buildSignedReceipt` does at `d79bd18` (member order, `buildReceiptCoverage`'s rules, `coverageField`'s member order, `signPayload`'s canonical form) with code that shares nothing with `src/adapters/ho-receipt.ts`. It checks itself before writing anything: it rebuilds the worker's XNYS receipt above from its member values (the coverage string rebuilt from tier, MIC, feed state and `ran_at`, not copied) and refuses to go on unless its signature equals the worker's byte for byte. It did. Its Tier 3 body is byte-identical to the worker's (same sha256). Run twice on 2026-10-07, it reproduced all 36 files byte-identically. Receipts are issued at 2026-10-07T14:30:00.000Z; tests evaluate at one second later.
+
+| fixture path | bytes | sha256 |
+|---|---|---|
+| `fixtures/ho/synthetic/health.test-throwaway.json` | 524 | `a06dd8ce4abefd1dfb1e1de90a531870e3bc6d71d9a3bc184e65926f1451fca4` |
+| `fixtures/ho/synthetic/jwks.test-throwaway.json` | 189 | `d118b36bbe00c6c91378d7cb96befca5d2d558a1b732d1cf6b131a4267313235` |
+| `fixtures/ho/synthetic/out-of-scope-safe-to-trade.test-throwaway.json` | 550 | `eabd58818c5268beaa3d8901a7d4b0b7276b28590082c537664dff135195ec81` |
+| `fixtures/ho/synthetic/registry-duplicate-key-id.test-throwaway.json` | 1224 | `5f044599fad466d1e5c1fab4b6400d4f52bbd6782567b093a1d45b97e5a37ddf` |
+| `fixtures/ho/synthetic/registry-key-window-closed.test-throwaway.json` | 1022 | `507179c46519059509910862126c983812f1d399ba63f319c5bf3f148bc1efc4` |
+| `fixtures/ho/synthetic/registry-no-spec.test-throwaway.json` | 230 | `087b66bb4e64518455597049a623684ae2c782aaf1e0bb64d78485881f482592` |
+| `fixtures/ho/synthetic/registry-pre-coverage.test-throwaway.json` | 993 | `655bd896445009d3c97082653ff9d526a7a25f9f47fa536988ebf8916dcb2446` |
+| `fixtures/ho/synthetic/registry.test-throwaway.json` | 1004 | `3ab42fd8e8a833c36ccb41afbcf9633754c7acbd14373daf619a753615e010a9` |
+| `fixtures/ho/synthetic/signed-coverage-consulted.test-throwaway.json` | 1607 | `5ccdaa44fa67ddc2b12056e39ebacd82c492461282c9f0010271ac928b5e235d` |
+| `fixtures/ho/synthetic/signed-coverage-determination_tier.test-throwaway.json` | 1633 | `b752b73a06d7fee6b52b2ba764ca9c92fbd8be153933d781a2872be2fc6d74fe` |
+| `fixtures/ho/synthetic/signed-coverage-encoding-whitespace.test-throwaway.json` | 1635 | `5098202df1ffb0d13dff935d4b1451151b9260fc25db0ce5448fa77e2badafba` |
+| `fixtures/ho/synthetic/signed-coverage-feed_last_run.test-throwaway.json` | 1637 | `998b193d9f183302c7a9995ef28ef9c04c9c5398be4a3680e1394aba63557a77` |
+| `fixtures/ho/synthetic/signed-coverage-feed_state.test-throwaway.json` | 1579 | `ab17bbd67d1f675daaab8033d31ae6e61c92d086e6a8211e1e9b9e920f934a7e` |
+| `fixtures/ho/synthetic/signed-coverage-not_consulted.test-throwaway.json` | 1545 | `65d294c592f2f6cf59fadf0ca7f22687b443a7493e3c94a7f4bb73ee5a0996a8` |
+| `fixtures/ho/synthetic/signed-coverage-realtime_halt_feed_scope.test-throwaway.json` | 1615 | `ad912ca08b591b9fd645d0f2c7a6aaa32f813e7ba69f8bbc7aa3a9eea1c434a8` |
+| `fixtures/ho/synthetic/signed-coverage-unknown_reason.test-throwaway.json` | 1681 | `e70f43212ca72ac7aa74f82afc61926908410b194cd52bf0dd86b0ba2edcfe24` |
+| `fixtures/ho/synthetic/signed-key-not-in-registry.test-throwaway.json` | 1617 | `f3a7d390082c10ec8067d72fbe5e27bfbbf7ad526580f42e041f1707b651d6f7` |
+| `fixtures/ho/synthetic/signed-schema-v5.1.test-throwaway.json` | 1633 | `0e62f5c88ec85655872e8503fbfb803c40746945825a7f4e88170d2a5075d78c` |
+| `fixtures/ho/synthetic/signed-stale-but-claimed-live.test-throwaway.json` | 1633 | `a00be015c39b0af75143c93fd3043ab9f8d04e3a1bbc1d447c69d63b8ec4b4c8` |
+| `fixtures/ho/synthetic/signed-ttl-300s.test-throwaway.json` | 1633 | `ef8f31225f2255b68de36370b9cd11aa24d6617b9604b337c5ad3e12e072db24` |
+| `fixtures/ho/synthetic/signed-ttl-61s.test-throwaway.json` | 1633 | `2daca7f2a937c7195c2036505ab7d4ce574ffed4bcb831fb6ab25fd52a9812bc` |
+| `fixtures/ho/synthetic/tamper-coverage-member-after-signing.test-throwaway.json` | 1635 | `02e4277facf4159e10f65c066fab6b88b6e4e6b57cbb0a6300cce55ec466a515` |
+| `fixtures/ho/synthetic/tamper-duplicate-member.test-throwaway.json` | 790 | `ee971b408586d47c99769bbc3edaf157025a6be8d184103cddc3aa509e297e3a` |
+| `fixtures/ho/synthetic/tamper-signature-one-nibble.test-throwaway.json` | 1633 | `a82665a420669dbb244a759df626e257bf5c085cec11762aedaf3d00236dba15` |
+| `fixtures/ho/synthetic/tamper-signature-uppercase-hex.test-throwaway.json` | 1633 | `a6c8409b49f2ec040688ddff363fc87b6f1a36b55ce4c249e5d5f49d636a8277` |
+| `fixtures/ho/synthetic/tamper-signed-member-not-a-string.test-throwaway.json` | 756 | `8a2b3287c0cee941e31687abe8fdf7951236953f770a089c98ff4e0d129b069a` |
+| `fixtures/ho/synthetic/tamper-wrapper-copy-disagrees.test-throwaway.json` | 1635 | `64543ff6dfd645044148b053f5c140ec09482c662d761cc207ba9638fce72ac7` |
+| `fixtures/ho/synthetic/tier0-XNAS-realtime-failed.test-throwaway.json` | 1721 | `2bf9ae5502b9c1ff7d679083bb26bb33d2d5ca79a113f0d49376c8cec475e03d` |
+| `fixtures/ho/synthetic/tier0-XNYS-operator-stale.test-throwaway.json` | 1715 | `0aa66aa0aa416235805d311ffe5d83791b11d1eacd72399203190ada6ad7753f` |
+| `fixtures/ho/synthetic/tier1-XJPX-unknown-no-holiday-data.test-throwaway.json` | 1635 | `ce5a445ce7939db49da4c60a370b3c79cb092983cd92ee6b6cd797d60d1adc01` |
+| `fixtures/ho/synthetic/tier1-XLON-closed-not-covered-bare.test-throwaway.json` | 750 | `78f6db4fa080c0d5e5b76ab2bc3edf33d9e2f298d5268da5acc951acf94217dd` |
+| `fixtures/ho/synthetic/tier1-XNYS-open-live.test-throwaway.json` | 1633 | `4ccf3d7acb4b63140efa7457168774fbe3db0037707cd3a947ac29e1e6defbac` |
+| `fixtures/ho/synthetic/tier1-XZZZ-unknown-unsupported-mic.test-throwaway.json` | 1621 | `aac04e7b57a00d6c9e362533ee7f79c127875ef96bab0842ab86322ee3ee11f4` |
+| `fixtures/ho/synthetic/tier2-XNYS-determination-error.test-throwaway.json` | 1647 | `fcff75ec5073912529ec12c1786d8e379af09c89bdef16db0bcb41fe48e27d33` |
+| `fixtures/ho/synthetic/tier3-critical-failure-unsigned.test-throwaway.json` | 385 | `35235547dfe7ff0401e677de7796facb90c18bb9e07193a433c418a302f16b26` |
+| `fixtures/ho/synthetic/wrapper-extra-unsigned-members.test-throwaway.json` | 1695 | `4dc67b967b5bbec15b068537bd734289eb8570d71ed99f778407a96c685f1140` |
+
+They are the `kind: local` entry `ho-receipt-fixtures/local` in `fixtures/upstreams.json`, which records each digest so `npm run drift` reports `changed` if a committed byte moves.
+

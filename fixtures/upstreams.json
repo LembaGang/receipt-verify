@@ -175,6 +175,15 @@
         "rows": "the 5 rows for fixtures/x402-pr-2853-compliance-fields/numbers/ in the 'Generated here, not snapshotted' table of fixtures/provenance.md",
         "reason_code": "generated_here",
         "reason": "Written by tools/compliance-fields-recompute.ts --write-numbers on 2026-09-29: one file per number-serialisation case, each recording what the two serialisers here emit on bytes this repository chose, so none is a copy of any published artifact."
+      },
+      {
+        "id": "ho-worker-capture-d79bd18",
+        "paths": [
+          "fixtures/ho/worker-d79bd18/*"
+        ],
+        "rows": "the 9 `fixtures/ho/worker-d79bd18/*.test-throwaway.json` rows under 'Appended 2026-10-07 — `ho.receipt/v5.0`' in fixtures/provenance.md",
+        "reason_code": "past_capture",
+        "reason": "Responses of a local run of the Headless Oracle worker at d79bd181 under a throwaway test key (not production, not key_test_v1), 2026-10-07 19:18-19:19Z: the worker mints a fresh receipt_id, issued_at and signature per request and the run is over, so there is no tip, no URL and no revision to check."
       }
     ]
   },
@@ -3314,6 +3323,163 @@
       ],
       "provenance_section": "Appended 2026-09-29 — x402 issue #2906's conformance vectors, `jsuich/x402-action-receipt` at `597f2145`, pinned for the record",
       "role_reason": "Pinned for the record, not run: the 29 Sep handoff (rev 6) has the #2906 vectors pinned in this session if found and run under a separate handoff. No result in this repository depends on these bytes, and nothing here claims the commit is a tip it tracks, so drift reports it not_checked."
+    },
+    {
+      "id": "ho-receipt-fixtures/local",
+      "kind": "local",
+      "role": "current",
+      "generator": "tools/make-ho-fixtures.mjs",
+      "files": [
+        {
+          "path": "fixtures/ho/synthetic/health.test-throwaway.json",
+          "sha256": "a06dd8ce4abefd1dfb1e1de90a531870e3bc6d71d9a3bc184e65926f1451fca4"
+        },
+        {
+          "path": "fixtures/ho/synthetic/jwks.test-throwaway.json",
+          "sha256": "d118b36bbe00c6c91378d7cb96befca5d2d558a1b732d1cf6b131a4267313235"
+        },
+        {
+          "path": "fixtures/ho/synthetic/out-of-scope-safe-to-trade.test-throwaway.json",
+          "sha256": "eabd58818c5268beaa3d8901a7d4b0b7276b28590082c537664dff135195ec81"
+        },
+        {
+          "path": "fixtures/ho/synthetic/registry-duplicate-key-id.test-throwaway.json",
+          "sha256": "5f044599fad466d1e5c1fab4b6400d4f52bbd6782567b093a1d45b97e5a37ddf"
+        },
+        {
+          "path": "fixtures/ho/synthetic/registry-key-window-closed.test-throwaway.json",
+          "sha256": "507179c46519059509910862126c983812f1d399ba63f319c5bf3f148bc1efc4"
+        },
+        {
+          "path": "fixtures/ho/synthetic/registry-no-spec.test-throwaway.json",
+          "sha256": "087b66bb4e64518455597049a623684ae2c782aaf1e0bb64d78485881f482592"
+        },
+        {
+          "path": "fixtures/ho/synthetic/registry-pre-coverage.test-throwaway.json",
+          "sha256": "655bd896445009d3c97082653ff9d526a7a25f9f47fa536988ebf8916dcb2446"
+        },
+        {
+          "path": "fixtures/ho/synthetic/registry.test-throwaway.json",
+          "sha256": "3ab42fd8e8a833c36ccb41afbcf9633754c7acbd14373daf619a753615e010a9"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-coverage-consulted.test-throwaway.json",
+          "sha256": "5ccdaa44fa67ddc2b12056e39ebacd82c492461282c9f0010271ac928b5e235d"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-coverage-determination_tier.test-throwaway.json",
+          "sha256": "b752b73a06d7fee6b52b2ba764ca9c92fbd8be153933d781a2872be2fc6d74fe"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-coverage-encoding-whitespace.test-throwaway.json",
+          "sha256": "5098202df1ffb0d13dff935d4b1451151b9260fc25db0ce5448fa77e2badafba"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-coverage-feed_last_run.test-throwaway.json",
+          "sha256": "998b193d9f183302c7a9995ef28ef9c04c9c5398be4a3680e1394aba63557a77"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-coverage-feed_state.test-throwaway.json",
+          "sha256": "ab17bbd67d1f675daaab8033d31ae6e61c92d086e6a8211e1e9b9e920f934a7e"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-coverage-not_consulted.test-throwaway.json",
+          "sha256": "65d294c592f2f6cf59fadf0ca7f22687b443a7493e3c94a7f4bb73ee5a0996a8"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-coverage-realtime_halt_feed_scope.test-throwaway.json",
+          "sha256": "ad912ca08b591b9fd645d0f2c7a6aaa32f813e7ba69f8bbc7aa3a9eea1c434a8"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-coverage-unknown_reason.test-throwaway.json",
+          "sha256": "e70f43212ca72ac7aa74f82afc61926908410b194cd52bf0dd86b0ba2edcfe24"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-key-not-in-registry.test-throwaway.json",
+          "sha256": "f3a7d390082c10ec8067d72fbe5e27bfbbf7ad526580f42e041f1707b651d6f7"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-schema-v5.1.test-throwaway.json",
+          "sha256": "0e62f5c88ec85655872e8503fbfb803c40746945825a7f4e88170d2a5075d78c"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-stale-but-claimed-live.test-throwaway.json",
+          "sha256": "a00be015c39b0af75143c93fd3043ab9f8d04e3a1bbc1d447c69d63b8ec4b4c8"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-ttl-300s.test-throwaway.json",
+          "sha256": "ef8f31225f2255b68de36370b9cd11aa24d6617b9604b337c5ad3e12e072db24"
+        },
+        {
+          "path": "fixtures/ho/synthetic/signed-ttl-61s.test-throwaway.json",
+          "sha256": "2daca7f2a937c7195c2036505ab7d4ce574ffed4bcb831fb6ab25fd52a9812bc"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tamper-coverage-member-after-signing.test-throwaway.json",
+          "sha256": "02e4277facf4159e10f65c066fab6b88b6e4e6b57cbb0a6300cce55ec466a515"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tamper-duplicate-member.test-throwaway.json",
+          "sha256": "ee971b408586d47c99769bbc3edaf157025a6be8d184103cddc3aa509e297e3a"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tamper-signature-one-nibble.test-throwaway.json",
+          "sha256": "a82665a420669dbb244a759df626e257bf5c085cec11762aedaf3d00236dba15"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tamper-signature-uppercase-hex.test-throwaway.json",
+          "sha256": "a6c8409b49f2ec040688ddff363fc87b6f1a36b55ce4c249e5d5f49d636a8277"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tamper-signed-member-not-a-string.test-throwaway.json",
+          "sha256": "8a2b3287c0cee941e31687abe8fdf7951236953f770a089c98ff4e0d129b069a"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tamper-wrapper-copy-disagrees.test-throwaway.json",
+          "sha256": "64543ff6dfd645044148b053f5c140ec09482c662d761cc207ba9638fce72ac7"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tier0-XNAS-realtime-failed.test-throwaway.json",
+          "sha256": "2bf9ae5502b9c1ff7d679083bb26bb33d2d5ca79a113f0d49376c8cec475e03d"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tier0-XNYS-operator-stale.test-throwaway.json",
+          "sha256": "0aa66aa0aa416235805d311ffe5d83791b11d1eacd72399203190ada6ad7753f"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tier1-XJPX-unknown-no-holiday-data.test-throwaway.json",
+          "sha256": "ce5a445ce7939db49da4c60a370b3c79cb092983cd92ee6b6cd797d60d1adc01"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tier1-XLON-closed-not-covered-bare.test-throwaway.json",
+          "sha256": "78f6db4fa080c0d5e5b76ab2bc3edf33d9e2f298d5268da5acc951acf94217dd"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tier1-XNYS-open-live.test-throwaway.json",
+          "sha256": "4ccf3d7acb4b63140efa7457168774fbe3db0037707cd3a947ac29e1e6defbac"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tier1-XZZZ-unknown-unsupported-mic.test-throwaway.json",
+          "sha256": "aac04e7b57a00d6c9e362533ee7f79c127875ef96bab0842ab86322ee3ee11f4"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tier2-XNYS-determination-error.test-throwaway.json",
+          "sha256": "fcff75ec5073912529ec12c1786d8e379af09c89bdef16db0bcb41fe48e27d33"
+        },
+        {
+          "path": "fixtures/ho/synthetic/tier3-critical-failure-unsigned.test-throwaway.json",
+          "sha256": "35235547dfe7ff0401e677de7796facb90c18bb9e07193a433c418a302f16b26"
+        },
+        {
+          "path": "fixtures/ho/synthetic/wrapper-extra-unsigned-members.test-throwaway.json",
+          "sha256": "4dc67b967b5bbec15b068537bd734289eb8570d71ed99f778407a96c685f1140"
+        }
+      ],
+      "kind_reason": "There is no upstream. tools/make-ho-fixtures.mjs writes these 36 files from a throwaway seed published in plain sight in the generator (test key, not production), and re-running it on 2026-10-07 reproduced all 36 byte-identically. Nothing external can move, so the only question left is whether the committed bytes are still the recorded ones.",
+      "why_it_exists": "A worker run yields only the receipts its clock, calendar and KV state produce at that instant. The Tier 2 and Tier 1 UNKNOWN receipts, the stale and failed feed states, one signed inconsistency per coverage member, the 61 s and 300 s TTLs and the wrapper tampers cannot be asked of a running worker, and they are what test/ho-receipt.test.ts needs to show each ho.receipt/v5.0 check can go red.",
+      "corpus_dirs": [],
+      "corpus_dirs_note": "Empty on purpose: fixtures/ho/ is NOT one corpus. The synthetic files are generated here and listed above; fixtures/ho/worker-d79bd18/ is a past local worker run, accounted for by its own `unmapped` row. A corpus_dirs of fixtures/ho would resolve the capture to this entry and hide it.",
+      "provenance_section": "Appended 2026-10-07 — `ho.receipt/v5.0`: a local Headless Oracle worker run under a throwaway key, and the synthetic set (test key, not production)"
     }
   ]
 }
