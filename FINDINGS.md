@@ -2067,6 +2067,109 @@ description of §3.2.2.3 is the specification's, quoted and not checked against 
 pull request and may change again; every row here is tied to the commit it was read at. Nothing here verifies
 an attestation or a signature, or checks any rule outside the canonicalization section.
 
+## J. Headless Oracle `ho.receipt/v5.0`: the key the receipt names, and the expiry boundary (appended 2026-10-07)
+
+**This section is the Headless Oracle author's tool grading Headless Oracle's own format.** The standing
+Interests section below applies to it with more force than to any other section here: the issuer, the format
+author and the grader are one person. Nothing below claims independence. Every statement is tied to the worker at
+`d79bd181350d184218fbdc3aa925630c79fc535e` (`src/index.ts`, line numbers at that commit), to the issuer's
+`docs/receipt-spec.md` as it stands at that commit (last changed in `c6f90982`), or to a fixture under
+`fixtures/ho/` whose digest is in `fixtures/provenance.md`, section "Appended 2026-10-07 — `ho.receipt/v5.0`".
+Every signed fixture is signed by the throwaway key `test-throwaway-ho-ed25519-39d969ad`, not a production key.
+
+### J1. A receipt names its key by `public_key_id`, and nothing leads from that name to a JWKS entry
+
+A receipt carries `public_key_id`, an identifier of the issuer's `/v5/keys` registry (13601), which publishes it
+beside a hex `public_key`, as does `/.well-known/oracle-keys.json` (14146). The issuer's `/.well-known/jwks.json`
+(14170) publishes the same key under a different name: its RFC 7638 thumbprint. It publishes four other keys
+beside it in the same set, none of them an oracle key: two Chirindo MCP-gate recorder keys
+(`ed25519/Y-QgeO0vHBBE` at 14206, `ed25519/nQgjxdLXI3wJ` at 14216) and the Delivery-Incidence Study capture key,
+twice (`study2026-54fb` at 14230, and again under its thumbprint). All five are `use: "sig"`, `alg: "EdDSA"`.
+Neither the receipt nor the JWKS maps `public_key_id` to the thumbprint.
+
+So a verifier holding only the JWKS has two choices: refuse, or try every key and accept whichever verifies. The
+second would accept, as an oracle market receipt, any body of the right shape signed by a recorder key or by the
+study key, because those keys are in the set and nothing in it says which of them signs which format. **Founder
+ruling 3 (2026-10-07): `--jwks` alone is refused**, as `UNVERIFIABLE`/`key_unresolvable` at the
+`registry_snapshot` check, with the detail naming why. With `--registry` the key resolves by `public_key_id`; with
+both, the registry is used and the result says the JWKS was not consulted. The control in
+`test/ho-receipt.test.ts` uses a JWKS that **does** carry the right key under its thumbprint, so the refusal is
+shown to be a refusal and not a failed lookup.
+
+`/.well-known/oracle-keys.json` cannot serve as the registry either: it carries no `canonical_payload_spec`, so it
+says which key but not which members are signed, and this adapter takes the signed members from the snapshot
+rather than from dropping wrapper members. A snapshot without the spec is `UNVERIFIABLE`/`malformed_member`.
+
+What would close the gap is a JWKS entry whose `kid` is the `public_key_id`, or a receipt member naming the
+thumbprint. Neither exists at `d79bd18`. Either is a change to the issuer, not to this repository.
+
+### J2. The expiry boundary: the issuer's verifiers disagree at equality, and this adapter takes the strict side
+
+The issuer's `docs/receipt-spec.md`, section "Expiry boundary", records that the implementations it examined on
+2026-10-01 disagree on whether a receipt is valid at the instant `now == expires_at`, and "records the difference
+and does not choose": `@headlessoracle/verify` 1.0.2 and 1.1.0 and the worker's `POST /v5/verify` refuse it; the
+PyPI `headless-oracle` 0.1.1 and the two unpublished in-repository SDKs accept it. Those rows are the issuer's
+document's; they were not re-measured for this entry.
+
+**Founder ruling 1 (2026-10-07), and this adapter's rule: a receipt is expired iff `now >= expires_at`.** Clock
+tolerance never extends validity past `expires_at`; it is applied only to an `issued_at` later than the evaluation
+instant. That puts this adapter with `@headlessoracle/verify` and `POST /v5/verify`, against the PyPI package and
+the two SDKs, and it is the fail-closed side: at the boundary instant a stale-by-zero-milliseconds OPEN is the
+receipt a consumer must not act on. The rule is the `freshness` check, ordered last so an expired receipt still
+reports every content check it passed. Tests pin `expires_at - 1 ms` (VALID), `expires_at` (expired),
+`expires_at` and `expires_at + 1 s` under a 3600 s tolerance (both expired), and an `issued_at` 30 s and 61 s in
+the future under the default 60 s tolerance (VALID, `not_yet_valid`).
+
+### J3. Where the signer and the issuer's written specification part
+
+The adapter grades what the signer emits. Where the written text says something else, the signer was followed and
+the difference is recorded here rather than resolved.
+
+1. **`source` on an UNKNOWN receipt.** The specification's "Implementing a Compliant Oracle" item 6 reads "Return
+   `source: SYSTEM` on all UNKNOWN receipts". `getScheduleStatus` (1687) returns `UNKNOWN` from source `SCHEDULE`
+   with reason `UNSUPPORTED_MIC`, and Tier 1 signs what it returns. The adapter accepts a Tier 1
+   `SCHEDULE`/`UNSUPPORTED_MIC` receipt (`fixtures/ho/synthetic/tier1-XZZZ-unknown-unsupported-mic`), because a
+   receipt the signer can emit is not malformed. Whether any route reaches that branch was not established: the
+   one route traced, `/v5/status/x402` (13176), refuses an unsupported MIC with HTTP 400 before building a receipt.
+2. **The TTL.** Item 3 lets a compliant oracle set `expires_at` up to 300 s ahead (60 s recommended). **Founder
+   ruling 2 (2026-10-07):** for HO's own format, any lifetime other than `RECEIPT_TTL_SECONDS` = 60 (2371) under a
+   valid signature is `INVALID`/`malformed_member`, 300 s included. No reason code was added: `malformed_member`
+   under a resolved key is the existing "self-inconsistent" kind, used the same way for an Insight `uid` that is
+   not its own digest.
+3. **The coverage block's rules are written nowhere but in code.** The field reference and
+   `canonical_payload_spec.coverage_note` describe each member. The joint rules — which tier signs which source,
+   status and `unknown_reason`; which `consulted`/`not_consulted` sets follow from tier, scope and feed state;
+   `halt_detection` against the scope; the 180 s bound on a `live` feed — are transcribed from
+   `buildSignedReceipt` (11487), `buildReceiptCoverage` (1565), `coverageField` (1641) and
+   `HALT_HEARTBEAT_FRESH_MS` (1502). `schema_version` stayed `v5.0` through the six signed-field changes the
+   specification's own changelog lists, so a later worker could change these rules with the version unchanged,
+   and this adapter would then call correctly issued receipts INVALID. The rules are pinned to `d79bd18`; no
+   drift entry watches the worker.
+4. **A heartbeat timestamped after `issued_at` is `live`.** The signer computes the age as `now - ran_at` and
+   calls anything up to 180 s live, so a negative age passes. The adapter reproduces the rule as written rather
+   than tightening it, and reports the age as `feed_age_seconds`.
+
+### J4. The origin of a Tier 0 override is not signed, and is partly recoverable from the bytes
+
+`buildSignedReceipt` signs `source: "OVERRIDE"` (11515) whether the override was written by the halt monitor
+(`REALTIME`) or by an operator, so the origin is not in the signed bytes. Under `buildReceiptCoverage`'s rule,
+though, a Tier 0 receipt for a MIC inside the feed scope whose feed is not `live` carries the feed token
+`realtime_halt_feed_via_override` exactly when the override was REALTIME. The two worker captures show both
+halves from the signer's own bytes: `demo-XNAS-tier0-realtime-absent` carries the token and
+`demo-XNYS-tier0-operator-absent` does not. With a live feed, or outside the scope, the bytes do not say.
+`override_origin` reports `consistent_only_with_realtime`, `consistent_only_with_operator`, `indeterminate` or
+`no_override`, and it is a `reported_only` row: an inference from the signer's rule, never a verdict.
+
+### J5. What J1–J4 do not establish
+
+No production receipt was verified for this section, and no production key was used: every signed byte here is
+under the throwaway key. The worker run was local, with no halt-monitor cron; the heartbeat and both overrides
+were written into a local KV by hand. Whether a Tier 1 status is the right calendar answer, whether a cited
+heartbeat existed, whether the scope signed is the scope deployed, and whether a supplied `/v5/keys` snapshot is
+the issuer's are not established by these bytes, and the adapter says so on every result that reaches them. The
+safe-to-trade receipt is outside this format and was not examined. The adapter, the generator, the fixtures and
+this section were all written by the issuer's author.
+
 ## Interests
 
 Appended 2026-09-03, in the words sent to the author of `draft-marques-asqav-compliance-receipts`

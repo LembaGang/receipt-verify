@@ -259,6 +259,10 @@ implemented:
 | `verification.*` | `inline_threshold_agreement` | Inline `v_gate_threshold` is not cross-checked against the mapping's threshold (§5.2). |
 | `acta.receipt/0` | `mldsa65_signature` | No ML-DSA implementation available; a declared ML-DSA-65 receipt is `UNVERIFIABLE`/`unsupported_algorithm`. |
 
+`ho.receipt/v5.0` declares nothing `not_implemented` either, and five checks
+`reported_only`: the things Headless Oracle's signed bytes cannot establish, listed
+under Format 6.
+
 `x402.settlement/2` declares nothing `not_implemented` and three checks
 `reported_only` — `resource_binding`, `facilitator_identity` and `rpc_trust`.
 Those are not gaps in this tool: they are the three things the protocol's own
@@ -303,7 +307,7 @@ recorded transcript is committed.
 ```
 receipt-verify <file> [options]
 
-  --format <name>        evidence.action | verification | acta | insight | x402   (default: auto-detect)
+  --format <name>        evidence.action | verification | acta | insight | x402 | ho   (default: auto-detect)
   --jwks <path|url>      published JWK Set: a .json file, a directory of them, or an https URL
   --mapping-dir <dir>    directory of mapping documents
   --payload <file>       detached-JWS payload: the bytes the signature covers
@@ -311,6 +315,7 @@ receipt-verify <file> [options]
   --prev <file>          predecessor receipt, for formats carrying a chain link
   --disclose <file>      disclosed {name, value, salt, proof} tuples, for committed fields
   --registry <path>      published key registry, for formats that resolve a signer from one
+                         (ho: the issuer's /v5/keys document; --jwks alone is refused)
   --rpc <url>            JSON-RPC endpoint, for formats that corroborate against a chain
   --clock-tolerance <s>  clock tolerance for exp/nbf (default 60)
   --now <epoch>          evaluate time-based checks at a fixed instant
@@ -713,6 +718,161 @@ The first of those is the one that matters most and is the least visible: a
 `VALID` verdict under this format proves that a named account authorized a
 transfer and that the transfer happened on a block at height. It does not prove
 what was bought.
+
+---
+
+## Format 6 — `ho.receipt/v5.0`
+
+**Interests, first.** The author of this repository builds Headless Oracle, the
+issuer of this format, so this is the HO author's tool grading HO's own format.
+The standing disclosure every findings document carries applies here unchanged:
+independence is not claimed; recomputability is. Every rule below is transcribed
+from the issuer's worker at a named commit and can be re-derived from the receipt
+bytes by anyone, with this tool or without it.
+
+Headless Oracle answers "is this exchange open right now?" with an Ed25519-signed
+receipt. This format verifies two of its receipt kinds:
+
+- **market receipts** — `/v5/demo`, `/v5/status`, `/v5/batch`, `/v1/status/{MIC}`
+  and MCP `get_market_status` — at all three signed tiers: Tier 0 (an override
+  answered), Tier 1 (the calendar answered), Tier 2 (the determination threw and the
+  signed fail-closed `UNKNOWN` was issued);
+- **health receipts** — `/v5/health`.
+
+The **safe-to-trade receipt** (`/v1/safe-to-trade`, `safe_to_trade_fields`) is
+**out of scope**: a different receipt with its own field list, left for a later
+format. It is declined at detection and refused under `--format ho` before anything
+is evaluated, and it is not an unaddressed coverage item of this format. The
+unsigned **Tier 3** body (`CRITICAL_FAILURE`, served when signing itself fails) is
+refused as `UNVERIFIABLE`/`malformed_receipt`: there is no signature, so nothing in
+it is attested, and the issuer's own contract for it is to treat the status as
+`UNKNOWN`, which means `CLOSED`.
+
+```bash
+receipt-verify fixtures/ho/worker-d79bd18/demo-XNYS-tier1-live.test-throwaway.json \
+  --registry fixtures/ho/worker-d79bd18/keys.test-throwaway.json --now 1791400704
+```
+
+### Where the rules come from
+
+The issuer publishes field lists and a short verification algorithm, but no prose
+stating the consistency rules of the signed `coverage` block; those rules are what
+the signer does. They are transcribed from the worker at
+`d79bd181350d184218fbdc3aa925630c79fc535e` (`signPayload`, `buildSignedReceipt`,
+`buildReceiptCoverage`, `coverageField`, `getScheduleStatus`, `RECEIPT_TTL_SECONDS`,
+`HALT_HEARTBEAT_FRESH_MS`; line numbers in `src/coverage.ts`), and the fixtures check
+the transcription against the worker's own bytes rather than against this
+repository's reading of them.
+
+### The key, and the signed members, come from a `/v5/keys` snapshot
+
+`--registry` takes the issuer's `/v5/keys` document. The receipt names its key by
+`public_key_id`, and the snapshot's `canonical_payload_spec` says which members are
+signed — `receipt_fields`, `override_fields` or `health_fields`. The canonical bytes
+are built from that list and nothing else (keys sorted, `JSON.stringify` with no
+whitespace, UTF-8), **never by dropping wrapper members**: a served body is
+`{...receipt, receipt, discovery_url}`, and the health body carries a dozen unsigned
+members beside the signed ones. Every top-level member the list does not name is
+reported in `unsigned_members` and never moves the verdict; an inner `receipt` copy
+that disagrees with the signed top level is a body carrying two receipts, and is
+refused.
+
+**`--jwks` alone is refused, as `UNVERIFIABLE`/`key_unresolvable`.** The receipt
+carries no JWKS `kid`, and the issuer's JWKS publishes its receipt key under an RFC
+7638 thumbprint beside keys that sign other things (Chirindo recorder keys, a study
+capture key). Resolving one would mean trying every key in the set and accepting
+whichever verifies, which would accept a receipt signed by any key in that set as an
+oracle receipt. This tool does not do that. Pass the `/v5/keys` snapshot; with both,
+the registry is used and the result says the JWKS was not consulted. See
+`FINDINGS.md` J1.
+
+### Verdict mapping
+
+| Condition | Verdict | `reason` |
+|---|---|---|
+| A repeated member, or a body that is not one JSON object | `UNVERIFIABLE` | `malformed_receipt` |
+| The unsigned Tier 3 body, or a body with no `signature` | `UNVERIFIABLE` | `malformed_receipt` |
+| A safe-to-trade receipt | `UNVERIFIABLE` | `format_unrecognized` |
+| No `--registry` (with or without `--jwks`), or a `public_key_id` the snapshot does not list or lists twice | `UNVERIFIABLE` | `key_unresolvable` |
+| `--registry-sha256` names other bytes | `UNVERIFIABLE` | `registry_snapshot_mismatch` |
+| A snapshot with no field lists, a list that does not sign a member a check reads, a signed member absent or not a string, a signature not 128 lowercase hex | `UNVERIFIABLE` | `malformed_member` |
+| The served wrapper's two copies disagree | `UNVERIFIABLE` | `malformed_receipt` |
+| The signature does not verify under the resolved key | `INVALID` | `signature_invalid` |
+| A signed `schema_version` other than `v5.0` | `UNVERIFIABLE` | `format_unrecognized` |
+| A signed value the signer never emits: a TTL other than 60 s, a coverage block inconsistent with its tier, scope or feed state, an unknown token | `INVALID` | `malformed_member` |
+| The signed `issued_at` falls outside the key's window in the snapshot | `UNVERIFIABLE` | `signed_outside_key_window` |
+| `now >= expires_at`, or `issued_at` later than now plus the tolerance | `UNVERIFIABLE` | `expired`, `not_yet_valid` |
+| Everything passes | `VALID` | `verified` |
+
+An `INVALID`/`malformed_member` here is the "self-inconsistent" kind `formatResult`
+already labels: a determinate negative about signed bytes under a named key. No
+reason code was added for this format.
+
+### Expiry is strict: expired iff `now >= expires_at`
+
+That is this adapter's rule. `--clock-tolerance` **never** extends validity past
+`expires_at`; it is applied only to an `issued_at` in the future. The issuer's own
+verifiers disagree at the instant `now == expires_at` — `@headlessoracle/verify`
+1.0.2 and 1.1.0 and the worker's `POST /v5/verify` refuse it, the PyPI
+`headless-oracle` 0.1.1 and the two unpublished in-repository SDKs accept it — as the
+issuer's `docs/receipt-spec.md` records under "Expiry boundary" without choosing.
+This tool takes the strict side, which is the fail-closed one. Freshness is evaluated
+last, so an expired receipt still reports every content check it passed.
+
+### TTL: exactly 60 seconds
+
+`expires_at - issued_at` must be exactly 60 s (`RECEIPT_TTL_SECONDS`). Under a valid
+signature any other lifetime is `INVALID`/`malformed_member`, including 300 s, the
+ceiling the issuer's spec allows other operators: this format is HO's own, and HO
+signs 60.
+
+### Coverage: 0 unaddressed coverage items
+
+The manifest declares **no `not_implemented` check**, and on every `VALID` market
+receipt `checks_not_evaluated` is empty — the "0 unaddressed coverage items" line,
+locked by a test. Every member of the signed `coverage` string is examined by a
+check that can move the verdict:
+
+| `coverage` member | examined by |
+|---|---|
+| `determination_tier` | `coverage_encoding`, `tier_source`, `consulted_sets` |
+| `consulted`, `not_consulted` | `coverage_encoding`, `consulted_sets` |
+| `realtime_halt_feed_scope` | `coverage_encoding`, `halt_scope` |
+| `unknown_reason` | `coverage_encoding`, `tier_source` |
+| `feed_state` | `coverage_encoding`, `halt_scope`, `feed_freshness`, `consulted_sets` |
+| `feed_last_run` | `coverage_encoding`, `feed_freshness` |
+
+Five things cannot be recomputed from the bytes. They are `reported_only` rows and
+annotations under stable tokens on every result that reaches them, never hidden:
+
+| annotation | what the bytes do not establish |
+|---|---|
+| `status_determination` | that the signed status is the right answer for the MIC at `issued_at`: that needs the issuer's calendar, or is an override's content |
+| `heartbeat_existence` | that the monitor run `feed_last_run` cites happened: the heartbeat is unsigned and is cited, not carried |
+| `override_origin` | whether a Tier 0 override was the halt monitor's (REALTIME) or an operator's: the origin is not signed. What the bytes are **consistent with** under the signer's rule is reported (`consistent_only_with_realtime`, `consistent_only_with_operator`, `indeterminate`, `no_override`) |
+| `feed_scope_configuration` | that `realtime_halt_feed_scope` is the scope the issuer's monitor actually runs |
+| `registry_provenance` | that the snapshot supplied is what the issuer's `/v5/keys` served when the receipt was issued; its SHA-256, byte length and origin are reported for you to compare |
+
+A health receipt carries no `mic`, no `coverage` and no `schema_version`, so on a
+health receipt the market-only checks are `condition_unmet`, with the condition in
+words.
+
+### Fixtures
+
+Every signed fixture is signed by the **throwaway** key `test-throwaway-ho-ed25519-39d969ad`,
+whose seed is published in `tools/make-ho-fixtures.mjs`. It is not a Headless Oracle
+production key and not the HO CI key. `fixtures/ho/worker-d79bd18/` holds the
+responses of the worker itself at `d79bd18`, run locally under that key, including a
+real Tier 3 body; `fixtures/ho/synthetic/` holds the generator's receipts — the tiers
+and feed states a running worker cannot be asked for, one signed inconsistency per
+`coverage` member, and the tamper matrix. The generator shares no code with the
+adapter and refuses to write unless it reproduces a worker signature byte for byte.
+
+**What a `VALID` here does not say.** That the market was open. A `VALID` says these
+bytes were signed by the key the snapshot names for that `public_key_id`, have the
+shape the signer always gives them, and had not expired at the instant evaluated. The
+status inside is the issuer's (`issuer_status`), and this tool does not issue gate
+decisions.
 
 ---
 

@@ -24,6 +24,7 @@ Options:
   --prev <file>       predecessor receipt, for formats carrying a chain link
   --disclose <file>   disclosed {name, value, salt, proof} tuples, for committed fields
   --registry <path>   published key registry, for formats that resolve a signer from one
+                      (ho: the issuer's /v5/keys document; --jwks alone is refused)
   --registry-sha256 <hex>
                       the SHA-256 you claim for --registry. Checked, not trusted: a
                       mismatch is UNVERIFIABLE and stops the run
@@ -31,7 +32,8 @@ Options:
   --allow-unregistered-signer
                       continue past a signer absent from the registry. Asserts NOTHING
                       about identity; the result says so in an annotation
-  --clock-tolerance <s>  seconds of clock tolerance for exp/nbf (default 60)
+  --clock-tolerance <s>  seconds of clock tolerance for exp/nbf (default 60). For ho it is
+                      applied only to an issued_at in the future, never past expires_at
   --now <epoch>       evaluate time-based checks at this instant, for reproducible runs
   --require-delivery  exit 1 unless the receipt PROVES x402 delivery (see below)
   --json              emit the machine-readable verdict object
