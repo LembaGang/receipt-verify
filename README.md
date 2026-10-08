@@ -1118,7 +1118,7 @@ added only for history that was never pushed, and never after a push.
 
 ## Citing a release
 
-To cite what ships today, name the npm artifact by version and integrity: `@headlessoracle/receipt-verify@0.1.2`, `sha512-M8I9mgXCsOoi1i9egEOapAp1mp8xdImkAg56BtqQZ3R9tlA7bQk5E6QllvFcDPIMZH8ty6lR3enOVZDa5mIDlQ==`, built from commit `1c3452fe9a8109616481dad75dacb312517bf47f`, which the `v0.1.2` tag points at; the published tarball was compared file for file against a fresh build of that commit and is identical (recorded in `RELEASE-NOTES.md` under 0.1.2). Do not cite `v0.1.1` as the source of what 0.1.1 runs: that tag points at a commit that does not contain the code that package runs (recorded in `RELEASE-NOTES.md` under 0.1.1). Cite a commit or a tag, never `HEAD`, which moves.
+To cite what ships today, name the npm artifact by version and integrity: `@headlessoracle/receipt-verify@0.1.3`, `sha512-EDIBOg0J9G1PRAvS8YFin18H70i4mgwjMZdAA6RoLWAFuZA125TPFx7YVkOgsRFLGjfUOAoKpMfx0DyrOARkmg==`, built from commit `ea07841ad1b2874ea38766f96352481b294fee4d`, which the `v0.1.3` tag points at; the published tarball was compared file for file against a fresh build of that commit and is identical (recorded in `RELEASE-NOTES.md` under 0.1.3). Do not cite `v0.1.1` as the source of what 0.1.1 runs: that tag points at a commit that does not contain the code that package runs (recorded in `RELEASE-NOTES.md` under 0.1.1). Cite a commit or a tag, never `HEAD`, which moves.
 
 Status: this README describes the tree it sits in, whose version is the one in
 `package.json`; published versions and the commit each was built from are

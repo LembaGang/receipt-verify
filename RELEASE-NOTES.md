@@ -3,7 +3,7 @@
 Shipped versions, newest first. Entries queued against the next release live in
 `RELEASE-NOTES-NEXT.md` and move here when they ship.
 
-## 0.1.3 (unreleased)
+## 0.1.3 (2026-10-08)
 
 **A v1–v4 `insight.attestation/eip712` verdict is now snapshot-relative or it is not a verdict, and the
 measurement that made that necessary is worth stating first: at `324c2ef` all three 2 September
@@ -353,6 +353,8 @@ shares no code with the adapter and refuses to write unless it reproduces a work
 Provenance: CC handoff, `ho.receipt` adapter, 2026-10-07; founder rulings 1-5 of the same date.
 
 Verification after publish: the npm `gitHead` and `dist.integrity` for 0.1.3 are appended below this section as a dated line once `npm view` returns them, so the notes record the artefact and not the intention (R71).
+
+Verified after publish, 2026-10-08. npm records `gitHead` `ea07841ad1b2874ea38766f96352481b294fee4d`, which is the commit the `v0.1.3` tag points at, `dist.integrity` `sha512-EDIBOg0J9G1PRAvS8YFin18H70i4mgwjMZdAA6RoLWAFuZA125TPFx7YVkOgsRFLGjfUOAoKpMfx0DyrOARkmg==` and `dist.shasum` `26917b8d2c29ffd10f5a7f1131f813a0e27e781e`, published 2026-10-08T09:49:59.083Z. On the same day, on a machine that has never held the signing key, a fresh clone at `v0.1.3` was built with `npm ci` and `npm run build` and packed; the resulting tarball has the same sha1 as the published one and every one of its 46 files is byte-identical to the published file. The release notes for 0.1.3 therefore rest on a comparison that was run, not on the intention recorded above it.
 
 ## 0.1.2 (2026-09-04)
 
