@@ -1017,7 +1017,7 @@ fingerprint above.
 
 ```bash
 npm run typecheck
-npm test                            # 750 tests, no network
+npm test                            # 931 tests, no network
 RECEIPT_VERIFY_LIVE=1 npm test      # adds the live-JWKS and live exit-contract tests
 npm run snapshot                    # re-pull remote fixtures + rewrite provenance
 npm run fixtures                    # regenerate throwaway-signed fixtures

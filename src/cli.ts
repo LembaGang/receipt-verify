@@ -11,7 +11,7 @@ import { adapterByFormat, detectFormat, FORMAT_NAMES } from "./detect.js";
 import { exitCodeFor, formatResult, jsonResult, type OutputOptions, unverifiable } from "./verdict.js";
 import type { VerifyOptions, VerifyResult } from "./types.js";
 
-const USAGE = `receipt-verify 0.1.2 — cross-format agent-receipt verifier
+const USAGE = `receipt-verify 0.1.3 — cross-format agent-receipt verifier
 
   receipt-verify <file> [options]
 
