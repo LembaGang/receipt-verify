@@ -479,6 +479,25 @@ describe("rule 6 — the review window and the right of reply", () => {
     const r = check(makeRegistry().root);
     expect(r.ok, messages(r)).toBe(true);
   });
+
+  // B-273: a reply that neither reproduces, disputes nor corrects (one that
+  // states limits of scope) had no honest kind, and `reproduced` would misstate
+  // it. The mutation control keeps the enum closed: adding `statement` must not
+  // have opened reply.kind to any string.
+  it("a reply of kind statement builds", () => {
+    const rec = validRecord("2026-01-01-throwaway", {
+      reply: { kind: "statement", date: "2026-01-02", pointer: "registry/records/2026-01-01-throwaway/reply.md", text_sha256: "c".repeat(64) },
+    });
+    const r = check(makeRegistry([rec]).root);
+    expect(r.ok, messages(r)).toBe(true);
+  });
+
+  it("mutation control: a reply kind outside the enum is still rejected", () => {
+    const rec = validRecord("2026-01-01-throwaway", {
+      reply: { kind: "endorsed", date: "2026-01-02", pointer: "registry/records/2026-01-01-throwaway/reply.md", text_sha256: "c".repeat(64) },
+    });
+    expect(() => makeRegistry([rec])).toThrow(/\/reply\/kind/);
+  });
 });
 
 describe("rule 7 — the index records the digest of its previous version, and the check walks that chain", () => {

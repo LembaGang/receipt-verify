@@ -209,7 +209,7 @@ export interface RegistryRecord {
   establishes: string[];
   independent_rerun: { by: string; date: string; pointer: string } | null;
   review_window: { sent_on: string; closes_on: string; outcome: "replied" | "lapsed" } | null;
-  reply: { kind: "none" | "reproduced" | "disputed" | "corrected"; date: string | null; pointer: string | null; text_sha256: string | null };
+  reply: { kind: "none" | "reproduced" | "disputed" | "corrected" | "statement"; date: string | null; pointer: string | null; text_sha256: string | null };
   status: "published" | "superseded";
   supersedes: string | null;
   superseded_by: string | null;

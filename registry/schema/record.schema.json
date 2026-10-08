@@ -224,7 +224,10 @@
       "additionalProperties": false,
       "required": ["kind", "date", "pointer", "text_sha256"],
       "properties": {
-        "kind": { "enum": ["none", "reproduced", "disputed", "corrected"] },
+        "kind": {
+          "enum": ["none", "reproduced", "disputed", "corrected", "statement"],
+          "description": "statement: a published reply from the graded party that neither reproduces, disputes nor corrects the record, for example one that states limits of scope."
+        },
         "date": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
         "pointer": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
         "text_sha256": { "anyOf": [{ "$ref": "#/$defs/sha256hex" }, { "type": "null" }] }
