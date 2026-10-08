@@ -1,0 +1,2 @@
+# Documents and proofs are byte-exact: never normalize line endings.
+* -text

@@ -1,0 +1,13 @@
+{
+  "schema": "receipt-verify/anchor/0",
+  "date": "2026-10-08",
+  "master_commit": "6434245a8ce59829e83063fc734fca52f7ff269c",
+  "master_commit_verified": true,
+  "master_commit_verified_range": "full",
+  "drift_json_sha256": "6d57a61e8269087571335ad0eb8fefca4b75eb6f26305dad15a4082045885539",
+  "drift_json_absent_reason": null,
+  "drift_exit_code": 1,
+  "drift_log_sha256": "1f55a7c35a0d6bb07f5b76dbaa9f0b8e67b1a1157149be06686a776903453aa4",
+  "registry_index_sha256": "ffb1abbb426a080a0a69bb8ab1b1c9f1a8d2f026a7d77b83a8bb0b10376c1283",
+  "generated_at": "2026-10-08T16:53:15Z"
+}
