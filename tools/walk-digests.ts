@@ -2069,10 +2069,17 @@ async function main(): Promise<number> {
   return totals.mismatch > 0 || totals.serializer_disagreement > 0 ? 1 : 0;
 }
 
+// exitCode, never process.exit(): stdout to a pipe is asynchronous on POSIX, and
+// process.exit() drops whatever is still queued, so a slow reader got a report
+// cut off before its SUMMARY line (2026-10-08: walker.test.ts (d) red under a
+// loaded full suite, green alone, and always green on Windows, where pipe
+// writes are synchronous).
 main().then(
-  (code) => process.exit(code),
+  (code) => {
+    process.exitCode = code;
+  },
   (e) => {
     console.error(e);
-    process.exit(2);
+    process.exitCode = 2;
   },
 );
