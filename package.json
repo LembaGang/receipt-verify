@@ -30,7 +30,10 @@
     "cli": "tsx src/cli.ts",
     "walk": "tsx tools/walk-digests.ts",
     "drift": "tsx tools/drift.ts",
-    "registry": "tsx tools/registry.ts"
+    "registry": "tsx tools/registry.ts",
+    "anchor": "node tools/anchor.mjs",
+    "anchor:verify": "node tools/anchor.mjs verify",
+    "anchor:upgrade": "node tools/anchor.mjs upgrade"
   },
   "dependencies": {
     "@headlessoracle/chirindo": "0.4.0",
@@ -40,6 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
+    "opentimestamps": "0.4.9",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

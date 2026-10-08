@@ -5,3 +5,4 @@ dist/
 walker/report.json
 walker/drift.json
 __pycache__/
+/anchors/

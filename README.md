@@ -1011,6 +1011,78 @@ If you were sent a bundle of this repository and want to check it yourself, that
 command is the whole of it: no key material to obtain, nothing to trust but the
 fingerprint above.
 
+### Anchoring
+
+A signature says who made a commit, not when, to anyone who does not trust the
+signer's clock. So once a day, at 06:30 UTC, the `anchor` workflow
+(`.github/workflows/anchor.yml`) builds a small JSON document,
+`anchors/<yyyy-mm-dd>.json` (schema `receipt-verify/anchor/0`), and has the
+public [OpenTimestamps](https://opentimestamps.org) calendars timestamp its
+sha256. The document names:
+
+- `master_commit`: the commit the job ran at, and `master_commit_verified`:
+  whether `tools/verify-history.sh` passed over the range since the previous
+  anchored commit (`master_commit_verified_range`), or over the whole history
+  on the first day;
+- `drift_json_sha256`: the sha256 of that morning's drift output. The job runs
+  `npm run drift` itself and commits the output byte for byte beside the
+  document, as `anchors/<date>.drift.json` and `anchors/<date>.drift.log`. If
+  the drift run produced no JSON, the member is `null` and
+  `drift_json_absent_reason` says why, and the day is stamped anyway;
+- `registry_index_sha256`: the sha256 of `registry/index.json` at that commit;
+- `generated_at`: the job's UTC clock.
+
+The OpenTimestamps proof is `anchors/<date>.json.ots`. Documents, drift bytes
+and proofs live on the **`anchors` branch**, committed by `github-actions[bot]`.
+They are never on `master`, which carries signed commits only.
+`tools/verify-history.sh` and `verify.yml` cover `master` alone. The job also
+upgrades every pending proof from the previous fourteen days.
+
+To verify one day from a fresh clone:
+
+```bash
+npm ci
+git fetch origin anchors && npm run anchor:verify -- 2026-10-08
+```
+
+`anchor:verify` reads the files from `origin/anchors` (or a directory, with
+`--dir`). It checks that the proof parses and commits to the sha256 of exactly
+those document bytes. It also checks that the drift bytes on the branch are the
+ones the document hashed, and that `master_commit` is a commit of this history
+whose `registry/index.json` hashes to `registry_index_sha256`. It prints one
+JSON object. The outcomes are:
+
+- `pending`: only calendar attestations so far (exit 0);
+- `attested`: the proof carries a Bitcoin block-header attestation, and the
+  height is printed (exit 0);
+- `mismatch`: a digest, a date or a commit disagrees (exit 1);
+- `malformed`: the proof or document does not parse, or the proof carries no
+  attestation (exit 1);
+- `missing`: a file is absent (exit 2).
+
+`npm run anchor:upgrade -- <date> --dir <dir>` asks the calendars for a pending
+proof's upgrade. It rewrites the `.ots` only when one came back and the result
+still commits to the document.
+
+What this does not do:
+
+- **A proof is pending for hours.** The calendars commit to Bitcoin in batches,
+  and a proof reads `attested` only after a block includes that commitment and
+  the next upgrade fetches it.
+- **The calendars are third parties.** The job depends on their availability.
+  A day on which none answered is committed as a document with no proof, and
+  the run goes red. That day stays unstamped. It is never backfilled with a
+  later time.
+- **`attested` is checked offline.** `anchor:verify` reads the attestation's
+  block height from the proof. It does not fetch that block to compare the
+  merkle root. For that, run the reference client, `ots verify`, against a
+  Bitcoin node or a block explorer.
+- **The drift file records what the drift tool observed that morning.** It is
+  not a re-pin, and nothing in `fixtures/` changes because of it.
+- **A stamp binds bytes to a time.** It shows that this document existed no
+  later than the attested block. It says nothing about whether any record,
+  finding or drift row that the document names is correct.
+
 ---
 
 ## Development

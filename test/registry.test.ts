@@ -226,6 +226,42 @@ describe("registry — a valid registry passes, and the control that says the pa
 });
 
 describe("rule 1 — no record without an executed run, pinned inputs, an anchored result and a named consenting human", () => {
+  // The daily anchor (B-89) lives on an orphan `anchors` branch, and a local
+  // `stamp` writes an untracked anchors/ directory at the repository root.
+  // Neither is part of master's tree, and --check must read neither. The red
+  // case is a future check that walks the working tree or every ref: this test
+  // is what would catch it.
+  it("an anchors branch and an untracked anchors/ directory leave --check unchanged", () => {
+    const { repo, root } = makeRegistry();
+    const before = check(root);
+    expect(before.ok, messages(before)).toBe(true);
+
+    // Built with plumbing, as a fetch delivers it: the branch is never checked
+    // out here. (Switching to it and back would re-check-out the throwaway's
+    // report.md, and with core.autocrlf on and no .gitattributes in the
+    // throwaway, that rewrites the bytes the record pins.)
+    const env = { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@example.invalid", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@example.invalid" };
+    const plumb = (args: string[], input?: string | Buffer) => execFileSync("git", args, { cwd: repo, input, env, encoding: "utf8" }).trim();
+    const doc = plumb(["hash-object", "-w", "--stdin"], `{"schema":"receipt-verify/anchor/0","date":"2026-01-02"}\n`);
+    const ots = plumb(["hash-object", "-w", "--stdin"], Buffer.from([0x00, 0x4f, 0x70]));
+    const sub = plumb(["mktree"], `100644 blob ${doc}\t2026-01-02.json\n100644 blob ${ots}\t2026-01-02.json.ots\n`);
+    const top = plumb(["mktree"], `040000 tree ${sub}\tanchors\n`);
+    const commit = plumb(["commit-tree", top, "-m", "anchor: 2026-01-02"]);
+    plumb(["update-ref", "refs/heads/anchors", commit]);
+    plumb(["update-ref", "refs/remotes/origin/anchors", commit]);
+    expect(plumb(["ls-tree", "-r", "--name-only", "anchors"])).toBe("anchors/2026-01-02.json\nanchors/2026-01-02.json.ots");
+
+    mkdirSync(join(repo, "anchors"));
+    writeFileSync(join(repo, "anchors", "2026-01-03.json"), "{}\n");
+    writeFileSync(join(repo, "anchors", "2026-01-03.json.ots"), Buffer.from([0x00]));
+    expect(git(repo, "status", "--porcelain")).toBe("?? anchors/");
+
+    const after = check(root);
+    expect(after.ok, messages(after)).toBe(true);
+    expect(after.citations).toEqual(before.citations);
+    expect(after.notices).toEqual(before.notices);
+  });
+
   it("an own_work record with consent: null refuses to build", () => {
     expect(() => makeRegistry([validRecord("2026-01-01-throwaway", { consent: null })])).toThrow(/rule 1:[^]*consent: null/);
   });
