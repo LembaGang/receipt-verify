@@ -1,0 +1,98 @@
+{
+  "schema": "receipt-verify/verdict/0",
+  "verdict": "UNVERIFIABLE",
+  "reason": "registry_snapshot_required",
+  "format": "insight.attestation/eip712",
+  "detail": "this is an ExecutionReceipt v4, and the issuer's deployed rule makes a v1-v4 verdict historical and snapshot-relative: it requires the exact preserved registry snapshot bytes, their full SHA-256 and their byte length with every such verdict, and says to fail closed when they are absent. No --registry was supplied, so there is no snapshot for a verdict to be relative to and none is stated. --allow-unregistered-signer does NOT waive this: that flag speaks about the signer, this is about the scope of the whole result. Supply the registry bytes preserved with this receipt — never current.json and never the current registry, which the rule forbids substituting",
+  "resolved_key": null,
+  "annotations": {
+    "schema_encode_type": "ExecutionReceipt(string bindingMode,string claimRole,address subject,address taker,bytes32 preTradeUid,bytes32 destinationPreTradeUid,bytes32 preTradeUidsHash,bytes32 requestHash,string sourceAssetId,string destinationAssetId,uint256 subjectChainId,uint256 settlementChainId,string action,uint256 quotedPrice,uint256 executedPrice,uint8 priceScale,string quoteBasis,uint256 quoteBlockNumber,bool quoteVenueIndependent,int256 priceDeltaBps,uint256 maxSlippageBps,bool slippageSatisfied,uint256 quotedAmountUsd,uint256 executedAmountUsd,uint256 actualFeeUsd,bytes32 measuredFieldsHash,string fillStatus,string priceExecutionStatus,bytes32 txHash,uint256 blockNumber,uint256 executedAt,uint256 preTradeSignedAt,uint256 attestationAgeAtExecSeconds,uint256 priceStateAgeAtExecSeconds,uint256 participantCount,uint256 requiredParticipantCount,uint256 sourceGroupCount,uint256 requiredSourceGroupCount,bool independenceSatisfied,uint256 mevRiskBps,bytes32 reasonCodesHash,uint256 validUntil,uint256 schemaVersion,string environment)",
+    "digest": "0x54a787220982817ae482d01e07c90144c69cf02b6d011c4567ecbd28bfeff9b4",
+    "recovered_signer": "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "uid_equals_digest": true
+  },
+  "coverage": {
+    "stopped_at": "snapshot",
+    "checks_not_evaluated": [
+      {
+        "id": "identity",
+        "title": "The recovered signer is a key published in the registry, not revoked on either channel, and inside its own validity window BOTH at the evaluation instant and at the artefact's own instant; the key's published role is reported; and the registry's type for this primaryType agrees with the artefact's",
+        "source": "refs/insight-oracle-keys-2026-09-02.json",
+        "status": "implemented",
+        "reason": "not_reached"
+      },
+      {
+        "id": "profile",
+        "title": "The semantic profile the receipt signs is one the registry publishes for its layout",
+        "source": "the registry's `semanticProfile` member (from 2026-09-09) and the promotion record's activation rule",
+        "status": "conditional",
+        "reason": "not_reached"
+      },
+      {
+        "id": "freshness",
+        "title": "validUntil equals its anchor plus validForSeconds, and has not closed at the evaluation time",
+        "source": "the artefact's own validUntil / checkedAt / executedAt / validForSeconds",
+        "status": "implemented",
+        "reason": "not_reached"
+      },
+      {
+        "id": "binding",
+        "title": "The receipt binds to every gate it names, the non-zero uids hash to the signed preTradeUidsHash, and each requestHash is the digest of its canonical request",
+        "source": "the receipt's preTradeUid / destinationPreTradeUid / preTradeUidsHash / requestHash and the gates' canonicalRequest* types",
+        "status": "conditional",
+        "reason": "not_reached"
+      },
+      {
+        "id": "swap",
+        "title": "The pool Swap event decodes to the signed executedPrice, and the delta against quotedPrice is recomputed",
+        "source": "the Uniswap V3 Swap event ABI, derived from its signature string here",
+        "status": "conditional",
+        "reason": "not_reached"
+      },
+      {
+        "id": "attribution",
+        "title": "Net flow per address over every Transfer log, and the price actually realised by the final beneficiary",
+        "source": "the ERC-20 Transfer event ABI, derived from its signature string here",
+        "status": "reported_only",
+        "reason": "not_reached"
+      },
+      {
+        "id": "prices",
+        "title": "Prices read at the signed `priceScale`, the quote recomputed from both gates, and the execution status recomputed",
+        "source": "the receipt's priceScale/quotedPrice/executedPrice and the gates' consensusPrice",
+        "status": "conditional",
+        "reason": "not_reached"
+      },
+      {
+        "id": "measured_fields",
+        "title": "`measuredFieldsHash` recomputed from the set of fields the package declares measured",
+        "source": "the receipt's signed measuredFieldsHash and the package's own `measuredFields` enumeration",
+        "status": "reported_only",
+        "reason": "not_reached"
+      },
+      {
+        "id": "chain",
+        "title": "Transaction status, block number, block timestamp and shipped logs corroborated against a JSON-RPC endpoint",
+        "source": "eth_getTransactionReceipt / eth_getBlockByNumber",
+        "status": "conditional",
+        "reason": "not_reached"
+      },
+      {
+        "id": "precedence",
+        "title": "That a pre-trade gate existed BEFORE the trade it gates",
+        "source": "the claim the package's structure invites; no source establishes it",
+        "status": "not_implemented",
+        "reason": "not_implemented"
+      },
+      {
+        "id": "observations",
+        "title": "participantCount, sourceGroupCount, independence, consensus-price provenance and mevRiskBps",
+        "source": "the receipt's own signed fields",
+        "status": "not_implemented",
+        "reason": "not_implemented"
+      }
+    ]
+  },
+  "delivery_gate": null,
+  "exit_code": 1
+}

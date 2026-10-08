@@ -1,0 +1,277 @@
+{
+  "schema": "receipt-verify/registry-record/0",
+  "id": "2026-10-08-insight-execution-receipt-v5",
+  "kind": "entry",
+  "record_type": "conformance_entry",
+  "key": {
+    "format": "insight.attestation/eip712",
+    "format_version": "ExecutionReceipt v5",
+    "upstream_digest": {
+      "alg": "sha256",
+      "value": "9171c0a2f9a029b9990c6913fb6909e78fbd265c257f797186c6812e6d079763"
+    },
+    "verifier": {
+      "tool": "@headlessoracle/receipt-verify",
+      "version": "0.1.3",
+      "commit": "7376ad43c4bb7a1f41abad6a727fa5ab24a8ad2b"
+    },
+    "verified_at": "2026-10-08"
+  },
+  "subject": {
+    "implementation": "Insight execution-receipt emitter, hosted at oracleinsight.xyz",
+    "artefact": "fixtures/insight/execution-sample-v5-2026-09-09T1443Z.json, the ExecutionReceipt v5 sample served 2026-09-09T14:43:43Z",
+    "artefact_digest": {
+      "alg": "sha256",
+      "value": "f5d32828cfac672e3bffdc96da188f8cfd3681a7281a22ef0bddedff81bc3336"
+    },
+    "role": "emitter",
+    "named_party": "YuTao, with Insight"
+  },
+  "assessor": {
+    "name": "Michael Msebenzi",
+    "affiliation": "Headless Oracle"
+  },
+  "consent": {
+    "named_human": "YuTao",
+    "affiliation": "Insight",
+    "given_on": "2026-09-05",
+    "channel": "email, recorded 2026-09-05",
+    "scope": "named as YuTao, with Insight, for this entry; reply text chosen 2026-10-02"
+  },
+  "methodology": {
+    "document": "registry/methodology/v0.4.5-draft.md",
+    "version": "v0.4.5-draft",
+    "sha256": "3af972a645561299858b8d584510916017b48cfdbd94f78a84d82fd17bcc6bb1"
+  },
+  "method": null,
+  "executed_run": {
+    "command": "node dist/cli.js --format insight --json --now 1788327600 --allow-unregistered-signer --registry refs/insight-oracle-keys-2026-09-02.json fixtures/insight/execution-receipt-bytes-2026-09-02.json > registry/records/2026-10-08-insight-execution-receipt-v5/run/v2-package.json ; node dist/cli.js --format insight --json --now 1788342810 --allow-unregistered-signer --registry refs/insight-oracle-keys-2026-09-02T1154Z.json fixtures/insight/execution-receipt-bytes-2026-09-02-repaired.headless.json > registry/records/2026-10-08-insight-execution-receipt-v5/run/v3-package.json ; node dist/cli.js --format insight --json --now 1788361990 --allow-unregistered-signer --registry refs/insight-oracle-keys-2026-09-02T1545Z.json fixtures/insight/execution-receipt-bytes-2026-09-02-v4.json > registry/records/2026-10-08-insight-execution-receipt-v5/run/v4-package.json ; node dist/cli.js --format insight --json --now 1788361990 --registry refs/insight-oracle-keys-2026-09-02T1545Z.json fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json > registry/records/2026-10-08-insight-execution-receipt-v5/run/v4-sample-1546.json ; node dist/cli.js --format insight --json --now 1788633057 --registry refs/insight-oracle-keys-2026-09-05T1829Z.json registry/records/2026-10-08-insight-execution-receipt-v5/inputs/execution-sample-2026-09-05T1830Z.attestation.json > registry/records/2026-10-08-insight-execution-receipt-v5/run/v4-sample-0905.json ; node dist/cli.js --format insight --json --now 1788965023 --registry refs/insight-oracle-keys-2026-09-09T1440Z.json registry/records/2026-10-08-insight-execution-receipt-v5/inputs/execution-sample-v5-2026-09-09T1443Z.attestation.json > registry/records/2026-10-08-insight-execution-receipt-v5/run/v5-sample-0909.json ; node dist/cli.js --format insight --json --now 1788327600 --allow-unregistered-signer fixtures/insight/execution-receipt-bytes-2026-09-02.json 2> registry/records/2026-10-08-insight-execution-receipt-v5/run/v2-package-noreg.stderr ; node dist/cli.js --format insight --json --now 1788342810 --allow-unregistered-signer fixtures/insight/execution-receipt-bytes-2026-09-02-repaired.headless.json 2> registry/records/2026-10-08-insight-execution-receipt-v5/run/v3-package-noreg.stderr ; node dist/cli.js --format insight --json --now 1788361990 --allow-unregistered-signer fixtures/insight/execution-receipt-bytes-2026-09-02-v4.json 2> registry/records/2026-10-08-insight-execution-receipt-v5/run/v4-package-noreg.stderr",
+    "run_at": "2026-10-08T14:11:34Z",
+    "tool_commit": "7376ad43c4bb7a1f41abad6a727fa5ab24a8ad2b",
+    "outputs": [
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v2-package.json",
+        "sha256": "97986f191b190c8be4b48a07bb2016b9fc913d2bb8c16ee234c521bf88770cdb",
+        "bytes": 9393
+      },
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v3-package.json",
+        "sha256": "c3b9d9bc0bb6bcc09aeafbed536a58bf15a3e32081f375964323d8ea615fdbb0",
+        "bytes": 12451
+      },
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v4-package.json",
+        "sha256": "137ae6c757e52ad1862e76e1388ce5a0bc7b0722df3e4fbb8083cf1c0f7df023",
+        "bytes": 12013
+      },
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v4-sample-1546.json",
+        "sha256": "e1e6e0c8cb9d16dac96a7fe90b4df1b53cfac9fbce7f069b4acf1402c8c1a47a",
+        "bytes": 6863
+      },
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v4-sample-0905.json",
+        "sha256": "5f54e29b83616a1599dce654bdd38cddafdaf9315d4f63edb133f6afdf3bf948",
+        "bytes": 7203
+      },
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v5-sample-0909.json",
+        "sha256": "621db122583ab420c304c5940d8669096d9f015076bfde00a4a032d8ea798f45",
+        "bytes": 7078
+      },
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v2-package-noreg.stderr",
+        "sha256": "c908e7a29595f2726d8c28f60b9df1fe284ba9bd3bbf0c94c83ed1f69c0c37fb",
+        "bytes": 5736
+      },
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v3-package-noreg.stderr",
+        "sha256": "69cb94545646ddd553ba34cf33a29610963eaa40039814d6b236b72271308c3d",
+        "bytes": 6478
+      },
+      {
+        "path": "registry/records/2026-10-08-insight-execution-receipt-v5/run/v4-package-noreg.stderr",
+        "sha256": "a4bb6aad023a14a0aba5c3c091a6fa0b41b055f75de7a30182b4691ec8f759ed",
+        "bytes": 6013
+      }
+    ]
+  },
+  "pinned_inputs": [
+    {
+      "path": "fixtures/insight/execution-receipt-bytes-2026-09-02.json",
+      "location": "in_tree",
+      "sha256": "b96ff0b3ec923b77a38553a00f44b9e6949683b6503cfcc13589071b806854ba",
+      "bytes": 25151,
+      "source": "email attachment from the graded party, 2026-09-02T06:08:45Z (fixtures/provenance.md line 255)",
+      "retrieved_at": "2026-09-02T05:41:12.092Z (the package's own meta.generatedAt)",
+      "holder": null
+    },
+    {
+      "path": "fixtures/insight/execution-receipt-bytes-2026-09-02-repaired.headless.json",
+      "location": "in_tree",
+      "sha256": "e4a11b4de20a4dfdfdbaee29dadc1f7126b0b36c130bf6ba3c6a7ff5578eb89a",
+      "bytes": 39871,
+      "source": "email attachment from the graded party, 2026-09-02 (fixtures/provenance.md line 293)",
+      "retrieved_at": "2026-09-02T09:53:54.871Z (the package's own meta.generatedAt)",
+      "holder": null
+    },
+    {
+      "path": "fixtures/insight/execution-receipt-bytes-2026-09-02-v4.json",
+      "location": "in_tree",
+      "sha256": "fb403a85d6bd9af3ce7243cdae0b753a53a4a5cad816efde3a3ffc247bd98781",
+      "bytes": 44472,
+      "source": "email attachment from the graded party, 2026-09-02T15:34Z mail, uploaded by the founder 15:50Z (fixtures/provenance.md line 563)",
+      "retrieved_at": "2026-09-02T15:50Z (uploaded by the founder; the provenance table has no retrieval column)",
+      "holder": null
+    },
+    {
+      "path": "fixtures/insight/execution-sample-2026-09-02T1546Z.json",
+      "location": "in_tree",
+      "sha256": "a3698a472f72578170266f6be42ae4c46ad6c7bd4e1f9f58309be5bfd9c6263a",
+      "bytes": 4675,
+      "source": "production sample endpoint, pinned as bytes (fixtures/provenance.md line 565)",
+      "retrieved_at": "2026-09-02T15:45:58Z",
+      "holder": null
+    },
+    {
+      "path": "fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json",
+      "location": "in_tree",
+      "sha256": "da6cdb0b71b7864d870614be661dfc1abda497ef78bd477c95785aadee3deb21",
+      "bytes": 6471,
+      "source": "data.attestation extracted from fixtures/insight/execution-sample-2026-09-02T1546Z.json (fixtures/provenance.md line 566)",
+      "retrieved_at": "2026-09-02T15:45:58Z",
+      "holder": null
+    },
+    {
+      "path": "fixtures/insight/execution-sample-2026-09-05T1830Z.json",
+      "location": "in_tree",
+      "sha256": "a2c442e02df4682899ee9707d0c695e17ce4f65029b2ccd7c67728061f143b5b",
+      "bytes": 4894,
+      "source": "https://www.oracleinsight.xyz/api/v1/execution/attestation/sample (fixtures/provenance.md line 772)",
+      "retrieved_at": "2026-09-05T18:30:58Z",
+      "holder": null
+    },
+    {
+      "path": "fixtures/insight/execution-sample-v5-2026-09-09T1443Z.json",
+      "location": "in_tree",
+      "sha256": "f5d32828cfac672e3bffdc96da188f8cfd3681a7281a22ef0bddedff81bc3336",
+      "bytes": 5015,
+      "source": "https://www.oracleinsight.xyz/api/v1/execution/attestation/sample?schemaVersion=5 (fixtures/provenance.md line 1507)",
+      "retrieved_at": "2026-09-09T14:43:43Z",
+      "holder": null
+    },
+    {
+      "path": "registry/records/2026-10-08-insight-execution-receipt-v5/inputs/execution-sample-2026-09-05T1830Z.attestation.json",
+      "location": "in_tree",
+      "sha256": "8f8a8c84615cfb9710070c0fcd86d69aae434a86e71c8c885bf4cb34d075c501",
+      "bytes": 6471,
+      "source": "derived by the assessor from the served sample fixtures/insight/execution-sample-2026-09-05T1830Z.json by extracting data.attestation, written as JSON.stringify(data.attestation, null, 2) followed by one newline; the same method reproduces the pinned 15:46Z attestation fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json byte for byte",
+      "retrieved_at": "2026-10-08 (derived); the served sample was retrieved 2026-09-05T18:30:58Z",
+      "holder": null
+    },
+    {
+      "path": "registry/records/2026-10-08-insight-execution-receipt-v5/inputs/execution-sample-v5-2026-09-09T1443Z.attestation.json",
+      "location": "in_tree",
+      "sha256": "caa1299b06675fb4b32c0db7598e08b91a10bf1edd82a557369b16b1ed668316",
+      "bytes": 6638,
+      "source": "derived by the assessor from the served sample fixtures/insight/execution-sample-v5-2026-09-09T1443Z.json by extracting data.attestation, written as JSON.stringify(data.attestation, null, 2) followed by one newline; the same method reproduces the pinned 15:46Z attestation fixtures/insight/execution-sample-attestation-2026-09-02T1546Z.json byte for byte",
+      "retrieved_at": "2026-10-08 (derived); the served sample was retrieved 2026-09-09T14:43:43Z",
+      "holder": null
+    },
+    {
+      "path": "refs/insight-oracle-keys-2026-09-02.json",
+      "location": "in_tree",
+      "sha256": "9269529e7f584ddd54d8ea0210af9820ee082b968492fcbb25b798fab7a88006",
+      "bytes": 9482,
+      "source": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json (fixtures/provenance.md line 256)",
+      "retrieved_at": "2026-09-02T09:09:25Z to 09:09:34Z",
+      "holder": null
+    },
+    {
+      "path": "refs/insight-oracle-keys-2026-09-02T1154Z.json",
+      "location": "in_tree",
+      "sha256": "21675e382e6ead969d3b3fb823b3199327283152ab241be27d9c5b7177de23eb",
+      "bytes": 14854,
+      "source": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json (fixtures/provenance.md line 294)",
+      "retrieved_at": "2026-09-02T11:54:27Z",
+      "holder": null
+    },
+    {
+      "path": "refs/insight-oracle-keys-2026-09-02T1545Z.json",
+      "location": "in_tree",
+      "sha256": "76522cd33edcb94a822a82cf6c70013f9d34489a39447912c28d8336fcc87ae2",
+      "bytes": 17019,
+      "source": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json, pinned as bytes (fixtures/provenance.md line 564)",
+      "retrieved_at": "2026-09-02T15:45:42Z",
+      "holder": null
+    },
+    {
+      "path": "refs/insight-oracle-keys-2026-09-05T1829Z.json",
+      "location": "in_tree",
+      "sha256": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
+      "bytes": 17958,
+      "source": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json (fixtures/provenance.md line 771)",
+      "retrieved_at": "2026-09-05T18:29:05Z",
+      "holder": null
+    },
+    {
+      "path": "refs/insight-oracle-keys-2026-09-09T1440Z.json",
+      "location": "in_tree",
+      "sha256": "dbcf0929615b59aba2cb70f0f45cc246807cab2109b1cb316cee2fd70c01fd57",
+      "bytes": 21836,
+      "source": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json (fixtures/provenance.md line 1506)",
+      "retrieved_at": "2026-09-09T14:40:02Z",
+      "holder": null
+    },
+    {
+      "path": "refs/insight-oracle-registry-release-0x6e3bd18c.json",
+      "location": "in_tree",
+      "sha256": "9171c0a2f9a029b9990c6913fb6909e78fbd265c257f797186c6812e6d079763",
+      "bytes": 22080,
+      "source": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0x6e3bd18c541cc80e326754a7743f05050df348257102b93f9a13bc82c7e69f6b (fixtures/upstreams.json, id insight-oracle-registry-release/0x6e3bd18c; fixtures/provenance.md line 2140); the key's upstream digest, not read by the run",
+      "retrieved_at": "2026-09-16T11:38:10Z",
+      "holder": null
+    }
+  ],
+  "as_of": {
+    "upstream_digest": {
+      "alg": "sha256",
+      "value": "9171c0a2f9a029b9990c6913fb6909e78fbd265c257f797186c6812e6d079763"
+    },
+    "date": "2026-10-08"
+  },
+  "not_established": [
+    "that any gate preceded any trade (H4; anchoring is the implementer's TODO); the profile's prose against the implementer's code beyond `preTradeUidsHash`; any v5 receipt signed by a production key (every v5 artefact examined is sample-signed); multi-profile behaviour; the runtime that enforces the published policy; the assessor's tool does not read the sentinel 4294967295 (treated as an age) and checks `preTradeUidsHash` on the package path only, so it is unchecked on the bare attestations Insight actually serves (both recorded in `FINDINGS.md`, open); the v1 activation set (`0xe125edc3…`), named in pinned documents and never fetched, so that of the two activation sets named in pinned documents only the v2 set is pinned; the promotion records named in the pinned documents (`0x338a53e5…`, `0x4396f761…`) were not fetched for this entry and their bytes are not pinned, so promotion content-addressing is established here by the release's declaration and by recomputing the one promotion this tree does pin, and not by resolving those two.",
+    "No package or sample examined is evidence of a real trade, and the entry claims nothing about the implementer's production signing flow beyond the served samples.",
+    "The tool cannot detect the substitution the issuer's rule exists to forbid: it reports the digest and byte length of whatever registry bytes it is handed, and the comparison against the preserved copy is the reader's.",
+    "And the adapter does not evaluate lineage admission at all, so the floor rule recorded under 2.5 is read here and not implemented.",
+    "It is a snapshot, true of the artefact versions and registry pins named and of nothing else (methodology §3)."
+  ],
+  "establishes": [
+    "The bytes that get signed are determined by EIP-712: `uid` equals keccak256(0x1901 || domainSeparator || hashStruct(message)); the assessor recomputed it for every artefact examined with no Insight code read or run (the recomputation is 2.4's evidence; this axis is determined by reading, per §3).",
+    "the three packages are signed by a labelled test key absent from the registry, by the implementer's own label; the served samples recover to registry keys, one of them role \"sample\".",
+    "The v4 package's declared types match the registry pinned at 2026-09-02T15:45:42Z field for field (44 fields; the retired V3, V2 and V1 layouts still published); the v5 sample's declared type matches the 9 September registry (`registry_schema = match (v5)`; five layouts published, only v5 open for signing).",
+    "Keys are retrievable without credentials at the registry URL the package itself names."
+  ],
+  "independent_rerun": null,
+  "review_window": {
+    "sent_on": "2026-09-17",
+    "closes_on": "2026-10-01",
+    "outcome": "replied"
+  },
+  "reply": {
+    "kind": "statement",
+    "date": "2026-10-02",
+    "pointer": "registry/records/2026-10-08-insight-execution-receipt-v5/reply.md",
+    "text_sha256": "47c022098e88a007d959680fe08a4f433888018e7dd6f792c05c949085e37348"
+  },
+  "status": "published",
+  "supersedes": null,
+  "superseded_by": null,
+  "supersession_reason": null,
+  "report": {
+    "path": "registry/records/2026-10-08-insight-execution-receipt-v5/report.md",
+    "sha256": "6e7d3e3d73bc31bc4d10cef0c4fe8649ab8c1bef5802a05b3b307a3f2ebe3653",
+    "bytes": 35043
+  }
+}

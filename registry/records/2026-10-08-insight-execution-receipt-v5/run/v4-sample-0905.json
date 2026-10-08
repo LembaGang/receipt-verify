@@ -1,0 +1,94 @@
+{
+  "schema": "receipt-verify/verdict/0",
+  "verdict": "VALID",
+  "reason": "verified",
+  "format": "insight.attestation/eip712",
+  "detail": "historical, snapshot-relative: EIP-712 digest, signature and schema checks passed for a single ExecutionReceipt attestation",
+  "resolved_key": {
+    "kid": "insight-oracle-safety-sample",
+    "alg": "EIP-712/secp256k1",
+    "origin": "refs/insight-oracle-keys-2026-09-05T1829Z.json"
+  },
+  "annotations": {
+    "schema_encode_type": "ExecutionReceipt(string bindingMode,string claimRole,address subject,address taker,bytes32 preTradeUid,bytes32 destinationPreTradeUid,bytes32 preTradeUidsHash,bytes32 requestHash,string sourceAssetId,string destinationAssetId,uint256 subjectChainId,uint256 settlementChainId,string action,uint256 quotedPrice,uint256 executedPrice,uint8 priceScale,string quoteBasis,uint256 quoteBlockNumber,bool quoteVenueIndependent,int256 priceDeltaBps,uint256 maxSlippageBps,bool slippageSatisfied,uint256 quotedAmountUsd,uint256 executedAmountUsd,uint256 actualFeeUsd,bytes32 measuredFieldsHash,string fillStatus,string priceExecutionStatus,bytes32 txHash,uint256 blockNumber,uint256 executedAt,uint256 preTradeSignedAt,uint256 attestationAgeAtExecSeconds,uint256 priceStateAgeAtExecSeconds,uint256 participantCount,uint256 requiredParticipantCount,uint256 sourceGroupCount,uint256 requiredSourceGroupCount,bool independenceSatisfied,uint256 mevRiskBps,bytes32 reasonCodesHash,uint256 validUntil,uint256 schemaVersion,string environment)",
+    "digest": "0xd6b8fcfb66b8862661c09a43e1bfd283d4397ecebf14fc478a64af814bec76b4",
+    "recovered_signer": "0xa41d5ee795d95b87b3aa988150fc2d5e5fe5a534",
+    "uid_equals_digest": true,
+    "verdict_scope": "snapshot-relative",
+    "registry_snapshot_sha256": "7cc00b957f14e1a954bcbff7dd0b5e97b9f4af1ef8c2e21cb9fa879339ce7330",
+    "registry_snapshot_byte_length": 17958,
+    "registry_snapshot_origin": "refs/insight-oracle-keys-2026-09-05T1829Z.json",
+    "registry_schema": "match (v4)",
+    "semantic_profile": "not_published — refs/insight-oracle-keys-2026-09-05T1829Z.json declares no semanticProfile for ExecutionReceipt v4; this layout does not sign one, and its semantics resolve through the registry snapshot pinned with the receipt",
+    "identity_key_role": "sample",
+    "identity_role_observation": "signed by a key the registry labels role sample; the signed fields do not say so",
+    "identity_key_registry_note": "SAMPLE ONLY: receipts signed by this key carry synthetic demo facts (clearly-labelled demo inputs, no real settlement). Verify them to exercise the signature loop; never treat them as evidence of a real trade.",
+    "identity_key_window_at_signing": "inside — signedAt 1788633057 (2026-09-05T18:30:57.000Z) is within key insight-oracle-safety-sample [validFrom 1788393600 (2026-09-03T00:00:00.000Z), validUntil open]",
+    "identity_signing_instant": "signedAt 1788633057 (2026-09-05T18:30:57.000Z) — package metadata, OUTSIDE the signed bytes; the signed executedAt reads 1788633057 (2026-09-05T18:30:57.000Z)",
+    "identity_key_window": "inside — evaluated at 1788633057 (2026-09-05T18:30:57.000Z) against key insight-oracle-safety-sample [validFrom 1788393600 (2026-09-03T00:00:00.000Z), validUntil open]",
+    "identity": "signer_in_registry (insight-oracle-safety-sample, role sample)",
+    "precedence": "signed_before_block (asserted by signer, unanchored) — preTradeSignedAt 1788633027 is 30s before executedAt 1788633057. Ordering itself is not_checked: that a gate existed BEFORE the trade cannot be established from these bytes. Signature timestamps are package metadata and `checkedAt` is a signed field the signer chooses. Anchoring the gate uid before the trade transaction is what would close it.",
+    "observations": "not_checked — participantCount, sourceGroupCount, independenceSatisfied, the consensus price's provenance and mevRiskBps are issuer claims; nothing in these bytes tests them."
+  },
+  "coverage": {
+    "stopped_at": null,
+    "checks_not_evaluated": [
+      {
+        "id": "profile",
+        "title": "The semantic profile the receipt signs is one the registry publishes for its layout",
+        "source": "the registry's `semanticProfile` member (from 2026-09-09) and the promotion record's activation rule",
+        "status": "conditional",
+        "reason": "condition_unmet",
+        "condition": "applies when the registry publishes a semanticProfile for this artefact's own layout; refs/insight-oracle-keys-2026-09-05T1829Z.json publishes none for ExecutionReceipt v4"
+      },
+      {
+        "id": "binding",
+        "title": "The receipt binds to every gate it names, the non-zero uids hash to the signed preTradeUidsHash, and each requestHash is the digest of its canonical request",
+        "source": "the receipt's preTradeUid / destinationPreTradeUid / preTradeUidsHash / requestHash and the gates' canonicalRequest* types",
+        "status": "conditional",
+        "reason": "condition_unmet",
+        "condition": "applies when a package supplies pre-trade gates; this is a single attestation, so preTradeUid, destinationPreTradeUid, preTradeUidsHash and requestHash were not examined against anything"
+      },
+      {
+        "id": "swap",
+        "title": "The pool Swap event decodes to the signed executedPrice, and the delta against quotedPrice is recomputed",
+        "source": "the Uniswap V3 Swap event ABI, derived from its signature string here",
+        "status": "conditional",
+        "reason": "condition_unmet",
+        "condition": "applies when a package ships an onchain block naming the swap legs; this is a single attestation, so no pool event was decoded"
+      },
+      {
+        "id": "prices",
+        "title": "Prices read at the signed `priceScale`, the quote recomputed from both gates, and the execution status recomputed",
+        "source": "the receipt's priceScale/quotedPrice/executedPrice and the gates' consensusPrice",
+        "status": "conditional",
+        "reason": "condition_unmet",
+        "condition": "applies when a package supplies gates to recompute the quote from; this is a single attestation"
+      },
+      {
+        "id": "chain",
+        "title": "Transaction status, block number, block timestamp and shipped logs corroborated against a JSON-RPC endpoint",
+        "source": "eth_getTransactionReceipt / eth_getBlockByNumber",
+        "status": "conditional",
+        "reason": "condition_unmet",
+        "condition": "applies when --rpc is given AND the package ships an onchain block; this is a single attestation"
+      },
+      {
+        "id": "precedence",
+        "title": "That a pre-trade gate existed BEFORE the trade it gates",
+        "source": "the claim the package's structure invites; no source establishes it",
+        "status": "not_implemented",
+        "reason": "not_implemented"
+      },
+      {
+        "id": "observations",
+        "title": "participantCount, sourceGroupCount, independence, consensus-price provenance and mevRiskBps",
+        "source": "the receipt's own signed fields",
+        "status": "not_implemented",
+        "reason": "not_implemented"
+      }
+    ]
+  },
+  "delivery_gate": null,
+  "exit_code": 0
+}
