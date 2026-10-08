@@ -42,7 +42,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { spawn, execFileSync } from "node:child_process";
 import { createServer, type Server } from "node:https";
-import { mkdtempSync, readFileSync, rmSync, existsSync, statSync, readdirSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, existsSync, statSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { EVIDENCE, ROOT, THROWAWAY_JWKS } from "./helpers.js";
@@ -64,12 +64,51 @@ let base: string;
 let tmp: string;
 let caPath: string;
 
+/**
+ * The openssl to run. PATH first; then the one Git for Windows ships, which is
+ * where a Windows machine with no separate OpenSSL install has one (found
+ * 2026-10-08: `spawnSync openssl ENOENT` on the maintainer's machine). OPENSSL
+ * overrides both. Located from `git --exec-path`, never guessed from a fixed
+ * install directory.
+ */
+function findOpenssl(): string {
+  const candidates: string[] = [];
+  if (process.env.OPENSSL) candidates.push(process.env.OPENSSL);
+  candidates.push("openssl");
+  if (process.platform === "win32") {
+    try {
+      const exec = execFileSync("git", ["--exec-path"], { stdio: "pipe" }).toString().trim();
+      const gitRoot = join(exec, "..", "..", "..");
+      candidates.push(join(gitRoot, "mingw64", "bin", "openssl.exe"));
+      candidates.push(join(gitRoot, "usr", "bin", "openssl.exe"));
+    } catch {
+      // no git on PATH: only the candidates above remain
+    }
+  }
+  for (const c of candidates) {
+    try {
+      execFileSync(c, ["version"], { stdio: "pipe" });
+      return c;
+    } catch {
+      // not runnable; try the next
+    }
+  }
+  throw new Error(
+    `openssl not found (tried: ${candidates.join(", ")}). Install OpenSSL, or set OPENSSL to its path.`,
+  );
+}
+
 /** Self-signed loopback cert, generated per-run into a temp dir. Never committed. */
 function makeCert(dir: string): { key: string; cert: string } {
+  // A minimal config of our own, so the run never depends on where (or whether)
+  // the openssl build looks for its default openssl.cnf.
+  const cnf = join(dir, "req.cnf");
+  writeFileSync(cnf, "[req]\ndistinguished_name = dn\n[dn]\n");
   execFileSync(
-    "openssl",
+    findOpenssl(),
     [
       "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+      "-config", cnf,
       "-keyout", join(dir, "key.pem"),
       "-out", join(dir, "cert.pem"),
       "-days", "1", "-subj", "/CN=127.0.0.1",
@@ -103,8 +142,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await new Promise<void>((r) => server.close(() => r()));
-  rmSync(tmp, { recursive: true, force: true });
+  if (server) await new Promise<void>((r) => server.close(() => r()));
+  if (tmp) rmSync(tmp, { recursive: true, force: true });
 });
 
 interface Ran {
