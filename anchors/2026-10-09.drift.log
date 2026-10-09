@@ -1,0 +1,121 @@
+
+> @headlessoracle/receipt-verify@0.1.3 drift
+> tsx tools/drift.ts
+
+== corpus drift ==
+  NOT_CHECKED      asqav-sdk/6137cb95                                       role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  MOVED_CHANGED    asqav-sdk/a21d060                                        main is bd002c0c9ad863fa0b1c4de675f6378b7321dda0 (pinned a21d0608b0ff949c583138f2987eba3b6c15749f); 1 of 1 pinned paths differ at the tip; noted: conformance/manifest.lock.json 4fe1d441ff6891ec68ed826dc7e52bc0e64ae429 -> 69aacedb141919fe321daa7ee589f7e676983be6
+      conformance/vectors.json
+          old blob : 9e0c093c83b3fff96a026093179adc09f8ffa96c
+          new blob : ebd8931ded180ac42c4d7c44a4b52b700c1af0d5
+          new sha256: 575d2605d5acf40d3387603cdded83e95efbe8794dc8dd8387f6b7905d1db99a
+      conformance/manifest.lock.json   [check: note -- reported, does not fail the run]
+          old blob : 4fe1d441ff6891ec68ed826dc7e52bc0e64ae429
+          new blob : 69aacedb141919fe321daa7ee589f7e676983be6
+          new sha256: a2839bf22a3b6eeb6b0182064ef590bff4ae721df611c612492e228af873251b
+  NOT_CHECKED      asqav-sdk/22a970d                                        role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      asqav-sdk/3b88156                                        role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      asqav-sdk/05c1c49                                        role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      asqav-sdk/history/4cbdfc0                                role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      asqav-sdk/history/ee8a3e7                                role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      asqav-sdk/history/3e13a0d                                role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  MOVED_UNTOUCHED  agentoracle-receipt-spec/196df22b                        HEAD is 14dd6e98bed08e267f4a88df329c9c31ae8c3de0 (pinned 196df22b255e7173d4eb6b20e833cc4e8ae6d35d); all 43 pinned paths unchanged at the tip
+  NOT_CHECKED      agent-governance-testvectors/HEAD-sha256-only            role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  MOVED_CHANGED    agent-governance-testvectors                             HEAD is 56801e37a0c9e668626959a267ac8cfa02e8c27d (pinned b82a50a375299e5edfbabea686b0e2654df75006); 1 of 12 pinned paths differ at the tip; noted: README.md 63a20dd533aa060478f4266407bc326393fb1be0 -> 729cdcc34046163877f177892f8a98369245dd64; noted: spec.md 2ce503bc7a40127e438cf06f9545ea9e1a5e68b9 -> 005312beebee56a0181b8012eb19c47fcb13a2a9
+      expected/receipt-schema.json
+          old blob : 5b7dae2c2373c92915c1a8d45ec8116d7d9ccb2b
+          new blob : 700ccc74b903d13c14c455671d16a3be10c9326c
+          new sha256: dbfb1ed24fdae80954f2c19d19b1e1fcaaae090b64f66128bc9a8a87fd891b13
+      README.md   [check: note -- reported, does not fail the run]
+          old blob : 63a20dd533aa060478f4266407bc326393fb1be0
+          new blob : 729cdcc34046163877f177892f8a98369245dd64
+          new sha256: a3c46a1a2fde48bbce6ea806bab704e6683ed7cf7cd7231f6632837372867496
+      spec.md   [check: note -- reported, does not fail the run]
+          old blob : 2ce503bc7a40127e438cf06f9545ea9e1a5e68b9
+          new blob : 005312beebee56a0181b8012eb19c47fcb13a2a9
+          new sha256: 2a8b15f5948146da733b4071b8ca154d1aeb160b17268c557707752dfe8e25bb
+  CHANGED          agentoracle-jwks                                         https://agentoracle.co/.well-known/jwks.json: pinned 5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8, now 0ea61e88deb153d66ebf21b5ab3f0f6b330becc360391ded7c7e17a0efe05bd5 (2399 bytes)
+  CURRENT          agentoracle-mapping-by-digest                            https://agentoracle.co/mappings/0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0.json still digests to the pin (2008 bytes)
+  CURRENT          agentoracle-mapping-named                                https://agentoracle.co/mappings/agentoracle-v0.3-2026-05-30.json still digests to the pin (2008 bytes)
+  CURRENT          insight-oracle-registry-release/0xd240af8f               https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0xd240af8f16adb282cbbbb9feb695f5bfb8cccde074af046fb7d4ca4c2d4c5c2e still digests to the pin (20488 bytes)
+  CURRENT          insight-oracle-registry-profile/0xe7513b05               https://www.oracleinsight.xyz/.well-known/oracle-registry/profiles/0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e still digests to the pin (2372 bytes)
+  CURRENT          insight-oracle-registry-release/0x96d1f624               https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0x96d1f62460d53e68b34cb7812e8ef736cce8332754dc1284cfb7df1b2b575e2c still digests to the pin (21519 bytes)
+  CURRENT          insight-oracle-registry-integration-set/0xe9512f0b       https://www.oracleinsight.xyz/.well-known/oracle-registry/integration-sets/0xe9512f0bf2b94c9a846877187b70fd29007fa196c8bd67f7c17eb58eebc24190 still digests to the pin (1400 bytes)
+  CURRENT          insight-oracle-registry-integration-policy/0xd510bd9f    https://www.oracleinsight.xyz/.well-known/oracle-registry/integrations/0xd510bd9f29be0b896aed2e2b95200eab25cb9e03430a456f1bee3df7a17de158 still digests to the pin (1173 bytes)
+  CURRENT          insight-oracle-registry-release/0x6e3bd18c               https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0x6e3bd18c541cc80e326754a7743f05050df348257102b93f9a13bc82c7e69f6b still digests to the pin (22080 bytes)
+  CURRENT          insight-oracle-registry-promotion/0x6148f427             https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x6148f4273e60fa702bbac5a5f0abd3461d8e46e532675aeaec6d991ef93a5217 still digests to the pin (2958 bytes)
+  CURRENT          insight-oracle-registry-promotion/0x4396f761             https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x4396f761c00eee4f37aad37e9a703bd3896ace1fee8a3bde2a5ff8ebb9dc9119 still digests to the pin (3559 bytes)
+  CURRENT          insight-oracle-registry-promotion/0x9c87d2ef             https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x9c87d2eface78336b901c8e8b7d2a1a0fcbe745cc6d9aa172cc36ecf453480d5 still digests to the pin (3341 bytes)
+  CURRENT          insight-oracle-registry-promotion/0x338a53e5             https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x338a53e57055bf01820ef3880b2668bee6907307fc6e682704f868e366518220 still digests to the pin (2977 bytes)
+  CURRENT          insight-oracle-registry-promotion/0x2eeda0f8             https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x2eeda0f89eddad88c20f69680a150754e12266396eb79d503a59c9f14b98e26c still digests to the pin (3486 bytes)
+  CHANGED (NOTE)   insight-oracle-registry-current                          https://www.oracleinsight.xyz/.well-known/oracle-registry/current.json: pinned ac4b4cd9d96ed2d4a9ab9b7b81be73e4c861d52dc46efb2f07f8b5d82889b0df, now 0f4f63b63bfe5428d01ea82ffedecfd501f5354a2ad09c30dc2a289dc75de121 (1331 bytes) [check: note (mutable_pointer) -- reported, does not fail the run]
+  NOT_CHECKED      insight-oracle-registry-current/2026-09-16               role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      insight-oracle-registry-current/2026-09-10               role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CHANGED (NOTE)   insight-oracle-registry-integrations-current             https://www.oracleinsight.xyz/.well-known/oracle-registry/integrations/current.json: pinned c2513d53e0a96999f5a718994ef2936a5b3e93ebaac1a6622fe5274698f49bf0, now f06171d782e72496c5f16306abbc162b125476b5af4e32ffb503f4aaef800367 (1093 bytes) [check: note (mutable_pointer) -- reported, does not fail the run]
+  NOT_CHECKED      insight-oracle-registry-integrations-current/2026-09-10  role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CURRENT          insight-oracle-registry-release/0xf45d4c02               https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0xf45d4c0272300f8132dba75c49b337557cf6fd7975b32fd14a8b4e13f430a8f7 still digests to the pin (21212 bytes)
+  NOT_CHECKED      insight-oracle-registry-current/2026-09-09T1443Z         role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      insight-oracle-keys/2026-09-09T1440Z                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CHANGED (NOTE)   insight-oracle-keys                                      https://www.oracleinsight.xyz/.well-known/oracle-keys.json: pinned f287c37b58d5af6b881a454f2ecd12618cd0f7a328e7ba434b42c3064944d019, now 62815ef10c08811827cd9d86d55b8d542a515f8e06a4f2c5e27a7589f7f4284e (23307 bytes) [check: note (mutable_pointer) -- reported, does not fail the run]
+  NOT_CHECKED      insight-oracle-keys/2026-09-10                           role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      insight-oracle-keys/2026-09-08T1218Z                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      insight-oracle-keys/2026-09-05T1829Z                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      insight-oracle-keys/2026-09-02T1741Z                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      insight-oracle-keys/2026-09-02T0909Z                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      insight-oracle-keys/2026-09-02T1154Z                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      insight-oracle-keys/2026-09-02T1545Z                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CURRENT          draft-marques-asqav-compliance-receipts-09               draft-marques-asqav-compliance-receipts-10 is 404; -09 is the highest revision published
+  NOT_CHECKED      draft-marques-asqav-compliance-receipts-08               role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      draft-marques-asqav-compliance-receipts-07               role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CURRENT          draft-farley-acta-signed-receipts-03                     draft-farley-acta-signed-receipts-04 is 404; -03 is the highest revision published
+  NOT_CHECKED      draft-farley-acta-signed-receipts-02                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  SUPERSEDED       draft-krausz-verification-state-01                       draft-krausz-verification-state-02 exists at the archive; this repository pins -01. Only -02 is probed, so a still higher revision would not be named here.
+  SUPERSEDED       draft-mih-sokolov-scitt-payload-binding-03               draft-mih-sokolov-scitt-payload-binding-04 exists at the archive; this repository pins -03. Only -04 is probed, so a still higher revision would not be named here.
+  NOT_CHECKED      draft-mih-sokolov-scitt-payload-binding-04               role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      draft-mih-sokolov-scitt-payload-binding-05               role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      draft-mih-sokolov-scitt-payload-binding-02               role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CURRENT          delivery-fixtures/local                                  all 4 local paths are present at HEAD and digest to the recorded sha256
+  CURRENT          x402-specification-v2                                    main is still dd927a26cfefc98c24b3ec38b3a8f204dad0c60d
+  CHANGED          x402-core-dist-tags                                      https://registry.npmjs.org/-/package/@x402%2fcore/dist-tags: pinned 3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60, now ca058a1f356b82eb06e43a6e2d2581167ab64c63c6294c01996b9f45f4929262 (19 bytes)
+  CHANGED          x402-fetch-dist-tags                                     https://registry.npmjs.org/-/package/@x402%2ffetch/dist-tags: pinned 3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60, now ca058a1f356b82eb06e43a6e2d2581167ab64c63c6294c01996b9f45f4929262 (19 bytes)
+  CURRENT          verifiable-intent-changelog                              main is still 356c29635f1c44df7de02edb58699ca9f29bece6
+  MOVED_UNTOUCHED  mcp-specification-changelog                              main is c518f7a927cff918bce35d3522fcdb046d264d7c (pinned aa8ce049f089f92618340190d4ece141f663310d); all 2 pinned paths unchanged at the tip
+  NOT_CHECKED      mcp-specification-changelog/render-2026-09-08T0959Z      role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      draft-hillier-scitt-arp-03                               role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CURRENT          draft-hillier-scitt-arp-04                               draft-hillier-scitt-arp-05 is 404; -04 is the highest revision published
+  SUPERSEDED       draft-sirkkavaara-vaara-receipt-10                       draft-sirkkavaara-vaara-receipt-11 exists at the archive; this repository pins -10. Only -11 is probed, so a still higher revision would not be named here.
+  CURRENT          draft-vauban-x402-consolidated-00                        draft-vauban-x402-consolidated-01 is 404; -00 is the highest revision published
+  NOT_CHECKED      rfc9964-info/render-2026-09-08T0959Z                     role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CURRENT          rfc9964-text                                             https://www.rfc-editor.org/rfc/rfc9964.txt still digests to the pin (180564 bytes)
+  CURRENT          rfc9964-status                                           https://www.rfc-editor.org/rfc/rfc9964.json still digests to the pin (998 bytes)
+  MOVED_UNTOUCHED  obsigna-receipt-spec                                     main is 77f36a22a6720deb4151970b047b0101a426f38d (pinned a53ffae1268cf2a9dda0a7796a641618543fe657); all 1 pinned path unchanged at the tip
+  CHANGED          dapr-workflow-history-signing                            https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-history-signing/: pinned 1059546c32e83a556eb6917f2c343fa6340c683bb00342fb96bff6349992327d, now def0eafcfe4de83b95967506174249f16db96c0e9eb884577d90584a490fb858 (72248 bytes)
+  MOVED_CHANGED    tersign-evidence-record-conformance                      main is 211eef4c875aa015ecfba88641a6beff5a535e53 (pinned 1075ca65b4495212cf49a891e63e07f2cf48acf8); 4 of 74 pinned paths differ at the tip; noted: README.md 3bb59c000ec2bde2ae39e9dc6d29ad3342561896 -> 890f928b25250292726ce858bef23399dec2244b
+      MANIFEST.json
+          old blob : 9c256714d607d1487f3e2a100251a53b317749e4
+          new blob : e33826814c3bfe7c4ad24d740ac083b2e49acc0f
+          new sha256: cb73cd80dfb05ca3b3d5fc1f9d64e4a011b38cfd44567130fa8f0d4c7a62a63d
+      tools/cross_check_ts.mjs
+          old blob : 84176a71eab5731aaf40df06d39598013e4c8bb1
+          new blob : e3001ccbc9e0c73c1824a8d477a72653ac00509e
+          new sha256: 29d5883cfbb205bf8f6f5aed318d599e84bad4c4958e61859ae4904217a18240
+      tools/differential.py
+          old blob : 9c08e36c02f9bce1a3b73f454b4bc369a0662e2e
+          new blob : ff676656e9ed91749f13bf2465b045c65c88f3c9
+          new sha256: 014d009fa4a71fbd3cd2bd085b3b9a57486a8a7d43213d5a1e3144e37d4764d5
+      verify.py
+          old blob : 0802d811872ac34067853f358d77440fd5197c94
+          new blob : d1c8a857834ac821c81e4b7d6dac5b174b82d4e5
+          new sha256: 1b0bc236a4ab0d21ab6b573a295ac7b3c7266d86dd0e85f9f8abbe94db2c836c
+      README.md   [check: note -- reported, does not fail the run]
+          old blob : 3bb59c000ec2bde2ae39e9dc6d29ad3342561896
+          new blob : 890f928b25250292726ce858bef23399dec2244b
+          new sha256: 95ce1a4473e07b11166aac4f3b7aad9da2d996075ee83a36051ba07344b708d4
+  CURRENT          axes-golden-trace/corpus-2026-08-08-gt-v2                refs/tags/corpus/2026-08-08-gt-v2^{} is still 776cc0b571a6bdd3fdc3f6901688905a75c0e279
+  NOT_CHECKED      x402-pr-2853-compliance-fields/8e0a3fc6                  role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      x402-pr-2853-compliance-fields/b8a81c09                  role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      x402-pr-3000-attestations/cb666052                       role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  NOT_CHECKED      x402-action-receipt/597f2145                             role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip
+  CURRENT          ho-receipt-fixtures/local                                all 36 local paths are present at HEAD and digest to the recorded sha256
+
+drift: current=25 moved_untouched=3 moved_changed=3 changed=7 superseded=3 unreachable=0 not_checked=33 no_entry=0 noted=3
