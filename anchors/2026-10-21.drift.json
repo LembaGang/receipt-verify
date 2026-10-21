@@ -1,0 +1,748 @@
+{
+  "header": {
+    "tool": "tools/drift.ts",
+    "run_at": "2026-10-21T12:12:29.456Z",
+    "upstreams": "fixtures/upstreams.json"
+  },
+  "body": {
+    "results": [
+      {
+        "id": "agent-governance-testvectors",
+        "kind": "git",
+        "role": "current",
+        "outcome": "moved_changed",
+        "tip": "0355dd400c461c66816f698896089545ac03196a",
+        "detail": "HEAD is 0355dd400c461c66816f698896089545ac03196a (pinned b82a50a375299e5edfbabea686b0e2654df75006); 1 of 12 pinned paths differ at the tip; noted: README.md 63a20dd533aa060478f4266407bc326393fb1be0 -> df361fe22e49b01d31d065279d978140802df34f; noted: spec.md 2ce503bc7a40127e438cf06f9545ea9e1a5e68b9 -> 005312beebee56a0181b8012eb19c47fcb13a2a9",
+        "changed_paths": [
+          {
+            "path": "expected/receipt-schema.json",
+            "old_blob": "5b7dae2c2373c92915c1a8d45ec8116d7d9ccb2b",
+            "new_blob": "700ccc74b903d13c14c455671d16a3be10c9326c",
+            "new_sha256": "dbfb1ed24fdae80954f2c19d19b1e1fcaaae090b64f66128bc9a8a87fd891b13"
+          }
+        ],
+        "noted_paths": [
+          {
+            "path": "README.md",
+            "old_blob": "63a20dd533aa060478f4266407bc326393fb1be0",
+            "new_blob": "df361fe22e49b01d31d065279d978140802df34f",
+            "new_sha256": "21b5ebb314adbeb604338b0cbf296a96d9233eebb1fac6cacda6f02c9068665f"
+          },
+          {
+            "path": "spec.md",
+            "old_blob": "2ce503bc7a40127e438cf06f9545ea9e1a5e68b9",
+            "new_blob": "005312beebee56a0181b8012eb19c47fcb13a2a9",
+            "new_sha256": "2a8b15f5948146da733b4071b8ca154d1aeb160b17268c557707752dfe8e25bb"
+          }
+        ]
+      },
+      {
+        "id": "agent-governance-testvectors/HEAD-sha256-only",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "agentoracle-jwks",
+        "kind": "http",
+        "role": "current",
+        "outcome": "changed",
+        "tip": "8046accaade1225100fba808193a7bb4f387c3be5080bd5c22da460af35e472b",
+        "detail": "https://agentoracle.co/.well-known/jwks.json: pinned 5cef45bb61ffe955113ca744e0fd131c9423831b2972a06aa2ad5a3bc328e2b8, now 8046accaade1225100fba808193a7bb4f387c3be5080bd5c22da460af35e472b (2044 bytes)"
+      },
+      {
+        "id": "agentoracle-mapping-by-digest",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
+        "detail": "https://agentoracle.co/mappings/0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0.json still digests to the pin (2008 bytes)"
+      },
+      {
+        "id": "agentoracle-mapping-named",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "0a78263976790df6e76cd9f3f441bf5a3b5c3a82e346b5aca43e49626881d7b0",
+        "detail": "https://agentoracle.co/mappings/agentoracle-v0.3-2026-05-30.json still digests to the pin (2008 bytes)"
+      },
+      {
+        "id": "agentoracle-receipt-spec/196df22b",
+        "kind": "git",
+        "role": "current",
+        "outcome": "moved_changed",
+        "tip": "a1849aa286a13402cfe7c1deb755731f7873c7f0",
+        "detail": "HEAD is a1849aa286a13402cfe7c1deb755731f7873c7f0 (pinned 196df22b255e7173d4eb6b20e833cc4e8ae6d35d); 8 of 43 pinned paths differ at the tip",
+        "changed_paths": [
+          {
+            "path": "examples/README.md",
+            "old_blob": null,
+            "new_blob": "d09548107bf546af6cc915c68cd6db0d5cbdca64",
+            "new_sha256": "41f6d43859af345a8c7b4f876d1a5022001a0ce7206b0deb158acdddfa7ff73c"
+          },
+          {
+            "path": "examples/package.json",
+            "old_blob": null,
+            "new_blob": "722dc7e17d3cbb1e6744db84882125c0dd2c6ca0",
+            "new_sha256": "6ef258e505d7b014dca01ec63fa3e79cf00c4401d45be59b4db49cd0e390618d"
+          },
+          {
+            "path": "examples/v0.3-composed/verify.mjs",
+            "old_blob": null,
+            "new_blob": "fdf298cf9b0add7360c797ee1da840d0cd68c2f2",
+            "new_sha256": "178100c3163fbfaf59e766aee21fe293e59e0e4e41c2669a81b5848b62a3385e"
+          },
+          {
+            "path": "examples/v0.3-composed/verify.py",
+            "old_blob": null,
+            "new_blob": "463589db78f4b2767d9b7d79d16431151f3b7770",
+            "new_sha256": "817b30b9db593175fa00a1427fbcf04fedfac5ff171daa2d5c5cb2f253c0c13f"
+          },
+          {
+            "path": "examples/verify_detached_node.mjs",
+            "old_blob": null,
+            "new_blob": "67f5096d650ca3727234a273fd14ad989f51c670",
+            "new_sha256": "aa7611d3c6d2114ca3b8b134e9bfeb9fa1c30d875b022f482a9d9b604cf3544c"
+          },
+          {
+            "path": "examples/verify_detached_python.py",
+            "old_blob": null,
+            "new_blob": "497ca884889992f5f39340b9f94cb7b2b17b315a",
+            "new_sha256": "3e39f52db30372026087df15441dc0717aada330df16628788f4e3c6fd52973f"
+          },
+          {
+            "path": "examples/verify_node.mjs",
+            "old_blob": null,
+            "new_blob": "9f8cca608660a9ae961ed1319bbbba6894ce4b45",
+            "new_sha256": "d7000b0f8833ff680f818f04d195edf50f6ab0e5ed1e45550bc8296468261d7a"
+          },
+          {
+            "path": "examples/verify_python.py",
+            "old_blob": null,
+            "new_blob": "7d79100d7cd3b7e0fa39bc867d79d85ed0a2119a",
+            "new_sha256": "bd60545ef9d4553736105e3021ca3cd1b81e7dc5701049de88ad432d6ecfe542"
+          }
+        ]
+      },
+      {
+        "id": "asqav-sdk/05c1c49",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "asqav-sdk/22a970d",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "asqav-sdk/3b88156",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "asqav-sdk/6137cb95",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "asqav-sdk/a21d060",
+        "kind": "git",
+        "role": "current",
+        "outcome": "moved_changed",
+        "tip": "20b7efade25226ae3fa1548a30b00fc76d280a01",
+        "detail": "main is 20b7efade25226ae3fa1548a30b00fc76d280a01 (pinned a21d0608b0ff949c583138f2987eba3b6c15749f); 1 of 1 pinned paths differ at the tip; noted: conformance/manifest.lock.json 4fe1d441ff6891ec68ed826dc7e52bc0e64ae429 -> 94d5b28bd48acc908654bb166ffa66b32b2e03c9",
+        "changed_paths": [
+          {
+            "path": "conformance/vectors.json",
+            "old_blob": "9e0c093c83b3fff96a026093179adc09f8ffa96c",
+            "new_blob": "a20091819ceb2b9c1b73200e3e3427a297ed3b05",
+            "new_sha256": "014f06f762297eb8208e253545b2dc4b52146190c0503ed42ebc5834fb118477"
+          }
+        ],
+        "noted_paths": [
+          {
+            "path": "conformance/manifest.lock.json",
+            "old_blob": "4fe1d441ff6891ec68ed826dc7e52bc0e64ae429",
+            "new_blob": "94d5b28bd48acc908654bb166ffa66b32b2e03c9",
+            "new_sha256": "68b1ed36c4f13a67e969b811912ed50e5681ed7de810f4dfd7638e03261a91b4"
+          }
+        ]
+      },
+      {
+        "id": "asqav-sdk/history/3e13a0d",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "asqav-sdk/history/4cbdfc0",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "asqav-sdk/history/ee8a3e7",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "axes-golden-trace/corpus-2026-08-08-gt-v2",
+        "kind": "git",
+        "role": "current",
+        "outcome": "current",
+        "tip": "776cc0b571a6bdd3fdc3f6901688905a75c0e279",
+        "detail": "refs/tags/corpus/2026-08-08-gt-v2^{} is still 776cc0b571a6bdd3fdc3f6901688905a75c0e279"
+      },
+      {
+        "id": "dapr-workflow-history-signing",
+        "kind": "http",
+        "role": "current",
+        "outcome": "changed",
+        "tip": "f6b04681564f2056c1a3093f7929d9e2230dd5e79b431b43c180648d8e6e5321",
+        "detail": "https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-history-signing/: pinned 1059546c32e83a556eb6917f2c343fa6340c683bb00342fb96bff6349992327d, now f6b04681564f2056c1a3093f7929d9e2230dd5e79b431b43c180648d8e6e5321 (72301 bytes)"
+      },
+      {
+        "id": "delivery-fixtures/local",
+        "kind": "local",
+        "role": "current",
+        "outcome": "current",
+        "tip": null,
+        "detail": "all 4 local paths are present at HEAD and digest to the recorded sha256"
+      },
+      {
+        "id": "draft-farley-acta-signed-receipts-02",
+        "kind": "ietf-draft",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "draft-farley-acta-signed-receipts-03",
+        "kind": "ietf-draft",
+        "role": "current",
+        "outcome": "current",
+        "tip": "draft-farley-acta-signed-receipts-03",
+        "detail": "draft-farley-acta-signed-receipts-04 is 404; -03 is the highest revision published"
+      },
+      {
+        "id": "draft-hillier-scitt-arp-03",
+        "kind": "ietf-draft",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "draft-hillier-scitt-arp-04",
+        "kind": "ietf-draft",
+        "role": "current",
+        "outcome": "current",
+        "tip": "draft-hillier-scitt-arp-04",
+        "detail": "draft-hillier-scitt-arp-05 is 404; -04 is the highest revision published"
+      },
+      {
+        "id": "draft-krausz-verification-state-01",
+        "kind": "ietf-draft",
+        "role": "current",
+        "outcome": "superseded",
+        "tip": "draft-krausz-verification-state-02",
+        "detail": "draft-krausz-verification-state-02 exists at the archive; this repository pins -01. Only -02 is probed, so a still higher revision would not be named here."
+      },
+      {
+        "id": "draft-marques-asqav-compliance-receipts-07",
+        "kind": "ietf-draft",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "draft-marques-asqav-compliance-receipts-08",
+        "kind": "ietf-draft",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "draft-marques-asqav-compliance-receipts-09",
+        "kind": "ietf-draft",
+        "role": "current",
+        "outcome": "current",
+        "tip": "draft-marques-asqav-compliance-receipts-09",
+        "detail": "draft-marques-asqav-compliance-receipts-10 is 404; -09 is the highest revision published"
+      },
+      {
+        "id": "draft-mih-sokolov-scitt-payload-binding-02",
+        "kind": "ietf-draft",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "draft-mih-sokolov-scitt-payload-binding-03",
+        "kind": "ietf-draft",
+        "role": "current",
+        "outcome": "superseded",
+        "tip": "draft-mih-sokolov-scitt-payload-binding-04",
+        "detail": "draft-mih-sokolov-scitt-payload-binding-04 exists at the archive; this repository pins -03. Only -04 is probed, so a still higher revision would not be named here."
+      },
+      {
+        "id": "draft-mih-sokolov-scitt-payload-binding-04",
+        "kind": "ietf-draft",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "draft-mih-sokolov-scitt-payload-binding-05",
+        "kind": "ietf-draft",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "draft-sirkkavaara-vaara-receipt-10",
+        "kind": "ietf-draft",
+        "role": "current",
+        "outcome": "superseded",
+        "tip": "draft-sirkkavaara-vaara-receipt-11",
+        "detail": "draft-sirkkavaara-vaara-receipt-11 exists at the archive; this repository pins -10. Only -11 is probed, so a still higher revision would not be named here."
+      },
+      {
+        "id": "draft-vauban-x402-consolidated-00",
+        "kind": "ietf-draft",
+        "role": "current",
+        "outcome": "current",
+        "tip": "draft-vauban-x402-consolidated-00",
+        "detail": "draft-vauban-x402-consolidated-01 is 404; -00 is the highest revision published"
+      },
+      {
+        "id": "ho-receipt-fixtures/local",
+        "kind": "local",
+        "role": "current",
+        "outcome": "current",
+        "tip": null,
+        "detail": "all 36 local paths are present at HEAD and digest to the recorded sha256"
+      },
+      {
+        "id": "insight-oracle-keys",
+        "kind": "http",
+        "role": "current",
+        "outcome": "changed",
+        "noted": true,
+        "tip": "095b46f3271bc33220b0ee04a06ef89a2b33a86db41ee564c4a8be5dcb2e9bf5",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-keys.json: pinned f287c37b58d5af6b881a454f2ecd12618cd0f7a328e7ba434b42c3064944d019, now 095b46f3271bc33220b0ee04a06ef89a2b33a86db41ee564c4a8be5dcb2e9bf5 (24524 bytes) [check: note (mutable_pointer) -- reported, does not fail the run]"
+      },
+      {
+        "id": "insight-oracle-keys/2026-09-02T0909Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-keys/2026-09-02T1154Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-keys/2026-09-02T1545Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-keys/2026-09-02T1741Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-keys/2026-09-05T1829Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-keys/2026-09-08T1218Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-keys/2026-09-09T1440Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-keys/2026-09-10",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-registry-current",
+        "kind": "http",
+        "role": "current",
+        "outcome": "changed",
+        "noted": true,
+        "tip": "d11dc06ab0330b65c1e5737e336c8aab99c36ba1294a1b000e83ba4db4946a94",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/current.json: pinned ac4b4cd9d96ed2d4a9ab9b7b81be73e4c861d52dc46efb2f07f8b5d82889b0df, now d11dc06ab0330b65c1e5737e336c8aab99c36ba1294a1b000e83ba4db4946a94 (1331 bytes) [check: note (mutable_pointer) -- reported, does not fail the run]"
+      },
+      {
+        "id": "insight-oracle-registry-current/2026-09-09T1443Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-registry-current/2026-09-10",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-registry-current/2026-09-16",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-registry-integration-policy/0xd510bd9f",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "14e29fbd050bd0d5b52cd4158d25d9fe1d0ea1ef14c8c92b397155d0c9cfc0f7",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/integrations/0xd510bd9f29be0b896aed2e2b95200eab25cb9e03430a456f1bee3df7a17de158 still digests to the pin (1173 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-integration-set/0xe9512f0b",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "91e4fd0cc264ea2bde6ae4ff4092f090b901070376bffd24b6c16a1891e4763b",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/integration-sets/0xe9512f0bf2b94c9a846877187b70fd29007fa196c8bd67f7c17eb58eebc24190 still digests to the pin (1400 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-integrations-current",
+        "kind": "http",
+        "role": "current",
+        "outcome": "changed",
+        "noted": true,
+        "tip": "f06171d782e72496c5f16306abbc162b125476b5af4e32ffb503f4aaef800367",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/integrations/current.json: pinned c2513d53e0a96999f5a718994ef2936a5b3e93ebaac1a6622fe5274698f49bf0, now f06171d782e72496c5f16306abbc162b125476b5af4e32ffb503f4aaef800367 (1093 bytes) [check: note (mutable_pointer) -- reported, does not fail the run]"
+      },
+      {
+        "id": "insight-oracle-registry-integrations-current/2026-09-10",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "insight-oracle-registry-profile/0xe7513b05",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "284056499d0e779f7c168edd11dd716e64acf173bcb43df0bc58cc7bb7287ace",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/profiles/0xe7513b059e9f8291bfa21250e0234661d74112a491efc6b40fbb56692013cb8e still digests to the pin (2372 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-promotion/0x2eeda0f8",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "ad98b03e6ac1045651d592c56754dcd2a2378c780edfcc6caa1c229ad30ee73e",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x2eeda0f89eddad88c20f69680a150754e12266396eb79d503a59c9f14b98e26c still digests to the pin (3486 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-promotion/0x338a53e5",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "8686aef18224d56b29011a95024326d9b8a4ca2fd1491e43f489e813a9fa835c",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x338a53e57055bf01820ef3880b2668bee6907307fc6e682704f868e366518220 still digests to the pin (2977 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-promotion/0x4396f761",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "83d189157861ab37fff153bc5ff858978bba4fcf22441ab818ef94b69d31eec3",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x4396f761c00eee4f37aad37e9a703bd3896ace1fee8a3bde2a5ff8ebb9dc9119 still digests to the pin (3559 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-promotion/0x6148f427",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "0924462061c58963082e2db2da28b17bafc576e24dfbae6a92de60671a3ce426",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x6148f4273e60fa702bbac5a5f0abd3461d8e46e532675aeaec6d991ef93a5217 still digests to the pin (2958 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-promotion/0x9c87d2ef",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "519768a49824e9f68d8036c39b504d252ed90ac41ff1065c72dc484369d8a4ab",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/promotions/0x9c87d2eface78336b901c8e8b7d2a1a0fcbe745cc6d9aa172cc36ecf453480d5 still digests to the pin (3341 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-release/0x6e3bd18c",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "9171c0a2f9a029b9990c6913fb6909e78fbd265c257f797186c6812e6d079763",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0x6e3bd18c541cc80e326754a7743f05050df348257102b93f9a13bc82c7e69f6b still digests to the pin (22080 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-release/0x96d1f624",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "9ef754b8c682e19c72c68dff71a6a836172639ee5e6a857b30307ec394ce0bf8",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0x96d1f62460d53e68b34cb7812e8ef736cce8332754dc1284cfb7df1b2b575e2c still digests to the pin (21519 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-release/0xd240af8f",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "cab85b239d53ac336c018a18ba26a487e76e2c86b4d5e416fbd76b891dd14785",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0xd240af8f16adb282cbbbb9feb695f5bfb8cccde074af046fb7d4ca4c2d4c5c2e still digests to the pin (20488 bytes)"
+      },
+      {
+        "id": "insight-oracle-registry-release/0xf45d4c02",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "f85381e271869daa6bfa53956441cd3b2641b9c53d326e4e2e59f8498f822fd7",
+        "detail": "https://www.oracleinsight.xyz/.well-known/oracle-registry/releases/0xf45d4c0272300f8132dba75c49b337557cf6fd7975b32fd14a8b4e13f430a8f7 still digests to the pin (21212 bytes)"
+      },
+      {
+        "id": "mcp-specification-changelog",
+        "kind": "git",
+        "role": "current",
+        "outcome": "moved_untouched",
+        "tip": "80041ab0a139a8f4fb3adbc99f7ae9113ea59671",
+        "detail": "main is 80041ab0a139a8f4fb3adbc99f7ae9113ea59671 (pinned aa8ce049f089f92618340190d4ece141f663310d); all 2 pinned paths unchanged at the tip"
+      },
+      {
+        "id": "mcp-specification-changelog/render-2026-09-08T0959Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "obsigna-receipt-spec",
+        "kind": "git",
+        "role": "current",
+        "outcome": "moved_untouched",
+        "tip": "fa2d82b313fd164217b411da195e08df9d8a372c",
+        "detail": "main is fa2d82b313fd164217b411da195e08df9d8a372c (pinned a53ffae1268cf2a9dda0a7796a641618543fe657); all 1 pinned path unchanged at the tip"
+      },
+      {
+        "id": "rfc9964-info/render-2026-09-08T0959Z",
+        "kind": "http",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "rfc9964-status",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "b55af9396c131e4617944f5dc56f160ad508ba24b9ae7382f211b05f1202052a",
+        "detail": "https://www.rfc-editor.org/rfc/rfc9964.json still digests to the pin (998 bytes)"
+      },
+      {
+        "id": "rfc9964-text",
+        "kind": "http",
+        "role": "current",
+        "outcome": "current",
+        "tip": "8c42035b948301b197d431de8b3f40019bdaa3bb40150dc523306923948f34cf",
+        "detail": "https://www.rfc-editor.org/rfc/rfc9964.txt still digests to the pin (180564 bytes)"
+      },
+      {
+        "id": "tersign-evidence-record-conformance",
+        "kind": "git",
+        "role": "current",
+        "outcome": "moved_changed",
+        "tip": "10785c2fca368118218d92fe3efd3c88b3e9b2e0",
+        "detail": "main is 10785c2fca368118218d92fe3efd3c88b3e9b2e0 (pinned 1075ca65b4495212cf49a891e63e07f2cf48acf8); 4 of 74 pinned paths differ at the tip; noted: README.md 3bb59c000ec2bde2ae39e9dc6d29ad3342561896 -> 9bae88be279818dcfbf683ea118b72a1d037d32d",
+        "changed_paths": [
+          {
+            "path": "MANIFEST.json",
+            "old_blob": "9c256714d607d1487f3e2a100251a53b317749e4",
+            "new_blob": "c8fb1e2b77257efce73911d0d7ab6ce2a983bdd2",
+            "new_sha256": "14aa9c790c8cc5bf4e02b323799e7f2e10f098791eac54d5d30a6b8a607af96b"
+          },
+          {
+            "path": "tools/cross_check_ts.mjs",
+            "old_blob": "84176a71eab5731aaf40df06d39598013e4c8bb1",
+            "new_blob": "0d81d4b7c2dfb3c4e78728418481381ab4ad041e",
+            "new_sha256": "949786f740b0d15266fddacb801c1d4013de08304c7f5bc6a40674e3401541ef"
+          },
+          {
+            "path": "tools/differential.py",
+            "old_blob": "9c08e36c02f9bce1a3b73f454b4bc369a0662e2e",
+            "new_blob": "e7771a68eb45fba635c281f44b575515ca8faad5",
+            "new_sha256": "2e629e43372e631da14ec9e2d81ba4ad0636835c199a64ed88ddab1b70a08bce"
+          },
+          {
+            "path": "verify.py",
+            "old_blob": "0802d811872ac34067853f358d77440fd5197c94",
+            "new_blob": "c7d9df57d47e975cec5607c27f4694a7a2caf34b",
+            "new_sha256": "6b0e14d77c842c471cf1411f1a23507e12598e5e14224be6cf1fc6a9d281202f"
+          }
+        ],
+        "noted_paths": [
+          {
+            "path": "README.md",
+            "old_blob": "3bb59c000ec2bde2ae39e9dc6d29ad3342561896",
+            "new_blob": "9bae88be279818dcfbf683ea118b72a1d037d32d",
+            "new_sha256": "d57cb3b63c11bee9bcc4d285e923ac8c38916a8153e8c76492e8b7e010fe77c3"
+          }
+        ]
+      },
+      {
+        "id": "verifiable-intent-changelog",
+        "kind": "git",
+        "role": "current",
+        "outcome": "current",
+        "tip": "356c29635f1c44df7de02edb58699ca9f29bece6",
+        "detail": "main is still 356c29635f1c44df7de02edb58699ca9f29bece6"
+      },
+      {
+        "id": "x402-action-receipt/597f2145",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "x402-core-dist-tags",
+        "kind": "http",
+        "role": "current",
+        "outcome": "changed",
+        "tip": "ca058a1f356b82eb06e43a6e2d2581167ab64c63c6294c01996b9f45f4929262",
+        "detail": "https://registry.npmjs.org/-/package/@x402%2fcore/dist-tags: pinned 3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60, now ca058a1f356b82eb06e43a6e2d2581167ab64c63c6294c01996b9f45f4929262 (19 bytes)"
+      },
+      {
+        "id": "x402-fetch-dist-tags",
+        "kind": "http",
+        "role": "current",
+        "outcome": "changed",
+        "tip": "ca058a1f356b82eb06e43a6e2d2581167ab64c63c6294c01996b9f45f4929262",
+        "detail": "https://registry.npmjs.org/-/package/@x402%2ffetch/dist-tags: pinned 3773cb4f1cae004fdf7592141ab7341bc63ab42623f8ea40e0c8df9c81ad1e60, now ca058a1f356b82eb06e43a6e2d2581167ab64c63c6294c01996b9f45f4929262 (19 bytes)"
+      },
+      {
+        "id": "x402-pr-2853-compliance-fields/8e0a3fc6",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "x402-pr-2853-compliance-fields/b8a81c09",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "x402-pr-3000-attestations/cb666052",
+        "kind": "git",
+        "role": "historical",
+        "outcome": "not_checked",
+        "tip": null,
+        "detail": "role: historical -- kept for a finding, not as the current corpus, so nothing claims it is the tip"
+      },
+      {
+        "id": "x402-specification-v2",
+        "kind": "git",
+        "role": "current",
+        "outcome": "moved_changed",
+        "tip": "0e6e8c55d86b4f14234fb6e49a4052074fb93e57",
+        "detail": "main is 0e6e8c55d86b4f14234fb6e49a4052074fb93e57 (pinned dd927a26cfefc98c24b3ec38b3a8f204dad0c60d); 1 of 1 pinned paths differ at the tip",
+        "changed_paths": [
+          {
+            "path": "specs/x402-specification-v2.md",
+            "old_blob": "b7eaea66f2743eac7ce2d0e1886f29e950e06988",
+            "new_blob": "3b4631af0684748966eafcdf6a6a90a8cbbf7198",
+            "new_sha256": "cb66bdef710298233316b02d48fce4a9417ec5449ed9cab7f5d9fe6a454920cd"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "current": 24,
+      "moved_untouched": 2,
+      "moved_changed": 5,
+      "changed": 7,
+      "superseded": 3,
+      "unreachable": 0,
+      "not_checked": 33,
+      "no_entry": 0,
+      "noted": 3
+    },
+    "exit_code": 1
+  }
+}
